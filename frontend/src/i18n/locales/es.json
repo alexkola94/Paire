@@ -1,0 +1,129 @@
+{
+  "app": {
+    "title": "Tú y Yo Gastos",
+    "tagline": "Administrando nuestras finanzas juntos"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "signup": "Registrarse",
+    "logout": "Cerrar Sesión",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "Restablecer Contraseña",
+    "dontHaveAccount": "¿No tienes cuenta?",
+    "alreadyHaveAccount": "¿Ya tienes cuenta?",
+    "welcomeBack": "¡Bienvenido de vuelta!",
+    "createAccount": "Crear tu Cuenta"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "expenses": "Gastos",
+    "income": "Ingresos",
+    "loans": "Préstamos",
+    "profile": "Perfil"
+  },
+  "dashboard": {
+    "title": "Resumen Financiero",
+    "totalIncome": "Ingresos Totales",
+    "totalExpenses": "Gastos Totales",
+    "balance": "Balance",
+    "recentTransactions": "Transacciones Recientes",
+    "monthlyOverview": "Resumen Mensual",
+    "noTransactions": "Aún no hay transacciones"
+  },
+  "expenses": {
+    "title": "Gastos",
+    "addExpense": "Agregar Gasto",
+    "editExpense": "Editar Gasto",
+    "deleteExpense": "Eliminar Gasto",
+    "expenseAdded": "Gasto agregado exitosamente",
+    "expenseUpdated": "Gasto actualizado exitosamente",
+    "expenseDeleted": "Gasto eliminado exitosamente",
+    "noExpenses": "No hay gastos registrados"
+  },
+  "income": {
+    "title": "Ingresos",
+    "addIncome": "Agregar Ingreso",
+    "editIncome": "Editar Ingreso",
+    "deleteIncome": "Eliminar Ingreso",
+    "incomeAdded": "Ingreso agregado exitosamente",
+    "incomeUpdated": "Ingreso actualizado exitosamente",
+    "incomeDeleted": "Ingreso eliminado exitosamente",
+    "noIncome": "No hay ingresos registrados"
+  },
+  "loans": {
+    "title": "Préstamos",
+    "addLoan": "Agregar Préstamo",
+    "editLoan": "Editar Préstamo",
+    "deleteLoan": "Eliminar Préstamo",
+    "loanAdded": "Préstamo agregado exitosamente",
+    "loanUpdated": "Préstamo actualizado exitosamente",
+    "loanDeleted": "Préstamo eliminado exitosamente",
+    "noLoans": "No hay préstamos registrados",
+    "lender": "Prestamista",
+    "borrower": "Prestatario",
+    "totalAmount": "Monto Total",
+    "remainingAmount": "Monto Restante",
+    "dueDate": "Fecha de Vencimiento",
+    "status": "Estado"
+  },
+  "transaction": {
+    "amount": "Monto",
+    "category": "Categoría",
+    "description": "Descripción",
+    "date": "Fecha",
+    "type": "Tipo",
+    "attachment": "Adjunto",
+    "uploadReceipt": "Subir Recibo",
+    "deleteAttachment": "Eliminar Adjunto"
+  },
+  "categories": {
+    "food": "Comida y Restaurantes",
+    "transport": "Transporte",
+    "utilities": "Servicios",
+    "entertainment": "Entretenimiento",
+    "healthcare": "Salud",
+    "shopping": "Compras",
+    "education": "Educación",
+    "salary": "Salario",
+    "freelance": "Freelance",
+    "investment": "Inversión",
+    "gift": "Regalo",
+    "other": "Otro"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "back": "Volver",
+    "confirm": "Confirmar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar"
+  },
+  "profile": {
+    "title": "Perfil",
+    "settings": "Configuración",
+    "language": "Idioma",
+    "changePassword": "Cambiar Contraseña",
+    "deleteAccount": "Eliminar Cuenta",
+    "personalInfo": "Información Personal",
+    "name": "Nombre",
+    "emailAddress": "Correo Electrónico"
+  },
+  "messages": {
+    "confirmDelete": "¿Estás seguro de que quieres eliminar este elemento?",
+    "operationSuccess": "Operación completada exitosamente",
+    "operationFailed": "La operación falló. Por favor, inténtalo de nuevo.",
+    "fillRequired": "Por favor completa todos los campos requeridos"
+  }
+}
+

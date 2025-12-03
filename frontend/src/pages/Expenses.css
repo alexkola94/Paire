@@ -1,0 +1,205 @@
+/* ================================
+   Expenses Page Styles
+   ================================ */
+
+.expenses-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* ================================
+   Form Modal
+   ================================ */
+
+.form-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-md);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.form-card {
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   Expenses Grid
+   ================================ */
+
+.expenses-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+}
+
+/* ================================
+   Expense Card
+   ================================ */
+
+.expense-card {
+  position: relative;
+  padding: var(--spacing-lg);
+  transition: var(--transition);
+  border-left: 4px solid var(--error-dark);
+}
+
+.expense-card:hover {
+  transform: translateY(-4px);
+}
+
+.expense-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-md);
+}
+
+.expense-category {
+  background: var(--error);
+  color: var(--error-dark);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.expense-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--error-dark);
+}
+
+.expense-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.6;
+}
+
+.expense-date {
+  color: var(--text-light);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-md);
+}
+
+/* ================================
+   Attachment Link
+   ================================ */
+
+.attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--primary);
+  font-size: 0.875rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  margin-bottom: var(--spacing-md);
+}
+
+.attachment-link:hover {
+  background: var(--primary-light);
+  color: white;
+}
+
+/* ================================
+   Expense Actions
+   ================================ */
+
+.expense-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--bg-tertiary);
+}
+
+.btn-icon {
+  background: var(--bg-tertiary);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-secondary);
+  padding: 0;
+}
+
+.btn-icon:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-icon.delete:hover {
+  background: var(--error-dark);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .expenses-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .expenses-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .form-modal {
+    padding: 0;
+    align-items: flex-start;
+  }
+
+  .form-card {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--spacing-md);
+  }
+
+  .page-header button {
+    width: 100%;
+  }
+}
+

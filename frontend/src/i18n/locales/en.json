@@ -1,0 +1,134 @@
+{
+  "app": {
+    "title": "You & Me Expenses",
+    "tagline": "Managing our finances together"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?",
+    "welcomeBack": "Welcome Back!",
+    "createAccount": "Create Your Account"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "expenses": "Expenses",
+    "income": "Income",
+    "loans": "Loans",
+    "profile": "Profile"
+  },
+  "dashboard": {
+    "title": "Financial Overview",
+    "totalIncome": "Total Income",
+    "totalExpenses": "Total Expenses",
+    "balance": "Balance",
+    "recentTransactions": "Recent Transactions",
+    "monthlyOverview": "Monthly Overview",
+    "noTransactions": "No transactions yet"
+  },
+  "expenses": {
+    "title": "Expenses",
+    "addExpense": "Add Expense",
+    "editExpense": "Edit Expense",
+    "deleteExpense": "Delete Expense",
+    "expenseAdded": "Expense added successfully",
+    "expenseUpdated": "Expense updated successfully",
+    "expenseDeleted": "Expense deleted successfully",
+    "noExpenses": "No expenses recorded"
+  },
+  "income": {
+    "title": "Income",
+    "addIncome": "Add Income",
+    "editIncome": "Edit Income",
+    "deleteIncome": "Delete Income",
+    "incomeAdded": "Income added successfully",
+    "incomeUpdated": "Income updated successfully",
+    "incomeDeleted": "Income deleted successfully",
+    "noIncome": "No income recorded"
+  },
+  "loans": {
+    "title": "Loans",
+    "addLoan": "Add Loan",
+    "editLoan": "Edit Loan",
+    "deleteLoan": "Delete Loan",
+    "loanAdded": "Loan added successfully",
+    "loanUpdated": "Loan updated successfully",
+    "loanDeleted": "Loan deleted successfully",
+    "noLoans": "No loans recorded",
+    "lender": "Lender",
+    "borrower": "Borrower",
+    "totalAmount": "Total Amount",
+    "remainingAmount": "Remaining Amount",
+    "dueDate": "Due Date",
+    "status": "Status",
+    "type": "Loan Type"
+  },
+  "transaction": {
+    "amount": "Amount",
+    "category": "Category",
+    "description": "Description",
+    "descriptionPlaceholder": "Add a description...",
+    "date": "Date",
+    "type": "Type",
+    "attachment": "Attachment",
+    "uploadReceipt": "Upload Receipt",
+    "deleteAttachment": "Delete Attachment",
+    "viewAttachment": "View Attachment"
+  },
+  "categories": {
+    "food": "Food & Dining",
+    "transport": "Transportation",
+    "utilities": "Utilities",
+    "entertainment": "Entertainment",
+    "healthcare": "Healthcare",
+    "shopping": "Shopping",
+    "education": "Education",
+    "salary": "Salary",
+    "freelance": "Freelance",
+    "investment": "Investment",
+    "gift": "Gift",
+    "other": "Other"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "back": "Back",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "select": "Select...",
+    "viewAll": "View All"
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "changePassword": "Change Password",
+    "deleteAccount": "Delete Account",
+    "personalInfo": "Personal Information",
+    "name": "Name",
+    "emailAddress": "Email Address"
+  },
+  "messages": {
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "operationSuccess": "Operation completed successfully",
+    "operationFailed": "Operation failed. Please try again.",
+    "fillRequired": "Please fill in all required fields"
+  }
+}
+

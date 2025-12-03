@@ -1,0 +1,244 @@
+/* ================================
+   Login Page Styles
+   ================================ */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-light) 100%);
+  padding: var(--spacing-md);
+}
+
+.login-container {
+  width: 100%;
+  max-width: 1000px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   Branding Section
+   ================================ */
+
+.login-branding {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: var(--spacing-xl);
+  display: none; /* Hidden on mobile */
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.branding-content {
+  max-width: 400px;
+}
+
+.heart-icon {
+  color: var(--accent);
+  margin-bottom: var(--spacing-lg);
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  50% { transform: scale(1); }
+}
+
+.branding-content h1 {
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-md);
+  color: white;
+}
+
+.branding-content p {
+  font-size: 1.125rem;
+  opacity: 0.95;
+  color: white;
+}
+
+/* ================================
+   Form Container
+   ================================ */
+
+.login-form-container {
+  padding: var(--spacing-xl);
+}
+
+.login-form-wrapper {
+  max-width: 450px;
+  margin: 0 auto;
+}
+
+.form-title {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+  font-size: 1.75rem;
+}
+
+/* ================================
+   Alerts
+   ================================ */
+
+.alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert-error {
+  background-color: var(--error);
+  color: var(--error-dark);
+  border-left: 4px solid var(--error-dark);
+}
+
+.alert-success {
+  background-color: var(--success);
+  color: var(--success-dark);
+  border-left: 4px solid var(--success-dark);
+}
+
+/* ================================
+   Form Styles
+   ================================ */
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.login-form label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: var(--spacing-md);
+  padding: 14px;
+  font-size: 1.0625rem;
+}
+
+.spinner-small {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* ================================
+   Form Footer
+   ================================ */
+
+.form-footer {
+  margin-top: var(--spacing-xl);
+  text-align: center;
+  padding-top: var(--spacing-lg);
+  border-top: 2px solid var(--bg-tertiary);
+}
+
+.form-footer p {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: var(--transition);
+  padding: var(--spacing-sm);
+}
+
+.btn-link:hover {
+  color: var(--primary-dark);
+  transform: scale(1.05);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .login-container {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .login-branding {
+    display: flex;
+  }
+
+  .login-form-container {
+    padding: var(--spacing-xl) 3rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .login-page {
+    padding: var(--spacing-xl);
+  }
+
+  .form-title {
+    font-size: 2rem;
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .login-page {
+    padding: var(--spacing-sm);
+  }
+
+  .login-form-container {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+  }
+}
+

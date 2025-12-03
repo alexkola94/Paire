@@ -1,0 +1,173 @@
+/* ================================
+   Profile Page Styles
+   ================================ */
+
+.profile-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.profile-page .card {
+  margin-bottom: var(--spacing-xl);
+}
+
+.profile-page .card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.profile-page .card-header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* ================================
+   Profile Information
+   ================================ */
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.info-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--primary);
+  color: white;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-content {
+  flex: 1;
+}
+
+.info-content label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+}
+
+.info-content p {
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  margin: 0;
+}
+
+.user-id {
+  font-size: 0.875rem !important;
+  font-family: monospace;
+  color: var(--text-secondary) !important;
+  font-weight: 400 !important;
+  word-break: break-all;
+}
+
+/* ================================
+   Language Options
+   ================================ */
+
+.language-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.language-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.language-btn:hover {
+  border-color: var(--primary-light);
+  background: var(--secondary);
+}
+
+.language-btn.active {
+  border-color: var(--primary);
+  background: var(--secondary);
+  color: var(--primary);
+}
+
+.language-btn .flag {
+  font-size: 1.5rem;
+}
+
+/* ================================
+   Password Form
+   ================================ */
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .language-options {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .profile-info {
+    flex-direction: row;
+  }
+
+  .info-item {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .profile-page {
+    max-width: 900px;
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .info-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .info-icon {
+    width: 40px;
+    height: 40px;
+  }
+}
+

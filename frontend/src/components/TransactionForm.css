@@ -1,0 +1,122 @@
+/* ================================
+   Transaction Form Styles
+   ================================ */
+
+.transaction-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* ================================
+   File Upload
+   ================================ */
+
+.file-upload {
+  margin-top: var(--spacing-sm);
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border: 2px dashed var(--primary-light);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  color: var(--primary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.file-upload-label:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: white;
+}
+
+/* ================================
+   File Preview
+   ================================ */
+
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--primary-light);
+}
+
+.file-preview svg:first-child {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.file-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.remove-file-btn {
+  background: var(--error);
+  color: var(--error-dark);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.remove-file-btn:hover {
+  background: var(--error-dark);
+  color: white;
+}
+
+/* ================================
+   Form Actions
+   ================================ */
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--bg-tertiary);
+}
+
+.form-actions button {
+  min-width: 120px;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+@media (max-width: 767px) {
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}
+

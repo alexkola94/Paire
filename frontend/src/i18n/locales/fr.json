@@ -1,0 +1,129 @@
+{
+  "app": {
+    "title": "Toi & Moi Dépenses",
+    "tagline": "Gérer nos finances ensemble"
+  },
+  "auth": {
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "logout": "Déconnexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "dontHaveAccount": "Vous n'avez pas de compte ?",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "welcomeBack": "Bon retour !",
+    "createAccount": "Créer votre compte"
+  },
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "expenses": "Dépenses",
+    "income": "Revenus",
+    "loans": "Prêts",
+    "profile": "Profil"
+  },
+  "dashboard": {
+    "title": "Aperçu financier",
+    "totalIncome": "Revenu total",
+    "totalExpenses": "Dépenses totales",
+    "balance": "Solde",
+    "recentTransactions": "Transactions récentes",
+    "monthlyOverview": "Aperçu mensuel",
+    "noTransactions": "Pas encore de transactions"
+  },
+  "expenses": {
+    "title": "Dépenses",
+    "addExpense": "Ajouter une dépense",
+    "editExpense": "Modifier la dépense",
+    "deleteExpense": "Supprimer la dépense",
+    "expenseAdded": "Dépense ajoutée avec succès",
+    "expenseUpdated": "Dépense mise à jour avec succès",
+    "expenseDeleted": "Dépense supprimée avec succès",
+    "noExpenses": "Aucune dépense enregistrée"
+  },
+  "income": {
+    "title": "Revenus",
+    "addIncome": "Ajouter un revenu",
+    "editIncome": "Modifier le revenu",
+    "deleteIncome": "Supprimer le revenu",
+    "incomeAdded": "Revenu ajouté avec succès",
+    "incomeUpdated": "Revenu mis à jour avec succès",
+    "incomeDeleted": "Revenu supprimé avec succès",
+    "noIncome": "Aucun revenu enregistré"
+  },
+  "loans": {
+    "title": "Prêts",
+    "addLoan": "Ajouter un prêt",
+    "editLoan": "Modifier le prêt",
+    "deleteLoan": "Supprimer le prêt",
+    "loanAdded": "Prêt ajouté avec succès",
+    "loanUpdated": "Prêt mis à jour avec succès",
+    "loanDeleted": "Prêt supprimé avec succès",
+    "noLoans": "Aucun prêt enregistré",
+    "lender": "Prêteur",
+    "borrower": "Emprunteur",
+    "totalAmount": "Montant total",
+    "remainingAmount": "Montant restant",
+    "dueDate": "Date d'échéance",
+    "status": "Statut"
+  },
+  "transaction": {
+    "amount": "Montant",
+    "category": "Catégorie",
+    "description": "Description",
+    "date": "Date",
+    "type": "Type",
+    "attachment": "Pièce jointe",
+    "uploadReceipt": "Télécharger le reçu",
+    "deleteAttachment": "Supprimer la pièce jointe"
+  },
+  "categories": {
+    "food": "Nourriture et restaurants",
+    "transport": "Transport",
+    "utilities": "Services publics",
+    "entertainment": "Divertissement",
+    "healthcare": "Santé",
+    "shopping": "Achats",
+    "education": "Éducation",
+    "salary": "Salaire",
+    "freelance": "Freelance",
+    "investment": "Investissement",
+    "gift": "Cadeau",
+    "other": "Autre"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "back": "Retour",
+    "confirm": "Confirmer",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "import": "Importer"
+  },
+  "profile": {
+    "title": "Profil",
+    "settings": "Paramètres",
+    "language": "Langue",
+    "changePassword": "Changer le mot de passe",
+    "deleteAccount": "Supprimer le compte",
+    "personalInfo": "Informations personnelles",
+    "name": "Nom",
+    "emailAddress": "Adresse email"
+  },
+  "messages": {
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément ?",
+    "operationSuccess": "Opération terminée avec succès",
+    "operationFailed": "L'opération a échoué. Veuillez réessayer.",
+    "fillRequired": "Veuillez remplir tous les champs obligatoires"
+  }
+}
+

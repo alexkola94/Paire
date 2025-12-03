@@ -1,0 +1,244 @@
+/* ================================
+   Loans Page Styles
+   ================================ */
+
+.loans-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* ================================
+   Loans Grid
+   ================================ */
+
+.loans-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+}
+
+/* ================================
+   Loan Card
+   ================================ */
+
+.loan-card {
+  position: relative;
+  padding: var(--spacing-lg);
+  transition: var(--transition);
+  border-left: 4px solid var(--primary);
+}
+
+.loan-card.given {
+  border-left-color: var(--success-dark);
+}
+
+.loan-card.received {
+  border-left-color: var(--warning-dark);
+}
+
+.loan-card:hover {
+  transform: translateY(-4px);
+}
+
+.loan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.loan-type-badge {
+  background: var(--primary);
+  color: white;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.loan-card.given .loan-type-badge {
+  background: var(--success-dark);
+}
+
+.loan-card.received .loan-type-badge {
+  background: var(--warning-dark);
+}
+
+.loan-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.loan-status.active {
+  background: var(--warning);
+  color: var(--warning-dark);
+}
+
+.loan-status.completed {
+  background: var(--success);
+  color: var(--success-dark);
+}
+
+/* ================================
+   Loan Details
+   ================================ */
+
+.loan-party {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.loan-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.amount-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.amount-label {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+.amount-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.amount-value.remaining {
+  color: var(--primary);
+}
+
+.loan-due-date {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.loan-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.6;
+}
+
+/* ================================
+   Loan Actions
+   ================================ */
+
+.loan-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--bg-tertiary);
+}
+
+/* ================================
+   Loan Form
+   ================================ */
+
+.loan-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 2px solid var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.radio-label:hover {
+  border-color: var(--primary-light);
+  background: var(--secondary);
+}
+
+.radio-label input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.radio-label input[type="radio"]:checked + span {
+  color: var(--primary);
+}
+
+.radio-label:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--secondary);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .loans-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .radio-group {
+    flex-direction: row;
+  }
+
+  .radio-label {
+    flex: 1;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .loans-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--spacing-md);
+  }
+
+  .page-header button {
+    width: 100%;
+  }
+
+  .loan-amounts {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .amount-value {
+    font-size: 1.125rem;
+  }
+}
+

@@ -1,0 +1,93 @@
+name: Full Test Suite
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: ./frontend
+        run: npm test -- --run
+      
+      - name: Generate coverage
+        working-directory: ./frontend
+        run: npm run test:coverage
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Restore dependencies
+        run: dotnet restore
+        working-directory: ./backend
+      
+      - name: Build
+        run: dotnet build --no-restore
+        working-directory: ./backend
+      
+      - name: Test
+        run: dotnet test --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+        working-directory: ./backend
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage.opencover.xml
+          flags: backend
+          name: backend-coverage
+
+  test-summary:
+    name: Test Summary
+    needs: [frontend-tests, backend-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Check test results
+        run: |
+          echo "Frontend tests: ${{ needs.frontend-tests.result }}"
+          echo "Backend tests: ${{ needs.backend-tests.result }}"
+          if [ "${{ needs.frontend-tests.result }}" != "success" ] || [ "${{ needs.backend-tests.result }}" != "success" ]; then
+            echo "Some tests failed!"
+            exit 1
+          fi
+          echo "All tests passed! ✅"
+

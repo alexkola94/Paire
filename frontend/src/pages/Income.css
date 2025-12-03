@@ -1,0 +1,111 @@
+/* ================================
+   Income Page Styles
+   (Similar to Expenses but with income colors)
+   ================================ */
+
+.income-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* ================================
+   Income Grid
+   ================================ */
+
+.income-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+}
+
+/* ================================
+   Income Card
+   ================================ */
+
+.income-card {
+  position: relative;
+  padding: var(--spacing-lg);
+  transition: var(--transition);
+  border-left: 4px solid var(--success-dark);
+}
+
+.income-card:hover {
+  transform: translateY(-4px);
+}
+
+.income-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-md);
+}
+
+.income-category {
+  background: var(--success);
+  color: var(--success-dark);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.income-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--success-dark);
+}
+
+.income-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.6;
+}
+
+.income-date {
+  color: var(--text-light);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-md);
+}
+
+/* ================================
+   Income Actions
+   ================================ */
+
+.income-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--bg-tertiary);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .income-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .income-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--spacing-md);
+  }
+
+  .page-header button {
+    width: 100%;
+  }
+}
+
