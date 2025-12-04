@@ -1,0 +1,12 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/YOUR_USERNAME/you-me-expenses/blob/main/README.md
+    about: Check our comprehensive documentation
+  - name: 💬 Discussions
+    url: https://github.com/YOUR_USERNAME/you-me-expenses/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🐛 Supabase Issues
+    url: https://github.com/supabase/supabase/issues
+    about: Report issues related to Supabase platform
+

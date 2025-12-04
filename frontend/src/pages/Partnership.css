@@ -1,0 +1,390 @@
+/* ================================
+   Partnership Page Styles
+   ================================ */
+
+.partnership-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.partnership-page .card {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* ================================
+   Partnership Card
+   ================================ */
+
+.partnership-card {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
+  border: 2px solid var(--primary);
+}
+
+.partnership-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.partnership-header h2 {
+  color: var(--primary);
+  margin: 0;
+}
+
+.partnership-status {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.partnership-status.active {
+  background: var(--success);
+  color: white;
+}
+
+/* ================================
+   Partner Info
+   ================================ */
+
+.partner-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  text-align: center;
+}
+
+.partner-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: var(--transition);
+}
+
+.partner-avatar:hover {
+  transform: scale(1.05);
+}
+
+.partner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.partner-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.partner-details {
+  flex: 1;
+}
+
+.partner-details h3 {
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.partner-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  justify-content: center;
+}
+
+.partner-description {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* ================================
+   Partnership Actions
+   ================================ */
+
+.partnership-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.partnership-actions .btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* ================================
+   No Partnership State
+   ================================ */
+
+.no-partnership-card {
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.no-partnership-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.no-partnership-icon {
+  width: 120px;
+  height: 120px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.no-partnership-content h2 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.no-partnership-content p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ================================
+   Invite Form
+   ================================ */
+
+.invite-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon .input-icon {
+  position: absolute;
+  left: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.input-with-icon input {
+  padding-left: calc(var(--spacing-md) * 2.5);
+}
+
+/* ================================
+   Benefits Card
+   ================================ */
+
+.benefits-card h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--primary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.benefits-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.benefits-list li:hover {
+  background: var(--secondary);
+  transform: translateX(4px);
+}
+
+.benefits-list li::before {
+  content: '✓';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--success);
+  color: white;
+  border-radius: 50%;
+  flex-shrink: 0;
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
+/* ================================
+   Help Section
+   ================================ */
+
+.help-card h3 {
+  color: var(--primary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.help-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.help-item {
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--primary);
+}
+
+.help-item h4 {
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  font-size: 1rem;
+}
+
+.help-item p {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+  font-size: 0.9375rem;
+}
+
+/* ================================
+   Alerts
+   ================================ */
+
+.alert {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+.alert-success {
+  background: var(--success-light);
+  color: var(--success-dark);
+  border-left: 4px solid var(--success);
+}
+
+.alert-error {
+  background: var(--error-light);
+  color: var(--error-dark);
+  border-left: 4px solid var(--error);
+}
+
+.alert-warning {
+  background: #fff3cd;
+  color: #856404;
+  border-left: 4px solid #ffc107;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .partner-info {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .meta-item {
+    justify-content: flex-start;
+  }
+
+  .partnership-actions {
+    justify-content: flex-end;
+  }
+
+  .benefits-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .partnership-page {
+    max-width: 900px;
+  }
+
+  .help-content {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .partnership-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    text-align: center;
+  }
+
+  .partnership-actions {
+    flex-direction: column;
+  }
+
+  .partnership-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+

@@ -1,0 +1,449 @@
+/* ================================
+   Analytics Page Styles
+   ================================ */
+
+.analytics-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.analytics-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.analytics-page .page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* ================================
+   Date Range Selector
+   ================================ */
+
+.date-range-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.date-range-select {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  outline: none;
+  transition: var(--transition);
+}
+
+.date-range-select:hover {
+  color: var(--primary);
+}
+
+/* ================================
+   Summary Cards
+   ================================ */
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.summary-card .card-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.income-card .card-icon {
+  background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+}
+
+.expense-card .card-icon {
+  background: linear-gradient(135deg, var(--error) 0%, var(--error-dark) 100%);
+}
+
+.balance-card .card-icon {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+.average-card .card-icon {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+}
+
+.summary-card .card-content {
+  flex: 1;
+}
+
+.summary-card .card-content h3 {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-card .card-content .amount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.summary-card .card-content .amount.positive {
+  color: var(--success-dark);
+}
+
+.summary-card .card-content .amount.negative {
+  color: var(--error-dark);
+}
+
+/* ================================
+   Charts Grid
+   ================================ */
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-card {
+  background: var(--bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.chart-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.chart-card .card-header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--primary);
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+/* ================================
+   Chart Container
+   ================================ */
+
+.chart-container {
+  width: 100%;
+  height: 300px;
+  padding: var(--spacing-md);
+  position: relative;
+}
+
+.pie-chart {
+  height: 350px;
+}
+
+/* ================================
+   Category List
+   ================================ */
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.category-item:hover {
+  background: var(--secondary);
+  transform: translateX(4px);
+}
+
+.category-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.category-amount {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.category-amount small {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-left: var(--spacing-xs);
+}
+
+/* ================================
+   Partner Details
+   ================================ */
+
+.partner-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.partner-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.partner-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1.0625rem;
+}
+
+.partner-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: 0.875rem;
+}
+
+.partner-percentage {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.partner-count {
+  color: var(--text-secondary);
+}
+
+/* ================================
+   Loan Analytics
+   ================================ */
+
+.loans-analytics-card {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
+}
+
+.loan-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.loan-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.loan-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.loan-stat label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.loan-stat .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.loan-stat .stat-value.positive {
+  color: var(--success-dark);
+}
+
+.loan-stat .stat-value.negative {
+  color: var(--error-dark);
+}
+
+/* ================================
+   Monthly Comparison Table
+   ================================ */
+
+.monthly-comparison-table {
+  overflow-x: auto;
+}
+
+.monthly-comparison-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.monthly-comparison-table th {
+  text-align: left;
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.monthly-comparison-table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.monthly-comparison-table tr:hover {
+  background: var(--bg-tertiary);
+}
+
+.monthly-comparison-table td.positive {
+  color: var(--success-dark);
+  font-weight: 600;
+}
+
+.monthly-comparison-table td.negative {
+  color: var(--error-dark);
+  font-weight: 600;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .charts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chart-card:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .loan-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .summary-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .loan-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .chart-container {
+    height: 350px;
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .analytics-page .page-header {
+    flex-direction: column;
+  }
+
+  .date-range-selector {
+    width: 100%;
+  }
+
+  .date-range-select {
+    flex: 1;
+  }
+
+  .summary-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .partner-detail-item {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    text-align: center;
+  }
+
+  .partner-stats {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .chart-container {
+    height: 250px;
+    padding: 0;
+  }
+
+  .pie-chart {
+    height: 300px;
+  }
+}
+

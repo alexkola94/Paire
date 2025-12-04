@@ -1,22 +1,22 @@
-import i18n from 'i18next'
+﻿import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
 // Import translation files
 import en from './locales/en.json'
-import es from './locales/es.json'
-import fr from './locales/fr.json'
+import el from './locales/el.json'
 
 /**
  * i18n Configuration
- * Supports multiple languages for internationalization
+ * Supports English and Greek for internationalization
+ * - en: English (default)
+ * - el: Greek (Ελληνικά)
  */
 i18n
   .use(initReactI18next)
   .init({
     resources: {
       en: { translation: en },
-      es: { translation: es },
-      fr: { translation: fr }
+      el: { translation: el }
     },
     lng: localStorage.getItem('language') || 'en', // Default language
     fallbackLng: 'en',
@@ -26,4 +26,3 @@ i18n
   })
 
 export default i18n
-

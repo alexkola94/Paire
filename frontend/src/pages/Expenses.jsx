@@ -206,6 +206,15 @@ function Expenses() {
 
               <div className="expense-date">
                 {format(new Date(expense.date), 'MMMM dd, yyyy')}
+                {expense.user_profiles && (
+                  <span className="added-by">
+                    {' • Added by '}
+                    {expense.user_profiles.display_name}
+                    {expense.user_profiles.email && (
+                      <span className="added-by-email"> ({expense.user_profiles.email})</span>
+                    )}
+                  </span>
+                )}
               </div>
 
               {expense.attachment_url && (

@@ -104,6 +104,21 @@
   margin-bottom: var(--spacing-md);
 }
 
+/* Name tag showing who added the expense */
+.expense-date .added-by {
+  color: var(--primary-color);
+  font-weight: 500;
+  opacity: 0.9;
+  transition: var(--transition);
+}
+
+/* Email in name tag - slightly muted */
+.expense-date .added-by-email {
+  color: var(--text-light);
+  font-weight: 400;
+  font-size: 0.85em;
+}
+
 /* ================================
    Attachment Link
    ================================ */

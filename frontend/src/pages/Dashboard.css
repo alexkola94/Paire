@@ -214,6 +214,21 @@
   margin: 0;
 }
 
+/* Name tag showing who added the transaction */
+.added-by {
+  color: var(--primary-color);
+  font-weight: 500;
+  opacity: 0.9;
+  transition: var(--transition);
+}
+
+/* Email in name tag - slightly muted */
+.added-by-email {
+  color: var(--text-light);
+  font-weight: 400;
+  font-size: 0.85em;
+}
+
 .transaction-amount {
   font-size: 1.125rem;
   font-weight: 700;

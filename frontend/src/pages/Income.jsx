@@ -206,6 +206,15 @@ function Income() {
 
               <div className="income-date">
                 {format(new Date(income.date), 'MMMM dd, yyyy')}
+                {income.user_profiles && (
+                  <span className="added-by">
+                    {' • Added by '}
+                    {income.user_profiles.display_name}
+                    {income.user_profiles.email && (
+                      <span className="added-by-email"> ({income.user_profiles.email})</span>
+                    )}
+                  </span>
+                )}
               </div>
 
               {income.attachment_url && (

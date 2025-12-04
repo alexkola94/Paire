@@ -1,0 +1,6 @@
+@YouAndMeExpensesAPI_HostAddress = http://localhost:5038
+
+GET {{YouAndMeExpensesAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

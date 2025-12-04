@@ -1,0 +1,75 @@
+# Supabase Project Configuration
+# Learn more: https://supabase.com/docs/reference/cli/config
+
+[project]
+name = "you-me-expenses"
+organization_id = ""
+project_id = ""
+
+# API Settings
+[api]
+enabled = true
+port = 54321
+max_rows = 1000
+schemas = ["public"]
+
+# Database Settings
+[db]
+port = 54322
+major_version = 15
+
+# Storage Settings
+[storage]
+enabled = true
+file_size_limit = "5MB"
+buckets = [
+  { name = "receipts", public = true }
+]
+
+# Auth Settings
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://yourusername.github.io"]
+jwt_expiry = 3600
+
+# Email Settings
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+# Session Settings
+[auth.sessions]
+timebox = 86400
+inactivity_timeout = 28800
+
+# External Auth Providers (optional)
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+
+# Studio Settings (Supabase Dashboard)
+[studio]
+enabled = true
+port = 54323
+
+# Realtime Settings
+[realtime]
+enabled = true
+
+# Edge Functions (optional)
+[functions]
+enabled = false
+
+# Local Development Settings
+[local]
+# File path to the Postgres database dump
+# seed_file = "./seed.sql"
+

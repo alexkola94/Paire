@@ -44,18 +44,30 @@ function Dashboard() {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
 
+      console.log('🔍 Dashboard Debug - Date Range:', {
+        now: now.toISOString(),
+        startOfMonth: startOfMonth.toISOString(),
+        endOfMonth: endOfMonth.toISOString(),
+        currentMonth: now.getMonth() + 1,
+        currentYear: now.getFullYear()
+      })
+
       // Fetch summary for current month
+      console.log('📊 Fetching summary...')
       const summaryData = await transactionService.getSummary(
         startOfMonth.toISOString(),
         endOfMonth.toISOString()
       )
+      console.log('✅ Summary received:', summaryData)
       setSummary(summaryData)
 
       // Fetch recent transactions (last 10)
+      console.log('📝 Fetching transactions...')
       const transactions = await transactionService.getAll()
+      console.log('✅ Transactions received:', transactions?.length, 'transactions')
       setRecentTransactions(transactions.slice(0, 10))
     } catch (error) {
-      console.error('Error loading dashboard data:', error)
+      console.error('❌ Error loading dashboard data:', error)
     } finally {
       setLoading(false)
     }
@@ -168,6 +180,15 @@ function Dashboard() {
                   <h4>{transaction.description || transaction.category}</h4>
                   <p className="transaction-date">
                     {format(new Date(transaction.date), 'MMM dd, yyyy')}
+                    {transaction.user_profiles && (
+                      <span className="added-by">
+                        {' • Added by '}
+                        {transaction.user_profiles.display_name}
+                        {transaction.user_profiles.email && (
+                          <span className="added-by-email"> ({transaction.user_profiles.email})</span>
+                        )}
+                      </span>
+                    )}
                   </p>
                 </div>
                 <div className={`transaction-amount ${transaction.type}`}>

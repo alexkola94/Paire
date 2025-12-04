@@ -9,6 +9,13 @@ import Expenses from './pages/Expenses'
 import Income from './pages/Income'
 import Loans from './pages/Loans'
 import Profile from './pages/Profile'
+import Analytics from './pages/Analytics'
+import Partnership from './pages/Partnership'
+import Budgets from './pages/Budgets'
+import ReminderSettings from './pages/ReminderSettings'
+import SavingsGoals from './pages/SavingsGoals'
+import RecurringBills from './pages/RecurringBills'
+import ShoppingLists from './pages/ShoppingLists'
 
 // Layout
 import Layout from './components/Layout'
@@ -66,6 +73,13 @@ function App() {
           <Route path="expenses" element={<Expenses />} />
           <Route path="income" element={<Income />} />
           <Route path="loans" element={<Loans />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="budgets" element={<Budgets />} />
+          <Route path="savings-goals" element={<SavingsGoals />} />
+          <Route path="recurring-bills" element={<RecurringBills />} />
+          <Route path="shopping-lists" element={<ShoppingLists />} />
+          <Route path="partnership" element={<Partnership />} />
+          <Route path="reminders" element={<ReminderSettings />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 

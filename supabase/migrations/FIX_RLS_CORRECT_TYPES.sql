@@ -1,0 +1,241 @@
+-- ============================================
+-- CORRECT RLS FIX - Using Proper UUID Types
+-- ============================================
+-- All columns are UUID, so compare UUID to UUID directly
+-- No casting needed!
+-- ============================================
+
+-- ============================================
+-- 1. TRANSACTIONS TABLE (CRITICAL!)
+-- ============================================
+
+DROP POLICY IF EXISTS "Users can view their transactions" ON transactions;
+DROP POLICY IF EXISTS "Users can view partner transactions" ON transactions;
+DROP POLICY IF EXISTS "Users can insert their transactions" ON transactions;
+DROP POLICY IF EXISTS "Users can update their transactions" ON transactions;
+DROP POLICY IF EXISTS "Users can delete their transactions" ON transactions;
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON transactions;
+DROP POLICY IF EXISTS "Enable insert for authenticated users" ON transactions;
+DROP POLICY IF EXISTS "Enable update for users based on user_id" ON transactions;
+DROP POLICY IF EXISTS "Enable delete for users based on user_id" ON transactions;
+
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+
+-- View own transactions
+CREATE POLICY "Users can view their transactions"
+ON transactions FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+-- View partner's transactions
+CREATE POLICY "Users can view partner transactions"
+ON transactions FOR SELECT TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM partnerships
+    WHERE partnerships.status = 'active'
+    AND (
+      (partnerships.user1_id = auth.uid() AND partnerships.user2_id = transactions.user_id)
+      OR
+      (partnerships.user2_id = auth.uid() AND partnerships.user1_id = transactions.user_id)
+    )
+  )
+);
+
+-- Insert own transactions (FIXES 403 ERROR!)
+CREATE POLICY "Users can insert their transactions"
+ON transactions FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+-- Update own transactions
+CREATE POLICY "Users can update their transactions"
+ON transactions FOR UPDATE TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- Delete own transactions
+CREATE POLICY "Users can delete their transactions"
+ON transactions FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON transactions TO authenticated;
+
+-- ============================================
+-- 2. LOANS TABLE
+-- ============================================
+
+DROP POLICY IF EXISTS "Users can view their loans" ON loans;
+DROP POLICY IF EXISTS "Users can view partner loans" ON loans;
+DROP POLICY IF EXISTS "Users can insert their loans" ON loans;
+DROP POLICY IF EXISTS "Users can update their loans" ON loans;
+DROP POLICY IF EXISTS "Users can delete their loans" ON loans;
+
+ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their loans"
+ON loans FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view partner loans"
+ON loans FOR SELECT TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM partnerships
+    WHERE partnerships.status = 'active'
+    AND (
+      (partnerships.user1_id = auth.uid() AND partnerships.user2_id = loans.user_id)
+      OR
+      (partnerships.user2_id = auth.uid() AND partnerships.user1_id = loans.user_id)
+    )
+  )
+);
+
+CREATE POLICY "Users can insert their loans"
+ON loans FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their loans"
+ON loans FOR UPDATE TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their loans"
+ON loans FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON loans TO authenticated;
+
+-- ============================================
+-- 3. USER_PROFILES TABLE
+-- ============================================
+
+DROP POLICY IF EXISTS "Users can view their own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can view partner profiles" ON user_profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Enable read for authenticated users" ON user_profiles;
+DROP POLICY IF EXISTS "Users can search profiles by email" ON user_profiles;
+DROP POLICY IF EXISTS "Authenticated users can view all profiles" ON user_profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
+
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- All authenticated users can view all profiles
+CREATE POLICY "Authenticated users can view all profiles"
+ON user_profiles FOR SELECT TO authenticated
+USING (true);
+
+-- Insert own profile
+CREATE POLICY "Users can insert own profile"
+ON user_profiles FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = id);
+
+-- Update own profile
+CREATE POLICY "Users can update own profile"
+ON user_profiles FOR UPDATE TO authenticated
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
+
+GRANT SELECT, INSERT, UPDATE ON user_profiles TO authenticated;
+
+-- ============================================
+-- 4. PARTNERSHIPS TABLE
+-- ============================================
+
+DROP POLICY IF EXISTS "Users can view their partnerships" ON partnerships;
+DROP POLICY IF EXISTS "Users can create partnerships" ON partnerships;
+DROP POLICY IF EXISTS "Users can update their partnerships" ON partnerships;
+DROP POLICY IF EXISTS "Users can delete their partnerships" ON partnerships;
+
+ALTER TABLE partnerships ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their partnerships"
+ON partnerships FOR SELECT TO authenticated
+USING (auth.uid() = user1_id OR auth.uid() = user2_id);
+
+CREATE POLICY "Users can create partnerships"
+ON partnerships FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user1_id);
+
+CREATE POLICY "Users can update their partnerships"
+ON partnerships FOR UPDATE TO authenticated
+USING (auth.uid() = user1_id OR auth.uid() = user2_id)
+WITH CHECK (auth.uid() = user1_id OR auth.uid() = user2_id);
+
+CREATE POLICY "Users can delete their partnerships"
+ON partnerships FOR DELETE TO authenticated
+USING (auth.uid() = user1_id OR auth.uid() = user2_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON partnerships TO authenticated;
+
+-- ============================================
+-- 5. BUDGETS TABLE
+-- ============================================
+
+DROP POLICY IF EXISTS "Users can view their budgets" ON budgets;
+DROP POLICY IF EXISTS "Users can create budgets" ON budgets;
+DROP POLICY IF EXISTS "Users can update their budgets" ON budgets;
+DROP POLICY IF EXISTS "Users can delete their budgets" ON budgets;
+DROP POLICY IF EXISTS "Users can view partner budgets" ON budgets;
+
+ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their budgets"
+ON budgets FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view partner budgets"
+ON budgets FOR SELECT TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM partnerships
+    WHERE partnerships.status = 'active'
+    AND (
+      (partnerships.user1_id = auth.uid() AND partnerships.user2_id = budgets.user_id)
+      OR
+      (partnerships.user2_id = auth.uid() AND partnerships.user1_id = budgets.user_id)
+    )
+  )
+);
+
+CREATE POLICY "Users can create budgets"
+ON budgets FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their budgets"
+ON budgets FOR UPDATE TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their budgets"
+ON budgets FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON budgets TO authenticated;
+
+-- ============================================
+-- GRANT PERMISSIONS
+-- ============================================
+
+GRANT USAGE ON SCHEMA public TO authenticated;
+
+-- ============================================
+-- SUCCESS MESSAGE
+-- ============================================
+
+DO $$
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '╔════════════════════════════════════════════╗';
+  RAISE NOTICE '║     ✅ RLS FIXED - ALL UUID TYPES!        ║';
+  RAISE NOTICE '╚════════════════════════════════════════════╝';
+  RAISE NOTICE '';
+  RAISE NOTICE '✅ transactions - ADD EXPENSES/INCOME NOW WORKS!';
+  RAISE NOTICE '✅ loans - Loan management enabled';
+  RAISE NOTICE '✅ user_profiles - Profile updates enabled';
+  RAISE NOTICE '✅ partnerships - Partnership management enabled';
+  RAISE NOTICE '✅ budgets - Budget tracking enabled';
+  RAISE NOTICE '';
+  RAISE NOTICE '🎉 REFRESH YOUR APP AND TRY ADDING AN EXPENSE!';
+END $$;
+

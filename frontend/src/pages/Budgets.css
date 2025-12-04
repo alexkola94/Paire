@@ -1,0 +1,374 @@
+/* ================================
+   Budgets Page Styles
+   ================================ */
+
+.budgets-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.budgets-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.budgets-page .page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* ================================
+   Budget Form
+   ================================ */
+
+.budget-form-card {
+  margin-bottom: var(--spacing-xl);
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
+  border: 2px solid var(--primary);
+}
+
+.budget-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+/* ================================
+   Budgets Grid
+   ================================ */
+
+.budgets-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+}
+
+/* ================================
+   Budget Card
+   ================================ */
+
+.budget-card {
+  padding: var(--spacing-xl);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
+  border-left: 4px solid var(--primary);
+}
+
+.budget-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.budget-card.over-budget {
+  border-left-color: var(--error);
+  background: linear-gradient(135deg, var(--error-light) 0%, var(--bg-secondary) 100%);
+}
+
+.budget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+}
+
+.budget-category h3 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.budget-period {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.budget-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-icon:hover {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+.btn-icon.danger:hover {
+  background: var(--error);
+}
+
+/* ================================
+   Budget Amounts
+   ================================ */
+
+.budget-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.amount-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  text-align: center;
+}
+
+.amount-item label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.amount-item .amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.amount-item .amount.over {
+  color: var(--error-dark);
+}
+
+.amount-item .amount.positive {
+  color: var(--success-dark);
+}
+
+.amount-item .amount.negative {
+  color: var(--error-dark);
+}
+
+/* ================================
+   Progress Section
+   ================================ */
+
+.progress-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.progress-header > span:first-child {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1.0625rem;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.status.on-track {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.status.over {
+  background: var(--error-light);
+  color: var(--error-dark);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Progress Bar */
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success) 0%, var(--success-dark) 100%);
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease-out;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-fill.over {
+  background: linear-gradient(90deg, var(--error) 0%, var(--error-dark) 100%);
+}
+
+/* ================================
+   Budget Description
+   ================================ */
+
+.budget-description {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+}
+
+/* ================================
+   Empty State
+   ================================ */
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.empty-icon {
+  color: var(--primary);
+  opacity: 0.5;
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  font-size: 1.0625rem;
+  margin: 0;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .form-row {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+
+  .budgets-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .budget-amounts {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .budgets-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .budgets-page .page-header {
+    flex-direction: column;
+  }
+
+  .budgets-page .page-header .btn {
+    width: 100%;
+  }
+
+  .budget-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .budget-actions {
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .budget-amounts {
+    grid-template-columns: 1fr;
+  }
+
+  .amount-item {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+

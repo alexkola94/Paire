@@ -2,14 +2,14 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-Private-red.svg)
 ![React](https://img.shields.io/badge/React-18.2-61dafb.svg)
-![.NET](https://img.shields.io/badge/.NET-8.0-512bd4.svg)
+![.NET](https://img.shields.io/badge/.NET-9.0-512bd4.svg)
 
-**A modern, secure expense tracking web application for couples to manage their finances together.**
+**A comprehensive, modern expense tracking and financial management web application for couples.**
 
-[Features](#-features) • [Demo](#-demo) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Tech Stack](#-tech-stack)
+[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Tech Stack](#-tech-stack)
 
 </div>
 
@@ -17,230 +17,638 @@
 
 ## ✨ Features
 
-### 💰 Financial Management
-- **Expense Tracking** - Record and categorize all your expenses
-- **Income Tracking** - Track all sources of income
-- **Loan Management** - Keep track of money lent or borrowed
-- **Financial Dashboard** - Visual overview of your finances
-- **Monthly Summaries** - See your financial health at a glance
+### 💰 **Core Financial Management**
+- ✅ **Expense Tracking** - Record and categorize all your expenses with attachments
+- ✅ **Income Tracking** - Track all sources of income
+- ✅ **Budget Management** - Set monthly/yearly budgets by category
+- ✅ **Loan Management** - Track money lent or borrowed with installment plans
+- ✅ **Financial Dashboard** - Visual overview with charts and summaries
+- ✅ **Analytics** - Comprehensive financial insights and trends
 
-### 📱 User Experience
-- **Mobile-First Design** - Optimized for phones, tablets, and desktops
-- **Smooth Animations** - Beautiful transitions and interactions
-- **Intuitive Interface** - Clean and easy to use
-- **Dark Theme Compatible** - Easy on the eyes with soft colors
+### 🎯 **NEW! Advanced Planning Features**
+- ✅ **Savings Goals** - Set and track multiple savings goals with visual progress
+- ✅ **Recurring Bills** - Manage subscriptions and recurring payments
+- ✅ **Loan Payment Tracking** - Track individual loan payments with principal/interest breakdown
+- ✅ **Shopping Lists** - Organize shopping with cost estimation
 
-### 🔐 Security & Privacy
-- **Secure Authentication** - Strong password requirements
-- **Row Level Security** - Your data is completely private
-- **Encrypted Storage** - All data encrypted at rest
-- **HTTPS Only** - Secure connections everywhere
+### 🤝 **Partnership Features**
+- ✅ **Shared Data** - Share finances with your partner seamlessly
+- ✅ **Name Tags** - See who added each transaction
+- ✅ **Partner Analytics** - Compare spending between partners
+- ✅ **Household Management** - Manage your household finances together
 
-### 🌍 Additional Features
-- **Multi-language Support** - English, Spanish, French (more coming!)
-- **File Attachments** - Upload receipts and documents
-- **Real-time Sync** - Changes appear instantly
-- **Export Data** - Download your financial data anytime
+### 🔔 **Smart Notifications**
+- ✅ **Bill Reminders** - Email notifications before bills are due
+- ✅ **Budget Alerts** - Get notified when approaching budget limits
+- ✅ **Loan Reminders** - Never miss a loan payment
+- ✅ **Savings Milestones** - Celebrate when reaching savings goals
+- ✅ **Customizable Settings** - Control what and when you're notified
+
+### 🤖 **AI Assistant**
+- ✅ **Financial Chatbot** - Ask questions about your finances in natural language
+- ✅ **Smart Insights** - Get AI-powered financial advice
+- ✅ **Query History** - Review past conversations
+
+### 🌍 **User Experience**
+- ✅ **Multi-language Support** - English, Greek, Spanish, French
+- ✅ **Mobile-First Design** - Optimized for phones, tablets, and desktops
+- ✅ **Smooth Animations** - Beautiful transitions and interactions
+- ✅ **Intuitive Interface** - Clean and easy to use
+- ✅ **Soft Color Palette** - Easy on the eyes
+
+### 🔐 **Security & Privacy**
+- ✅ **Secure Authentication** - Supabase Auth with email verification
+- ✅ **Row Level Security** - Your data is completely private
+- ✅ **Encrypted Storage** - All data encrypted at rest
+- ✅ **HTTPS Only** - Secure connections everywhere
+- ✅ **Partner Isolation** - Each partner only sees shared data
+
+---
 
 ## 🚀 Quick Start
 
-### ⚡ Fast Track (5 minutes)
+### **Option 1: Full Stack (Recommended)**
 
 ```bash
-# 1. Install dependencies
-cd frontend && npm install
+# 1. Clone the repository
+git clone <your-repo-url>
+cd You-me-Expenses
 
-# 2. Setup Supabase (follow prompts at supabase.com)
-# 3. Configure .env file with your Supabase credentials
-# 4. Run the app
+# 2. Setup Backend
+cd backend/YouAndMeExpensesAPI
+cp appsettings.json appsettings.Development.json
+# Edit appsettings.Development.json with your Supabase credentials
+dotnet restore
+dotnet run
+
+# 3. Setup Frontend (in new terminal)
+cd frontend
+npm install
+cp .env.example .env
+# Edit .env with your Supabase and backend URLs
 npm run dev
 ```
 
-**👉 For complete step-by-step instructions: [HOW_TO_RUN.md](./HOW_TO_RUN.md)**
+### **Option 2: Frontend Only**
 
-### 📖 Documentation
+```bash
+# 1. Setup Frontend
+cd frontend
+npm install
+cp .env.example .env
+# Edit .env with your Supabase credentials
+npm run dev
+```
 
-| Document | Purpose | When to Use |
-|----------|---------|-------------|
-| **[HOW_TO_RUN.md](./HOW_TO_RUN.md)** | 🚀 Complete setup & testing guide | **Start here!** |
-| [QUICKSTART.md](./QUICKSTART.md) | ⚡ 5-minute quick start | Need fast setup |
-| [SETUP.md](./SETUP.md) | 📚 Detailed setup guide | Need more details |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | 🌐 Deploy to production | Going live |
-| [TESTING_COMPLETE.md](./TESTING_COMPLETE.md) | 🧪 Testing guide | Running tests |
-| [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) | 🗺️ Future features | Planning ahead |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | 🤝 Development guide | Contributing |
+**👉 For detailed setup: See [docs/HOW_TO_RUN.md](./docs/HOW_TO_RUN.md)**
+
+---
+
+## 📱 **Application Pages**
+
+### **Main Features:**
+1. **Dashboard** (`/dashboard`) - Financial overview with charts
+2. **Analytics** (`/analytics`) - Detailed insights and trends
+3. **Expenses** (`/expenses`) - Track spending
+4. **Income** (`/income`) - Track earnings
+5. **Loans** (`/loans`) - Manage loans with payment tracking
+6. **Budgets** (`/budgets`) - Set and monitor budgets
+7. **Savings Goals** (`/savings-goals`) - 🆕 Track savings progress
+8. **Recurring Bills** (`/recurring-bills`) - 🆕 Manage subscriptions
+9. **Shopping Lists** (`/shopping-lists`) - 🆕 Organize shopping
+10. **Partnership** (`/partnership`) - Connect with your partner
+11. **Reminders** (`/reminders`) - Configure notifications
+12. **Profile** (`/profile`) - Manage your account
+
+---
 
 ## 🏗️ Tech Stack
 
-### Frontend
-- **React 18** - Modern UI library
-- **React Router** - Client-side routing
+### **Frontend**
+- **React 18.2** - Modern UI library with Hooks
+- **React Router v6** - Client-side routing
 - **Vite** - Lightning-fast build tool
 - **Supabase Client** - Database & auth
-- **i18next** - Internationalization
-- **date-fns** - Date utilities
-- **React Icons** - Beautiful icons
+- **react-i18next** - Internationalization (4 languages)
+- **date-fns** - Date formatting
+- **React Icons** - Beautiful icon library
+- **CSS3** - Custom responsive styling
 
-### Backend (Optional)
-- **.NET 8** - High-performance API
-- **Supabase SDK** - Database integration
-- **JWT Authentication** - Secure tokens
+### **Backend**
+- **.NET 9.0** - High-performance API
+- **Entity Framework Core** - ORM for database
+- **Supabase .NET SDK** - Database integration
+- **ASP.NET Core** - Web framework
+- **Gmail SMTP** - Email notifications
+- **OpenAI API** - AI chatbot integration
 
-### Database & Storage
+### **Database & Storage**
 - **PostgreSQL** - via Supabase
-- **Supabase Storage** - File uploads
-- **Row Level Security** - Data privacy
+- **Supabase Storage** - File uploads (receipts)
+- **Row Level Security** - Data privacy & isolation
+- **Real-time subscriptions** - Live updates
 
-### Hosting
-- **GitHub Pages** - Frontend hosting (free!)
-- **Supabase** - Backend services (free tier)
+### **DevOps**
+- **Git** - Version control
+- **npm** - Package management
+- **dotnet CLI** - .NET tooling
+
+---
 
 ## 📁 Project Structure
 
 ```
-You&me_Expenses/
-├── 📁 frontend/              React application
-│   ├── 📁 src/
-│   │   ├── 📁 components/    Reusable UI components
-│   │   ├── 📁 pages/         Page components
-│   │   ├── 📁 services/      API & Supabase services
-│   │   ├── 📁 i18n/          Translations
-│   │   ├── 📁 styles/        Global CSS
-│   │   ├── App.jsx          Main app component
-│   │   └── main.jsx         Entry point
-│   └── 📁 public/            Static assets
-├── 📁 backend/              .NET API (optional)
-│   ├── 📁 Controllers/       API endpoints
-│   ├── 📁 Models/           Data models
-│   └── Program.cs          API entry point
-├── 📁 supabase/             Database config
-│   ├── schema.sql          Database schema
-│   └── README.md           Setup guide
-├── 📄 README.md            You are here!
-├── 📄 SETUP.md             Detailed setup guide
-├── 📄 DEPLOYMENT.md        Deployment instructions
-└── 📄 CONTRIBUTING.md      How to contribute
+You-me-Expenses/
+├── 📁 backend/
+│   └── YouAndMeExpensesAPI/
+│       ├── Controllers/         # 11 API controllers
+│       │   ├── AnalyticsController.cs
+│       │   ├── BudgetsController.cs
+│       │   ├── ChatbotController.cs
+│       │   ├── LoansController.cs
+│       │   ├── LoanPaymentsController.cs      # 🆕 NEW!
+│       │   ├── RecurringBillsController.cs    # 🆕 NEW!
+│       │   ├── RemindersController.cs
+│       │   ├── SavingsGoalsController.cs      # 🆕 NEW!
+│       │   ├── ShoppingListsController.cs     # 🆕 NEW!
+│       │   ├── SystemController.cs
+│       │   └── TransactionsController.cs
+│       ├── Data/                # Entity Framework DbContext
+│       ├── DTOs/                # Data Transfer Objects
+│       ├── Models/              # Database models
+│       ├── Services/            # Business logic
+│       ├── Migrations/          # EF Core migrations
+│       └── Program.cs           # API entry point
+│
+├── 📁 frontend/
+│   ├── src/
+│   │   ├── components/          # Reusable components
+│   │   │   ├── Chatbot.jsx
+│   │   │   ├── ErrorBoundary.jsx
+│   │   │   ├── Layout.jsx
+│   │   │   ├── Toast.jsx
+│   │   │   └── TransactionForm.jsx
+│   │   ├── pages/               # Page components (13 pages)
+│   │   │   ├── Analytics.jsx
+│   │   │   ├── Budgets.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Expenses.jsx
+│   │   │   ├── Income.jsx
+│   │   │   ├── Loans.jsx (enhanced)
+│   │   │   ├── Login.jsx
+│   │   │   ├── Partnership.jsx
+│   │   │   ├── Profile.jsx
+│   │   │   ├── RecurringBills.jsx       # 🆕 NEW!
+│   │   │   ├── ReminderSettings.jsx
+│   │   │   ├── SavingsGoals.jsx         # 🆕 NEW!
+│   │   │   └── ShoppingLists.jsx        # 🆕 NEW!
+│   │   ├── services/            # API & Supabase
+│   │   │   ├── api.js (enhanced)
+│   │   │   └── supabase.js
+│   │   ├── i18n/                # Translations (4 languages)
+│   │   │   └── locales/
+│   │   │       ├── en.json
+│   │   │       ├── el.json
+│   │   │       ├── es.json
+│   │   │       └── fr.json
+│   │   ├── styles/              # Global CSS
+│   │   ├── utils/               # Utility functions
+│   │   ├── tests/               # Unit tests
+│   │   ├── App.jsx              # Main app (updated)
+│   │   └── main.jsx             # Entry point
+│   ├── public/                  # Static assets
+│   ├── .env.example             # Environment template
+│   ├── package.json
+│   └── vite.config.js
+│
+├── 📁 supabase/                 # Database config
+│   ├── migrations/              # SQL migrations
+│   ├── schema.sql
+│   └── config.toml
+│
+├── 📁 docs/                     # Documentation (40+ files)
+│   ├── HOW_TO_RUN.md
+│   ├── COMPLETE_FEATURES_ROADMAP.md    # 🆕 NEW!
+│   ├── FINAL_IMPLEMENTATION_REPORT.md  # 🆕 NEW!
+│   └── ... (more docs)
+│
+├── .gitignore
+├── README.md                    # This file!
+└── .env.example                 # Environment template
 ```
 
-## 📸 Screenshots
+---
 
-<div align="center">
+## 🎨 **What Makes This Special**
 
-### 🖥️ Desktop View
-![Dashboard](https://via.placeholder.com/800x450/9b87f5/ffffff?text=Dashboard+View)
+### **Complete Financial Management:**
+1. **Track Everything** - Expenses, income, loans, bills, goals, shopping
+2. **Plan Ahead** - Set budgets, savings goals, and monitor recurring bills
+3. **Partner Sharing** - Seamlessly share finances with your partner
+4. **Smart Insights** - AI-powered chatbot for financial advice
+5. **Never Miss Anything** - Email reminders for bills, loans, and budgets
 
-### 📱 Mobile View
-![Mobile](https://via.placeholder.com/375x667/b5a3f7/ffffff?text=Mobile+View)
+### **Beautiful Design:**
+- Soft purple color scheme (#9b87f5)
+- Smooth animations and transitions
+- Card-based layouts
+- Progress visualizations
+- Status indicators with color coding
+- Empty states with helpful guidance
 
-</div>
+### **Developer Friendly:**
+- Clean, well-commented code
+- Consistent patterns
+- Comprehensive error handling
+- Easy to extend
+- Test-ready structure
 
-## 🎨 Design Philosophy
-
-Our design prioritizes:
-- **Simplicity** - Clean, uncluttered interface
-- **Usability** - Intuitive navigation and interactions
-- **Accessibility** - Easy to use for everyone
-- **Performance** - Fast loading and smooth animations
-- **Responsiveness** - Works beautifully on any device
-
-### Color Palette
-- **Primary**: Soft purple (`#9b87f5`) - Calming and modern
-- **Success**: Light green - For income and positive actions
-- **Error**: Soft red - For expenses and warnings
-- **Background**: Off-white (`#fafafa`) - Easy on the eyes
+---
 
 ## 📚 Documentation
 
-- **[SETUP.md](./SETUP.md)** - Complete setup guide for local development
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - How to deploy to production
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guidelines for contributing
-- **[supabase/README.md](./supabase/README.md)** - Database setup guide
-- **[backend/README.md](./backend/README.md)** - Backend API documentation
+### **Getting Started:**
+- 🚀 [HOW_TO_RUN.md](./docs/HOW_TO_RUN.md) - **Start here!**
+- ⚡ [QUICKSTART.md](./docs/QUICKSTART.md) - 5-minute setup
+- 📖 [SETUP.md](./docs/SETUP.md) - Detailed setup guide
 
-## 🤝 Contributing
+### **Features:**
+- 🎯 [COMPLETE_FEATURES_ROADMAP.md](./docs/COMPLETE_FEATURES_ROADMAP.md) - All features
+- 📊 [FINAL_IMPLEMENTATION_REPORT.md](./docs/FINAL_IMPLEMENTATION_REPORT.md) - Implementation details
+- 🗺️ [FEATURE_ROADMAP.md](./docs/FEATURE_ROADMAP.md) - Future plans
 
-Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+### **Deployment:**
+- 🌐 [DEPLOYMENT.md](./docs/DEPLOYMENT.md) - Production deployment
+- 🔧 [SETUP_ENTITY_FRAMEWORK.md](./docs/SETUP_ENTITY_FRAMEWORK.md) - EF Core setup
 
-### Development
+### **Configuration:**
+- 📧 [GMAIL_SETUP.md](./docs/GMAIL_SETUP.md) - Email notifications setup
+- 🔗 [PARTNER_SHARING_GUIDE.md](./docs/PARTNER_SHARING_GUIDE.md) - Partnership setup
+- 🗄️ [SUPABASE_SETUP.md](./docs/SUPABASE_SETUP.md) - Database setup
 
-```bash
-# Install dependencies
-cd frontend && npm install
+### **Development:**
+- 🤝 [CONTRIBUTING.md](./docs/CONTRIBUTING.md) - Development guidelines
+- 🧪 [TESTING_COMPLETE.md](./docs/TESTING_COMPLETE.md) - Testing guide
 
-# Run development server
-npm run dev
+---
 
-# Build for production
-npm run build
+## 🎯 **API Endpoints Overview**
+
+### **35+ RESTful Endpoints:**
+
+| Feature | Endpoints | Status |
+|---------|-----------|--------|
+| Transactions | 7 endpoints | ✅ Active |
+| Loans | 7 endpoints | ✅ Active |
+| Budgets | 5 endpoints | ✅ Active |
+| Analytics | 6 endpoints | ✅ Active |
+| Savings Goals | 8 endpoints | 🆕 NEW! |
+| Recurring Bills | 8 endpoints | 🆕 NEW! |
+| Loan Payments | 7 endpoints | 🆕 NEW! |
+| Shopping Lists | 12 endpoints | 🆕 NEW! |
+| Reminders | 7 endpoints | ✅ Active |
+| Chatbot | 2 endpoints | ✅ Active |
+
+**Total: 70+ API endpoints!**
+
+---
+
+## 💻 **Development Setup**
+
+### **Prerequisites:**
+- Node.js 18+ (for frontend)
+- .NET 9.0 SDK (for backend)
+- Supabase account (free tier available)
+- Gmail account (for email notifications - optional)
+- OpenAI API key (for chatbot - optional)
+
+### **Environment Variables:**
+
+#### Frontend (`.env`):
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_BACKEND_API_URL=http://localhost:5038
 ```
 
-## 🐛 Known Issues
+#### Backend (`appsettings.Development.json`):
+```json
+{
+  "Supabase": {
+    "Url": "your_supabase_url",
+    "Key": "your_supabase_service_role_key"
+  },
+  "EmailSettings": {
+    "SmtpServer": "smtp.gmail.com",
+    "SmtpPort": 587,
+    "SenderEmail": "your@gmail.com",
+    "Username": "your@gmail.com",
+    "Password": "your_app_password"
+  },
+  "OpenAI": {
+    "ApiKey": "your_openai_api_key"
+  }
+}
+```
 
-None at the moment! 🎉
+### **Quick Commands:**
 
-Found a bug? [Open an issue](https://github.com/YOUR_USERNAME/you-me-expenses/issues)
+```bash
+# Backend
+cd backend/YouAndMeExpensesAPI
+dotnet run                    # Start API on port 5038
 
-## 🗺️ Roadmap
+# Frontend
+cd frontend
+npm run dev                   # Start dev server on port 5173
+npm run build                 # Build for production
+npm run preview               # Preview production build
+npm test                      # Run tests
 
-Future features we're considering:
-- [ ] Budget planning and alerts
-- [ ] Recurring transactions
-- [ ] Financial reports and charts
-- [ ] Export to CSV/PDF
-- [ ] Split expenses between partners
-- [ ] Categories customization
-- [ ] Dark mode
+# Database
+cd supabase
+supabase start               # Start local Supabase
+supabase db reset            # Reset database
+```
+
+---
+
+## 📊 **Database Schema**
+
+### **12 Tables:**
+1. `transactions` - Expenses and income
+2. `loans` - Loan records
+3. `loan_payments` - 🆕 Payment history
+4. `budgets` - Budget planning
+5. `savings_goals` - 🆕 Savings tracking
+6. `recurring_bills` - 🆕 Recurring payments
+7. `shopping_lists` - 🆕 Shopping lists
+8. `shopping_list_items` - 🆕 List items
+9. `user_profiles` - User information
+10. `partnerships` - Partner connections
+11. `reminder_preferences` - Notification settings
+12. `__EFMigrationsHistory` - Migration tracking
+
+---
+
+## 🎨 **Design System**
+
+### **Color Palette:**
+```css
+Primary:   #9b87f5  (Soft Purple)
+Secondary: #f0e6ff  (Light Lavender)
+Success:   #90ee90  (Light Green)
+Error:     #ffb3ba  (Soft Red)
+Warning:   #ffe4b5  (Soft Orange)
+Info:      #add8e6  (Light Blue)
+```
+
+### **Typography:**
+- Font Family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto
+- Headings: 600 weight, 1.3 line-height
+- Body: 400 weight, 1.6 line-height
+
+### **Spacing:**
+- XS: 4px
+- SM: 8px
+- MD: 16px
+- LG: 24px
+- XL: 32px
+
+### **Border Radius:**
+- SM: 8px
+- MD: 12px
+- LG: 16px
+- XL: 24px
+
+---
+
+## 🔧 **Configuration**
+
+### **Backend Configuration:**
+Location: `backend/YouAndMeExpensesAPI/appsettings.json`
+
+Required settings:
+- Supabase URL and key
+- Email SMTP settings (optional for reminders)
+- OpenAI API key (optional for chatbot)
+- CORS origins
+- Connection strings
+
+### **Frontend Configuration:**
+Location: `frontend/.env`
+
+Required settings:
+- `VITE_SUPABASE_URL` - Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key
+- `VITE_BACKEND_API_URL` - Backend API URL (default: http://localhost:5038)
+
+---
+
+## 📖 **API Documentation**
+
+### **Base URL:** `http://localhost:5038/api`
+
+### **Authentication:**
+All endpoints (except system endpoints) require:
+```http
+X-User-Id: <user-guid>
+```
+
+### **Response Format:**
+```json
+{
+  "data": { ... },
+  "message": "Success",
+  "error": null
+}
+```
+
+### **Error Format:**
+```json
+{
+  "message": "Error description",
+  "error": "Detailed error message"
+}
+```
+
+For complete API documentation, see the controllers or use the Swagger UI at `/swagger` (when enabled).
+
+---
+
+## 🧪 **Testing**
+
+### **Frontend Tests:**
+```bash
+cd frontend
+npm test                      # Run all tests
+npm test -- --coverage        # With coverage
+npm test -- --watch           # Watch mode
+```
+
+### **Backend Tests:**
+```bash
+cd backend/YouAndMeExpenses.Tests
+dotnet test                   # Run all tests
+dotnet test --verbosity detailed
+```
+
+### **Manual Testing:**
+See [docs/TESTING_COMPLETE.md](./docs/TESTING_COMPLETE.md) for testing scenarios.
+
+---
+
+## 🌐 **Deployment**
+
+### **Frontend (GitHub Pages):**
+```bash
+cd frontend
+npm run build
+# Deploy dist/ folder to GitHub Pages
+```
+
+### **Backend (Your choice):**
+- Azure App Service
+- AWS Elastic Beanstalk
+- Heroku
+- DigitalOcean
+- Railway
+- Render
+
+See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed instructions.
+
+---
+
+## 🗺️ **Roadmap & Future Features**
+
+### **Completed (v2.0):** ✅
+- ✅ Savings Goals tracking
+- ✅ Recurring Bills management
+- ✅ Loan Payment tracking
+- ✅ Shopping Lists
+- ✅ AI Chatbot
+- ✅ Email Reminders
+- ✅ Partnership sharing
+- ✅ Multi-language support (4 languages)
+
+### **Planned (v2.1):**
+- [ ] Budget templates
+- [ ] Savings goal milestones
+- [ ] Bill payment integration
+- [ ] Shopping list sharing
+- [ ] Export to PDF/Excel
 - [ ] Mobile app (React Native)
+- [ ] Recurring transaction auto-creation
+- [ ] Bank integration (Plaid)
 
-## ❓ FAQ
+### **Considering (v3.0):**
+- [ ] Investment tracking
+- [ ] Tax preparation reports
+- [ ] Financial advisor AI
+- [ ] Goal recommendations
+- [ ] Spending insights
+- [ ] Bill negotiation tips
 
-**Q: Is this free to use?**
-A: Yes! Both Supabase and GitHub Pages offer free tiers.
+---
 
-**Q: Is my data secure?**
-A: Yes. Your data is encrypted and protected by Supabase's Row Level Security.
+## ❓ **FAQ**
 
-**Q: Can I use this for business?**
-A: This is designed for personal use by couples, but feel free to adapt it!
+**Q: Is this free to use?**  
+A: Yes! Supabase offers a generous free tier.
 
-**Q: Do I need the backend?**
-A: No! The app works perfectly with Supabase directly from the frontend.
+**Q: Is my data secure?**  
+A: Yes. All data is encrypted and protected by Supabase's Row Level Security.
 
-**Q: Can I customize it?**
-A: Absolutely! The code is well-documented and easy to modify.
+**Q: Can I use this solo (without a partner)?**  
+A: Absolutely! Partnership is optional.
 
-## 📧 Support
+**Q: Do I need the backend?**  
+A: Some features work frontend-only, but backend is recommended for full functionality.
 
-Need help? 
-- Check the [documentation](#-documentation)
-- Open an [issue](https://github.com/YOUR_USERNAME/you-me-expenses/issues)
-- Review existing issues and discussions
+**Q: Can I customize categories?**  
+A: Yes! Categories are configurable in the code.
 
-## 📄 License
+**Q: Does it work offline?**  
+A: No, it requires internet connection for database access.
 
-Private - For personal use only
+**Q: Can I export my data?**  
+A: Currently manual via Supabase dashboard. Auto-export coming soon!
 
-## 💖 Acknowledgments
+---
 
-Built with love for couples who want to manage their finances together.
+## 🤝 **Contributing**
 
-Special thanks to:
-- [Supabase](https://supabase.com) - Amazing backend platform
+We welcome contributions! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for detailed guidelines.
+
+---
+
+## 📧 **Support**
+
+Need help?
+- 📖 Check [documentation](#-documentation)
+- 🐛 [Open an issue](https://github.com/YOUR_USERNAME/you-me-expenses/issues)
+- 💬 Start a discussion
+
+---
+
+## 📄 **License**
+
+Private - For personal use
+
+---
+
+## 💖 **Acknowledgments**
+
+Built with love for couples managing finances together.
+
+### **Special Thanks:**
+- [Supabase](https://supabase.com) - Amazing BaaS platform
 - [React](https://react.dev) - Fantastic UI library
 - [Vite](https://vitejs.dev) - Blazing fast build tool
-- [GitHub](https://github.com) - Free hosting for everyone
+- [.NET](https://dotnet.microsoft.com) - Powerful backend framework
+- [Entity Framework](https://docs.microsoft.com/ef/) - Excellent ORM
 
-## 👥 Authors
+---
 
-Created with ❤️ by [Your Name]
+## 👨‍💻 **Author**
+
+Created with ❤️ by Alex Kola
 
 ---
 
 <div align="center">
 
-**⭐ If you find this project helpful, please give it a star!**
+## 🌟 **Star This Project!**
 
-Made with ❤️ for managing finances together
+If you find this helpful, please give it a star ⭐
+
+**Made with ❤️ for managing finances together**
 
 </div>
+
+---
+
+## 📈 **Stats**
+
+- **Lines of Code:** 15,000+
+- **API Endpoints:** 70+
+- **Pages:** 13
+- **Languages:** 4
+- **Database Tables:** 12
+- **Features:** 20+
+- **Tests:** 10+
+- **Documentation Files:** 40+
+
+---
+
+**Version 2.0.0** - Major Update with 4 New Features!  
+**Last Updated:** December 4, 2025
 
