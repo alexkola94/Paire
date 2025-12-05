@@ -24,7 +24,6 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
   const hasAutoVerified = useRef(false);
   const isVerifyingRef = useRef(false);
   const hasCalledOnSuccess = useRef(false); // Prevent multiple success calls
-  const isPastingRef = useRef(false); // Track paste operation
 
   /**
    * Verify 2FA code
@@ -211,19 +210,16 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       return;
     }
 
-    // Only auto-verify if all conditions are met
+    // Only auto-verify if all conditions are met (for manual typing)
     if (
       verificationCode.length === 6 && 
       !loading && 
       !useBackupCode && 
       !hasAutoVerified.current &&
       !isVerifyingRef.current &&
-      !isPastingRef.current && // Don't auto-verify immediately after paste
       verificationCode.match(/^\d{6}$/) // Ensure it's exactly 6 digits
     ) {
       hasAutoVerified.current = true;
-      // Delay longer if paste operation just happened
-      const delay = isPastingRef.current ? 1000 : 800;
       
       // Small delay to ensure the last digit is fully entered and visible
       const timer = setTimeout(() => {
@@ -232,14 +228,13 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
           verificationCode.length === 6 && 
           !loading && 
           !isVerifyingRef.current &&
-          !isPastingRef.current &&
           !hasCalledOnSuccess.current // Don't verify if already succeeded
         ) {
           handleVerifyCode(verificationCode);
         } else {
           hasAutoVerified.current = false;
         }
-      }, delay);
+      }, 500); // Reduced delay for faster response
       return () => clearTimeout(timer);
     }
   }, [verificationCode, loading, useBackupCode, handleVerifyCode]);
@@ -307,7 +302,6 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                 // Reset auto-verify flag when user edits
                 if (normalizedCode.length < 6) {
                   hasAutoVerified.current = false;
-                  isPastingRef.current = false;
                 }
               }}
               numInputs={6}
@@ -316,20 +310,45 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                   {...props} 
                   className="verification-otp-input"
                   onKeyPress={handleKeyPress}
-                  onPaste={(e) => {
+                  onPaste={async (e) => {
                     // Handle paste operation
-                    isPastingRef.current = true;
                     e.preventDefault();
                     const pastedData = (e.clipboardData || window.clipboardData).getData('text');
                     // Extract only digits and limit to 6
                     const digits = pastedData.replace(/\D/g, '').slice(0, 6);
+                    
+                    console.log('📋 [2FA] Paste detected:', { pastedData, digits, length: digits.length });
+                    
                     if (digits.length === 6) {
                       setVerificationCode(digits);
                       setError('');
-                      // Delay auto-verify after paste to ensure UI updates
+                      hasAutoVerified.current = false; // Reset to allow auto-verify
+                      
+                      console.log('✅ [2FA] Code pasted, will verify in 600ms');
+                      
+                      // Wait a moment for UI to update, then verify
                       setTimeout(() => {
-                        isPastingRef.current = false;
-                      }, 800);
+                        console.log('🔍 [2FA] Attempting auto-verify after paste:', {
+                          codeLength: digits.length,
+                          loading,
+                          isVerifying: isVerifyingRef.current,
+                          hasSucceeded: hasCalledOnSuccess.current
+                        });
+                        
+                        if (digits.length === 6 && !loading && !isVerifyingRef.current && !hasCalledOnSuccess.current) {
+                          console.log('🚀 [2FA] Triggering verification from paste handler');
+                          handleVerifyCode(digits);
+                        } else {
+                          console.warn('⚠️ [2FA] Auto-verify blocked:', {
+                            codeLength: digits.length,
+                            loading,
+                            isVerifying: isVerifyingRef.current,
+                            hasSucceeded: hasCalledOnSuccess.current
+                          });
+                        }
+                      }, 600);
+                    } else {
+                      console.warn('⚠️ [2FA] Invalid paste - not 6 digits:', digits);
                     }
                   }}
                   disabled={loading}
@@ -353,6 +372,20 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                 <span className="loading-spinner"></span>
                 <span>{t('twoFactor.verifying') || 'Verifying...'}</span>
               </div>
+            )}
+
+            {/* Manual Verify Button (backup for mobile if auto-verify doesn't work) */}
+            {!loading && verificationCode.length === 6 && (
+              <button
+                onClick={() => {
+                  hasAutoVerified.current = false;
+                  handleVerifyCode(verificationCode);
+                }}
+                className="verify-btn"
+                style={{ marginTop: '1rem' }}
+              >
+                {t('twoFactor.verify') || 'Verify Code'}
+              </button>
             )}
           </div>
         ) : (
@@ -392,7 +425,6 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
               hasAutoVerified.current = false;
               isVerifyingRef.current = false;
               hasCalledOnSuccess.current = false;
-              isPastingRef.current = false;
             }}
             className="link-btn"
             disabled={loading}

@@ -125,6 +125,9 @@ function Login() {
           setUserEmail(formData.email)
         } else {
           // No 2FA required - login successful
+          // Ensure localStorage is written
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
           // Trigger event to notify App.jsx that session has changed
           window.dispatchEvent(new CustomEvent('auth-storage-change', {
             detail: {
@@ -133,16 +136,15 @@ function Login() {
             }
           }))
           
-          // Small delay to let App.jsx process the event
-          await new Promise(resolve => setTimeout(resolve, 100))
+          // Delay to let App.jsx process the event
+          await new Promise(resolve => setTimeout(resolve, 150))
           
           // Check if there's a redirect URL
-          if (redirectUrl) {
-            navigate(redirectUrl, { replace: true })
-          } else {
-            // Navigate to dashboard - App.jsx should now detect the session
-            navigate('/dashboard', { replace: true })
-          }
+          const targetPath = redirectUrl || '/dashboard'
+          
+          // Use navigate for desktop, but fallback to window.location for mobile if needed
+          // For now, use navigate as it's faster and works on desktop
+          navigate(targetPath, { replace: true })
         }
       }
     } catch (err) {
@@ -168,40 +170,69 @@ function Login() {
       handle2FASuccessRef.current = true;
       
       // Token is already stored by TwoFactorVerification component
-      // Small delay to ensure localStorage is written
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Ensure localStorage is written (mobile browsers may need more time)
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
+      // Verify tokens are actually stored
+      const token = localStorage.getItem('auth_token')
+      const user = localStorage.getItem('user')
+      
+      if (!token || !user) {
+        console.error('Tokens not stored properly after 2FA verification')
+        throw new Error('Failed to store authentication data')
+      }
       
       // Trigger a custom event to notify App.jsx that session has changed
       // This ensures App.jsx detects the new authentication state
-      // Note: StorageEvent only works across tabs, so we use a custom event for same-tab updates
       window.dispatchEvent(new CustomEvent('auth-storage-change', {
         detail: {
           key: 'auth_token',
-          newValue: localStorage.getItem('auth_token')
+          newValue: token
         }
       }))
       
       // Also trigger a storage event (works across tabs)
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'auth_token',
-        newValue: localStorage.getItem('auth_token'),
-        storageArea: localStorage
-      }))
+      try {
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'auth_token',
+          newValue: token,
+          storageArea: localStorage
+        }))
+      } catch (e) {
+        // Some browsers may not allow creating StorageEvent manually
+        console.warn('Could not dispatch StorageEvent:', e)
+      }
       
-      // Small delay to let App.jsx process the events
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Detect if we're on a mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
       
-      // Check if there's a redirect URL
-      if (redirectUrl) {
-        navigate(redirectUrl, { replace: true })
+      if (isMobile) {
+        // For mobile browsers, use window.location for more reliable navigation
+        // This ensures a full page reload which properly initializes App.jsx
+        const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
+        const targetPath = redirectUrl || '/dashboard'
+        const fullPath = `${basename}${targetPath}`
+        
+        // Use window.location for mobile compatibility
+        // This forces a full reload which ensures App.jsx re-checks session
+        window.location.href = fullPath
       } else {
-        // Navigate to dashboard - App.jsx should now detect the session
-        navigate('/dashboard', { replace: true })
+        // For desktop, use React Router navigation (faster, no reload)
+        // Longer delay for event processing
+        await new Promise(resolve => setTimeout(resolve, 200))
+        
+        // Check if there's a redirect URL
+        if (redirectUrl) {
+          navigate(redirectUrl, { replace: true })
+        } else {
+          // Navigate to dashboard - App.jsx should now detect the session
+          navigate('/dashboard', { replace: true })
+        }
       }
     } catch (error) {
       console.error('Error handling 2FA success:', error)
       handle2FASuccessRef.current = false; // Reset on error so user can retry
-      // Don't reload - let user see the error
+      setError('Failed to complete login. Please try again.')
     }
   }
 

@@ -82,19 +82,43 @@ Fill in the following settings:
 - **Branch:** `main` (or your default branch)
 - **Root Directory:** `backend/YouAndMeExpensesAPI`
 
-#### Runtime Configuration:
-Render.com will **auto-detect** .NET from your `.csproj` file. You have two options:
+**⚠️ IMPORTANT:** 
+- Make sure there are **NO trailing slashes** in the Root Directory
+- The path should be exactly: `backend/YouAndMeExpensesAPI` (not `/backend/YouAndMeExpensesAPI` or `backend/YouAndMeExpensesAPI/`)
+- If you get an error about "no such file or directory", double-check the path matches your repository structure
 
-**Option 1: Auto-Detection (Recommended)**
-- **Runtime:** Leave as **"Auto-detect"** or **"Docker"** (Render will detect .NET 7.0 from your `.csproj`)
-- **Build Command:** `dotnet restore && dotnet publish -c Release -o ./publish`
-- **Start Command:** `dotnet ./publish/YouAndMeExpensesAPI.dll`
+#### Runtime Configuration:
+**⚠️ CRITICAL:** If you don't see a ".NET" option, use **Docker** instead!
+
+**Option 1: Use Docker (Recommended if no .NET option)**
+1. **Runtime:** Select **"Docker"** from the dropdown
+2. **Dockerfile Path:** Leave **BLANK** (Render will auto-detect Dockerfile in Root Directory)
+   - OR set to: `Dockerfile` (relative to Root Directory)
+3. **Build Command:** Leave **BLANK** (Docker handles the build)
+4. **Start Command:** Leave **BLANK** (Docker handles the start)
+
+**Option 2: Try Auto-Detection (if Docker doesn't work)**
+1. **Runtime:** Select **"Auto-detect"** or leave as default
+2. **Root Directory:** Must be exactly `backend/YouAndMeExpensesAPI` (this is critical!)
+3. **Build Command:** `dotnet restore && dotnet publish -c Release -o ./publish`
+4. **Start Command:** `dotnet ./publish/YouAndMeExpensesAPI.dll`
+5. Render should detect .NET from the `.csproj` file in Root Directory
+
+**If Render shows "Using Node.js version" in logs:**
+- This means Render is NOT detecting your .NET project
+- **Solution:** Use Docker (Option 1 above) - this is the most reliable method
 
 **Option 2: Use Dockerfile**
 - **Runtime:** Select **"Docker"** (if available)
-- **Dockerfile Path:** `backend/YouAndMeExpensesAPI/Dockerfile` (or leave blank if Dockerfile is in root directory)
+- **Dockerfile Path:** `Dockerfile` (relative to Root Directory - since Root Directory is `backend/YouAndMeExpensesAPI`, and Dockerfile is in that folder, use just `Dockerfile`)
 - **Build Command:** (Leave blank - Docker handles this)
 - **Start Command:** (Leave blank - Docker handles this)
+
+**⚠️ IMPORTANT for Docker:**
+- Dockerfile Path is **relative to Root Directory**, not the repository root
+- If Root Directory is `backend/YouAndMeExpensesAPI` and Dockerfile is in that folder, use: `Dockerfile`
+- **DO NOT** use: `backend/YouAndMeExpensesAPI/Dockerfile` (this will cause the error you're seeing)
+- If you get "no such file or directory" errors, try leaving Dockerfile Path **blank** or use just `Dockerfile`
 
 **Note:** If you don't see a specific .NET option, Render will automatically detect it from your `YouAndMeExpensesAPI.csproj` file. Just make sure the Root Directory is set correctly.
 
@@ -586,26 +610,72 @@ Test API endpoints:
 
 ### Backend Issues
 
-#### ❌ No .NET Runtime Option Available
+#### ❌ No .NET Runtime Option Available / Render Using Node.js
 
-**Problem:** Render.com doesn't show ".NET" in the runtime dropdown
-
-**Solutions:**
-1. **Render auto-detects .NET** - You don't need to select a specific runtime
-2. Just set the **Root Directory** to: `backend/YouAndMeExpensesAPI`
-3. Render will automatically detect .NET 7.0 from your `.csproj` file
-4. If you see "Docker" option, you can select it (Dockerfile will be used)
-5. If auto-detection fails, ensure:
-   - Root Directory points to the folder containing `.csproj` file
-   - The `.csproj` file is named correctly
-   - Check build logs for detection messages
-
-#### ❌ Build Fails on Render
-
-**Problem:** Build command fails
+**Problem:** Render shows "Using Node.js version" or "dotnet: command not found"
 
 **Solutions:**
-1. Check build logs in Render dashboard
+1. **Check Root Directory:**
+   - Must be exactly: `backend/YouAndMeExpensesAPI`
+   - This folder MUST contain `YouAndMeExpensesAPI.csproj` file
+   - Render detects .NET by finding the `.csproj` file in Root Directory
+
+2. **Force .NET Runtime:**
+   - Go to Settings → Look for "Runtime" or "Environment" section
+   - If you see a dropdown, try selecting:
+     - **".NET"** (if available)
+     - **"Docker"** (will use your Dockerfile)
+     - **"Auto-detect"** (should detect .NET from .csproj)
+   - **DO NOT** leave it as "Node.js" or "Python"
+
+3. **If Runtime dropdown doesn't show .NET:**
+   - Make sure Root Directory is correct: `backend/YouAndMeExpensesAPI`
+   - Verify the `.csproj` file exists in that location
+   - Try deleting and recreating the service
+   - Or use Docker option (select "Docker" as runtime)
+
+4. **Verify .csproj file exists:**
+   - In your GitHub repo, check: `backend/YouAndMeExpensesAPI/YouAndMeExpensesAPI.csproj`
+   - This file must exist for Render to detect .NET
+
+5. **Check Build Logs:**
+   - Look for messages like "Detected .NET" or "Using .NET SDK"
+   - If you see "Using Node.js", Render is not detecting your .NET project
+
+#### ❌ Build Fails on Render - "no such file or directory" Error
+
+**Problem:** Error like `lstat /opt/render/project/src/backend/YouAndMeExpensesAPI/backend: no such file or directory`
+
+**Solutions:**
+1. **Check Root Directory:**
+   - Go to Render dashboard → Your Service → Settings
+   - Verify **Root Directory** is exactly: `backend/YouAndMeExpensesAPI`
+   - **NO leading slash** (not `/backend/YouAndMeExpensesAPI`)
+   - **NO trailing slash** (not `backend/YouAndMeExpensesAPI/`)
+   - **NO extra paths** (not `backend/YouAndMeExpensesAPI/backend`)
+
+2. **If using Docker:**
+   - Go to Settings → Docker
+   - **Dockerfile Path** should be: `Dockerfile` (relative to Root Directory)
+   - OR leave Dockerfile Path **blank** if Dockerfile is in `backend/YouAndMeExpensesAPI/`
+   - If Dockerfile Path is set incorrectly, it might cause this error
+
+3. **Verify Repository Structure:**
+   - Make sure your repository has the structure: `backend/YouAndMeExpensesAPI/YouAndMeExpensesAPI.csproj`
+   - Check that the `.csproj` file exists in that location
+
+4. **Try Without Docker:**
+   - If using Docker, try switching to auto-detect runtime
+   - Set Runtime to "Auto-detect" (not Docker)
+   - Set Build Command: `dotnet restore && dotnet publish -c Release -o ./publish`
+   - Set Start Command: `dotnet ./publish/YouAndMeExpensesAPI.dll`
+
+#### ❌ Build Fails on Render - General Build Errors
+
+**Problem:** Build command fails with other errors
+
+**Solutions:**
+1. Check build logs in Render dashboard for specific error messages
 2. Verify `Root Directory` is correct: `backend/YouAndMeExpensesAPI`
 3. Verify build command:
    ```
@@ -616,6 +686,7 @@ Test API endpoints:
    dotnet ./publish/YouAndMeExpensesAPI.dll
    ```
 5. If using Docker, verify Dockerfile exists and is correct
+6. Check that all NuGet packages are restored properly
 
 #### ❌ Application Crashes on Start
 
