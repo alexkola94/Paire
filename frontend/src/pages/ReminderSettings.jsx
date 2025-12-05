@@ -11,7 +11,6 @@ function ReminderSettings() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [testingEmail, setTestingEmail] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   
   const [settings, setSettings] = useState({
@@ -52,25 +51,6 @@ function ReminderSettings() {
       showMessage('error', t('reminders.errorSaving'));
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleTestEmail = async () => {
-    try {
-      setTestingEmail(true);
-      const testEmail = prompt(t('reminders.enterTestEmail'));
-      if (!testEmail) {
-        setTestingEmail(false);
-        return;
-      }
-      
-      await reminderService.sendTestEmail(testEmail);
-      showMessage('success', t('reminders.testEmailSent'));
-    } catch (error) {
-      console.error('Error sending test email:', error);
-      showMessage('error', t('reminders.errorTestEmail'));
-    } finally {
-      setTestingEmail(false);
     }
   };
 
@@ -258,13 +238,6 @@ function ReminderSettings() {
             className="btn btn-primary"
           >
             {saving ? t('common.saving') : t('common.save')}
-          </button>
-          <button
-            onClick={handleTestEmail}
-            disabled={testingEmail || !settings.emailEnabled}
-            className="btn btn-secondary"
-          >
-            {testingEmail ? t('reminders.sendingTest') : t('reminders.sendTestEmail')}
           </button>
         </div>
       </div>

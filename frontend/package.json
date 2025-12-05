@@ -1,12 +1,15 @@
 {
-  "name": "you-me-expenses-frontend",
+  "name": "paire-frontend",
   "version": "1.0.0",
-  "description": "Expense tracking app for couples",
+  "description": "Paire - Expense tracking app for couples",
   "type": "module",
+  "homepage": "https://alexkola94.github.io/Paire",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
@@ -16,15 +19,16 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,css,json}\""
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.3",
     "chart.js": "^4.5.1",
     "date-fns": "^3.0.6",
     "i18next": "^23.7.16",
+    "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.2.0",
     "react-i18next": "^14.0.0",
     "react-icons": "^5.0.1",
+    "react-otp-input": "^3.1.1",
     "react-router-dom": "^6.21.1",
     "recharts": "^2.15.4"
   },

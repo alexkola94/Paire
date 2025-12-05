@@ -1,9 +1,13 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { supabase } from './services/supabase'
+import { authService } from './services/auth'
 
 // Pages
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import EmailConfirmation from './pages/EmailConfirmation'
+import ResetPassword from './pages/ResetPassword'
+import AcceptInvitation from './pages/AcceptInvitation'
 import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
 import Income from './pages/Income'
@@ -21,6 +25,18 @@ import ShoppingLists from './pages/ShoppingLists'
 import Layout from './components/Layout'
 
 /**
+ * GitHub Pages Redirect Handler Component
+ * Handles redirects from 404.html for SPA routing
+ * Note: We don't automatically process redirect query params here
+ * to avoid interfering with normal navigation. Individual pages handle their own redirects.
+ */
+function RedirectHandler() {
+  // This component is kept for potential future use with GitHub Pages 404.html
+  // but doesn't automatically redirect to prevent conflicts with normal navigation
+  return null
+}
+
+/**
  * Main Application Component
  * Handles routing and authentication state
  */
@@ -30,19 +46,50 @@ function App() {
 
   useEffect(() => {
     // Check for existing session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setLoading(false)
-    })
+    const checkSession = async () => {
+      try {
+        const session = await authService.getSession()
+        setSession(session)
+      } catch (error) {
+        console.error('Session check error:', error)
+        setSession(null)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
+    checkSession()
 
-    return () => subscription.unsubscribe()
+    // Listen for storage changes (logout in another tab, or login in same tab)
+    const handleStorageChange = async (e) => {
+      // Handle both StorageEvent (cross-tab) and CustomEvent (same-tab)
+      const key = e.key || e.detail?.key
+      const newValue = e.newValue || e.detail?.newValue
+      
+      if (key === 'auth_token') {
+        if (!newValue) {
+          // Token removed - logout
+          setSession(null)
+        } else {
+          // Token added or updated - refresh session
+          try {
+            const session = await authService.getSession()
+            setSession(session)
+          } catch (error) {
+            console.error('Session refresh error:', error)
+            setSession(null)
+          }
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    // Also listen for custom storage events (for same-tab updates)
+    window.addEventListener('auth-storage-change', handleStorageChange)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('auth-storage-change', handleStorageChange)
+    }
   }, [])
 
   if (loading) {
@@ -54,13 +101,35 @@ function App() {
     )
   }
 
+  // Use basename only in production (GitHub Pages)
+  const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
+
   return (
-    <Router>
+    <Router basename={basename}>
+      {/* Handle GitHub Pages redirects */}
+      <RedirectHandler />
+      
       <Routes>
-        {/* Public route - Login */}
+        {/* Public routes */}
         <Route
           path="/login"
           element={!session ? <Login /> : <Navigate to="/dashboard" />}
+        />
+        <Route
+          path="/forgot-password"
+          element={!session ? <ForgotPassword /> : <Navigate to="/dashboard" />}
+        />
+        <Route
+          path="/confirm-email"
+          element={<EmailConfirmation />}
+        />
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
+        <Route
+          path="/accept-invitation"
+          element={<AcceptInvitation />}
         />
 
         {/* Protected routes - Require authentication */}

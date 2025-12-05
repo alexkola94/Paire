@@ -56,7 +56,7 @@ function TransactionForm({
     if (selectedFile) {
       // Validate file size (max 5MB)
       if (selectedFile.size > 5 * 1024 * 1024) {
-        setError('File size must be less than 5MB')
+        setError(t('transaction.fileSizeError'))
         return
       }
       setFile(selectedFile)
@@ -85,7 +85,7 @@ function TransactionForm({
 
     // Validate amount
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      setError('Please enter a valid amount')
+      setError(t('transaction.invalidAmount'))
       return
     }
 
@@ -107,7 +107,7 @@ function TransactionForm({
 
       await onSubmit(finalData)
     } catch (err) {
-      setError(err.message || 'An error occurred')
+      setError(err.message || t('transaction.errorOccurred'))
       setUploadProgress(false)
     }
   }
@@ -134,6 +134,7 @@ function TransactionForm({
           placeholder="0.00"
           step="0.01"
           min="0"
+          max="1000000"
           required
         />
       </div>
@@ -213,13 +214,13 @@ function TransactionForm({
           <div className="file-preview">
             <FiFileText size={20} />
             <span className="file-name">
-              {file?.name || 'Attached file'}
+              {file?.name || t('transaction.attachedFile')}
             </span>
             <button
               type="button"
               onClick={removeFile}
               className="remove-file-btn"
-              aria-label="Remove file"
+              aria-label={t('transaction.deleteAttachment')}
             >
               <FiX size={18} />
             </button>
@@ -245,7 +246,7 @@ function TransactionForm({
           {loading || uploadProgress ? (
             <>
               <span className="spinner-small"></span>
-              {uploadProgress ? 'Uploading...' : t('common.loading')}
+              {uploadProgress ? t('transaction.uploading') : t('common.loading')}
             </>
           ) : (
             t('common.save')

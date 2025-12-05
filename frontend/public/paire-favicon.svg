@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- Deep purple gradient -->
+    <linearGradient id="favGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c5ce7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4a3f8f;stop-opacity:1" />
+    </linearGradient>
+    <!-- Slate accent gradient -->
+    <linearGradient id="favGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a29bfe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6c5ce7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Simplified overlapping P shapes for favicon -->
+  <!-- Left P -->
+  <path d="M6 4 L6 28 L11 28 L11 18 L15 18 Q20 18, 20 13 Q20 8, 15 8 L11 8 L11 4 Z M11 11 L14 11 Q16 11, 16 13 Q16 15, 14 15 L11 15 Z" 
+        fill="url(#favGrad1)"
+        fill-rule="evenodd"/>
+  
+  <!-- Right P - offset -->
+  <path d="M13 6 L13 30 L18 30 L18 20 L22 20 Q27 20, 27 15 Q27 10, 22 10 L18 10 L18 6 Z M18 13 L21 13 Q23 13, 23 15 Q23 17, 21 17 L18 17 Z" 
+        fill="url(#favGrad2)"
+        fill-rule="evenodd"
+        opacity="0.85"/>
+</svg>
+

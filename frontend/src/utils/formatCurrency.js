@@ -3,18 +3,18 @@
  * Converts numbers to properly formatted currency strings
  * 
  * @param {number} amount - The amount to format
- * @param {string} currency - Currency code (default: 'USD')
+ * @param {string} currency - Currency code (default: 'EUR')
  * @param {string} locale - Locale for formatting (default: 'en-US')
  * @returns {string} Formatted currency string
  * 
  * @example
- * formatCurrency(1234.56) // "$1,234.56"
+ * formatCurrency(1234.56) // "€1,234.56"
  * formatCurrency(1234.56, 'EUR', 'de-DE') // "1.234,56 €"
  */
-export function formatCurrency(amount, currency = 'USD', locale = 'en-US') {
+export function formatCurrency(amount, currency = 'EUR', locale = 'en-US') {
   // Handle invalid inputs
   if (amount === null || amount === undefined || isNaN(amount)) {
-    return '$0.00';
+    return '€0.00';
   }
 
   // Convert to number if string
@@ -31,7 +31,7 @@ export function formatCurrency(amount, currency = 'USD', locale = 'en-US') {
   } catch (error) {
     // Fallback to simple format if Intl fails
     console.error('Currency formatting error:', error);
-    return `$${numAmount.toFixed(2)}`;
+    return `€${numAmount.toFixed(2)}`;
   }
 }
 
@@ -43,7 +43,7 @@ export function formatCurrency(amount, currency = 'USD', locale = 'en-US') {
  * @returns {number} Numeric value
  * 
  * @example
- * parseCurrency("$1,234.56") // 1234.56
+ * parseCurrency("€1,234.56") // 1234.56
  */
 export function parseCurrency(currencyString) {
   if (!currencyString) return 0;

@@ -1,4 +1,4 @@
-# 💑 You & Me Expenses
+# Paire
 
 <div align="center">
 
@@ -7,7 +7,9 @@
 ![React](https://img.shields.io/badge/React-18.2-61dafb.svg)
 ![.NET](https://img.shields.io/badge/.NET-9.0-512bd4.svg)
 
-**A comprehensive, modern expense tracking and financial management web application for couples.**
+**Finances, aligned.**
+
+A comprehensive expense tracking and financial management platform for couples.
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Tech Stack](#-tech-stack)
 
@@ -249,7 +251,7 @@ You-me-Expenses/
 5. **Never Miss Anything** - Email reminders for bills, loans, and budgets
 
 ### **Beautiful Design:**
-- Soft purple color scheme (#9b87f5)
+- Deep purple color scheme (#6c5ce7)
 - Smooth animations and transitions
 - Card-based layouts
 - Progress visualizations
@@ -278,7 +280,9 @@ You-me-Expenses/
 - 🗺️ [FEATURE_ROADMAP.md](./docs/FEATURE_ROADMAP.md) - Future plans
 
 ### **Deployment:**
-- 🌐 [DEPLOYMENT.md](./docs/DEPLOYMENT.md) - Production deployment
+- 🚀 [RENDER_GITHUB_PAGES_DEPLOYMENT.md](./docs/RENDER_GITHUB_PAGES_DEPLOYMENT.md) - **Step-by-step: Render.com + GitHub Pages**
+- 🌐 [DEPLOYMENT.md](./docs/DEPLOYMENT.md) - General deployment guide
+- ✅ [PRODUCTION_READINESS.md](./docs/PRODUCTION_READINESS.md) - Production checklist
 - 🔧 [SETUP_ENTITY_FRAMEWORK.md](./docs/SETUP_ENTITY_FRAMEWORK.md) - EF Core setup
 
 ### **Configuration:**
@@ -395,8 +399,9 @@ supabase db reset            # Reset database
 
 ### **Color Palette:**
 ```css
-Primary:   #9b87f5  (Soft Purple)
+Primary:   #6c5ce7  (Deep Indigo)
 Secondary: #f0e6ff  (Light Lavender)
+Accent:    #a29bfe  (Soft Purple)
 Success:   #90ee90  (Light Green)
 Error:     #ffb3ba  (Soft Red)
 Warning:   #ffe4b5  (Soft Orange)
@@ -630,7 +635,7 @@ Created with ❤️ by Alex Kola
 
 If you find this helpful, please give it a star ⭐
 
-**Made with ❤️ for managing finances together**
+**Paire — Finances, aligned.**
 
 </div>
 

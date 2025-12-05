@@ -138,19 +138,31 @@
 
 /* Name tag showing who added the loan */
 .loan-added-by {
-  color: var(--primary-color);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--primary);
   font-size: 0.875rem;
   font-weight: 500;
   margin-top: var(--spacing-sm);
-  opacity: 0.9;
+  padding: 4px 10px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
   transition: var(--transition);
+}
+
+.loan-added-by:hover {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-1px);
 }
 
 /* Email in name tag - slightly muted */
 .loan-added-by .added-by-email {
   color: var(--text-light);
   font-weight: 400;
-  font-size: 0.9em;
+  font-size: 0.85em;
+  margin-left: var(--spacing-xs);
 }
 
 /* ================================

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiTarget, FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiAlertCircle, FiCheckCircle } from 'react-icons/fi'
 import { budgetService, transactionService } from '../services/api'
+import ConfirmationModal from '../components/ConfirmationModal'
 import './Budgets.css'
 
 /**
@@ -15,6 +16,7 @@ function Budgets() {
   const [expenses, setExpenses] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [editingBudget, setEditingBudget] = useState(null)
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, budgetId: null })
   const [formData, setFormData] = useState({
     category: '',
     amount: '',
@@ -119,16 +121,30 @@ function Budgets() {
   }
 
   /**
+   * Open delete confirmation modal
+   */
+  const openDeleteModal = (budgetId) => {
+    setDeleteModal({ isOpen: true, budgetId })
+  }
+
+  /**
+   * Close delete confirmation modal
+   */
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, budgetId: null })
+  }
+
+  /**
    * Handle delete budget
    */
-  const handleDelete = async (id) => {
-    if (!confirm(t('budgets.confirmDelete'))) {
-      return
-    }
+  const handleDelete = async () => {
+    const { budgetId } = deleteModal
+    if (!budgetId) return
 
     try {
-      await budgetService.delete(id)
+      await budgetService.delete(budgetId)
       await loadData()
+      closeDeleteModal()
     } catch (error) {
       console.error('Error deleting budget:', error)
       alert(t('budgets.deleteError'))
@@ -167,7 +183,7 @@ function Budgets() {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'EUR'
     }).format(amount)
   }
 
@@ -240,6 +256,7 @@ function Budgets() {
                   placeholder="0.00"
                   step="0.01"
                   min="0"
+                  max="1000000"
                   required
                 />
               </div>
@@ -317,7 +334,7 @@ function Budgets() {
                       <FiEdit size={18} />
                     </button>
                     <button
-                      onClick={() => handleDelete(budget.id)}
+                      onClick={() => openDeleteModal(budget.id)}
                       className="btn-icon danger"
                       title={t('common.delete')}
                     >
@@ -374,6 +391,17 @@ function Budgets() {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        title={t('budgets.deleteBudget')}
+        message={t('budgets.confirmDelete')}
+        confirmText={t('common.delete')}
+        variant="danger"
+      />
     </div>
   )
 }

@@ -10,9 +10,8 @@ namespace YouAndMeExpensesAPI.Controllers
     /// Helps users track shopping needs and budget estimation
     /// Uses Entity Framework Core for data access
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class ShoppingListsController : ControllerBase
+    public class ShoppingListsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger<ShoppingListsController> _logger;
@@ -28,24 +27,64 @@ namespace YouAndMeExpensesAPI.Controllers
         // ==========================================
 
         /// <summary>
-        /// Gets all shopping lists for the authenticated user
+        /// Gets all shopping lists for the authenticated user and their partner (if partnership exists)
+        /// Includes user profile information to show who created each list
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<ShoppingList>>> GetShoppingLists([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetShoppingLists()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Get shopping lists from user and partner(s)
                 var lists = await _dbContext.ShoppingLists
-                    .Where(l => l.UserId == userId)
+                    .Where(l => allUserIds.Contains(l.UserId))
                     .OrderByDescending(l => l.CreatedAt)
                     .ToListAsync();
 
-                return Ok(lists);
+                // Get user profiles for all list creators
+                var userIds = lists.Select(l => l.UserId).Distinct().ToList();
+                var userProfiles = await _dbContext.UserProfiles
+                    .Where(up => userIds.Contains(up.Id.ToString()))
+                    .ToListAsync();
+
+                // Create a dictionary for quick lookup
+                var profileDict = userProfiles.ToDictionary(
+                    p => p.Id.ToString(),
+                    p => new
+                    {
+                        id = p.Id,
+                        email = p.Email,
+                        display_name = p.DisplayName,
+                        avatar_url = p.AvatarUrl
+                    }
+                );
+
+                // Enrich lists with user profile data
+                var enrichedLists = lists.Select(l => new
+                {
+                    id = l.Id,
+                    user_id = l.UserId,
+                    name = l.Name,
+                    category = l.Category,
+                    is_completed = l.IsCompleted,
+                    estimated_total = l.EstimatedTotal,
+                    actual_total = l.ActualTotal,
+                    notes = l.Notes,
+                    completed_date = l.CompletedDate,
+                    created_at = l.CreatedAt,
+                    updated_at = l.UpdatedAt,
+                    user_profiles = profileDict.ContainsKey(l.UserId) ? profileDict[l.UserId] : null
+                }).ToList();
+
+                return Ok(enrichedLists);
             }
             catch (Exception ex)
             {
@@ -55,22 +94,56 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
+        /// Helper method to get partner user IDs for the current user
+        /// </summary>
+        /// <param name="userId">Current user ID</param>
+        /// <returns>List of partner user IDs as strings</returns>
+        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
+        {
+            try
+            {
+                var partnership = await _dbContext.Partnerships
+                    .FirstOrDefaultAsync(p =>
+                        (p.User1Id == userId || p.User2Id == userId) &&
+                        p.Status == "active");
+
+                if (partnership == null)
+                {
+                    return new List<string>();
+                }
+
+                // Return the partner's ID
+                var partnerId = partnership.User1Id == userId
+                    ? partnership.User2Id
+                    : partnership.User1Id;
+
+                return new List<string> { partnerId.ToString() };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
         /// Gets a specific shopping list by ID with all its items
         /// </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult> GetShoppingList(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetShoppingList(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
 
                 if (list == null)
                 {
@@ -105,14 +178,10 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Creates a new shopping list
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<ShoppingList>> CreateShoppingList(
-            [FromBody] ShoppingList list,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> CreateShoppingList([FromBody] ShoppingList list)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (string.IsNullOrEmpty(list.Name))
             {
@@ -122,7 +191,7 @@ namespace YouAndMeExpensesAPI.Controllers
             try
             {
                 list.Id = Guid.NewGuid();
-                list.UserId = userId;
+                list.UserId = userId.ToString();
                 list.CreatedAt = DateTime.UtcNow;
                 list.UpdatedAt = DateTime.UtcNow;
                 list.IsCompleted = false;
@@ -146,15 +215,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Updates an existing shopping list
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult<ShoppingList>> UpdateShoppingList(
+        public async Task<IActionResult> UpdateShoppingList(
             Guid id,
-            [FromBody] ShoppingList list,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] ShoppingList list)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (id != list.Id)
             {
@@ -163,8 +229,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to update the shopping list
                 var existingList = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
 
                 if (existingList == null)
                 {
@@ -203,19 +275,21 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Deletes a shopping list and all its items
         /// </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteShoppingList(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> DeleteShoppingList(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to delete the shopping list
                 var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
 
                 if (list == null)
                 {
@@ -248,20 +322,21 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Gets all items for a specific shopping list
         /// </summary>
         [HttpGet("{listId}/items")]
-        public async Task<ActionResult<List<ShoppingListItem>>> GetShoppingListItems(
-            Guid listId,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetShoppingListItems(Guid listId)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                // Verify list belongs to user
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Verify list belongs to user or partner
                 var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
 
                 if (list == null)
                 {
@@ -287,15 +362,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Adds a new item to a shopping list
         /// </summary>
         [HttpPost("{listId}/items")]
-        public async Task<ActionResult<ShoppingListItem>> AddShoppingListItem(
+        public async Task<IActionResult> AddShoppingListItem(
             Guid listId,
-            [FromBody] ShoppingListItem item,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] ShoppingListItem item)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (string.IsNullOrEmpty(item.Name))
             {
@@ -304,9 +376,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Verify list belongs to user
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Verify list belongs to user or partner
                 var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
 
                 if (list == null)
                 {
@@ -350,16 +427,13 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Updates a shopping list item
         /// </summary>
         [HttpPut("{listId}/items/{itemId}")]
-        public async Task<ActionResult<ShoppingListItem>> UpdateShoppingListItem(
+        public async Task<IActionResult> UpdateShoppingListItem(
             Guid listId,
             Guid itemId,
-            [FromBody] ShoppingListItem item,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] ShoppingListItem item)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (itemId != item.Id)
             {
@@ -368,9 +442,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Verify list belongs to user
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Verify list belongs to user or partner
                 var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
 
                 if (list == null)
                 {
@@ -423,21 +502,23 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Toggles an item's checked status
         /// </summary>
         [HttpPost("{listId}/items/{itemId}/toggle")]
-        public async Task<ActionResult<ShoppingListItem>> ToggleItemChecked(
+        public async Task<IActionResult> ToggleItemChecked(
             Guid listId,
-            Guid itemId,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            Guid itemId)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                // Verify list belongs to user
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Verify list belongs to user or partner
                 var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
 
                 if (list == null)
                 {
@@ -470,21 +551,23 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Deletes an item from a shopping list
         /// </summary>
         [HttpDelete("{listId}/items/{itemId}")]
-        public async Task<ActionResult> DeleteShoppingListItem(
+        public async Task<IActionResult> DeleteShoppingListItem(
             Guid listId,
-            Guid itemId,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            Guid itemId)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                // Verify list belongs to user
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Verify list belongs to user or partner
                 var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
 
                 if (list == null)
                 {
@@ -522,19 +605,20 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Marks a shopping list as completed
         /// </summary>
         [HttpPost("{id}/complete")]
-        public async Task<ActionResult<ShoppingList>> CompleteShoppingList(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> CompleteShoppingList(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
 
                 if (list == null)
                 {
@@ -560,17 +644,20 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Get shopping lists summary
         /// </summary>
         [HttpGet("summary")]
-        public async Task<ActionResult> GetSummary([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetSummary()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var lists = await _dbContext.ShoppingLists
-                    .Where(l => l.UserId == userId)
+                    .Where(l => allUserIds.Contains(l.UserId))
                     .ToListAsync();
 
                 var activeLists = lists.Where(l => !l.IsCompleted).ToList();

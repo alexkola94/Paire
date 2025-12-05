@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   FiShoppingCart, FiPlus, FiEdit, FiTrash2, FiCheck, 
-  FiSquare, FiCheckSquare, FiDollarSign, FiPackage, FiList
+  FiSquare, FiCheckSquare, FiPackage, FiList
 } from 'react-icons/fi'
 import { formatCurrency } from '../utils/formatCurrency'
+import { shoppingListService } from '../services/api'
+import ConfirmationModal from '../components/ConfirmationModal'
 import './ShoppingLists.css'
 
 /**
@@ -20,6 +22,8 @@ function ShoppingLists() {
   const [showItemForm, setShowItemForm] = useState(false)
   const [editingList, setEditingList] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
+  const [deleteListModal, setDeleteListModal] = useState({ isOpen: false, listId: null })
+  const [deleteItemModal, setDeleteItemModal] = useState({ isOpen: false, itemId: null })
   
   const [listFormData, setListFormData] = useState({
     name: '',
@@ -62,10 +66,22 @@ function ShoppingLists() {
   const loadLists = async () => {
     try {
       setLoading(true)
-      // TODO: Implement API call
-      // const data = await shoppingListService.getAll()
-      // setLists(data || [])
-      setLists([]) // Placeholder
+      const data = await shoppingListService.getAll()
+      // Map snake_case to camelCase
+      const mappedLists = (data || []).map(list => ({
+        id: list.id,
+        name: list.name,
+        category: list.category,
+        isCompleted: list.is_completed ?? list.isCompleted,
+        estimatedTotal: list.estimated_total ?? list.estimatedTotal,
+        actualTotal: list.actual_total ?? list.actualTotal,
+        notes: list.notes,
+        completedDate: list.completed_date ?? list.completedDate,
+        createdAt: list.created_at ?? list.createdAt,
+        updatedAt: list.updated_at ?? list.updatedAt,
+        userProfiles: list.user_profiles ?? list.userProfiles
+      }))
+      setLists(mappedLists)
     } catch (error) {
       console.error('Error loading shopping lists:', error)
     } finally {
@@ -75,10 +91,36 @@ function ShoppingLists() {
 
   const loadListDetails = async (listId) => {
     try {
-      // TODO: Implement API call
-      // const data = await shoppingListService.getById(listId)
-      // setSelectedList(data)
-      console.log('Load list:', listId)
+      const data = await shoppingListService.getById(listId)
+      if (data) {
+        // Map snake_case to camelCase
+        const mappedList = {
+          list: {
+            id: data.list.id,
+            name: data.list.name,
+            category: data.list.category,
+            isCompleted: data.list.is_completed ?? data.list.isCompleted,
+            estimatedTotal: data.list.estimated_total ?? data.list.estimatedTotal,
+            actualTotal: data.list.actual_total ?? data.list.actualTotal,
+            notes: data.list.notes,
+            completedDate: data.list.completed_date ?? data.list.completedDate
+          },
+          items: (data.items || []).map(item => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            estimatedPrice: item.estimated_price ?? item.estimatedPrice,
+            actualPrice: item.actual_price ?? item.actualPrice,
+            isChecked: item.is_checked ?? item.isChecked,
+            category: item.category,
+            notes: item.notes
+          })),
+          itemCount: data.itemCount ?? data.item_count ?? 0,
+          checkedCount: data.checkedCount ?? data.checked_count ?? 0
+        }
+        setSelectedList(mappedList)
+      }
     } catch (error) {
       console.error('Error loading list details:', error)
     }
@@ -98,11 +140,17 @@ function ShoppingLists() {
     e.preventDefault()
     try {
       if (editingList) {
-        // TODO: Update list
-        console.log('Update list:', listFormData)
+        await shoppingListService.update(editingList.id, {
+          name: listFormData.name,
+          category: listFormData.category || null,
+          notes: listFormData.notes || null
+        })
       } else {
-        // TODO: Create list
-        console.log('Create list:', listFormData)
+        await shoppingListService.create({
+          name: listFormData.name,
+          category: listFormData.category || null,
+          notes: listFormData.notes || null
+        })
       }
       await loadLists()
       resetListForm()
@@ -114,13 +162,22 @@ function ShoppingLists() {
 
   const handleItemSubmit = async (e) => {
     e.preventDefault()
+    if (!selectedList) return
+    
     try {
+      const itemData = {
+        name: itemFormData.name,
+        quantity: parseInt(itemFormData.quantity) || 1,
+        unit: itemFormData.unit || null,
+        estimatedPrice: itemFormData.estimatedPrice ? parseFloat(itemFormData.estimatedPrice) : null,
+        category: itemFormData.category || null,
+        notes: itemFormData.notes || null
+      }
+
       if (editingItem) {
-        // TODO: Update item
-        console.log('Update item:', itemFormData)
+        await shoppingListService.updateItem(selectedList.list.id, editingItem.id, itemData)
       } else {
-        // TODO: Add item
-        console.log('Add item:', itemFormData)
+        await shoppingListService.addItem(selectedList.list.id, itemData)
       }
       await loadListDetails(selectedList.list.id)
       resetItemForm()
@@ -131,48 +188,89 @@ function ShoppingLists() {
   }
 
   const handleToggleItem = async (itemId) => {
+    if (!selectedList) return
+    
     try {
-      // TODO: Toggle item checked status
-      console.log('Toggle item:', itemId)
+      await shoppingListService.toggleItem(selectedList.list.id, itemId)
       await loadListDetails(selectedList.list.id)
     } catch (error) {
       console.error('Error toggling item:', error)
     }
   }
 
-  const handleDeleteList = async (listId) => {
-    if (!confirm(t('shoppingLists.confirmDeleteList'))) return
+  /**
+   * Open delete list confirmation modal
+   */
+  const openDeleteListModal = (listId) => {
+    setDeleteListModal({ isOpen: true, listId })
+  }
+
+  /**
+   * Close delete list confirmation modal
+   */
+  const closeDeleteListModal = () => {
+    setDeleteListModal({ isOpen: false, listId: null })
+  }
+
+  /**
+   * Handle deleting list
+   */
+  const handleDeleteList = async () => {
+    const { listId } = deleteListModal
+    if (!listId) return
+
     try {
-      // TODO: Delete list
-      console.log('Delete list:', listId)
+      await shoppingListService.delete(listId)
       await loadLists()
       if (selectedList?.list.id === listId) {
         setSelectedList(null)
       }
+      closeDeleteListModal()
     } catch (error) {
       console.error('Error deleting list:', error)
+      alert(t('shoppingLists.errorDeleting'))
     }
   }
 
-  const handleDeleteItem = async (itemId) => {
-    if (!confirm(t('shoppingLists.confirmDeleteItem'))) return
+  /**
+   * Open delete item confirmation modal
+   */
+  const openDeleteItemModal = (itemId) => {
+    setDeleteItemModal({ isOpen: true, itemId })
+  }
+
+  /**
+   * Close delete item confirmation modal
+   */
+  const closeDeleteItemModal = () => {
+    setDeleteItemModal({ isOpen: false, itemId: null })
+  }
+
+  /**
+   * Handle deleting item
+   */
+  const handleDeleteItem = async () => {
+    const { itemId } = deleteItemModal
+    if (!selectedList || !itemId) return
+
     try {
-      // TODO: Delete item
-      console.log('Delete item:', itemId)
+      await shoppingListService.deleteItem(selectedList.list.id, itemId)
       await loadListDetails(selectedList.list.id)
+      closeDeleteItemModal()
     } catch (error) {
       console.error('Error deleting item:', error)
+      alert(t('shoppingLists.errorDeletingItem'))
     }
   }
 
   const handleCompleteList = async (listId) => {
     try {
-      // TODO: Mark list as complete
-      console.log('Complete list:', listId)
+      await shoppingListService.complete(listId)
       await loadLists()
       setSelectedList(null)
     } catch (error) {
       console.error('Error completing list:', error)
+      alert(t('shoppingLists.errorCompleting'))
     }
   }
 
@@ -202,9 +300,9 @@ function ShoppingLists() {
     setEditingItem(item)
     setItemFormData({
       name: item.name,
-      quantity: item.quantity.toString(),
+      quantity: item.quantity?.toString() || '1',
       unit: item.unit || '',
-      estimatedPrice: item.estimatedPrice?.toString() || '',
+      estimatedPrice: (item.estimatedPrice ?? item.estimated_price)?.toString() || '',
       category: item.category || '',
       notes: item.notes || ''
     })
@@ -254,7 +352,17 @@ function ShoppingLists() {
                     onClick={() => loadListDetails(list.id)}
                   >
                     <div className="list-card-header">
-                      <h4>{list.name}</h4>
+                      <div className="list-title-section">
+                        <h4>{list.name}</h4>
+                        {list.userProfiles && (
+                          <div className="list-added-by">
+                            {t('shoppingLists.addedBy')} {list.userProfiles.display_name || list.userProfiles.displayName}
+                            {list.userProfiles.email && (
+                              <span className="added-by-email"> ({list.userProfiles.email})</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <div className="list-actions">
                         <button
                           className="icon-btn"
@@ -269,7 +377,7 @@ function ShoppingLists() {
                           className="icon-btn danger"
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleDeleteList(list.id)
+                            openDeleteListModal(list.id)
                           }}
                         >
                           <FiTrash2 />
@@ -278,7 +386,7 @@ function ShoppingLists() {
                     </div>
                     {list.estimatedTotal && (
                       <div className="list-estimate">
-                        <FiDollarSign size={14} />
+                        <span style={{ fontSize: '14px', fontWeight: 'bold', marginRight: '4px' }}>€</span>
                         <span>{formatCurrency(list.estimatedTotal)}</span>
                       </div>
                     )}
@@ -393,7 +501,7 @@ function ShoppingLists() {
                         </button>
                         <button
                           className="icon-btn danger"
-                          onClick={() => handleDeleteItem(item.id)}
+                          onClick={() => openDeleteItemModal(item.id)}
                         >
                           <FiTrash2 />
                         </button>
@@ -529,6 +637,7 @@ function ShoppingLists() {
                   onChange={handleItemChange}
                   step="0.01"
                   min="0"
+                  max="1000000"
                   placeholder="0.00"
                 />
                 <small>{t('shoppingLists.priceHint')}</small>
@@ -569,6 +678,28 @@ function ShoppingLists() {
           </div>
         </div>
       )}
+
+      {/* Delete List Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteListModal.isOpen}
+        onClose={closeDeleteListModal}
+        onConfirm={handleDeleteList}
+        title={t('shoppingLists.deleteList')}
+        message={t('shoppingLists.confirmDeleteList')}
+        confirmText={t('common.delete')}
+        variant="danger"
+      />
+
+      {/* Delete Item Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteItemModal.isOpen}
+        onClose={closeDeleteItemModal}
+        onConfirm={handleDeleteItem}
+        title={t('shoppingLists.deleteItem')}
+        message={t('shoppingLists.confirmDeleteItem')}
+        confirmText={t('common.delete')}
+        variant="danger"
+      />
     </div>
   )
 }

@@ -30,9 +30,14 @@ namespace YouAndMeExpensesAPI.Services
             {
                 _logger.LogInformation("Calculating financial analytics for user {UserId}", userId);
 
-                // Fetch transactions for the period
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId };
+                allUserIds.AddRange(partnerIds);
+
+                // Fetch transactions for the period (from user and partner)
                 var transactionList = await _dbContext.Transactions
-                    .Where(t => t.UserId == userId)
+                    .Where(t => allUserIds.Contains(t.UserId))
                     .Where(t => t.Date >= startDate && t.Date <= endDate)
                     .ToListAsync();
 
@@ -122,8 +127,13 @@ namespace YouAndMeExpensesAPI.Services
             {
                 _logger.LogInformation("Calculating loan analytics for user {UserId}", userId);
 
-                // Fetch all loans
-                var loansQuery = _dbContext.Loans.Where(l => l.UserId == userId);
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId };
+                allUserIds.AddRange(partnerIds);
+
+                // Fetch all loans (from user and partner)
+                var loansQuery = _dbContext.Loans.Where(l => allUserIds.Contains(l.UserId));
 
                 if (startDate.HasValue && endDate.HasValue)
                 {
@@ -141,7 +151,7 @@ namespace YouAndMeExpensesAPI.Services
                 // Calculate interest
                 var totalInterestEarned = loanList
                     .Where(l => l.InterestRate.HasValue)
-                    .Sum(l => CalculateInterest(l.Amount, l.InterestRate.Value, l.Date, DateTime.UtcNow));
+                    .Sum(l => CalculateInterest(l.Amount, l.InterestRate!.Value, l.Date, DateTime.UtcNow));
 
                 var activeCount = loanList.Count(l => !l.IsSettled);
                 var settledCount = loanList.Count(l => l.IsSettled);
@@ -156,9 +166,9 @@ namespace YouAndMeExpensesAPI.Services
                         LoanId = l.Id,
                         Description = l.Description ?? $"{l.LentBy} to {l.BorrowedBy}",
                         Amount = l.InstallmentAmount ?? l.RemainingAmount,
-                        DueDate = l.NextPaymentDate.Value,
-                        DaysUntilDue = (l.NextPaymentDate.Value - DateTime.UtcNow).Days,
-                        IsOverdue = l.NextPaymentDate.Value < DateTime.UtcNow
+                        DueDate = l.NextPaymentDate!.Value,
+                        DaysUntilDue = (l.NextPaymentDate!.Value - DateTime.UtcNow).Days,
+                        IsOverdue = l.NextPaymentDate!.Value < DateTime.UtcNow
                     })
                     .ToList();
 
@@ -206,9 +216,14 @@ namespace YouAndMeExpensesAPI.Services
             {
                 _logger.LogInformation("Calculating household analytics for user {UserId}", userId);
 
-                // Fetch budgets
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId };
+                allUserIds.AddRange(partnerIds);
+
+                // Fetch budgets (from user and partner)
                 var budgets = await _dbContext.Budgets
-                    .Where(b => b.UserId == userId && b.IsActive)
+                    .Where(b => allUserIds.Contains(b.UserId) && b.IsActive)
                     .ToListAsync();
 
                 var budgetProgress = budgets.Select(b => new BudgetProgress
@@ -221,9 +236,9 @@ namespace YouAndMeExpensesAPI.Services
                     IsOverBudget = b.SpentAmount > b.Amount
                 }).ToList();
 
-                // Fetch savings goals
+                // Fetch savings goals (from user and partner)
                 var goals = await _dbContext.SavingsGoals
-                    .Where(g => g.UserId == userId && !g.IsAchieved)
+                    .Where(g => allUserIds.Contains(g.UserId) && !g.IsAchieved)
                     .ToListAsync();
 
                 var savingsProgress = goals.Select(g => new SavingsGoalProgress
@@ -237,9 +252,9 @@ namespace YouAndMeExpensesAPI.Services
                     DaysRemaining = g.TargetDate.HasValue ? (g.TargetDate.Value - DateTime.UtcNow).Days : null
                 }).ToList();
 
-                // Fetch recurring bills
+                // Fetch recurring bills (from user and partner)
                 var bills = await _dbContext.RecurringBills
-                    .Where(b => b.UserId == userId && b.IsActive)
+                    .Where(b => allUserIds.Contains(b.UserId) && b.IsActive)
                     .ToListAsync();
 
                 var upcomingBills = bills
@@ -290,9 +305,14 @@ namespace YouAndMeExpensesAPI.Services
             {
                 _logger.LogInformation("Calculating comparative analytics for user {UserId}", userId);
 
-                // Fetch transactions
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId };
+                allUserIds.AddRange(partnerIds);
+
+                // Fetch transactions (from user and partner)
                 var transactionList = await _dbContext.Transactions
-                    .Where(t => t.UserId == userId)
+                    .Where(t => allUserIds.Contains(t.UserId))
                     .Where(t => t.Date >= startDate && t.Date <= endDate)
                     .ToListAsync();
 
@@ -375,18 +395,23 @@ namespace YouAndMeExpensesAPI.Services
                 var lastMonthStart = currentMonthStart.AddMonths(-1);
                 var lastMonthEnd = currentMonthStart.AddDays(-1);
 
-                // Current month transactions
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId };
+                allUserIds.AddRange(partnerIds);
+
+                // Current month transactions (from user and partner)
                 var currentMonth = await _dbContext.Transactions
-                    .Where(t => t.UserId == userId)
+                    .Where(t => allUserIds.Contains(t.UserId))
                     .Where(t => t.Date >= currentMonthStart && t.Date <= currentMonthEnd)
                     .ToListAsync();
 
                 var currentIncome = currentMonth.Where(t => t.Type == "income").Sum(t => t.Amount);
                 var currentExpenses = currentMonth.Where(t => t.Type == "expense").Sum(t => t.Amount);
 
-                // Last month expenses
+                // Last month expenses (from user and partner)
                 var lastMonth = await _dbContext.Transactions
-                    .Where(t => t.UserId == userId)
+                    .Where(t => allUserIds.Contains(t.UserId))
                     .Where(t => t.Date >= lastMonthStart && t.Date <= lastMonthEnd)
                     .ToListAsync();
 
@@ -408,10 +433,10 @@ namespace YouAndMeExpensesAPI.Services
                     .Take(5)
                     .ToList();
 
-                // Last 7 days trend
+                // Last 7 days trend (from user and partner)
                 var sevenDaysAgo = now.AddDays(-7);
                 var last7Days = await _dbContext.Transactions
-                    .Where(t => t.UserId == userId)
+                    .Where(t => allUserIds.Contains(t.UserId))
                     .Where(t => t.Date >= sevenDaysAgo)
                     .ToListAsync();
 
@@ -428,9 +453,9 @@ namespace YouAndMeExpensesAPI.Services
                     .OrderBy(t => t.Date)
                     .ToList();
 
-                // Active loans
+                // Active loans (from user and partner)
                 var loans = await _dbContext.Loans
-                    .Where(l => l.UserId == userId && !l.IsSettled)
+                    .Where(l => allUserIds.Contains(l.UserId) && !l.IsSettled)
                     .ToListAsync();
 
                 return new DashboardAnalyticsDTO
@@ -459,13 +484,18 @@ namespace YouAndMeExpensesAPI.Services
             var result = new List<MonthlyComparison>();
             var now = DateTime.UtcNow;
 
+            // Get partner IDs once (outside the loop for efficiency)
+            var partnerIds = await GetPartnerIdsAsync(userId);
+            var allUserIds = new List<string> { userId };
+            allUserIds.AddRange(partnerIds);
+
             for (int i = 0; i < months; i++)
             {
                 var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-i);
                 var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
                 var transactions = await _dbContext.Transactions
-                    .Where(t => t.UserId == userId)
+                    .Where(t => allUserIds.Contains(t.UserId))
                     .Where(t => t.Date >= monthStart && t.Date <= monthEnd)
                     .ToListAsync();
 
@@ -491,13 +521,18 @@ namespace YouAndMeExpensesAPI.Services
             var now = DateTime.UtcNow;
             decimal previousAmount = 0;
 
+            // Get partner IDs once (outside the loop for efficiency)
+            var partnerIds = await GetPartnerIdsAsync(userId);
+            var allUserIds = new List<string> { userId };
+            allUserIds.AddRange(partnerIds);
+
             for (int i = months - 1; i >= 0; i--)
             {
                 var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-i);
                 var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
                 var transactions = await _dbContext.Transactions
-                    .Where(t => t.UserId == userId)
+                    .Where(t => allUserIds.Contains(t.UserId))
                     .Where(t => t.Date >= monthStart && t.Date <= monthEnd)
                     .ToListAsync();
 
@@ -524,6 +559,44 @@ namespace YouAndMeExpensesAPI.Services
             var days = (endDate - startDate).Days;
             var years = days / 365.0m;
             return principal * (annualRate / 100) * years;
+        }
+
+        /// <summary>
+        /// Helper method to get partner user IDs for the current user
+        /// </summary>
+        /// <param name="userId">Current user ID</param>
+        /// <returns>List of partner user IDs as strings</returns>
+        private async Task<List<string>> GetPartnerIdsAsync(string userId)
+        {
+            try
+            {
+                if (!Guid.TryParse(userId, out var userIdGuid))
+                {
+                    return new List<string>();
+                }
+
+                var partnership = await _dbContext.Partnerships
+                    .FirstOrDefaultAsync(p =>
+                        (p.User1Id == userIdGuid || p.User2Id == userIdGuid) &&
+                        p.Status == "active");
+
+                if (partnership == null)
+                {
+                    return new List<string>();
+                }
+
+                // Return the partner's ID
+                var partnerId = partnership.User1Id == userIdGuid
+                    ? partnership.User2Id
+                    : partnership.User1Id;
+
+                return new List<string> { partnerId.ToString() };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
+                return new List<string>();
+            }
         }
     }
 }

@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-light) 100%);
+  background: linear-gradient(135deg, #f0e6ff 0%, #a29bfe 100%);
   padding: var(--spacing-md);
 }
 
@@ -39,29 +39,59 @@
    ================================ */
 
 .login-branding {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #6c5ce7 0%, #4a3f8f 100%);
   color: white;
   padding: var(--spacing-xl);
-  display: none; /* Hidden on mobile */
+  display: none; /* Hidden on mobile by default */
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+/* Mobile branding - show logo at top (hidden on desktop) */
+.login-branding-mobile {
+  display: none; /* Hidden on desktop by default */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, #6c5ce7 0%, #4a3f8f 100%);
+  color: white;
+  text-align: center;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.login-branding-mobile .brand-logo {
+  margin-bottom: var(--spacing-md);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+}
+
+.login-branding-mobile h1 {
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-xs);
+  color: white;
+}
+
+.login-branding-mobile p {
+  font-size: 0.9375rem;
+  opacity: 0.95;
+  color: white;
+  margin: 0;
 }
 
 .branding-content {
   max-width: 400px;
 }
 
-.heart-icon {
-  color: var(--accent);
+/* Paire brand logo styling */
+.brand-logo {
   margin-bottom: var(--spacing-lg);
-  animation: heartbeat 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  transition: transform 0.3s ease;
 }
 
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  25% { transform: scale(1.1); }
-  50% { transform: scale(1); }
+.brand-logo:hover {
+  transform: scale(1.05);
 }
 
 .branding-content h1 {
@@ -147,6 +177,63 @@
   gap: var(--spacing-sm);
 }
 
+/* Password Input Wrapper */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: calc(var(--spacing-md) + 24px + var(--spacing-sm));
+}
+
+.password-toggle {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  border-radius: var(--radius-sm);
+}
+
+.password-toggle:hover {
+  color: var(--primary);
+  background: var(--bg-tertiary);
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Forgot Password Link */
+.forgot-password-link {
+  text-align: right;
+  margin-top: calc(var(--spacing-sm) * -1);
+  margin-bottom: var(--spacing-sm);
+}
+
+.forgot-password-link a {
+  color: var(--primary);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.forgot-password-link a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
 .btn-block {
   width: 100%;
   margin-top: var(--spacing-md);
@@ -211,6 +298,10 @@
     display: flex;
   }
 
+  .login-branding-mobile {
+    display: none; /* Ensure mobile branding is hidden on tablet/desktop */
+  }
+
   .login-form-container {
     padding: var(--spacing-xl) 3rem;
   }
@@ -230,15 +321,44 @@
 /* Mobile optimization */
 @media (max-width: 767px) {
   .login-page {
-    padding: var(--spacing-sm);
+    padding: 0;
+    background: var(--bg-primary);
+  }
+
+  .login-container {
+    border-radius: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Show mobile branding, hide desktop branding on mobile */
+  .login-branding-mobile {
+    display: flex;
+  }
+
+  .login-branding {
+    display: none; /* Hide desktop branding on mobile */
   }
 
   .login-form-container {
-    padding: var(--spacing-lg) var(--spacing-md);
+    padding: var(--spacing-xl) var(--spacing-md);
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .login-form-wrapper {
+    width: 100%;
   }
 
   .form-title {
     font-size: 1.5rem;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .login-form {
+    gap: var(--spacing-md);
   }
 }
 

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 
@@ -6,41 +8,94 @@ namespace YouAndMeExpensesAPI.Controllers
 {
     /// <summary>
     /// API controller for managing transactions (expenses and income)
-    /// All endpoints require authentication and user context
+    /// All endpoints require authentication via JWT token
+    /// Uses Entity Framework Core for data access
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class TransactionsController : ControllerBase
+    public class TransactionsController : BaseApiController
     {
-        private readonly ISupabaseService _supabaseService;
+        private readonly AppDbContext _dbContext;
+        private readonly ISupabaseService _supabaseService; // For storage only
         private readonly ILogger<TransactionsController> _logger;
 
         public TransactionsController(
+            AppDbContext dbContext,
             ISupabaseService supabaseService,
             ILogger<TransactionsController> logger)
         {
+            _dbContext = dbContext;
             _supabaseService = supabaseService;
             _logger = logger;
         }
 
         /// <summary>
-        /// Gets all transactions for the authenticated user
+        /// Gets all transactions for the authenticated user and their partner (if partnership exists)
+        /// Includes user profile information to show who created each transaction
         /// </summary>
-        /// <param name="userId">User ID from auth token</param>
-        /// <returns>List of transactions</returns>
+        /// <returns>List of transactions with user profile data</returns>
         [HttpGet]
-        public async Task<ActionResult<List<Transaction>>> GetTransactions([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetTransactions()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                _logger.LogWarning("GetTransactions called without user ID");
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var transactions = await _supabaseService.GetTransactionsAsync(userId);
-                return Ok(transactions);
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Get transactions from user and partner(s)
+                var transactions = await _dbContext.Transactions
+                    .Where(t => allUserIds.Contains(t.UserId))
+                    .OrderByDescending(t => t.Date)
+                    .ToListAsync();
+
+                // Get user profiles for all transaction creators
+                var userIds = transactions.Select(t => t.UserId).Distinct().ToList();
+                var userProfiles = await _dbContext.UserProfiles
+                    .Where(up => userIds.Contains(up.Id.ToString()))
+                    .ToListAsync();
+
+                // Create a dictionary for quick lookup
+                var profileDict = userProfiles.ToDictionary(
+                    p => p.Id.ToString(),
+                    p => new
+                    {
+                        id = p.Id,
+                        email = p.Email,
+                        display_name = p.DisplayName,
+                        avatar_url = p.AvatarUrl
+                    }
+                );
+
+                // Enrich transactions with user profile data (using camelCase for frontend compatibility)
+                var enrichedTransactions = transactions.Select(t => new
+                {
+                    id = t.Id,
+                    userId = t.UserId,
+                    type = t.Type,
+                    amount = t.Amount,
+                    category = t.Category,
+                    description = t.Description,
+                    date = t.Date,
+                    attachmentUrl = t.AttachmentUrl,
+                    attachmentPath = t.AttachmentPath,
+                    isRecurring = t.IsRecurring,
+                    recurrencePattern = t.RecurrencePattern,
+                    recurrenceEndDate = t.RecurrenceEndDate,
+                    paidBy = t.PaidBy,
+                    splitType = t.SplitType,
+                    splitPercentage = t.SplitPercentage,
+                    tags = t.Tags,
+                    notes = t.Notes,
+                    createdAt = t.CreatedAt,
+                    updatedAt = t.UpdatedAt,
+                    user_profiles = profileDict.ContainsKey(t.UserId) ? profileDict[t.UserId] : null
+                }).ToList();
+
+                return Ok(enrichedTransactions);
             }
             catch (Exception ex)
             {
@@ -50,24 +105,53 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
+        /// Helper method to get partner user IDs for the current user
+        /// </summary>
+        /// <param name="userId">Current user ID</param>
+        /// <returns>List of partner user IDs as strings</returns>
+        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
+        {
+            try
+            {
+                var partnership = await _dbContext.Partnerships
+                    .FirstOrDefaultAsync(p =>
+                        (p.User1Id == userId || p.User2Id == userId) &&
+                        p.Status == "active");
+
+                if (partnership == null)
+                {
+                    return new List<string>();
+                }
+
+                // Return the partner's ID
+                var partnerId = partnership.User1Id == userId
+                    ? partnership.User2Id
+                    : partnership.User1Id;
+
+                return new List<string> { partnerId.ToString() };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
         /// Gets a specific transaction by ID
         /// </summary>
         /// <param name="id">Transaction ID</param>
-        /// <param name="userId">User ID from auth token</param>
         /// <returns>Transaction details</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Transaction>> GetTransaction(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<ActionResult<Transaction>> GetTransaction(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return Unauthorized(new { error = "User not authenticated" });
 
             try
             {
-                var transaction = await _supabaseService.GetTransactionByIdAsync(id, userId);
+                var transaction = await _dbContext.Transactions
+                    .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId.ToString());
                 
                 if (transaction == null)
                 {
@@ -87,17 +171,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Creates a new transaction
         /// </summary>
         /// <param name="transaction">Transaction data</param>
-        /// <param name="userId">User ID from auth token</param>
         /// <returns>Created transaction</returns>
         [HttpPost]
-        public async Task<ActionResult<Transaction>> CreateTransaction(
-            [FromBody] Transaction transaction,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<ActionResult<Transaction>> CreateTransaction([FromBody] Transaction transaction)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return Unauthorized(new { error = "User not authenticated" });
 
             // Validate transaction
             if (transaction.Amount <= 0)
@@ -117,19 +196,23 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Ensure user ID matches
-                transaction.UserId = userId;
+                // Set transaction properties
+                transaction.Id = Guid.NewGuid();
+                transaction.UserId = userId.ToString();
+                transaction.CreatedAt = DateTime.UtcNow;
+                transaction.UpdatedAt = DateTime.UtcNow;
 
-                var createdTransaction = await _supabaseService.CreateTransactionAsync(transaction);
+                _dbContext.Transactions.Add(transaction);
+                await _dbContext.SaveChangesAsync();
                 
                 return CreatedAtAction(
                     nameof(GetTransaction),
-                    new { id = createdTransaction.Id },
-                    createdTransaction);
+                    new { id = transaction.Id },
+                    transaction);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating transaction");
+                _logger.LogError(ex, "Error creating transaction for user {UserId}", userId);
                 return StatusCode(500, new { message = "Error creating transaction", error = ex.Message });
             }
         }
@@ -139,18 +222,14 @@ namespace YouAndMeExpensesAPI.Controllers
         /// </summary>
         /// <param name="id">Transaction ID</param>
         /// <param name="transaction">Updated transaction data</param>
-        /// <param name="userId">User ID from auth token</param>
         /// <returns>Updated transaction</returns>
         [HttpPut("{id}")]
         public async Task<ActionResult<Transaction>> UpdateTransaction(
             Guid id,
-            [FromBody] Transaction transaction,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] Transaction transaction)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return Unauthorized(new { error = "User not authenticated" });
 
             if (id != transaction.Id)
             {
@@ -165,49 +244,78 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Ensure user ID matches
-                transaction.UserId = userId;
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
 
-                var updatedTransaction = await _supabaseService.UpdateTransactionAsync(transaction);
-                return Ok(updatedTransaction);
+                // Allow user or partner to update the transaction
+                var existingTransaction = await _dbContext.Transactions
+                    .FirstOrDefaultAsync(t => t.Id == id && allUserIds.Contains(t.UserId));
+
+                if (existingTransaction == null)
+                {
+                    return NotFound(new { message = $"Transaction {id} not found" });
+                }
+
+                // Update properties
+                existingTransaction.Type = transaction.Type;
+                existingTransaction.Amount = transaction.Amount;
+                existingTransaction.Category = transaction.Category;
+                existingTransaction.Description = transaction.Description;
+                existingTransaction.Date = transaction.Date;
+                existingTransaction.PaidBy = transaction.PaidBy;
+                existingTransaction.IsRecurring = transaction.IsRecurring;
+                existingTransaction.RecurrencePattern = transaction.RecurrencePattern;
+                existingTransaction.RecurrenceEndDate = transaction.RecurrenceEndDate;
+                existingTransaction.UpdatedAt = DateTime.UtcNow;
+
+                await _dbContext.SaveChangesAsync();
+                
+                return Ok(existingTransaction);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating transaction {Id}", id);
+                _logger.LogError(ex, "Error updating transaction {Id} for user {UserId}", id, userId);
                 return StatusCode(500, new { message = "Error updating transaction", error = ex.Message });
             }
         }
 
         /// <summary>
-        /// Deletes a transaction
+        /// Deletes a transaction (must belong to user or partner)
         /// </summary>
         /// <param name="id">Transaction ID</param>
-        /// <param name="userId">User ID from auth token</param>
         /// <returns>Success status</returns>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTransaction(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> DeleteTransaction(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var deleted = await _supabaseService.DeleteTransactionAsync(id, userId);
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to delete the transaction
+                var transaction = await _dbContext.Transactions
+                    .FirstOrDefaultAsync(t => t.Id == id && allUserIds.Contains(t.UserId));
                 
-                if (!deleted)
+                if (transaction == null)
                 {
                     return NotFound(new { message = $"Transaction {id} not found" });
                 }
+
+                _dbContext.Transactions.Remove(transaction);
+                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting transaction {Id}", id);
+                _logger.LogError(ex, "Error deleting transaction {Id} for user {UserId}", id, userId);
                 return StatusCode(500, new { message = "Error deleting transaction", error = ex.Message });
             }
         }
@@ -216,17 +324,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Uploads a receipt for a transaction
         /// </summary>
         /// <param name="file">Receipt file</param>
-        /// <param name="userId">User ID from auth token</param>
         /// <returns>Receipt URL</returns>
         [HttpPost("receipt")]
-        public async Task<ActionResult<string>> UploadReceipt(
-            IFormFile file,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<ActionResult<string>> UploadReceipt(IFormFile file)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return Unauthorized(new { error = "User not authenticated" });
 
             if (file == null || file.Length == 0)
             {
@@ -251,13 +354,13 @@ namespace YouAndMeExpensesAPI.Controllers
             try
             {
                 using var stream = file.OpenReadStream();
-                var receiptUrl = await _supabaseService.UploadReceiptAsync(stream, file.FileName, userId);
+                var receiptUrl = await _supabaseService.UploadReceiptAsync(stream, file.FileName, userId.ToString());
                 
                 return Ok(new { url = receiptUrl });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading receipt");
+                _logger.LogError(ex, "Error uploading receipt for user {UserId}", userId);
                 return StatusCode(500, new { message = "Error uploading receipt", error = ex.Message });
             }
         }

@@ -8,9 +8,8 @@ namespace YouAndMeExpensesAPI.Controllers
     /// Analytics API Controller
     /// Provides comprehensive analytics endpoints for financial insights
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class AnalyticsController : ControllerBase
+    public class AnalyticsController : BaseApiController
     {
         private readonly IAnalyticsService _analyticsService;
         private readonly ILogger<AnalyticsController> _logger;
@@ -30,15 +29,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>Financial analytics data</returns>
         [HttpGet("financial")]
         [ResponseCache(Duration = 300)] // Cache for 5 minutes
-        public async Task<ActionResult<FinancialAnalyticsDTO>> GetFinancialAnalytics(
-            [FromHeader(Name = "X-User-Id")] string userId,
+        public async Task<IActionResult> GetFinancialAnalytics(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
@@ -46,7 +42,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 var start = startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                 var end = endDate ?? DateTime.Now;
 
-                var analytics = await _analyticsService.GetFinancialAnalyticsAsync(userId, start, end);
+                var analytics = await _analyticsService.GetFinancialAnalyticsAsync(userId.ToString(), start, end);
                 return Ok(analytics);
             }
             catch (Exception ex)
@@ -65,19 +61,16 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>Loan analytics data</returns>
         [HttpGet("loans")]
         [ResponseCache(Duration = 300)]
-        public async Task<ActionResult<LoanAnalyticsDTO>> GetLoanAnalytics(
-            [FromHeader(Name = "X-User-Id")] string userId,
+        public async Task<IActionResult> GetLoanAnalytics(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var analytics = await _analyticsService.GetLoanAnalyticsAsync(userId, startDate, endDate);
+                var analytics = await _analyticsService.GetLoanAnalyticsAsync(userId.ToString(), startDate, endDate);
                 return Ok(analytics);
             }
             catch (Exception ex)
@@ -94,17 +87,14 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>Household analytics data</returns>
         [HttpGet("household")]
         [ResponseCache(Duration = 300)]
-        public async Task<ActionResult<HouseholdAnalyticsDTO>> GetHouseholdAnalytics(
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetHouseholdAnalytics()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var analytics = await _analyticsService.GetHouseholdAnalyticsAsync(userId);
+                var analytics = await _analyticsService.GetHouseholdAnalyticsAsync(userId.ToString());
                 return Ok(analytics);
             }
             catch (Exception ex)
@@ -123,15 +113,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>Comparative analytics data</returns>
         [HttpGet("comparative")]
         [ResponseCache(Duration = 300)]
-        public async Task<ActionResult<ComparativeAnalyticsDTO>> GetComparativeAnalytics(
-            [FromHeader(Name = "X-User-Id")] string userId,
+        public async Task<IActionResult> GetComparativeAnalytics(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
@@ -139,7 +126,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 var start = startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                 var end = endDate ?? DateTime.Now;
 
-                var analytics = await _analyticsService.GetComparativeAnalyticsAsync(userId, start, end);
+                var analytics = await _analyticsService.GetComparativeAnalyticsAsync(userId.ToString(), start, end);
                 return Ok(analytics);
             }
             catch (Exception ex)
@@ -157,17 +144,14 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>Dashboard analytics data</returns>
         [HttpGet("dashboard")]
         [ResponseCache(Duration = 180)] // Cache for 3 minutes (more frequent updates)
-        public async Task<ActionResult<DashboardAnalyticsDTO>> GetDashboardAnalytics(
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetDashboardAnalytics()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var analytics = await _analyticsService.GetDashboardAnalyticsAsync(userId);
+                var analytics = await _analyticsService.GetDashboardAnalyticsAsync(userId.ToString());
                 return Ok(analytics);
             }
             catch (Exception ex)
@@ -186,26 +170,23 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>Combined analytics data</returns>
         [HttpGet("all")]
         [ResponseCache(Duration = 300)]
-        public async Task<ActionResult> GetAllAnalytics(
-            [FromHeader(Name = "X-User-Id")] string userId,
+        public async Task<IActionResult> GetAllAnalytics(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
                 var start = startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                 var end = endDate ?? DateTime.Now;
-
+    
                 // Fetch all analytics in parallel
-                var financialTask = _analyticsService.GetFinancialAnalyticsAsync(userId, start, end);
-                var loansTask = _analyticsService.GetLoanAnalyticsAsync(userId, start, end);
-                var householdTask = _analyticsService.GetHouseholdAnalyticsAsync(userId);
-                var comparativeTask = _analyticsService.GetComparativeAnalyticsAsync(userId, start, end);
+                var financialTask = _analyticsService.GetFinancialAnalyticsAsync(userId.ToString(), start, end);
+                var loansTask = _analyticsService.GetLoanAnalyticsAsync(userId.ToString(), start, end);
+                var householdTask = _analyticsService.GetHouseholdAnalyticsAsync(userId.ToString());
+                var comparativeTask = _analyticsService.GetComparativeAnalyticsAsync(userId.ToString(), start, end);
 
                 await Task.WhenAll(financialTask, loansTask, householdTask, comparativeTask);
 

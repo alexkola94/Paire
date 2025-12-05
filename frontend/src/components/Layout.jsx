@@ -5,7 +5,6 @@ import {
   FiHome, 
   FiTrendingDown, 
   FiTrendingUp, 
-  FiDollarSign, 
   FiUser, 
   FiMenu, 
   FiX,
@@ -14,13 +13,32 @@ import {
   FiTarget,
   FiUsers,
   FiBell,
-  FiSettings,
   FiShoppingCart,
   FiPieChart,
   FiMoreHorizontal,
   FiChevronDown
 } from 'react-icons/fi'
-import { authService } from '../services/supabase'
+
+// Euro icon component to replace dollar sign
+const EuroIcon = ({ size = 24, className = '', style = {} }) => {
+  const iconSize = style?.width || style?.height || size
+  return (
+    <span 
+      className={`euro-icon ${className}`} 
+      style={{ 
+        fontSize: typeof iconSize === 'string' ? iconSize : `${iconSize}px`, 
+        fontWeight: 'bold',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...style
+      }}
+    >
+      €
+    </span>
+  )
+}
+import { authService } from '../services/auth'
 import Chatbot from './Chatbot'
 import './Layout.css'
 
@@ -33,27 +51,27 @@ function Layout() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
-  const userMenuRef = useRef(null)
   const moreMenuRef = useRef(null)
 
   // Primary navigation items (always visible on desktop)
+  // These are the most frequently used features - accessed daily
   const mainNavItems = [
     { path: '/dashboard', icon: FiHome, label: t('navigation.dashboard') },
-    { path: '/analytics', icon: FiBarChart2, label: t('navigation.analytics') },
     { path: '/expenses', icon: FiTrendingDown, label: t('navigation.expenses') },
     { path: '/income', icon: FiTrendingUp, label: t('navigation.income') },
     { path: '/budgets', icon: FiTarget, label: t('navigation.budgets') },
-    { path: '/partnership', icon: FiUsers, label: t('navigation.partnership') },
+    { path: '/recurring-bills', icon: FiBell, label: t('navigation.recurringBills') },
+    { path: '/shopping-lists', icon: FiShoppingCart, label: t('navigation.shoppingLists') },
+    { path: '/loans', icon: EuroIcon, label: t('navigation.loans') },
   ]
 
   // Secondary navigation items (inside "More" dropdown on desktop)
+  // Less frequently used features - accessed weekly/monthly or occasionally
   const moreNavItems = [
-    { path: '/loans', icon: FiDollarSign, label: t('navigation.loans') },
+    { path: '/analytics', icon: FiBarChart2, label: t('navigation.analytics') },
+    { path: '/partnership', icon: FiUsers, label: t('navigation.partnership') },
     { path: '/savings-goals', icon: FiPieChart, label: t('navigation.savingsGoals') },
-    { path: '/recurring-bills', icon: FiBell, label: t('navigation.recurringBills') },
-    { path: '/shopping-lists', icon: FiShoppingCart, label: t('navigation.shoppingLists') },
   ]
 
   // All navigation items (for mobile menu)
@@ -63,7 +81,8 @@ function Layout() {
   const handleLogout = async () => {
     try {
       await authService.signOut()
-      navigate('/login')
+      // Force reload to update session state in App.jsx
+      window.location.reload()
     } catch (error) {
       console.error('Error signing out:', error)
     }
@@ -74,22 +93,14 @@ function Layout() {
     setMobileMenuOpen(!mobileMenuOpen)
   }
 
-  // Toggle user menu
-  const toggleUserMenu = () => {
-    setUserMenuOpen(!userMenuOpen)
-  }
-
   // Close mobile menu when navigation link is clicked
   const closeMobileMenu = () => {
     setMobileMenuOpen(false)
   }
 
-  // Close user menu and more menu when clicking outside
+  // Close more menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setUserMenuOpen(false)
-      }
       if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
         setMoreMenuOpen(false)
       }
@@ -111,10 +122,15 @@ function Layout() {
     closeMobileMenu()
   }
 
-  // Navigate to profile or reminders
+  // Navigate to reminders
   const handleNavigation = (path) => {
     navigate(path)
-    setUserMenuOpen(false)
+    closeMobileMenu()
+  }
+
+  // Navigate to profile directly
+  const handleProfileNavigation = () => {
+    navigate('/profile')
     closeMobileMenu()
   }
 
@@ -124,8 +140,19 @@ function Layout() {
       <header className="layout-header">
         <div className="header-content">
           <div className="header-left">
-            <h1 className="app-title">{t('app.title')}</h1>
-            <p className="app-tagline">{t('app.tagline')}</p>
+            <div className="header-brand">
+              <img 
+                src="/paire-logo.svg" 
+                alt="Paire" 
+                className="header-logo"
+                width="36"
+                height="36"
+              />
+              <div className="header-text">
+                <h1 className="app-title">{t('app.title')}</h1>
+                <p className="app-tagline">{t('app.tagline')}</p>
+              </div>
+            </div>
           </div>
           
           {/* Header actions - right side */}
@@ -142,45 +169,29 @@ function Layout() {
               <FiBell size={22} />
             </span>
 
-            {/* User menu - desktop only */}
-            <div className="user-menu desktop-only" ref={userMenuRef}>
-              <span 
-                className="user-menu-btn"
-                onClick={toggleUserMenu}
-                aria-label="User menu"
-                role="button"
-                tabIndex={0}
-              >
-                <FiUser size={22} />
-              </span>
-              
-              {userMenuOpen && (
-                <div className="user-menu-dropdown">
-                  <button 
-                    className="menu-item"
-                    onClick={() => handleNavigation('/profile')}
-                  >
-                    <FiSettings style={{ width: '18px', height: '18px' }} />
-                    <span>{t('navigation.profile')}</span>
-                  </button>
-                  <button 
-                    className="menu-item"
-                    onClick={() => handleNavigation('/reminders')}
-                  >
-                    <FiBell style={{ width: '18px', height: '18px' }} />
-                    <span>{t('navigation.reminders')}</span>
-                  </button>
-                  <div className="menu-divider"></div>
-                  <button 
-                    className="menu-item logout"
-                    onClick={handleLogout}
-                  >
-                    <FiLogOut style={{ width: '18px', height: '18px' }} />
-                    <span>{t('auth.logout')}</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Profile button - desktop only */}
+            <span 
+              className="header-icon-btn desktop-only"
+              onClick={handleProfileNavigation}
+              aria-label={t('navigation.profile')}
+              title={t('navigation.profile')}
+              role="button"
+              tabIndex={0}
+            >
+              <FiUser size={22} />
+            </span>
+
+            {/* Logout button - desktop only */}
+            <span 
+              className="header-icon-btn desktop-only"
+              onClick={handleLogout}
+              aria-label={t('auth.logout')}
+              title={t('auth.logout')}
+              role="button"
+              tabIndex={0}
+            >
+              <FiLogOut size={22} />
+            </span>
 
             {/* Mobile menu toggle */}
             <span 

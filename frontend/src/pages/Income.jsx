@@ -4,6 +4,7 @@ import { FiPlus, FiEdit, FiTrash2, FiFileText } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
+import ConfirmationModal from '../components/ConfirmationModal'
 import './Income.css'
 
 /**
@@ -17,6 +18,7 @@ function Income() {
   const [showForm, setShowForm] = useState(false)
   const [editingIncome, setEditingIncome] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, income: null })
 
   /**
    * Load incomes on mount
@@ -76,12 +78,28 @@ function Income() {
   }
 
   /**
+   * Open delete confirmation modal
+   */
+  const openDeleteModal = (income) => {
+    setDeleteModal({ isOpen: true, income })
+  }
+
+  /**
+   * Close delete confirmation modal
+   */
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, income: null })
+  }
+
+  /**
    * Handle deleting income
    */
-  const handleDelete = async (income) => {
-    if (!window.confirm(t('messages.confirmDelete'))) return
+  const handleDelete = async () => {
+    const { income } = deleteModal
+    if (!income) return
 
     try {
+      setFormLoading(true)
       // Delete attachment if exists
       if (income.attachment_path) {
         await storageService.deleteFile(income.attachment_path)
@@ -89,8 +107,11 @@ function Income() {
       
       await transactionService.delete(income.id)
       await loadIncomes()
+      closeDeleteModal()
     } catch (error) {
       console.error('Error deleting income:', error)
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -116,7 +137,7 @@ function Income() {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'EUR'
     }).format(amount)
   }
 
@@ -136,7 +157,7 @@ function Income() {
         <div>
           <h1>{t('income.title')}</h1>
           <p className="page-subtitle">
-            Total: {incomes.length} {incomes.length === 1 ? 'entry' : 'entries'}
+            {t('income.totalCount', { count: incomes.length })}
           </p>
         </div>
         {!showForm && (
@@ -208,7 +229,7 @@ function Income() {
                 {format(new Date(income.date), 'MMMM dd, yyyy')}
                 {income.user_profiles && (
                   <span className="added-by">
-                    {' • Added by '}
+                    {' • ' + t('dashboard.addedBy') + ' '}
                     {income.user_profiles.display_name}
                     {income.user_profiles.email && (
                       <span className="added-by-email"> ({income.user_profiles.email})</span>
@@ -225,7 +246,7 @@ function Income() {
                   className="attachment-link"
                 >
                   <FiFileText size={16} />
-                  View Attachment
+                  {t('transaction.viewAttachment')}
                 </a>
               )}
 
@@ -238,7 +259,7 @@ function Income() {
                   <FiEdit size={18} />
                 </button>
                 <button
-                  onClick={() => handleDelete(income)}
+                  onClick={() => openDeleteModal(income)}
                   className="btn-icon delete"
                   aria-label="Delete"
                 >
@@ -249,6 +270,18 @@ function Income() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        title={t('income.deleteIncome')}
+        message={t('messages.confirmDelete')}
+        confirmText={t('common.delete')}
+        loading={formLoading}
+        variant="danger"
+      />
     </div>
   )
 }

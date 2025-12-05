@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { 
   FiTrendingUp, 
   FiTrendingDown, 
-  FiDollarSign,
   FiPieChart,
   FiBarChart2,
   FiActivity,
@@ -131,7 +130,7 @@ function Analytics() {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'EUR'
     }).format(amount)
   }
 
@@ -288,7 +287,7 @@ function Analytics() {
 
           <div className="summary-card balance-card">
             <div className="card-icon">
-              <FiDollarSign size={32} />
+              <span style={{ fontSize: '32px', fontWeight: 'bold' }}>€</span>
             </div>
             <div className="card-content">
               <h3>{t('analytics.netBalance')}</h3>

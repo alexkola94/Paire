@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   FiTarget, FiPlus, FiEdit, FiTrash2, FiTrendingUp, 
-  FiDollarSign, FiCalendar, FiCheckCircle, FiArrowUp, FiArrowDown 
+  FiCalendar, FiCheckCircle, FiArrowUp, FiArrowDown 
 } from 'react-icons/fi'
 import { savingsGoalService } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
+import ConfirmationModal from '../components/ConfirmationModal'
 import './SavingsGoals.css'
 
 /**
@@ -21,6 +22,7 @@ function SavingsGoals() {
   const [editingGoal, setEditingGoal] = useState(null)
   const [showDepositForm, setShowDepositForm] = useState(null)
   const [depositAmount, setDepositAmount] = useState('')
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, goalId: null })
   const [formData, setFormData] = useState({
     name: '',
     targetAmount: '',
@@ -206,14 +208,30 @@ function SavingsGoals() {
   }
 
   /**
+   * Open delete confirmation modal
+   */
+  const openDeleteModal = (goalId) => {
+    setDeleteModal({ isOpen: true, goalId })
+  }
+
+  /**
+   * Close delete confirmation modal
+   */
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, goalId: null })
+  }
+
+  /**
    * Handle delete goal
    */
-  const handleDelete = async (id) => {
-    if (!confirm(t('savingsGoals.confirmDelete'))) return
+  const handleDelete = async () => {
+    const { goalId } = deleteModal
+    if (!goalId) return
 
     try {
-      await savingsGoalService.delete(id)
+      await savingsGoalService.delete(goalId)
       await loadData()
+      closeDeleteModal()
     } catch (error) {
       console.error('Error deleting goal:', error)
       alert(t('savingsGoals.errorDeleting'))
@@ -275,7 +293,7 @@ function SavingsGoals() {
 
           <div className="summary-card">
             <div className="summary-icon saved">
-              <FiDollarSign />
+              <span style={{ fontSize: '24px', fontWeight: 'bold' }}>€</span>
             </div>
             <div className="summary-content">
               <h3>{t('savingsGoals.totalSaved')}</h3>
@@ -345,7 +363,7 @@ function SavingsGoals() {
                     </button>
                     <button 
                       className="icon-btn danger" 
-                      onClick={() => handleDelete(goal.id)}
+                      onClick={() => openDeleteModal(goal.id)}
                       title={t('common.delete')}
                     >
                       <FiTrash2 />
@@ -416,6 +434,7 @@ function SavingsGoals() {
                           placeholder={t('savingsGoals.enterAmount')}
                           step="0.01"
                           min="0"
+                          max="1000000"
                         />
                         <button 
                           className="btn btn-sm btn-success" 
@@ -498,6 +517,7 @@ function SavingsGoals() {
                     required
                     step="0.01"
                     min="0"
+                    max="1000000"
                     placeholder="10000"
                   />
                 </div>
@@ -511,6 +531,7 @@ function SavingsGoals() {
                     onChange={handleChange}
                     step="0.01"
                     min="0"
+                    max="1000000"
                     placeholder="0"
                   />
                 </div>
@@ -606,6 +627,17 @@ function SavingsGoals() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        title={t('savingsGoals.deleteGoal')}
+        message={t('savingsGoals.confirmDelete')}
+        confirmText={t('common.delete')}
+        variant="danger"
+      />
     </div>
   )
 }

@@ -1,0 +1,638 @@
+/* ================================
+   Two-Factor Verification Styles
+   ================================ */
+
+.two-factor-verification {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--primary-light), var(--bg-secondary));
+  transition: var(--transition);
+}
+
+.verification-container {
+  background: var(--bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  max-width: 500px;
+  width: 100%;
+  animation: slideUp 0.4s ease;
+  transition: var(--transition);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   Header Section
+   ================================ */
+
+.verification-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.security-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--primary), var(--success-dark));
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: pulse 2s ease-in-out infinite;
+  transition: var(--transition);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(108, 92, 231, 0);
+  }
+}
+
+.security-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.verification-header h2 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.verification-subtitle {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: var(--transition);
+}
+
+/* ================================
+   Error Message
+   ================================ */
+
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  background: var(--error);
+  color: var(--error-dark);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--error-dark);
+  animation: shake 0.5s ease;
+  transition: var(--transition);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.error-message svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ================================
+   Code Input Section
+   ================================ */
+
+.code-input-section,
+.backup-code-input-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* OTP Input Container - Better spacing for mobile */
+.code-input-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+/* React OTP Input container wrapper - Center and wrap properly */
+.code-input-section > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+/* OTP Input Fields - Improved mobile touch targets */
+.verification-otp-input {
+  width: 3rem !important;
+  height: 3.5rem !important;
+  margin: 0 0.25rem;
+  font-size: 1.5rem;
+  text-align: center;
+  border: 2px solid #e0e0e0;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 700;
+  transition: var(--transition);
+  /* Better touch target for mobile */
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  overflow: visible;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verification-otp-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+  transform: scale(1.05);
+}
+
+/* Backup Code Input */
+.backup-code-input {
+  width: 100%;
+  padding: var(--spacing-md);
+  font-size: 1.125rem;
+  text-align: center;
+  border: 2px solid #e0e0e0;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: var(--transition);
+  /* Better touch target */
+  min-height: 48px;
+}
+
+.backup-code-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+}
+
+.backup-code-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ================================
+   Verify Button
+   ================================ */
+
+.verify-btn {
+  width: 100%;
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--primary), var(--success-dark));
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
+  /* Better touch target */
+  min-height: 48px;
+}
+
+.verify-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-dark), #388e3c);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.verify-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.verify-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ================================
+   Verifying Indicator
+   ================================ */
+
+.verifying-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  transition: var(--transition);
+}
+
+.verifying-indicator .loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--primary-light);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ================================
+   Alternative Methods
+   ================================ */
+
+.alternative-methods {
+  text-align: center;
+  margin: var(--spacing-lg) 0;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid #e0e0e0;
+  transition: var(--transition);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: var(--transition);
+  /* Better touch target */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.link-btn:hover:not(:disabled) {
+  color: var(--success-dark);
+  transform: scale(1.05);
+}
+
+.link-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.link-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ================================
+   Help Text
+   ================================ */
+
+.help-text {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--primary);
+  transition: var(--transition);
+}
+
+.help-text svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.help-text p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* ================================
+   Cancel Button
+   ================================ */
+
+.cancel-btn {
+  width: 100%;
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  background: transparent;
+  color: var(--text-secondary);
+  border: 2px solid #e0e0e0;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  /* Better touch target */
+  min-height: 44px;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.cancel-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ================================
+   Responsive Design - Tablet
+   ================================ */
+
+@media (max-width: 768px) {
+  .two-factor-verification {
+    padding: var(--spacing-md);
+    align-items: flex-start;
+    padding-top: var(--spacing-xl);
+  }
+
+  .verification-container {
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    max-width: 100%;
+  }
+
+  .verification-header {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .verification-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .security-icon {
+    width: 70px;
+    height: 70px;
+    padding: var(--spacing-md);
+  }
+
+  .verification-otp-input {
+    width: 2.75rem !important;
+    height: 3.25rem !important;
+    font-size: 1.375rem;
+    margin: 0 0.2rem;
+  }
+
+  .error-message {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9375rem;
+  }
+
+  .error-message svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* ================================
+   Responsive Design - Mobile
+   ================================ */
+
+@media (max-width: 480px) {
+  .two-factor-verification {
+    padding: var(--spacing-sm);
+    align-items: flex-start;
+    padding-top: var(--spacing-lg);
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  }
+
+  .verification-container {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin: 0 auto;
+  }
+
+  /* Header adjustments for mobile */
+  .verification-header {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .verification-header h2 {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .verification-subtitle {
+    font-size: 0.875rem;
+    padding: 0 var(--spacing-sm);
+  }
+
+  .security-icon {
+    width: 64px;
+    height: 64px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* OTP Input - Optimized for mobile */
+  .code-input-section {
+    margin-bottom: var(--spacing-lg);
+    padding: 0 var(--spacing-xs);
+  }
+
+  .verification-otp-input {
+    width: 2.5rem !important;
+    height: 3.5rem !important;
+    font-size: 1.5rem !important;
+    margin: 0 0.15rem;
+    border-radius: var(--radius-sm);
+    /* Ensure good touch target and full visibility */
+    min-width: 48px;
+    min-height: 56px;
+    padding: 0 !important;
+    overflow: visible !important;
+    line-height: 1.2;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Error message mobile optimization */
+  .error-message {
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.875rem;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+  }
+
+  .error-message svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Backup code input mobile */
+  .backup-code-input {
+    font-size: 1rem;
+    padding: var(--spacing-md);
+    min-height: 48px;
+  }
+
+  /* Buttons mobile optimization */
+  .verify-btn {
+    font-size: 1rem;
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-md);
+    letter-spacing: 0.5px;
+    min-height: 48px;
+  }
+
+  .cancel-btn {
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    min-height: 44px;
+  }
+
+  /* Alternative methods mobile */
+  .alternative-methods {
+    margin: var(--spacing-md) 0;
+    padding-top: var(--spacing-md);
+  }
+
+  .link-btn {
+    font-size: 0.9375rem;
+    padding: var(--spacing-sm);
+    min-height: 44px;
+  }
+
+  /* Help text mobile */
+  .help-text {
+    padding: var(--spacing-sm);
+    margin: var(--spacing-md) 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .help-text svg {
+    width: 18px;
+    height: 18px;
+    margin-top: 0;
+  }
+
+  .help-text p {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  /* Verifying indicator mobile */
+  .verifying-indicator {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    font-size: 0.875rem;
+  }
+}
+
+/* ================================
+   Very Small Mobile Screens
+   ================================ */
+
+@media (max-width: 360px) {
+  .two-factor-verification {
+    padding: var(--spacing-xs);
+    padding-top: var(--spacing-md);
+  }
+
+  .verification-container {
+    padding: var(--spacing-md);
+  }
+
+  .verification-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .security-icon {
+    width: 56px;
+    height: 56px;
+    padding: var(--spacing-sm);
+  }
+
+  /* Even smaller OTP inputs for very small screens */
+  .verification-otp-input {
+    width: 2.25rem !important;
+    height: 3rem !important;
+    font-size: 1.375rem !important;
+    margin: 0 0.1rem;
+    min-width: 44px;
+    min-height: 48px;
+    padding: 0 !important;
+    overflow: visible !important;
+    line-height: 1.2;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .verify-btn,
+  .cancel-btn {
+    font-size: 0.9375rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+

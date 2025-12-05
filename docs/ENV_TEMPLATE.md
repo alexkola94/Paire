@@ -1,278 +1,271 @@
-# 🔐 Environment Variables Templates
+# 🔧 Environment Variables Template - Paire
 
-Copy the templates below to create your environment files.
+This document provides templates for all environment variables needed for deployment.
 
 ---
 
-## 📱 **Frontend .env Template**
+## Frontend Environment Variables
 
-**File Location:** `frontend/.env`
+### File: `frontend/.env.production`
 
-**How to create:**
-```bash
-cd frontend
-# Create a new file called .env and paste the content below
-```
-
-**Template Content:**
+**⚠️ This file is gitignored - create it locally**
 
 ```env
-# ================================
-# FRONTEND ENVIRONMENT VARIABLES
-# You & Me Expenses Application
-# ================================
+# Backend API URL from Render.com
+# Replace with your actual Render deployment URL
+VITE_BACKEND_API_URL=https://paire-api.onrender.com
+```
 
-# ================================
-# Supabase Configuration (REQUIRED)
-# ================================
-# Get these from: https://app.supabase.com/project/YOUR_PROJECT/settings/api
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
+**How to get this value:**
+1. Deploy backend to Render.com first
+2. Copy the URL from Render dashboard (e.g., `https://paire-api.onrender.com`)
+3. Paste it here
+4. Redeploy frontend
 
-# ================================
-# Backend API Configuration (REQUIRED)
-# ================================
-# Local development
-VITE_BACKEND_API_URL=http://localhost:5038
+---
 
-# Production (update when deploying)
-# VITE_BACKEND_API_URL=https://your-api-domain.com
+## Backend Environment Variables (Render.com)
 
-# ================================
-# Optional Settings
-# ================================
-VITE_APP_ENV=development
-VITE_DEBUG=false
+### Configure in: Render Dashboard → Your Service → Environment
+
+#### Core Settings
+
+```bash
+# Environment
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+#### Database Configuration
+
+```bash
+# PostgreSQL Connection String (from Supabase)
+# Format: User Id=USER;Password=PASSWORD;Server=SERVER;Port=5432;Database=postgres
+ConnectionStrings__DefaultConnection=User Id=postgres.xxxxx;Password=YOUR_PASSWORD;Server=aws-0-region.pooler.supabase.com;Port=5432;Database=postgres
+```
+
+**How to get this:**
+1. Go to Supabase Dashboard
+2. Project Settings → Database
+3. Copy connection string
+4. **IMPORTANT:** Change the password to a new secure password first!
+
+#### JWT Settings
+
+```bash
+# JWT Secret Key - Generate a new one!
+# NEVER use the example secret in production
+JwtSettings__Secret=YOUR_SECURE_64_CHARACTER_SECRET_KEY_HERE
+
+# JWT Configuration
+JwtSettings__Issuer=PaireAPI
+JwtSettings__Audience=PaireApp
+JwtSettings__ExpirationMinutes=60
+JwtSettings__RefreshTokenExpirationDays=7
+```
+
+**Generate JWT Secret:**
+
+PowerShell (Windows):
+```powershell
+[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
+```
+
+Bash/Linux/Mac:
+```bash
+openssl rand -base64 64
+```
+
+Online: https://generate-secret.vercel.app/64
+
+#### Email Settings (Gmail)
+
+```bash
+# SMTP Configuration
+EmailSettings__SmtpServer=smtp.gmail.com
+EmailSettings__SmtpPort=587
+EmailSettings__EnableSsl=true
+
+# Your Email Account
+EmailSettings__SenderEmail=your-email@gmail.com
+EmailSettings__SenderName=Paire
+EmailSettings__Username=your-email@gmail.com
+
+# Gmail App Password (NOT your regular Gmail password)
+EmailSettings__Password=xxxx xxxx xxxx xxxx
+```
+
+**How to get Gmail App Password:**
+1. Go to https://myaccount.google.com/security
+2. Enable 2-Factor Authentication
+3. Go to "App Passwords"
+4. Generate new app password for "Mail"
+5. Copy the 16-character password
+6. Use it here (with or without spaces)
+
+**Alternative Email Providers:**
+
+**SendGrid:**
+```bash
+EmailSettings__SmtpServer=smtp.sendgrid.net
+EmailSettings__SmtpPort=587
+EmailSettings__Username=apikey
+EmailSettings__Password=YOUR_SENDGRID_API_KEY
+```
+
+**Mailgun:**
+```bash
+EmailSettings__SmtpServer=smtp.mailgun.org
+EmailSettings__SmtpPort=587
+EmailSettings__Username=postmaster@your-domain.mailgun.org
+EmailSettings__Password=YOUR_MAILGUN_PASSWORD
+```
+
+#### CORS Configuration
+
+```bash
+# Frontend Domain (GitHub Pages)
+# IMPORTANT: Use ONLY the domain, NO path/repo name
+# Wrong: https://username.github.io/repo-name
+# Right: https://username.github.io
+CORS_ORIGINS=https://alexkola94.github.io
+
+# For local development, you can add multiple (comma-separated):
+# CORS_ORIGINS=https://alexkola94.github.io,http://localhost:3000
+```
+
+#### Frontend URL
+
+```bash
+# Full URL to your GitHub Pages site (WITH repo name)
+AppSettings__FrontendUrl=https://alexkola94.github.io/Paire
 ```
 
 ---
 
-## 🖥️ **Backend appsettings.Development.json Template**
+## Complete Environment Variables List for Render
 
-**File Location:** `backend/YouAndMeExpensesAPI/appsettings.Development.json`
+Copy this template and fill in your values:
 
-**How to create:**
 ```bash
-cd backend/YouAndMeExpensesAPI
-# Create a new file called appsettings.Development.json and paste the content below
-```
+# ======================
+# Core Settings
+# ======================
+ASPNETCORE_ENVIRONMENT=Production
 
-**Template Content:**
+# ======================
+# Database
+# ======================
+ConnectionStrings__DefaultConnection=User Id=YOUR_DB_USER;Password=YOUR_DB_PASSWORD;Server=YOUR_DB_SERVER;Port=5432;Database=postgres
 
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "Microsoft.EntityFrameworkCore": "Information"
-    }
-  },
-  "AllowedHosts": "*",
-  
-  "Supabase": {
-    "Url": "https://your-project.supabase.co",
-    "Key": "your-supabase-service-role-key-here"
-  },
-  
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=aws-0-eu-central-1.pooler.supabase.com;Port=6543;Database=postgres;Username=postgres.xxxxx;Password=your-password"
-  },
-  
-  "EmailSettings": {
-    "SmtpServer": "smtp.gmail.com",
-    "SmtpPort": 587,
-    "SenderEmail": "your-email@gmail.com",
-    "SenderName": "You & Me Expenses",
-    "Username": "your-email@gmail.com",
-    "Password": "your-gmail-app-password-here",
-    "EnableSsl": true
-  },
-  
-  "OpenAI": {
-    "ApiKey": "sk-your-openai-api-key-here",
-    "Model": "gpt-4",
-    "MaxTokens": 500,
-    "Temperature": 0.7
-  },
-  
-  "Cors": {
-    "AllowedOrigins": [
-      "http://localhost:5173",
-      "http://localhost:3000"
-    ]
-  }
-}
+# ======================
+# JWT Authentication
+# ======================
+JwtSettings__Secret=GENERATE_A_NEW_64_CHARACTER_SECRET
+JwtSettings__Issuer=PaireAPI
+JwtSettings__Audience=PaireApp
+JwtSettings__ExpirationMinutes=60
+JwtSettings__RefreshTokenExpirationDays=7
+
+# ======================
+# Email Configuration
+# ======================
+EmailSettings__SmtpServer=smtp.gmail.com
+EmailSettings__SmtpPort=587
+EmailSettings__SenderEmail=your-email@gmail.com
+EmailSettings__SenderName=Paire
+EmailSettings__Username=your-email@gmail.com
+EmailSettings__Password=YOUR_GMAIL_APP_PASSWORD
+EmailSettings__EnableSsl=true
+
+# ======================
+# CORS & Frontend
+# ======================
+CORS_ORIGINS=https://YOUR_USERNAME.github.io
+AppSettings__FrontendUrl=https://YOUR_USERNAME.github.io/YOUR_REPO_NAME
 ```
 
 ---
 
-## 📋 **Configuration Steps**
+## GitHub Secrets (for CI/CD)
 
-### **1. Get Supabase Credentials**
+If using GitHub Actions (optional), add these secrets:
 
-1. Go to [https://app.supabase.com](https://app.supabase.com)
-2. Select your project
-3. Navigate to **Settings** → **API**
-4. Copy the following:
-   - **Project URL** → `VITE_SUPABASE_URL` and `Supabase.Url`
-   - **anon/public key** → `VITE_SUPABASE_ANON_KEY` (frontend only)
-   - **service_role key** → `Supabase.Key` (backend only - keep secret!)
+**Settings → Secrets and variables → Actions → New repository secret**
 
-5. Navigate to **Settings** → **Database**
-   - Copy **Connection String** (use "Connection Pooling" mode)
-   - Use for `ConnectionStrings.DefaultConnection`
-
-### **2. Setup Gmail (Optional - for email notifications)**
-
-1. Enable 2-Factor Authentication on your Google account
-2. Go to [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-3. Create app password named "You & Me Expenses"
-4. Copy the 16-character password
-5. Use in `EmailSettings.Password`
-
-**Required for:** Bill reminders, budget alerts, loan notifications  
-**Optional:** App works fine without email features
-
-### **3. Setup OpenAI (Optional - for chatbot)**
-
-1. Go to [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-2. Create account or sign in
-3. Create new API key
-4. Copy the key (starts with `sk-`)
-5. Use in `OpenAI.ApiKey`
-
-**Required for:** AI Financial Chatbot  
-**Optional:** App works fine without chatbot
-
----
-
-## ✅ **Verification**
-
-### **Check Frontend Config:**
-
-```bash
-cd frontend
-cat .env  # Linux/Mac
-type .env  # Windows
-
-# Should show your actual values (not template text)
 ```
-
-### **Check Backend Config:**
-
-```bash
-cd backend/YouAndMeExpensesAPI
-cat appsettings.Development.json  # Linux/Mac
-type appsettings.Development.json  # Windows
-
-# Should show your actual values
-```
-
-### **Test Connection:**
-
-```bash
-# Start backend
-cd backend/YouAndMeExpensesAPI
-dotnet run
-
-# In new terminal, start frontend
-cd frontend
-npm run dev
-
-# Open browser to http://localhost:5173
-# Try logging in - if successful, configuration is correct!
+Name: VITE_BACKEND_API_URL
+Value: https://your-app-name.onrender.com
 ```
 
 ---
 
-## 🚨 **Security Warnings**
+## Verification Checklist
 
-### **CRITICAL - Never commit these files:**
-- ❌ `frontend/.env`
-- ❌ `backend/YouAndMeExpensesAPI/appsettings.Development.json`
-- ❌ `backend/YouAndMeExpensesAPI/appsettings.Production.json`
+After setting environment variables:
 
-### **Safe to commit:**
-- ✅ `frontend/.env.example`
-- ✅ `backend/YouAndMeExpensesAPI/appsettings.Example.json`
-- ✅ `backend/YouAndMeExpensesAPI/appsettings.json` (no secrets)
+### Backend (Render)
+- [ ] All environment variables set in Render dashboard
+- [ ] Service redeployed (happens automatically)
+- [ ] Visit `https://your-app.onrender.com/health` - should return healthy
+- [ ] Check Render logs for any errors
+- [ ] No errors about missing configuration
 
-### **Key Security Rules:**
-1. **Service Role Key** is admin-level - never expose it
-2. **Anon Key** is safe for frontend (designed for public use)
-3. **Gmail App Password** is app-specific - never use regular password
-4. **OpenAI Key** has billing attached - protect it
-5. **Always use HTTPS** in production
-
----
-
-## 🔄 **Updating Configuration**
-
-### **When you change .env:**
-```bash
-# Frontend requires dev server restart
-npm run dev
-```
-
-### **When you change appsettings:**
-```bash
-# Backend requires restart
-dotnet run
-```
-
-### **Best Practice:**
-- Keep development and production configs separate
-- Use environment-specific files
-- Document any custom variables
-- Test after every change
+### Frontend
+- [ ] `.env.production` created with correct API URL
+- [ ] File is gitignored (not pushed to GitHub)
+- [ ] Built and deployed: `npm run deploy`
+- [ ] Site loads at GitHub Pages URL
+- [ ] No CORS errors in browser console
+- [ ] Can register/login successfully
 
 ---
 
-## 📞 **Troubleshooting**
+## Troubleshooting
 
-### **Problem: "Supabase is not defined"**
-**Solution:** Check `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set correctly
+### "Configuration is missing" error
+**Solution:** Check that environment variable names match exactly (including double underscores `__`)
 
-### **Problem: "CORS error"**
-**Solution:** Add your frontend URL to `Cors.AllowedOrigins` in backend config
-
-### **Problem: "Email not sending"**
+### CORS error in browser
 **Solution:** 
-- Verify Gmail app password (not regular password)
-- Check 2FA is enabled
-- Verify SMTP settings
-- Check email in backend logs
+1. Verify `CORS_ORIGINS` in Render matches your GitHub Pages domain
+2. Make sure it's ONLY the domain, not the full path
+3. Redeploy backend after changing CORS
 
-### **Problem: "Chatbot returns errors"**
+### Email not sending
 **Solution:**
-- Verify OpenAI API key
-- Check you have credits
-- Check API quota limits
-- Review backend logs
+1. Verify Gmail app password is correct
+2. Check that 2FA is enabled on Gmail
+3. Try sending test email via Render logs
+4. Check for SMTP errors in logs
 
-### **Problem: "Database connection failed"**
+### Database connection failed
 **Solution:**
-- Check connection string format
-- Verify Supabase project is running
-- Check database password
-- Use "Connection Pooling" mode from Supabase
+1. Verify Supabase connection string is correct
+2. Check that database password is correct
+3. Ensure Supabase project is not paused
+4. Check Render logs for specific error
 
 ---
 
-## 📚 **Related Documentation**
+## Security Reminders
 
-- [HOW_TO_RUN.md](./HOW_TO_RUN.md) - Complete setup guide
-- [GMAIL_SETUP.md](./GMAIL_SETUP.md) - Detailed Gmail setup
-- [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) - Supabase configuration
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Production deployment
-
----
-
-**Remember:** Keep your secrets secret! 🔒  
-**Never commit `.env` or `appsettings.Development.json` to git!**
+- ✅ Never commit environment variables to Git
+- ✅ Use strong, unique secrets for production
+- ✅ Rotate secrets periodically
+- ✅ Use separate databases for dev/production
+- ✅ Monitor logs for suspicious activity
+- ✅ Keep backup of environment variables in secure location (password manager)
 
 ---
 
-*Last Updated: December 4, 2025*
+## Need Help?
+
+- Check `DEPLOYMENT_GUIDE.md` for detailed deployment instructions
+- Check `SECURITY_CHECKLIST.md` for security best practices
+- Check Render logs for error details
+- Check browser console for frontend errors
+
+---
+
+**Remember to save these values in a secure location (like a password manager) - you'll need them for updates and debugging!**
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
@@ -8,10 +9,12 @@ namespace YouAndMeExpensesAPI.Controllers
 {
     /// <summary>
     /// Controller for managing email reminders and notifications
+    /// All endpoints require authentication via JWT token
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    public class RemindersController : ControllerBase
+    [Authorize]
+    public class RemindersController : BaseApiController
     {
         private readonly IReminderService _reminderService;
         private readonly IEmailService _emailService;
@@ -31,14 +34,16 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Manually trigger reminder check for a specific user
+        /// Manually trigger reminder check for the authenticated user
         /// </summary>
-        /// <param name="userId">User ID to check reminders for</param>
         /// <returns>Number of reminders sent</returns>
         [HttpPost("check")]
         [ProducesResponseType(typeof(ReminderCheckResult), 200)]
-        public async Task<IActionResult> CheckReminders([FromQuery] Guid userId)
+        public async Task<IActionResult> CheckReminders()
         {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
             try
             {
                 _logger.LogInformation($"Manual reminder check triggered for user {userId}");
@@ -64,18 +69,20 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Get user reminder preferences
+        /// Get authenticated user's reminder preferences
         /// </summary>
-        /// <param name="userId">User ID</param>
         /// <returns>Reminder preferences</returns>
         [HttpGet("settings")]
         [ProducesResponseType(typeof(ReminderPreferences), 200)]
-        public async Task<IActionResult> GetReminderSettings([FromQuery] Guid userId)
+        public async Task<IActionResult> GetReminderSettings()
         {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
             try
             {
                 // Try to get existing preferences from database
-                var preferences = await _dbContext.Set<ReminderPreferences>()
+                var preferences = await _dbContext.ReminderPreferences
                     .FirstOrDefaultAsync(p => p.UserId == userId);
 
                 // If none exist, create default settings
@@ -108,19 +115,21 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Update user reminder preferences
+        /// Update authenticated user's reminder preferences
         /// </summary>
-        /// <param name="userId">User ID</param>
         /// <param name="preferences">Updated preferences</param>
         /// <returns>Updated preferences</returns>
         [HttpPut("settings")]
         [ProducesResponseType(typeof(ReminderPreferences), 200)]
-        public async Task<IActionResult> UpdateReminderSettings([FromQuery] Guid userId, [FromBody] ReminderPreferences preferences)
+        public async Task<IActionResult> UpdateReminderSettings([FromBody] ReminderPreferences preferences)
         {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
             try
             {
                 // Check if preferences already exist
-                var existing = await _dbContext.Set<ReminderPreferences>()
+                var existing = await _dbContext.ReminderPreferences
                     .FirstOrDefaultAsync(p => p.UserId == userId);
 
                 if (existing != null)
@@ -149,7 +158,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     preferences.CreatedAt = DateTime.UtcNow;
                     preferences.UpdatedAt = DateTime.UtcNow;
 
-                    _dbContext.Set<ReminderPreferences>().Add(preferences);
+                    _dbContext.ReminderPreferences.Add(preferences);
                     await _dbContext.SaveChangesAsync();
 
                     _logger.LogInformation($"Reminder settings created for user {userId}");
@@ -198,29 +207,41 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Check specific reminder types
         /// </summary>
         [HttpPost("check-bills")]
-        public async Task<IActionResult> CheckBillReminders([FromQuery] Guid userId)
+        public async Task<IActionResult> CheckBillReminders()
         {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
             var sent = await _reminderService.SendBillRemindersAsync(userId);
             return Ok(new { remindersSent = sent });
         }
 
         [HttpPost("check-loans")]
-        public async Task<IActionResult> CheckLoanReminders([FromQuery] Guid userId)
+        public async Task<IActionResult> CheckLoanReminders()
         {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
             var sent = await _reminderService.SendLoanPaymentRemindersAsync(userId);
             return Ok(new { remindersSent = sent });
         }
 
         [HttpPost("check-budgets")]
-        public async Task<IActionResult> CheckBudgetAlerts([FromQuery] Guid userId)
+        public async Task<IActionResult> CheckBudgetAlerts()
         {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
             var sent = await _reminderService.SendBudgetAlertsAsync(userId);
             return Ok(new { remindersSent = sent });
         }
 
         [HttpPost("check-savings")]
-        public async Task<IActionResult> CheckSavingsReminders([FromQuery] Guid userId)
+        public async Task<IActionResult> CheckSavingsReminders()
         {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
             var sent = await _reminderService.SendSavingsGoalRemindersAsync(userId);
             return Ok(new { remindersSent = sent });
         }

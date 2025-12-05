@@ -4,11 +4,11 @@ import { Link } from 'react-router-dom'
 import { 
   FiTrendingUp, 
   FiTrendingDown, 
-  FiDollarSign,
   FiArrowRight 
 } from 'react-icons/fi'
 import { transactionService } from '../services/api'
 import { format } from 'date-fns'
+import SecurityBadge from '../components/SecurityBadge'
 import './Dashboard.css'
 
 /**
@@ -79,7 +79,7 @@ function Dashboard() {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'EUR'
     }).format(amount)
   }
 
@@ -96,7 +96,10 @@ function Dashboard() {
     <div className="dashboard-page">
       {/* Page Header */}
       <div className="page-header">
-        <h1>{t('dashboard.title')}</h1>
+        <h1>
+          {t('dashboard.title')}
+          <SecurityBadge />
+        </h1>
         <p className="page-subtitle">{t('dashboard.monthlyOverview')}</p>
       </div>
 
@@ -127,7 +130,7 @@ function Dashboard() {
         {/* Balance Card */}
         <div className="summary-card balance-card">
           <div className="card-icon">
-            <FiDollarSign size={32} />
+            <span style={{ fontSize: '32px', fontWeight: 'bold' }}>€</span>
           </div>
           <div className="card-content">
             <h3>{t('dashboard.balance')}</h3>
@@ -182,7 +185,7 @@ function Dashboard() {
                     {format(new Date(transaction.date), 'MMM dd, yyyy')}
                     {transaction.user_profiles && (
                       <span className="added-by">
-                        {' • Added by '}
+                        {' • ' + t('dashboard.addedBy') + ' '}
                         {transaction.user_profiles.display_name}
                         {transaction.user_profiles.email && (
                           <span className="added-by-email"> ({transaction.user_profiles.email})</span>

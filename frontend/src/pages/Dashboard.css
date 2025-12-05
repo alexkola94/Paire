@@ -216,17 +216,31 @@
 
 /* Name tag showing who added the transaction */
 .added-by {
-  color: var(--primary-color);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--primary);
   font-weight: 500;
-  opacity: 0.9;
+  font-size: 0.875rem;
+  margin-left: var(--spacing-sm);
+  padding: 2px 8px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
   transition: var(--transition);
+}
+
+.added-by:hover {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-1px);
 }
 
 /* Email in name tag - slightly muted */
 .added-by-email {
   color: var(--text-light);
   font-weight: 400;
-  font-size: 0.85em;
+  font-size: 0.8em;
+  margin-left: var(--spacing-xs);
 }
 
 .transaction-amount {

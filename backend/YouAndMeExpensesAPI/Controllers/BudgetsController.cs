@@ -9,9 +9,8 @@ namespace YouAndMeExpensesAPI.Controllers
     /// API controller for managing budgets
     /// Uses Entity Framework Core for data access
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class BudgetsController : ControllerBase
+    public class BudgetsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger<BudgetsController> _logger;
@@ -23,24 +22,64 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets all budgets for the authenticated user
+        /// Gets all budgets for the authenticated user and their partner (if partnership exists)
+        /// Includes user profile information to show who created each budget
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<Budget>>> GetBudgets([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetBudgets()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Get budgets from user and partner(s)
                 var budgets = await _dbContext.Budgets
-                    .Where(b => b.UserId == userId)
+                    .Where(b => allUserIds.Contains(b.UserId))
                     .OrderByDescending(b => b.CreatedAt)
                     .ToListAsync();
 
-                return Ok(budgets);
+                // Get user profiles for all budget creators
+                var userIds = budgets.Select(b => b.UserId).Distinct().ToList();
+                var userProfiles = await _dbContext.UserProfiles
+                    .Where(up => userIds.Contains(up.Id.ToString()))
+                    .ToListAsync();
+
+                // Create a dictionary for quick lookup
+                var profileDict = userProfiles.ToDictionary(
+                    p => p.Id.ToString(),
+                    p => new
+                    {
+                        id = p.Id,
+                        email = p.Email,
+                        display_name = p.DisplayName,
+                        avatar_url = p.AvatarUrl
+                    }
+                );
+
+                // Enrich budgets with user profile data
+                var enrichedBudgets = budgets.Select(b => new
+                {
+                    id = b.Id,
+                    user_id = b.UserId,
+                    category = b.Category,
+                    amount = b.Amount,
+                    period = b.Period,
+                    spent_amount = b.SpentAmount,
+                    is_active = b.IsActive,
+                    start_date = b.StartDate,
+                    end_date = b.EndDate,
+                    created_at = b.CreatedAt,
+                    updated_at = b.UpdatedAt,
+                    user_profiles = profileDict.ContainsKey(b.UserId) ? profileDict[b.UserId] : null
+                }).ToList();
+
+                return Ok(enrichedBudgets);
             }
             catch (Exception ex)
             {
@@ -50,22 +89,56 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets a specific budget by ID
+        /// Helper method to get partner user IDs for the current user
+        /// </summary>
+        /// <param name="userId">Current user ID</param>
+        /// <returns>List of partner user IDs as strings</returns>
+        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
+        {
+            try
+            {
+                var partnership = await _dbContext.Partnerships
+                    .FirstOrDefaultAsync(p =>
+                        (p.User1Id == userId || p.User2Id == userId) &&
+                        p.Status == "active");
+
+                if (partnership == null)
+                {
+                    return new List<string>();
+                }
+
+                // Return the partner's ID
+                var partnerId = partnership.User1Id == userId
+                    ? partnership.User2Id
+                    : partnership.User1Id;
+
+                return new List<string> { partnerId.ToString() };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
+        /// Gets a specific budget by ID (must belong to user or partner)
         /// </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Budget>> GetBudget(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetBudget(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var budget = await _dbContext.Budgets
-                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+                    .FirstOrDefaultAsync(b => b.Id == id && allUserIds.Contains(b.UserId));
 
                 if (budget == null)
                 {
@@ -85,14 +158,10 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Creates a new budget
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<Budget>> CreateBudget(
-            [FromBody] Budget budget,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> CreateBudget([FromBody] Budget budget)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             // Validate budget
             if (budget.Amount <= 0)
@@ -109,7 +178,7 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 // Set budget properties
                 budget.Id = Guid.NewGuid();
-                budget.UserId = userId;
+                budget.UserId = userId.ToString();
                 budget.CreatedAt = DateTime.UtcNow;
                 budget.UpdatedAt = DateTime.UtcNow;
 
@@ -155,15 +224,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Updates an existing budget
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult<Budget>> UpdateBudget(
+        public async Task<IActionResult> UpdateBudget(
             Guid id,
-            [FromBody] Budget budget,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] Budget budget)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (id != budget.Id)
             {
@@ -172,8 +238,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to update the budget
                 var existingBudget = await _dbContext.Budgets
-                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+                    .FirstOrDefaultAsync(b => b.Id == id && allUserIds.Contains(b.UserId));
 
                 if (existingBudget == null)
                 {
@@ -238,19 +310,21 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Deletes a budget
         /// </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteBudget(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> DeleteBudget(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to delete the budget
                 var budget = await _dbContext.Budgets
-                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+                    .FirstOrDefaultAsync(b => b.Id == id && allUserIds.Contains(b.UserId));
 
                 if (budget == null)
                 {

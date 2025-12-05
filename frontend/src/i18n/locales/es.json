@@ -1,4 +1,42 @@
 {
+  "app": {
+    "title": "Paire",
+    "tagline": "Finanzas, alineadas."
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "signup": "Registrarse",
+    "logout": "Cerrar Sesión",
+    "email": "Email",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "Restablecer Contraseña",
+    "dontHaveAccount": "¿No tienes una cuenta?",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "welcomeBack": "¡Bienvenido de Nuevo!",
+    "createAccount": "Crea tu Cuenta",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+    "accountCreated": "¡Cuenta creada exitosamente! Por favor verifica tu email para confirmar.",
+    "newPasswordPlaceholder": "Ingresa nueva contraseña",
+    "confirmPasswordPlaceholder": "Confirma nueva contraseña",
+    "currentPasswordPlaceholder": "Ingresa contraseña actual",
+    "forgotPasswordTitle": "¿Olvidaste tu Contraseña?",
+    "forgotPasswordDescription": "Ingresa tu dirección de email y te enviaremos un enlace para restablecer tu contraseña.",
+    "sendResetLink": "Enviar Enlace de Restablecimiento",
+    "sendingResetLink": "Enviando...",
+    "forgotPasswordSuccessTitle": "Revisa tu Email",
+    "forgotPasswordSuccessMessage": "Si existe una cuenta con ese email, te hemos enviado un enlace para restablecer tu contraseña.",
+    "emailSentTo": "Email enviado a",
+    "backToLogin": "Volver a Iniciar Sesión",
+    "invalidEmail": "Por favor ingresa una dirección de email válida"
+  },
+  "messages": {
+    "operationFailed": "La operación falló. Por favor intenta de nuevo.",
+    "fillRequired": "Por favor completa todos los campos requeridos"
+  },
   "shoppingLists": {
     "title": "Listas de Compras",
     "newList": "Nueva Lista",

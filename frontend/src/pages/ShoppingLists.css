@@ -123,6 +123,12 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: var(--spacing-xs);
+  gap: var(--spacing-sm);
+}
+
+.list-title-section {
+  flex: 1;
+  min-width: 0;
 }
 
 .list-card-header h4 {
@@ -132,7 +138,25 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
+}
+
+.list-added-by {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: var(--transition);
+}
+
+.list-added-by:hover {
+  color: var(--primary-color);
+}
+
+.list-added-by .added-by-email {
+  opacity: 0.7;
+  font-size: 0.7rem;
 }
 
 .list-actions {

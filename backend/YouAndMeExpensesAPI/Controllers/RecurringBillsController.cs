@@ -10,9 +10,8 @@ namespace YouAndMeExpensesAPI.Controllers
     /// Helps users track and manage regular payments
     /// Uses Entity Framework Core for data access
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class RecurringBillsController : ControllerBase
+    public class RecurringBillsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger<RecurringBillsController> _logger;
@@ -24,24 +23,67 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets all recurring bills for the authenticated user
+        /// Gets all recurring bills for the authenticated user and their partner (if partnership exists)
+        /// Includes user profile information to show who created each bill
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<RecurringBill>>> GetRecurringBills([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetRecurringBills()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Get recurring bills from user and partner(s)
                 var bills = await _dbContext.RecurringBills
-                    .Where(b => b.UserId == userId)
+                    .Where(b => allUserIds.Contains(b.UserId))
                     .OrderBy(b => b.NextDueDate)
                     .ToListAsync();
 
-                return Ok(bills);
+                // Get user profiles for all bill creators
+                var userIds = bills.Select(b => b.UserId).Distinct().ToList();
+                var userProfiles = await _dbContext.UserProfiles
+                    .Where(up => userIds.Contains(up.Id.ToString()))
+                    .ToListAsync();
+
+                // Create a dictionary for quick lookup
+                var profileDict = userProfiles.ToDictionary(
+                    p => p.Id.ToString(),
+                    p => new
+                    {
+                        id = p.Id,
+                        email = p.Email,
+                        display_name = p.DisplayName,
+                        avatar_url = p.AvatarUrl
+                    }
+                );
+
+                // Enrich bills with user profile data (using camelCase for frontend compatibility)
+                var enrichedBills = bills.Select(b => new
+                {
+                    id = b.Id,
+                    userId = b.UserId,
+                    name = b.Name,
+                    amount = b.Amount,
+                    category = b.Category,
+                    frequency = b.Frequency,
+                    dueDay = b.DueDay,
+                    nextDueDate = b.NextDueDate,
+                    autoPay = b.AutoPay,
+                    reminderDays = b.ReminderDays,
+                    isActive = b.IsActive,
+                    notes = b.Notes,
+                    createdAt = b.CreatedAt,
+                    updatedAt = b.UpdatedAt,
+                    user_profiles = profileDict.ContainsKey(b.UserId) ? profileDict[b.UserId] : null
+                }).ToList();
+
+                return Ok(enrichedBills);
             }
             catch (Exception ex)
             {
@@ -51,22 +93,56 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets a specific recurring bill by ID
+        /// Helper method to get partner user IDs for the current user
+        /// </summary>
+        /// <param name="userId">Current user ID</param>
+        /// <returns>List of partner user IDs as strings</returns>
+        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
+        {
+            try
+            {
+                var partnership = await _dbContext.Partnerships
+                    .FirstOrDefaultAsync(p =>
+                        (p.User1Id == userId || p.User2Id == userId) &&
+                        p.Status == "active");
+
+                if (partnership == null)
+                {
+                    return new List<string>();
+                }
+
+                // Return the partner's ID
+                var partnerId = partnership.User1Id == userId
+                    ? partnership.User2Id
+                    : partnership.User1Id;
+
+                return new List<string> { partnerId.ToString() };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
+        /// Gets a specific recurring bill by ID (must belong to user or partner)
         /// </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<RecurringBill>> GetRecurringBill(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetRecurringBill(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var bill = await _dbContext.RecurringBills
-                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+                    .FirstOrDefaultAsync(b => b.Id == id && allUserIds.Contains(b.UserId));
 
                 if (bill == null)
                 {
@@ -86,14 +162,10 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Creates a new recurring bill
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<RecurringBill>> CreateRecurringBill(
-            [FromBody] RecurringBill bill,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> CreateRecurringBill([FromBody] RecurringBill bill)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             // Validate bill
             if (bill.Amount <= 0)
@@ -115,7 +187,7 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 // Set bill properties
                 bill.Id = Guid.NewGuid();
-                bill.UserId = userId;
+                bill.UserId = userId.ToString();
                 bill.CreatedAt = DateTime.UtcNow;
                 bill.UpdatedAt = DateTime.UtcNow;
                 bill.IsActive = true;
@@ -164,15 +236,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Updates an existing recurring bill
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult<RecurringBill>> UpdateRecurringBill(
+        public async Task<IActionResult> UpdateRecurringBill(
             Guid id,
-            [FromBody] RecurringBill bill,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] RecurringBill bill)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (id != bill.Id)
             {
@@ -181,8 +250,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to update the recurring bill
                 var existingBill = await _dbContext.RecurringBills
-                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+                    .FirstOrDefaultAsync(b => b.Id == id && allUserIds.Contains(b.UserId));
 
                 if (existingBill == null)
                 {
@@ -226,22 +301,24 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Deletes a recurring bill
+        /// Deletes a recurring bill (must belong to user or partner)
         /// </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteRecurringBill(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> DeleteRecurringBill(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to delete the recurring bill
                 var bill = await _dbContext.RecurringBills
-                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+                    .FirstOrDefaultAsync(b => b.Id == id && allUserIds.Contains(b.UserId));
 
                 if (bill == null)
                 {
@@ -264,19 +341,15 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Mark a bill as paid for the current period
         /// </summary>
         [HttpPost("{id}/mark-paid")]
-        public async Task<ActionResult<RecurringBill>> MarkBillPaid(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> MarkBillPaid(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
                 var bill = await _dbContext.RecurringBills
-                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId);
+                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId.ToString());
 
                 if (bill == null)
                 {
@@ -302,22 +375,23 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Get upcoming bills (due within specified days)
         /// </summary>
         [HttpGet("upcoming")]
-        public async Task<ActionResult> GetUpcomingBills(
-            [FromHeader(Name = "X-User-Id")] string userId,
-            [FromQuery] int days = 30)
+        public async Task<IActionResult> GetUpcomingBills([FromQuery] int days = 30)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
                 var today = DateTime.UtcNow.Date;
                 var futureDate = today.AddDays(days);
 
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var upcomingBills = await _dbContext.RecurringBills
-                    .Where(b => b.UserId == userId && b.IsActive && b.NextDueDate <= futureDate)
+                    .Where(b => allUserIds.Contains(b.UserId) && b.IsActive && b.NextDueDate <= futureDate)
                     .OrderBy(b => b.NextDueDate)
                     .ToListAsync();
 
@@ -334,17 +408,20 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Get recurring bills summary statistics
         /// </summary>
         [HttpGet("summary")]
-        public async Task<ActionResult> GetSummary([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetSummary()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var bills = await _dbContext.RecurringBills
-                    .Where(b => b.UserId == userId)
+                    .Where(b => allUserIds.Contains(b.UserId))
                     .ToListAsync();
 
                 var activeBills = bills.Where(b => b.IsActive).ToList();

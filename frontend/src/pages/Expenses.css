@@ -6,6 +6,11 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* ================================
    Form Modal
    ================================ */
@@ -42,6 +47,32 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ================================
+   Empty State
+   ================================ */
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.empty-state p {
+  color: var(--text-light);
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.empty-state .btn {
+  min-width: 200px;
+  transition: var(--transition);
 }
 
 /* ================================
@@ -106,17 +137,31 @@
 
 /* Name tag showing who added the expense */
 .expense-date .added-by {
-  color: var(--primary-color);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--primary);
   font-weight: 500;
-  opacity: 0.9;
+  font-size: 0.875rem;
+  margin-left: var(--spacing-sm);
+  padding: 2px 8px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
   transition: var(--transition);
+}
+
+.expense-date .added-by:hover {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-1px);
 }
 
 /* Email in name tag - slightly muted */
 .expense-date .added-by-email {
   color: var(--text-light);
   font-weight: 400;
-  font-size: 0.85em;
+  font-size: 0.8em;
+  margin-left: var(--spacing-xs);
 }
 
 /* ================================
@@ -215,6 +260,27 @@
 
   .page-header button {
     width: 100%;
+  }
+
+  /* Empty state responsive adjustments */
+  .empty-state {
+    padding: var(--spacing-lg);
+  }
+
+  .empty-state .btn {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .expense-amount {
+    font-size: 1.25rem;
+  }
+}
+
+/* Tablet optimization */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .empty-state {
+    padding: var(--spacing-xl) var(--spacing-xl);
   }
 }
 

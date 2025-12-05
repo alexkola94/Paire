@@ -4,6 +4,7 @@ import { FiPlus, FiEdit, FiTrash2, FiFileText } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
+import ConfirmationModal from '../components/ConfirmationModal'
 import './Expenses.css'
 
 /**
@@ -17,6 +18,7 @@ function Expenses() {
   const [showForm, setShowForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, expense: null })
 
   /**
    * Load expenses on mount
@@ -76,12 +78,28 @@ function Expenses() {
   }
 
   /**
+   * Open delete confirmation modal
+   */
+  const openDeleteModal = (expense) => {
+    setDeleteModal({ isOpen: true, expense })
+  }
+
+  /**
+   * Close delete confirmation modal
+   */
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, expense: null })
+  }
+
+  /**
    * Handle deleting expense
    */
-  const handleDelete = async (expense) => {
-    if (!window.confirm(t('messages.confirmDelete'))) return
+  const handleDelete = async () => {
+    const { expense } = deleteModal
+    if (!expense) return
 
     try {
+      setFormLoading(true)
       // Delete attachment if exists
       if (expense.attachment_path) {
         await storageService.deleteFile(expense.attachment_path)
@@ -89,8 +107,11 @@ function Expenses() {
       
       await transactionService.delete(expense.id)
       await loadExpenses()
+      closeDeleteModal()
     } catch (error) {
       console.error('Error deleting expense:', error)
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -116,7 +137,7 @@ function Expenses() {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'EUR'
     }).format(amount)
   }
 
@@ -208,7 +229,7 @@ function Expenses() {
                 {format(new Date(expense.date), 'MMMM dd, yyyy')}
                 {expense.user_profiles && (
                   <span className="added-by">
-                    {' • Added by '}
+                    {' • ' + t('dashboard.addedBy') + ' '}
                     {expense.user_profiles.display_name}
                     {expense.user_profiles.email && (
                       <span className="added-by-email"> ({expense.user_profiles.email})</span>
@@ -238,7 +259,7 @@ function Expenses() {
                   <FiEdit size={18} />
                 </button>
                 <button
-                  onClick={() => handleDelete(expense)}
+                  onClick={() => openDeleteModal(expense)}
                   className="btn-icon delete"
                   aria-label="Delete"
                 >
@@ -249,6 +270,18 @@ function Expenses() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        title={t('expenses.deleteExpense')}
+        message={t('messages.confirmDelete')}
+        confirmText={t('common.delete')}
+        loading={formLoading}
+        variant="danger"
+      />
     </div>
   )
 }

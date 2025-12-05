@@ -3,12 +3,12 @@
    ================================ */
 
 :root {
-  /* Color Palette - Soft, easy on the eyes */
-  --primary: #9b87f5;
-  --primary-light: #b5a3f7;
-  --primary-dark: #7c63d4;
+  /* Color Palette - Paire Brand Colors */
+  --primary: #6c5ce7;
+  --primary-light: #a29bfe;
+  --primary-dark: #4a3f8f;
   --secondary: #f0e6ff;
-  --accent: #ffc9e5;
+  --accent: #a29bfe;
   
   /* Neutral Colors */
   --bg-primary: #fafafa;

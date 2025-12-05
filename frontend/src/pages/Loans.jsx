@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiDollarSign, FiList, FiTrendingDown } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDown } from 'react-icons/fi'
 import { loanService, loanPaymentService } from '../services/api'
 import { format } from 'date-fns'
+import ConfirmationModal from '../components/ConfirmationModal'
 import './Loans.css'
 
 /**
@@ -19,6 +20,8 @@ function Loans() {
   const [viewingPayments, setViewingPayments] = useState(null)
   const [paymentHistory, setPaymentHistory] = useState([])
   const [showPaymentForm, setShowPaymentForm] = useState(false)
+  const [deleteLoanModal, setDeleteLoanModal] = useState({ isOpen: false, loan: null })
+  const [deletePaymentModal, setDeletePaymentModal] = useState({ isOpen: false, paymentId: null })
   const [paymentFormData, setPaymentFormData] = useState({
     amount: '',
     principalAmount: '',
@@ -64,10 +67,16 @@ function Loans() {
    */
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value }
+      
+      // Auto-update remainingAmount when amount changes for new loans
+      if (name === 'amount' && !editingLoan && value) {
+        updated.remainingAmount = value
+      }
+      
+      return updated
+    })
   }
 
   /**
@@ -80,9 +89,16 @@ function Loans() {
       setFormLoading(true)
       
       // Prepare loan data based on type
+      // For new loans, remainingAmount should equal amount (no payments yet)
+      // For editing, use the form value
+      const loanAmount = parseFloat(formData.amount)
+      const remainingAmount = editingLoan 
+        ? parseFloat(formData.remainingAmount || formData.amount)
+        : loanAmount // For new loans, remaining = amount
+      
       const loanData = {
-        amount: parseFloat(formData.amount),
-        remainingAmount: parseFloat(formData.remainingAmount),
+        amount: loanAmount,
+        remainingAmount: remainingAmount,
         lentBy: formData.type === 'given' ? 'Me' : formData.lentBy,
         borrowedBy: formData.type === 'given' ? formData.borrowedBy : 'Me',
         description: formData.description,
@@ -92,6 +108,8 @@ function Loans() {
       }
 
       if (editingLoan) {
+        // Include the ID in the loan data for the update request
+        loanData.id = editingLoan.id
         await loanService.update(editingLoan.id, loanData)
       } else {
         await loanService.create(loanData)
@@ -107,14 +125,30 @@ function Loans() {
   }
 
   /**
+   * Open delete loan confirmation modal
+   */
+  const openDeleteLoanModal = (loan) => {
+    setDeleteLoanModal({ isOpen: true, loan })
+  }
+
+  /**
+   * Close delete loan confirmation modal
+   */
+  const closeDeleteLoanModal = () => {
+    setDeleteLoanModal({ isOpen: false, loan: null })
+  }
+
+  /**
    * Handle deleting loan
    */
-  const handleDelete = async (loan) => {
-    if (!window.confirm(t('messages.confirmDelete'))) return
+  const handleDelete = async () => {
+    const { loan } = deleteLoanModal
+    if (!loan) return
 
     try {
       await loanService.delete(loan.id)
       await loadLoans()
+      closeDeleteLoanModal()
     } catch (error) {
       console.error('Error deleting loan:', error)
     }
@@ -127,15 +161,20 @@ function Loans() {
     setEditingLoan(loan)
     // Determine type based on lentBy/borrowedBy
     const isGiven = loan.lentBy === 'Me'
+    // Handle both camelCase and snake_case property names
+    const loanData = {
+      lentBy: loan.lentBy || loan.lent_by,
+      borrowedBy: loan.borrowedBy || loan.borrowed_by,
+      amount: loan.amount,
+      remainingAmount: loan.remainingAmount ?? loan.remaining_amount ?? loan.amount,
+      dueDate: (loan.dueDate || loan.due_date) ? (loan.dueDate || loan.due_date).split('T')[0] : '',
+      description: loan.description || '',
+      isSettled: loan.isSettled ?? loan.is_settled ?? false
+    }
+    
     setFormData({
       type: isGiven ? 'given' : 'received',
-      lentBy: loan.lentBy,
-      borrowedBy: loan.borrowedBy,
-      amount: loan.amount,
-      remainingAmount: loan.remainingAmount,
-      dueDate: loan.dueDate ? loan.dueDate.split('T')[0] : '',
-      description: loan.description || '',
-      isSettled: loan.isSettled
+      ...loanData
     })
     setShowForm(true)
   }
@@ -213,15 +252,31 @@ function Loans() {
   }
 
   /**
+   * Open delete payment confirmation modal
+   */
+  const openDeletePaymentModal = (paymentId) => {
+    setDeletePaymentModal({ isOpen: true, paymentId })
+  }
+
+  /**
+   * Close delete payment confirmation modal
+   */
+  const closeDeletePaymentModal = () => {
+    setDeletePaymentModal({ isOpen: false, paymentId: null })
+  }
+
+  /**
    * Handle deleting a payment
    */
-  const handleDeletePayment = async (paymentId) => {
-    if (!confirm('Are you sure you want to delete this payment?')) return
+  const handleDeletePayment = async () => {
+    const { paymentId } = deletePaymentModal
+    if (!paymentId) return
 
     try {
       await loanPaymentService.delete(paymentId)
       await loadLoans()
       await loadPaymentHistory(viewingPayments)
+      closeDeletePaymentModal()
     } catch (error) {
       console.error('Error deleting payment:', error)
     }
@@ -237,13 +292,24 @@ function Loans() {
   }
 
   /**
-   * Format currency
+   * Format currency with safety check for null/undefined/NaN values
    */
   const formatCurrency = (amount) => {
+    // Handle null, undefined, NaN, or invalid values
+    if (amount == null || isNaN(amount) || amount === 'NaN') {
+      return '€0.00'
+    }
+    
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+    
+    if (isNaN(numAmount)) {
+      return '€0.00'
+    }
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
-    }).format(amount)
+      currency: 'EUR'
+    }).format(numAmount)
   }
 
   if (loading) {
@@ -302,7 +368,7 @@ function Loans() {
                       checked={formData.type === 'given'}
                       onChange={handleChange}
                     />
-                    <span>Money Lent (Given)</span>
+                    <span>{t('loans.moneyLent')}</span>
                   </label>
                   <label className="radio-label">
                     <input
@@ -312,7 +378,7 @@ function Loans() {
                       checked={formData.type === 'received'}
                       onChange={handleChange}
                     />
-                    <span>Money Borrowed (Received)</span>
+                    <span>{t('loans.moneyBorrowed')}</span>
                   </label>
                 </div>
               </div>
@@ -328,7 +394,7 @@ function Loans() {
                   name={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
                   value={formData.type === 'given' ? formData.borrowedBy : formData.lentBy}
                   onChange={handleChange}
-                  placeholder="Enter name"
+                  placeholder={t('loans.enterName')}
                   required
                 />
               </div>
@@ -345,6 +411,7 @@ function Loans() {
                   placeholder="0.00"
                   step="0.01"
                   min="0"
+                  max="1000000"
                   required
                 />
               </div>
@@ -361,8 +428,16 @@ function Loans() {
                   placeholder="0.00"
                   step="0.01"
                   min="0"
+                  max="1000000"
                   required
+                  readOnly={!editingLoan} // Read-only for new loans (auto-calculated)
+                  title={!editingLoan ? "Remaining amount equals total amount for new loans" : ""}
                 />
+                {!editingLoan && (
+                  <small className="form-hint">
+                    For new loans, remaining amount equals total amount
+                  </small>
+                )}
               </div>
 
               {/* Due Date */}
@@ -399,7 +474,7 @@ function Loans() {
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  placeholder="Additional notes..."
+                  placeholder={t('loans.additionalNotes')}
                   rows="3"
                 />
               </div>
@@ -442,17 +517,18 @@ function Loans() {
       ) : (
         <div className="loans-grid">
           {loans.map((loan) => {
-            const isGiven = loan.lentBy === 'Me'
-            const partyName = isGiven ? loan.borrowedBy : loan.lentBy
+            // Handle both camelCase and snake_case property names
+            const isGiven = (loan.lentBy || loan.lent_by) === 'Me'
+            const partyName = isGiven ? (loan.borrowedBy || loan.borrowed_by) : (loan.lentBy || loan.lent_by)
             
             return (
               <div key={loan.id} className={`loan-card card ${isGiven ? 'given' : 'received'}`}>
                 <div className="loan-header">
                   <div className="loan-type-badge">
-                    {isGiven ? 'Money Lent' : 'Money Borrowed'}
+                    {isGiven ? t('loans.moneyLentShort') : t('loans.moneyBorrowedShort')}
                   </div>
-                  <div className={`loan-status ${loan.isSettled ? 'completed' : 'active'}`}>
-                    {loan.isSettled ? (
+                  <div className={`loan-status ${(loan.isSettled ?? loan.is_settled) ? 'completed' : 'active'}`}>
+                    {(loan.isSettled ?? loan.is_settled) ? (
                       <FiCheckCircle size={20} />
                     ) : (
                       <FiClock size={20} />
@@ -466,21 +542,21 @@ function Loans() {
                   <div className="amount-item">
                     <span className="amount-label">{t('loans.totalAmount')}</span>
                     <span className="amount-value">
-                      {formatCurrency(loan.amount)}
+                      {formatCurrency(loan.amount ?? 0)}
                     </span>
                   </div>
                   <div className="amount-item">
                     <span className="amount-label">{t('loans.remainingAmount')}</span>
                     <span className="amount-value remaining">
-                      {formatCurrency(loan.remainingAmount)}
+                      {formatCurrency(loan.remainingAmount ?? loan.remaining_amount ?? 0)}
                     </span>
                   </div>
                 </div>
 
-                {loan.dueDate && (
+                {(loan.dueDate || loan.due_date) && (
                   <div className="loan-due-date">
                     <strong>{t('loans.dueDate')}:</strong>{' '}
-                    {format(new Date(loan.dueDate), 'MMM dd, yyyy')}
+                    {format(new Date(loan.dueDate || loan.due_date), 'MMM dd, yyyy')}
                   </div>
                 )}
 
@@ -498,27 +574,25 @@ function Loans() {
                 )}
 
                 <div className="loan-actions">
-                  {!loan.isSettled && (
-                    <button
-                      onClick={() => loadPaymentHistory(loan.id)}
-                      className="btn btn-sm btn-primary"
-                      title="View Payment History"
-                    >
-                      <FiList size={16} />
-                      Payments
-                    </button>
-                  )}
+                  <button
+                    onClick={() => loadPaymentHistory(loan.id)}
+                    className="btn btn-sm btn-primary"
+                    title="View Payment History"
+                  >
+                    <FiList size={16} />
+                    Payments
+                  </button>
                   <button
                     onClick={() => openEditForm(loan)}
                     className="btn-icon"
-                    aria-label="Edit"
+                    aria-label={t('common.edit')}
                   >
                     <FiEdit size={18} />
                   </button>
                   <button
-                    onClick={() => handleDelete(loan)}
+                    onClick={() => openDeleteLoanModal(loan)}
                     className="btn-icon delete"
-                    aria-label="Delete"
+                    aria-label={t('common.delete')}
                   >
                     <FiTrash2 size={18} />
                   </button>
@@ -535,7 +609,7 @@ function Loans() {
           <div className="modal-content payment-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>
-                <FiDollarSign /> Payment History
+                <span style={{ fontSize: '20px', fontWeight: 'bold', marginRight: '8px' }}>€</span> Payment History
               </h2>
               <button className="close-btn" onClick={closePaymentHistory}>&times;</button>
             </div>
@@ -554,13 +628,13 @@ function Loans() {
                   </div>
                   <div className="summary-item">
                     <span className="label">Remaining:</span>
-                    <span className="value remaining">{formatCurrency(loans.find(l => l.id === viewingPayments).remainingAmount)}</span>
+                    <span className="value remaining">{formatCurrency(loans.find(l => l.id === viewingPayments)?.remainingAmount ?? loans.find(l => l.id === viewingPayments)?.remaining_amount ?? 0)}</span>
                   </div>
                 </div>
               )}
 
-              {/* Add Payment Button */}
-              {!showPaymentForm && (
+              {/* Add Payment Button - Only show for non-settled loans */}
+              {!showPaymentForm && !(loans.find(l => l.id === viewingPayments)?.isSettled ?? loans.find(l => l.id === viewingPayments)?.is_settled) && (
                 <button 
                   className="btn btn-primary btn-block"
                   onClick={() => setShowPaymentForm(true)}
@@ -584,6 +658,7 @@ function Loans() {
                         required
                         step="0.01"
                         min="0"
+                        max="1000000"
                         placeholder="0.00"
                       />
                     </div>
@@ -598,7 +673,8 @@ function Loans() {
                           onChange={handlePaymentChange}
                           step="0.01"
                           min="0"
-                          placeholder="Optional"
+                          max="1000000"
+                          placeholder={t('common.optional')}
                         />
                       </div>
 
@@ -611,7 +687,8 @@ function Loans() {
                           onChange={handlePaymentChange}
                           step="0.01"
                           min="0"
-                          placeholder="Optional"
+                          max="1000000"
+                          placeholder={t('common.optional')}
                         />
                       </div>
                     </div>
@@ -634,7 +711,7 @@ function Loans() {
                         value={paymentFormData.notes}
                         onChange={handlePaymentChange}
                         rows="2"
-                        placeholder="Optional payment notes..."
+                        placeholder={t('loans.paymentNotesPlaceholder')}
                       />
                     </div>
 
@@ -706,7 +783,7 @@ function Loans() {
                         </div>
                         <button
                           className="btn-icon delete"
-                          onClick={() => handleDeletePayment(payment.id)}
+                          onClick={() => openDeletePaymentModal(payment.id)}
                           aria-label="Delete Payment"
                         >
                           <FiTrash2 size={16} />
@@ -720,6 +797,28 @@ function Loans() {
           </div>
         </div>
       )}
+
+      {/* Delete Loan Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteLoanModal.isOpen}
+        onClose={closeDeleteLoanModal}
+        onConfirm={handleDelete}
+        title={t('loans.deleteLoan')}
+        message={t('messages.confirmDelete')}
+        confirmText={t('common.delete')}
+        variant="danger"
+      />
+
+      {/* Delete Payment Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deletePaymentModal.isOpen}
+        onClose={closeDeletePaymentModal}
+        onConfirm={handleDeletePayment}
+        title={t('loans.deletePayment')}
+        message={t('loans.confirmDeletePayment')}
+        confirmText={t('common.delete')}
+        variant="danger"
+      />
     </div>
   )
 }

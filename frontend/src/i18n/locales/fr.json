@@ -1,4 +1,42 @@
 {
+  "app": {
+    "title": "Paire",
+    "tagline": "Finances, alignées."
+  },
+  "auth": {
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "logout": "Déconnexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "forgotPassword": "Mot de passe oublié?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "dontHaveAccount": "Vous n'avez pas de compte?",
+    "alreadyHaveAccount": "Vous avez déjà un compte?",
+    "welcomeBack": "Bon Retour!",
+    "createAccount": "Créez votre compte",
+    "emailPlaceholder": "vous@exemple.com",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+    "accountCreated": "Compte créé avec succès! Veuillez vérifier votre email pour confirmer.",
+    "newPasswordPlaceholder": "Entrez le nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez le nouveau mot de passe",
+    "currentPasswordPlaceholder": "Entrez le mot de passe actuel",
+    "forgotPasswordTitle": "Mot de passe oublié?",
+    "forgotPasswordDescription": "Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "sendResetLink": "Envoyer le lien de réinitialisation",
+    "sendingResetLink": "Envoi...",
+    "forgotPasswordSuccessTitle": "Vérifiez votre email",
+    "forgotPasswordSuccessMessage": "Si un compte avec cet email existe, nous vous avons envoyé un lien de réinitialisation de mot de passe.",
+    "emailSentTo": "Email envoyé à",
+    "backToLogin": "Retour à la connexion",
+    "invalidEmail": "Veuillez entrer une adresse email valide"
+  },
+  "messages": {
+    "operationFailed": "L'opération a échoué. Veuillez réessayer.",
+    "fillRequired": "Veuillez remplir tous les champs requis"
+  },
   "shoppingLists": {
     "title": "Listes de Courses",
     "newList": "Nouvelle Liste",

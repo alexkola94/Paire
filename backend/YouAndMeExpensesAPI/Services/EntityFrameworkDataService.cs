@@ -6,21 +6,18 @@ namespace YouAndMeExpensesAPI.Services
 {
     /// <summary>
     /// Entity Framework implementation of data service
-    /// Replaces Supabase SDK with EF Core for database operations
+    /// Uses EF Core for all database operations
     /// </summary>
     public class EntityFrameworkDataService : ISupabaseService
     {
         private readonly AppDbContext _dbContext;
-        private readonly Supabase.Client _supabaseClient; // Keep for Storage operations
         private readonly ILogger<EntityFrameworkDataService> _logger;
 
         public EntityFrameworkDataService(
             AppDbContext dbContext,
-            Supabase.Client supabaseClient,
             ILogger<EntityFrameworkDataService> logger)
         {
             _dbContext = dbContext;
-            _supabaseClient = supabaseClient;
             _logger = logger;
         }
 
@@ -281,48 +278,26 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         // ============================================
-        // STORAGE (Still uses Supabase Storage)
+        // STORAGE - Local File Storage Implementation
         // ============================================
+        // TODO: Implement local file storage (replacing Supabase Storage)
+        // Options: Local filesystem, Azure Blob Storage, AWS S3, etc.
 
         public async Task<string> UploadReceiptAsync(Stream file, string fileName, string userId)
         {
-            try
-            {
-                var bucket = _supabaseClient.Storage.From("receipts");
-                var filePath = $"{userId}/{fileName}";
-
-                // Convert stream to byte array for Supabase
-                using var memoryStream = new MemoryStream();
-                await file.CopyToAsync(memoryStream);
-                var fileBytes = memoryStream.ToArray();
-
-                await bucket.Upload(fileBytes, filePath);
-                var publicUrl = bucket.GetPublicUrl(filePath);
-
-                return publicUrl;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error uploading receipt {FileName} for user {UserId}", fileName, userId);
-                throw;
-            }
+            // TODO: Implement local file storage
+            // For now, return a placeholder indicating file storage not yet implemented
+            _logger.LogWarning("File upload not yet implemented - Supabase Storage removed");
+            await Task.CompletedTask;
+            throw new NotImplementedException("File storage not yet implemented. Please implement local file storage.");
         }
 
         public async Task<bool> DeleteReceiptAsync(string fileName, string userId)
         {
-            try
-            {
-                var bucket = _supabaseClient.Storage.From("receipts");
-                var filePath = $"{userId}/{fileName}";
-
-                await bucket.Remove(new List<string> { filePath });
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting receipt {FileName} for user {UserId}", fileName, userId);
-                return false;
-            }
+            // TODO: Implement local file deletion
+            _logger.LogWarning("File deletion not yet implemented - Supabase Storage removed");
+            await Task.CompletedTask;
+            throw new NotImplementedException("File storage not yet implemented. Please implement local file storage.");
         }
     }
 }

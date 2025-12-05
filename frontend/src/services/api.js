@@ -1,146 +1,147 @@
-import { supabase } from './supabase'
+import { getToken, getStoredUser } from './auth'
 
 /**
  * API Service for database operations
- * Uses Supabase client for all CRUD operations
+ * Uses custom backend API with JWT authentication
  */
 
 // ========================================
 // Backend API Configuration
 // ========================================
 
-const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:5038';
+import { getBackendUrl as getBackendApiUrl } from '../utils/getBackendUrl';
+
+/**
+ * Get current authenticated user
+ * @returns {Object|null} User object or null if not authenticated
+ */
+const getCurrentUser = () => {
+  const token = getToken()
+  const user = getStoredUser()
+  
+  if (!token || !user) {
+    throw new Error('User not authenticated')
+  }
+  
+  return user
+}
+
+/**
+ * Make authenticated API request to backend
+ * @param {string} url - API endpoint URL
+ * @param {Object} options - Fetch options
+ * @returns {Promise<any>} Response data
+ */
+const apiRequest = async (url, options = {}) => {
+  const token = getToken()
+  // Get URL dynamically on each request to ensure it uses current window location
+  let backendApiUrl = getBackendApiUrl()
+  
+  // CRITICAL SAFETY CHECK: If we're on an IP but got localhost, FORCE use the IP
+  if (typeof window !== 'undefined' && window.location) {
+    const currentHostname = window.location.hostname
+    const currentProtocol = window.location.protocol
+    
+    // If we're accessing via IP but got localhost, something is very wrong
+    if (currentHostname && 
+        currentHostname !== 'localhost' && 
+        currentHostname !== '127.0.0.1' &&
+        backendApiUrl.includes('localhost')) {
+      // FORCE use the IP - override whatever getBackendApiUrl() returned
+      backendApiUrl = `${currentProtocol}//${currentHostname}:5038`
+    }
+  }
+  
+  const fullUrl = `${backendApiUrl}${url}`
+  
+  const headers = {
+    ...options.headers
+  }
+
+  // Add Content-Type for POST/PUT requests with body
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  try {
+    const response = await fetch(fullUrl, {
+      ...options,
+      headers
+    })
+
+    // For DELETE requests, don't try to parse JSON if there's no content
+    if (options.method === 'DELETE' && response.status === 204) {
+      return
+    }
+
+    if (!response.ok) {
+      const errorData = await response.text().catch(() => '')
+      const errorMessage = errorData || `HTTP error! status: ${response.status}`
+      throw new Error(errorMessage)
+    }
+
+    // Only parse JSON if there's content
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json()
+    }
+    
+    return await response.text()
+  } catch (error) {
+    // Network errors (CORS, connection refused, etc.)
+    if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
+      throw new Error(`Cannot connect to API at ${fullUrl}. Please check if the server is running and CORS is configured correctly.`)
+    }
+    throw error
+  }
+}
 
 // ========================================
 // Transactions (Expenses & Income)
 // ========================================
 
 export const transactionService = {
-  /**
-   * Get all transactions with optional filters
-   * Uses backend API with Entity Framework
-   * @param {Object} filters - Filter options (type, startDate, endDate)
-   */
   async getAll(filters = {}) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
     const params = new URLSearchParams()
     if (filters.type) params.append('type', filters.type)
     if (filters.startDate) params.append('startDate', filters.startDate)
     if (filters.endDate) params.append('endDate', filters.endDate)
 
-    const response = await fetch(`${BACKEND_API_URL}/api/transactions?${params}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch transactions')
-    return await response.json()
+    return await apiRequest(`/api/transactions?${params}`)
   },
 
-  /**
-   * Get a single transaction by ID
-   */
   async getById(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/transactions/${id}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch transaction')
-    return await response.json()
+    return await apiRequest(`/api/transactions/${id}`)
   },
 
-  /**
-   * Create a new transaction
-   */
   async create(transaction) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/transactions`, {
+    return await apiRequest('/api/transactions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify(transaction)
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to create transaction: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Update an existing transaction
-   */
   async update(id, updates) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/transactions/${id}`, {
+    return await apiRequest(`/api/transactions/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify(updates)
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to update transaction: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Delete a transaction
-   */
   async delete(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/transactions/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'X-User-Id': user.id
-      }
+    await apiRequest(`/api/transactions/${id}`, {
+      method: 'DELETE'
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to delete transaction: ${error}`)
-    }
   },
 
-  /**
-   * Get summary statistics
-   * Uses the transactions API to fetch and calculate summary
-   */
   async getSummary(startDate, endDate) {
-    console.log('🔍 getSummary called with:', { startDate, endDate })
-    
-    // Use the backend API to get transactions
     const transactions = await this.getAll({ startDate, endDate })
 
-    console.log('📊 Transactions fetched:', { 
-      count: transactions?.length, 
-      transactions 
-    })
-
-    // Calculate totals
     const summary = transactions.reduce((acc, transaction) => {
-      console.log('  Processing transaction:', transaction)
       if (transaction.type === 'expense') {
         acc.expenses += transaction.amount
       } else if (transaction.type === 'income') {
@@ -151,7 +152,6 @@ export const transactionService = {
 
     summary.balance = summary.income - summary.expenses
     
-    console.log('✅ Final summary:', summary)
     return summary
   }
 }
@@ -161,160 +161,53 @@ export const transactionService = {
 // ========================================
 
 export const loanService = {
-  /**
-   * Get all loans
-   * Uses backend API with Entity Framework
-   */
   async getAll() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loans`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch loans')
-    return await response.json()
+    return await apiRequest('/api/loans')
   },
 
-  /**
-   * Get a single loan by ID
-   */
   async getById(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loans/${id}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch loan')
-    return await response.json()
+    return await apiRequest(`/api/loans/${id}`)
   },
 
-  /**
-   * Create a new loan
-   */
   async create(loan) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loans`, {
+    return await apiRequest('/api/loans', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify(loan)
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to create loan: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Update a loan
-   */
   async update(id, updates) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loans/${id}`, {
+    return await apiRequest(`/api/loans/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify(updates)
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to update loan: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Delete a loan
-   */
   async delete(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loans/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'X-User-Id': user.id
-      }
+    await apiRequest(`/api/loans/${id}`, {
+      method: 'DELETE'
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to delete loan: ${error}`)
-    }
   }
 }
 
 // ========================================
-// File Attachments (Supabase Storage)
+// File Attachments (Not implemented yet)
 // ========================================
 
 export const storageService = {
-  /**
-   * Upload a file to Supabase Storage
-   * @param {File} file - The file to upload
-   * @param {string} bucket - Storage bucket name (default: 'receipts')
-   */
   async uploadFile(file, bucket = 'receipts') {
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`
-    const filePath = `${fileName}`
-
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, file)
-
-    if (error) throw error
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(filePath)
-
-    return {
-      path: filePath,
-      url: urlData.publicUrl
-    }
+    // TODO: Implement file upload to your backend
+    throw new Error('File upload not implemented yet')
   },
 
-  /**
-   * Delete a file from storage
-   */
   async deleteFile(path, bucket = 'receipts') {
-    const { error } = await supabase.storage
-      .from(bucket)
-      .remove([path])
-
-    if (error) throw error
+    // TODO: Implement file deletion
+    throw new Error('File deletion not implemented yet')
   },
 
-  /**
-   * Get public URL for a file
-   */
   getPublicUrl(path, bucket = 'receipts') {
-    const { data } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(path)
-
-    return data.publicUrl
+    // TODO: Return file URL from your backend
+    return ''
   }
 }
 
@@ -323,58 +216,33 @@ export const storageService = {
 // ========================================
 
 export const profileService = {
-  /**
-   * Get user profile by ID
-   */
   async getProfile(userId) {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    
-    if (error && error.code !== 'PGRST116') throw error // Ignore not found
-    return data
+    return await apiRequest(`/api/profile/${userId}`)
   },
 
-  /**
-   * Update user profile
-   */
+  async getMyProfile() {
+    return await apiRequest('/api/profile')
+  },
+
   async updateProfile(userId, profileData) {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .upsert({
-        id: userId,
-        ...profileData,
-        updated_at: new Date().toISOString()
-      })
-      .select()
-    
-    if (error) throw error
-    return data[0]
+    // Use the endpoint with ID (legacy support)
+    return await apiRequest(`/api/profile/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(profileData)
+    })
   },
 
-  /**
-   * Upload avatar to Supabase Storage
-   */
+  async updateMyProfile(profileData) {
+    // Use the endpoint without ID (uses authenticated user from JWT)
+    return await apiRequest('/api/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData)
+    })
+  },
+
   async uploadAvatar(file, userId) {
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${userId}-avatar.${fileExt}`
-    const filePath = `avatars/${fileName}`
-
-    // Upload file (upsert to replace existing)
-    const { error: uploadError } = await supabase.storage
-      .from('receipts') // Using receipts bucket for now
-      .upload(filePath, file, { upsert: true })
-
-    if (uploadError) throw uploadError
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('receipts')
-      .getPublicUrl(filePath)
-
-    return publicUrl
+    // TODO: Implement avatar upload
+    throw new Error('Avatar upload not implemented yet')
   }
 }
 
@@ -383,90 +251,47 @@ export const profileService = {
 // ========================================
 
 export const partnershipService = {
-  /**
-   * Get current user's partnership
-   */
   async getMyPartnership() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    // Get partnership
-    const { data: partnership, error } = await supabase
-      .from('partnerships')
-      .select('*')
-      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-      .eq('status', 'active')
-      .single()
-
-    if (error && error.code !== 'PGRST116') throw error // Ignore not found
-    if (!partnership) return null
-
-    // Fetch user profiles separately
-    const { data: user1Profile } = await supabase
-      .from('user_profiles')
-      .select('id, display_name, email, avatar_url')
-      .eq('id', partnership.user1_id)
-      .single()
-
-    const { data: user2Profile } = await supabase
-      .from('user_profiles')
-      .select('id, display_name, email, avatar_url')
-      .eq('id', partnership.user2_id)
-      .single()
-
-    // Combine data
-    return {
-      ...partnership,
-      user1: user1Profile,
-      user2: user2Profile
-    }
+    return await apiRequest('/api/partnership')
   },
 
-  /**
-   * Create a new partnership
-   */
   async createPartnership(partnerId) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const { data, error } = await supabase
-      .from('partnerships')
-      .insert({
-        user1_id: user.id,
-        user2_id: partnerId,
-        status: 'active',
-        created_at: new Date().toISOString()
-      })
-      .select()
-
-    if (error) throw error
-    return data[0]
+    return await apiRequest('/api/partnership', {
+      method: 'POST',
+      body: JSON.stringify({ partnerId })
+    })
   },
 
-  /**
-   * Find user by email
-   */
   async findUserByEmail(email) {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('id, display_name, email')
-      .eq('email', email)
-      .single()
-
-    if (error) throw error
-    return data
+    return await apiRequest(`/api/users/find-by-email?email=${encodeURIComponent(email)}`)
   },
 
-  /**
-   * End partnership
-   */
   async endPartnership(partnershipId) {
-    const { error } = await supabase
-      .from('partnerships')
-      .update({ status: 'inactive', updated_at: new Date().toISOString() })
-      .eq('id', partnershipId)
+    await apiRequest(`/api/partnership/${partnershipId}`, {
+      method: 'DELETE'
+    })
+  },
 
-    if (error) throw error
+  async sendInvitation(email) {
+    return await apiRequest('/api/partnership/invite', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    })
+  },
+
+  async getInvitationDetails(token) {
+    return await apiRequest(`/api/partnership/invitation/${token}`)
+  },
+
+  async acceptInvitation(token) {
+    return await apiRequest('/api/partnership/accept-invitation', {
+      method: 'POST',
+      body: JSON.stringify({ token })
+    })
+  },
+
+  async getPendingInvitations() {
+    return await apiRequest('/api/partnership/pending-invitations')
   }
 }
 
@@ -475,49 +300,15 @@ export const partnershipService = {
 // ========================================
 
 export const budgetService = {
-  /**
-   * Get all budgets for current user
-   * Uses backend API with Entity Framework
-   */
   async getAll() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/budgets`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch budgets')
-    return await response.json()
+    return await apiRequest('/api/budgets')
   },
 
-  /**
-   * Get a single budget by ID
-   */
   async getById(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/budgets/${id}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch budget')
-    return await response.json()
+    return await apiRequest(`/api/budgets/${id}`)
   },
 
-  /**
-   * Create a new budget
-   */
   async create(budgetData) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    // Set default dates if not provided
     const now = new Date()
     const budget = {
       ...budgetData,
@@ -527,193 +318,69 @@ export const budgetService = {
       isActive: true
     }
 
-    const response = await fetch(`${BACKEND_API_URL}/api/budgets`, {
+    return await apiRequest('/api/budgets', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify(budget)
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to create budget: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Update a budget
-   */
   async update(id, budgetData) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const budget = {
-      id,
-      ...budgetData
-    }
-
-    const response = await fetch(`${BACKEND_API_URL}/api/budgets/${id}`, {
+    return await apiRequest(`/api/budgets/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
-      body: JSON.stringify(budget)
+      body: JSON.stringify({ id, ...budgetData })
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to update budget: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Delete a budget
-   */
   async delete(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/budgets/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'X-User-Id': user.id
-      }
+    await apiRequest(`/api/budgets/${id}`, {
+      method: 'DELETE'
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to delete budget: ${error}`)
-    }
   }
 }
 
-// ========================================
 // ========================================
 // Analytics Service
 // ========================================
 
 export const analyticsService = {
-  /**
-   * Get financial analytics for a date range
-   */
   async getFinancialAnalytics(startDate, endDate) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
     const params = new URLSearchParams()
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
 
-    const response = await fetch(`${BACKEND_API_URL}/api/analytics/financial?${params}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch financial analytics')
-    return await response.json()
+    return await apiRequest(`/api/analytics/financial?${params}`)
   },
 
-  /**
-   * Get loan analytics
-   */
   async getLoanAnalytics(startDate = null, endDate = null) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
     const params = new URLSearchParams()
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
 
-    const response = await fetch(`${BACKEND_API_URL}/api/analytics/loans?${params}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch loan analytics')
-    return await response.json()
+    return await apiRequest(`/api/analytics/loans?${params}`)
   },
 
-  /**
-   * Get household analytics
-   */
   async getHouseholdAnalytics() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/analytics/household`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch household analytics')
-    return await response.json()
+    return await apiRequest('/api/analytics/household')
   },
 
-  /**
-   * Get comparative analytics
-   */
   async getComparativeAnalytics(startDate, endDate) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
     const params = new URLSearchParams()
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
 
-    const response = await fetch(`${BACKEND_API_URL}/api/analytics/comparative?${params}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch comparative analytics')
-    return await response.json()
+    return await apiRequest(`/api/analytics/comparative?${params}`)
   },
 
-  /**
-   * Get dashboard analytics summary
-   */
   async getDashboardAnalytics() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/analytics/dashboard`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch dashboard analytics')
-    return await response.json()
+    return await apiRequest('/api/analytics/dashboard')
   },
 
-  /**
-   * Get all analytics in one request
-   */
   async getAllAnalytics(startDate, endDate) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
     const params = new URLSearchParams()
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
 
-    const response = await fetch(`${BACKEND_API_URL}/api/analytics/all?${params}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch analytics')
-    return await response.json()
+    return await apiRequest(`/api/analytics/all?${params}`)
   }
 }
 
@@ -722,41 +389,15 @@ export const analyticsService = {
 // ========================================
 
 export const chatbotService = {
-  /**
-   * Send a query to the chatbot
-   */
   async sendQuery(query, history = []) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/chatbot/query`, {
+    return await apiRequest('/api/chatbot/query', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify({ query, history })
     })
-
-    if (!response.ok) throw new Error('Failed to process chatbot query')
-    return await response.json()
   },
 
-  /**
-   * Get suggested questions
-   */
   async getSuggestions() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/chatbot/suggestions`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to get suggestions')
-    return await response.json()
+    return await apiRequest('/api/chatbot/suggestions')
   }
 }
 
@@ -765,173 +406,50 @@ export const chatbotService = {
 // ========================================
 
 export const savingsGoalService = {
-  /**
-   * Get all savings goals for current user
-   * Uses backend API with Entity Framework
-   */
   async getAll() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/savingsgoals`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch savings goals')
-    return await response.json()
+    return await apiRequest('/api/savingsgoals')
   },
 
-  /**
-   * Get a single savings goal by ID
-   */
   async getById(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/savingsgoals/${id}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch savings goal')
-    return await response.json()
+    return await apiRequest(`/api/savingsgoals/${id}`)
   },
 
-  /**
-   * Create a new savings goal
-   */
   async create(goalData) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/savingsgoals`, {
+    return await apiRequest('/api/savingsgoals', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify(goalData)
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to create savings goal: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Update a savings goal
-   */
   async update(id, goalData) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const goal = {
-      id,
-      ...goalData
-    }
-
-    const response = await fetch(`${BACKEND_API_URL}/api/savingsgoals/${id}`, {
+    return await apiRequest(`/api/savingsgoals/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
-      body: JSON.stringify(goal)
+      body: JSON.stringify({ id, ...goalData })
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to update savings goal: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Delete a savings goal
-   */
   async delete(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/savingsgoals/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'X-User-Id': user.id
-      }
+    await apiRequest(`/api/savingsgoals/${id}`, {
+      method: 'DELETE'
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to delete savings goal: ${error}`)
-    }
   },
 
-  /**
-   * Add money to a savings goal (deposit)
-   */
   async addDeposit(id, amount) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/savingsgoals/${id}/deposit`, {
+    return await apiRequest(`/api/savingsgoals/${id}/deposit`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify({ amount })
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to add deposit: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Withdraw money from a savings goal
-   */
   async withdraw(id, amount) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/savingsgoals/${id}/withdraw`, {
+    return await apiRequest(`/api/savingsgoals/${id}/withdraw`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify({ amount })
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to withdraw: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Get savings goals summary
-   */
   async getSummary() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/savingsgoals/summary`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch savings goals summary')
-    return await response.json()
+    return await apiRequest('/api/savingsgoals/summary')
   }
 }
 
@@ -940,126 +458,36 @@ export const savingsGoalService = {
 // ========================================
 
 export const loanPaymentService = {
-  /**
-   * Get all payments for a specific loan
-   */
   async getByLoan(loanId) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loanpayments/by-loan/${loanId}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch loan payments')
-    return await response.json()
+    return await apiRequest(`/api/loanpayments/by-loan/${loanId}`)
   },
 
-  /**
-   * Get all loan payments for current user
-   */
   async getAll() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loanpayments`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch loan payments')
-    return await response.json()
+    return await apiRequest('/api/loanpayments')
   },
 
-  /**
-   * Create a new loan payment
-   */
   async create(paymentData) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loanpayments`, {
+    return await apiRequest('/api/loanpayments', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify(paymentData)
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to create loan payment: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Update a loan payment
-   */
   async update(id, paymentData) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const payment = {
-      id,
-      ...paymentData
-    }
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loanpayments/${id}`, {
+    return await apiRequest(`/api/loanpayments/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
-      body: JSON.stringify(payment)
+      body: JSON.stringify({ id, ...paymentData })
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to update loan payment: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Delete a loan payment
-   */
   async delete(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loanpayments/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'X-User-Id': user.id
-      }
+    await apiRequest(`/api/loanpayments/${id}`, {
+      method: 'DELETE'
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to delete loan payment: ${error}`)
-    }
   },
 
-  /**
-   * Get payment summary for a loan
-   */
   async getSummary(loanId) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/loanpayments/summary/${loanId}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch payment summary')
-    return await response.json()
+    return await apiRequest(`/api/loanpayments/summary/${loanId}`)
   }
 }
 
@@ -1068,164 +496,121 @@ export const loanPaymentService = {
 // ========================================
 
 export const recurringBillService = {
-  /**
-   * Get all recurring bills for current user
-   */
   async getAll() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/recurringbills`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch recurring bills')
-    return await response.json()
+    return await apiRequest('/api/recurringbills')
   },
 
-  /**
-   * Get a single recurring bill by ID
-   */
   async getById(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/recurringbills/${id}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch recurring bill')
-    return await response.json()
+    return await apiRequest(`/api/recurringbills/${id}`)
   },
 
-  /**
-   * Create a new recurring bill
-   */
   async create(billData) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/recurringbills`, {
+    return await apiRequest('/api/recurringbills', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
       body: JSON.stringify(billData)
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to create recurring bill: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Update a recurring bill
-   */
   async update(id, billData) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const bill = {
-      id,
-      ...billData
-    }
-
-    const response = await fetch(`${BACKEND_API_URL}/api/recurringbills/${id}`, {
+    return await apiRequest(`/api/recurringbills/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id
-      },
-      body: JSON.stringify(bill)
+      body: JSON.stringify({ id, ...billData })
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to update recurring bill: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Delete a recurring bill
-   */
   async delete(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/recurringbills/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'X-User-Id': user.id
-      }
+    await apiRequest(`/api/recurringbills/${id}`, {
+      method: 'DELETE'
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to delete recurring bill: ${error}`)
-    }
   },
 
-  /**
-   * Mark bill as paid (advances to next period)
-   */
   async markPaid(id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/recurringbills/${id}/mark-paid`, {
-      method: 'POST',
-      headers: {
-        'X-User-Id': user.id
-      }
+    return await apiRequest(`/api/recurringbills/${id}/mark-paid`, {
+      method: 'POST'
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to mark bill as paid: ${error}`)
-    }
-    return await response.json()
   },
 
-  /**
-   * Get upcoming bills
-   */
   async getUpcoming(days = 30) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/recurringbills/upcoming?days=${days}`, {
-      headers: {
-        'X-User-Id': user.id
-      }
-    })
-
-    if (!response.ok) throw new Error('Failed to fetch upcoming bills')
-    return await response.json()
+    return await apiRequest(`/api/recurringbills/upcoming?days=${days}`)
   },
 
-  /**
-   * Get recurring bills summary
-   */
   async getSummary() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
+    return await apiRequest('/api/recurringbills/summary')
+  }
+}
 
-    const response = await fetch(`${BACKEND_API_URL}/api/recurringbills/summary`, {
-      headers: {
-        'X-User-Id': user.id
-      }
+// ========================================
+// Shopping Lists Service
+// ========================================
+
+export const shoppingListService = {
+  async getAll() {
+    return await apiRequest('/api/shoppinglists')
+  },
+
+  async getById(id) {
+    return await apiRequest(`/api/shoppinglists/${id}`)
+  },
+
+  async create(listData) {
+    return await apiRequest('/api/shoppinglists', {
+      method: 'POST',
+      body: JSON.stringify(listData)
     })
+  },
 
-    if (!response.ok) throw new Error('Failed to fetch recurring bills summary')
-    return await response.json()
+  async update(id, listData) {
+    return await apiRequest(`/api/shoppinglists/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ id, ...listData })
+    })
+  },
+
+  async delete(id) {
+    await apiRequest(`/api/shoppinglists/${id}`, {
+      method: 'DELETE'
+    })
+  },
+
+  async complete(id) {
+    return await apiRequest(`/api/shoppinglists/${id}/complete`, {
+      method: 'POST'
+    })
+  },
+
+  // Items
+  async getItems(listId) {
+    return await apiRequest(`/api/shoppinglists/${listId}/items`)
+  },
+
+  async addItem(listId, itemData) {
+    return await apiRequest(`/api/shoppinglists/${listId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(itemData)
+    })
+  },
+
+  async updateItem(listId, itemId, itemData) {
+    return await apiRequest(`/api/shoppinglists/${listId}/items/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ id: itemId, ...itemData })
+    })
+  },
+
+  async deleteItem(listId, itemId) {
+    await apiRequest(`/api/shoppinglists/${listId}/items/${itemId}`, {
+      method: 'DELETE'
+    })
+  },
+
+  async toggleItem(listId, itemId) {
+    return await apiRequest(`/api/shoppinglists/${listId}/items/${itemId}/toggle`, {
+      method: 'POST'
+    })
+  },
+
+  async getSummary() {
+    return await apiRequest('/api/shoppinglists/summary')
   }
 }
 
@@ -1234,62 +619,27 @@ export const recurringBillService = {
 // ========================================
 
 export const reminderService = {
-  /**
-   * Get user reminder settings
-   */
   async getSettings() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/reminders/settings?userId=${user.id}`)
-    if (!response.ok) throw new Error('Failed to fetch reminder settings')
-    return await response.json()
+    getCurrentUser() // Ensure user is authenticated
+    return await apiRequest('/api/reminders/settings')
   },
 
-  /**
-   * Update user reminder settings
-   */
   async updateSettings(settings) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/reminders/settings?userId=${user.id}`, {
+    return await apiRequest('/api/reminders/settings', {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify(settings)
     })
-
-    if (!response.ok) throw new Error('Failed to update reminder settings')
-    return await response.json()
   },
 
-  /**
-   * Send a test email
-   */
   async sendTestEmail(email) {
-    const response = await fetch(`${BACKEND_API_URL}/api/reminders/test-email?email=${encodeURIComponent(email)}`, {
+    return await apiRequest(`/api/reminders/test-email?email=${encodeURIComponent(email)}`, {
       method: 'POST'
     })
-
-    if (!response.ok) throw new Error('Failed to send test email')
-    return await response.json()
   },
 
-  /**
-   * Manually trigger reminder check
-   */
   async checkReminders() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`${BACKEND_API_URL}/api/reminders/check?userId=${user.id}`, {
+    return await apiRequest('/api/reminders/check', {
       method: 'POST'
     })
-
-    if (!response.ok) throw new Error('Failed to check reminders')
-    return await response.json()
   }
 }
-

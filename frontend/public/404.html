@@ -1,30 +1,63 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/heart-icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Expense tracking app for couples" />
-    <meta name="theme-color" content="#f0e6ff" />
-    <title>You & Me Expenses</title>
-    <script>
-      // Single Page Apps for GitHub Pages
-      // https://github.com/rafgraph/spa-github-pages
-      sessionStorage.redirect = location.href;
-    </script>
-    <script>
-      (function() {
-        var redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
-        if (redirect && redirect != location.href) {
-          history.replaceState(null, null, redirect);
-        }
-      })();
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paire - Redirecting...</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: white;
+    }
+    .container {
+      text-align: center;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 4px solid white;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  <script>
+    /**
+     * GitHub Pages SPA Redirect Handler
+     * This script redirects to index.html with the original path as a query parameter
+     * The React app will handle the redirect using the redirect parameter
+     */
+    (function() {
+      // Get the path without the repo name
+      const repo = '/Paire'; // Replace with your repo name
+      const path = window.location.pathname.replace(repo, '');
+      
+      // Build the redirect URL
+      const redirectUrl = window.location.origin + repo + '/?redirect=' + encodeURIComponent(path);
+      
+      // Redirect immediately
+      window.location.replace(redirectUrl);
+    })();
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <h2>Redirecting...</h2>
+    <p>Please wait while we redirect you.</p>
+  </div>
+</body>
 </html>
-

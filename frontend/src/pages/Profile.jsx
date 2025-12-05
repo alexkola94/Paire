@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave } from 'react-icons/fi'
-import { authService } from '../services/supabase'
+import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle } from 'react-icons/fi'
+import { authService } from '../services/auth'
 import { profileService } from '../services/api'
+import { getBackendUrl } from '../utils/getBackendUrl'
+import TwoFactorSetup from '../components/TwoFactorSetup'
 import './Profile.css'
 
 /**
@@ -24,10 +26,15 @@ function Profile() {
   const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
   const [message, setMessage] = useState({ type: '', text: '' })
+  const [showClearDataModal, setShowClearDataModal] = useState(false)
+  const [clearDataConfirmation, setClearDataConfirmation] = useState('')
+  const [clearingData, setClearingData] = useState(false)
+  const [clearDataRequest, setClearDataRequest] = useState(null)
 
   /**
    * Load user data on mount
@@ -94,11 +101,15 @@ function Profile() {
         avatarUrl = await profileService.uploadAvatar(avatarFile, user.id)
       }
 
-      // Update profile
-      await profileService.updateProfile(user.id, {
+      // Update profile - use endpoint without ID (uses authenticated user from JWT)
+      console.log('Updating profile with data:', {
         display_name: profileData.display_name,
-        avatar_url: avatarUrl,
-        email: user.email
+        avatar_url: avatarUrl
+      })
+      
+      await profileService.updateMyProfile({
+        display_name: profileData.display_name,
+        avatar_url: avatarUrl
       })
 
       setMessage({ type: 'success', text: 'Profile updated successfully!' })
@@ -144,12 +155,126 @@ function Profile() {
     }
 
     try {
-      await authService.updatePassword(passwordData.newPassword)
+      await authService.updatePassword(passwordData.currentPassword, passwordData.newPassword)
       setMessage({ type: 'success', text: 'Password updated successfully!' })
       setShowPasswordForm(false)
-      setPasswordData({ newPassword: '', confirmPassword: '' })
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (error) {
       setMessage({ type: 'error', text: error.message || 'Failed to update password' })
+    }
+  }
+
+  /**
+   * Handle cancel password form
+   */
+  const handleCancelPasswordForm = () => {
+    setShowPasswordForm(false)
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    })
+  }
+
+  /**
+   * Check for existing data clearing request on mount
+   */
+  useEffect(() => {
+    if (user?.id) {
+      checkClearDataStatus()
+    }
+  }, [user?.id])
+
+  /**
+   * Check status of data clearing request
+   */
+  const checkClearDataStatus = async () => {
+    try {
+      const response = await fetch(`${getBackendUrl()}/api/dataclearing/status?userId=${user.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.hasActiveRequest) {
+          setClearDataRequest(data)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking clear data status:', error)
+    }
+  }
+
+  /**
+   * Handle initiating data clearing request
+   */
+  const handleClearAllData = async () => {
+    if (clearDataConfirmation !== 'DELETE ALL MY DATA') {
+      setMessage({ type: 'error', text: t('profile.clearData.invalidConfirmation') })
+      return
+    }
+
+    try {
+      setClearingData(true)
+      const response = await fetch(`${getBackendUrl()}/api/dataclearing/initiate?userId=${user.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          confirmationPhrase: 'DELETE ALL MY DATA',
+          notes: 'User initiated data clearing from profile'
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to initiate data clearing')
+      }
+
+      const result = await response.json()
+      
+      if (result.requiresPartnerApproval) {
+        setMessage({ 
+          type: 'info', 
+          text: t('profile.clearData.partnerConfirmationSent')
+        })
+        setClearDataRequest(result)
+      } else {
+        setMessage({ 
+          type: 'success', 
+          text: t('profile.clearData.success')
+        })
+        // Log out user after clearing data
+        setTimeout(() => {
+          authService.signOut()
+        }, 2000)
+      }
+      
+      setShowClearDataModal(false)
+      setClearDataConfirmation('')
+    } catch (error) {
+      console.error('Error clearing data:', error)
+      setMessage({ type: 'error', text: error.message || t('profile.clearData.error') })
+    } finally {
+      setClearingData(false)
+    }
+  }
+
+  /**
+   * Cancel pending data clearing request
+   */
+  const handleCancelClearDataRequest = async () => {
+    try {
+      const response = await fetch(
+        `${getBackendUrl()}/api/dataclearing/cancel?userId=${user.id}&requestId=${clearDataRequest.requestId}`,
+        { method: 'DELETE' }
+      )
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: t('profile.clearData.requestCancelled') })
+        setClearDataRequest(null)
+      }
+    } catch (error) {
+      console.error('Error cancelling request:', error)
+      setMessage({ type: 'error', text: 'Failed to cancel request' })
     }
   }
 
@@ -374,6 +499,24 @@ function Profile() {
         ) : (
           <form onSubmit={handlePasswordChange} className="password-form">
             <div className="form-group">
+              <label htmlFor="currentPassword">
+                Current Password
+              </label>
+              <input
+                type="password"
+                id="currentPassword"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({
+                  ...passwordData,
+                  currentPassword: e.target.value
+                })}
+                placeholder={t('auth.currentPasswordPlaceholder')}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="newPassword">
                 {t('auth.password')}
               </label>
@@ -385,7 +528,7 @@ function Profile() {
                   ...passwordData,
                   newPassword: e.target.value
                 })}
-                placeholder="Enter new password"
+                placeholder={t('auth.newPasswordPlaceholder')}
                 required
                 autoComplete="new-password"
               />
@@ -403,7 +546,7 @@ function Profile() {
                   ...passwordData,
                   confirmPassword: e.target.value
                 })}
-                placeholder="Confirm new password"
+                placeholder={t('auth.confirmPasswordPlaceholder')}
                 required
                 autoComplete="new-password"
               />
@@ -412,10 +555,7 @@ function Profile() {
             <div className="form-actions">
               <button
                 type="button"
-                onClick={() => {
-                  setShowPasswordForm(false)
-                  setPasswordData({ newPassword: '', confirmPassword: '' })
-                }}
+                onClick={handleCancelPasswordForm}
                 className="btn btn-secondary"
               >
                 {t('common.cancel')}
@@ -427,6 +567,158 @@ function Profile() {
           </form>
         )}
       </div>
+
+      {/* Two-Factor Authentication */}
+      <TwoFactorSetup 
+        isEnabled={user?.twoFactorEnabled || false}
+        onStatusChange={async (enabled) => {
+          // Reload user data from API to get the latest 2FA status
+          // Force refresh to bypass localStorage cache
+          try {
+            const updatedUser = await authService.getUser(true)
+            setUser(updatedUser)
+            setMessage({ 
+              type: 'success', 
+              text: enabled 
+                ? 'Two-factor authentication enabled successfully!' 
+                : 'Two-factor authentication disabled successfully!'
+            })
+          } catch (error) {
+            console.error('Error refreshing user data:', error)
+            // Fallback: update local state if API call fails
+            setUser(prev => ({ ...prev, twoFactorEnabled: enabled }))
+            setMessage({ 
+              type: 'success', 
+              text: enabled 
+                ? 'Two-factor authentication enabled successfully!' 
+                : 'Two-factor authentication disabled successfully!'
+            })
+          }
+        }}
+      />
+
+      {/* Danger Zone - Clear All Data */}
+      <div className="card danger-zone">
+        <div className="card-header">
+          <h2>
+            <FiAlertTriangle size={24} />
+            {t('profile.clearData.dangerZone')}
+          </h2>
+        </div>
+
+        <div className="danger-zone-content">
+          {clearDataRequest && clearDataRequest.status === 'pending' ? (
+            <div className="pending-request-info">
+              <FiAlertTriangle size={24} className="warning-icon" />
+              <div>
+                <h3>{t('profile.clearData.pendingRequest')}</h3>
+                <p>{t('profile.clearData.pendingDescription')}</p>
+                <p className="expiry-time">
+                  {t('profile.clearData.expiresAt')}: {new Date(clearDataRequest.expiresAt).toLocaleString()}
+                </p>
+                <button
+                  onClick={handleCancelClearDataRequest}
+                  className="btn btn-secondary btn-sm"
+                >
+                  {t('profile.clearData.cancelRequest')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="danger-warning">
+                <FiAlertTriangle />
+                <div>
+                  <h3>{t('profile.clearData.warning')}</h3>
+                  <p>{t('profile.clearData.warningDescription')}</p>
+                  <ul>
+                    <li>{t('profile.clearData.deleteTransactions')}</li>
+                    <li>{t('profile.clearData.deleteLoans')}</li>
+                    <li>{t('profile.clearData.deleteBudgets')}</li>
+                    <li>{t('profile.clearData.deleteGoals')}</li>
+                    <li>{t('profile.clearData.deletePartnership')}</li>
+                  </ul>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowClearDataModal(true)}
+                className="btn btn-danger"
+              >
+                <FiTrash2 size={18} />
+                {t('profile.clearData.buttonText')}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Clear Data Confirmation Modal */}
+      {showClearDataModal && (
+        <div className="modal-overlay" onClick={() => !clearingData && setShowClearDataModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>
+                <FiAlertTriangle size={24} className="text-danger" />
+                {t('profile.clearData.confirmTitle')}
+              </h2>
+            </div>
+
+            <div className="modal-body">
+              <div className="warning-box">
+                <FiAlertTriangle size={32} />
+                <p>{t('profile.clearData.confirmWarning')}</p>
+              </div>
+
+              <p>{t('profile.clearData.confirmInstructions')}</p>
+
+              <div className="form-group">
+                <label>{t('profile.clearData.typeToConfirm')}:</label>
+                <input
+                  type="text"
+                  value={clearDataConfirmation}
+                  onChange={(e) => setClearDataConfirmation(e.target.value)}
+                  placeholder={t('profile.clearData.exactPhrase')}
+                  className="confirmation-input"
+                  disabled={clearingData}
+                  autoFocus
+                />
+                <small className="form-hint">{t('profile.clearData.exactPhrase')}</small>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                onClick={() => {
+                  setShowClearDataModal(false)
+                  setClearDataConfirmation('')
+                }}
+                className="btn btn-secondary"
+                disabled={clearingData}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleClearAllData}
+                className="btn btn-danger"
+                disabled={clearingData || clearDataConfirmation !== 'DELETE ALL MY DATA'}
+              >
+                {clearingData ? (
+                  <>
+                    <div className="spinner-small"></div>
+                    {t('profile.clearData.clearing')}
+                  </>
+                ) : (
+                  <>
+                    <FiTrash2 size={18} />
+                    {t('profile.clearData.confirmButton')}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiMail, FiLock, FiHeart } from 'react-icons/fi'
-import { authService } from '../services/supabase'
+import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
+import { authService } from '../services/auth'
+import TwoFactorVerification from '../components/TwoFactorVerification'
 import './Login.css'
 
 /**
@@ -9,11 +11,22 @@ import './Login.css'
  * Handles user authentication (sign in and sign up)
  */
 function Login() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { t } = useTranslation()
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  
+  // Get redirect URL and mode from query parameters
+  const redirectUrl = searchParams.get('redirect')
+  const mode = searchParams.get('mode')
+
+  // 2FA state
+  const [requires2FA, setRequires2FA] = useState(false)
+  const [tempToken, setTempToken] = useState('')
+  const [userEmail, setUserEmail] = useState('')
 
   // Form state
   const [formData, setFormData] = useState({
@@ -21,6 +34,27 @@ function Login() {
     password: '',
     confirmPassword: ''
   })
+
+  // Password visibility state
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  /**
+   * Check URL parameters on mount
+   */
+  useEffect(() => {
+    // Check if mode=signup is in the URL
+    if (mode === 'signup') {
+      setIsSignUp(true)
+    }
+    
+    // Pre-fill email if there's a pending invitation token
+    const pendingToken = sessionStorage.getItem('pendingInvitationToken')
+    if (pendingToken) {
+      // Try to get the invitation details to pre-fill email
+      // This is optional - we can skip it for now
+    }
+  }, [mode])
 
   /**
    * Handle input changes
@@ -72,16 +106,114 @@ function Login() {
         // Sign up new user
         await authService.signUp(formData.email, formData.password)
         setSuccess('Account created successfully! Please check your email to verify.')
+        
+        // After signup, check if there's a redirect URL (e.g., from invitation)
+        if (redirectUrl) {
+          // Wait a moment for the user to see the success message
+          setTimeout(() => {
+            navigate(redirectUrl)
+          }, 2000)
+        }
       } else {
         // Sign in existing user
-        await authService.signIn(formData.email, formData.password)
-        // Navigation handled by App.jsx through session state
+        const response = await authService.signIn(formData.email, formData.password)
+        
+        // Check if 2FA is required
+        if (response.requiresTwoFactor) {
+          setRequires2FA(true)
+          setTempToken(response.tempToken)
+          setUserEmail(formData.email)
+        } else {
+          // No 2FA required - login successful
+          // Trigger event to notify App.jsx that session has changed
+          window.dispatchEvent(new CustomEvent('auth-storage-change', {
+            detail: {
+              key: 'auth_token',
+              newValue: localStorage.getItem('auth_token')
+            }
+          }))
+          
+          // Small delay to let App.jsx process the event
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          // Check if there's a redirect URL
+          if (redirectUrl) {
+            navigate(redirectUrl, { replace: true })
+          } else {
+            // Navigate to dashboard - App.jsx should now detect the session
+            navigate('/dashboard', { replace: true })
+          }
+        }
       }
     } catch (err) {
-      setError(err.message || t('messages.operationFailed'))
+      const errorMessage = err.message || t('messages.operationFailed')
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
+  }
+
+  /**
+   * Handle successful 2FA verification
+   */
+  const handle2FASuccessRef = useRef(false); // Prevent multiple navigation calls
+  
+  const handle2FASuccess = async (authData) => {
+    // Prevent multiple navigation calls (infinite loop protection)
+    if (handle2FASuccessRef.current) {
+      return;
+    }
+    
+    try {
+      handle2FASuccessRef.current = true;
+      
+      // Token is already stored by TwoFactorVerification component
+      // Small delay to ensure localStorage is written
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Trigger a custom event to notify App.jsx that session has changed
+      // This ensures App.jsx detects the new authentication state
+      // Note: StorageEvent only works across tabs, so we use a custom event for same-tab updates
+      window.dispatchEvent(new CustomEvent('auth-storage-change', {
+        detail: {
+          key: 'auth_token',
+          newValue: localStorage.getItem('auth_token')
+        }
+      }))
+      
+      // Also trigger a storage event (works across tabs)
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'auth_token',
+        newValue: localStorage.getItem('auth_token'),
+        storageArea: localStorage
+      }))
+      
+      // Small delay to let App.jsx process the events
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Check if there's a redirect URL
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true })
+      } else {
+        // Navigate to dashboard - App.jsx should now detect the session
+        navigate('/dashboard', { replace: true })
+      }
+    } catch (error) {
+      console.error('Error handling 2FA success:', error)
+      handle2FASuccessRef.current = false; // Reset on error so user can retry
+      // Don't reload - let user see the error
+    }
+  }
+
+  /**
+   * Handle 2FA cancellation
+   */
+  const handle2FACancel = () => {
+    setRequires2FA(false)
+    setTempToken('')
+    setUserEmail('')
+    setFormData({ email: '', password: '', confirmPassword: '' })
+    handle2FASuccessRef.current = false // Reset to allow retry
   }
 
   /**
@@ -94,13 +226,44 @@ function Login() {
     setFormData({ email: '', password: '', confirmPassword: '' })
   }
 
+  // Show 2FA verification screen if required
+  if (requires2FA) {
+    return (
+      <TwoFactorVerification
+        email={userEmail}
+        tempToken={tempToken}
+        onSuccess={handle2FASuccess}
+        onCancel={handle2FACancel}
+      />
+    )
+  }
+
   return (
     <div className="login-page">
       <div className="login-container">
-        {/* Left side - Branding */}
+        {/* Mobile Branding - shown on mobile only */}
+        <div className="login-branding-mobile">
+          <img 
+            src="/paire-logo.svg" 
+            alt="Paire Logo" 
+            className="brand-logo"
+            width="60"
+            height="60"
+          />
+          <h1>{t('app.title')}</h1>
+          <p>{t('app.tagline')}</p>
+        </div>
+
+        {/* Left side - Branding (Desktop/Tablet) */}
         <div className="login-branding">
           <div className="branding-content">
-            <FiHeart size={64} className="heart-icon" />
+            <img 
+              src="/paire-logo.svg" 
+              alt="Paire Logo" 
+              className="brand-logo"
+              width="80"
+              height="80"
+            />
             <h1>{t('app.title')}</h1>
             <p>{t('app.tagline')}</p>
           </div>
@@ -151,16 +314,26 @@ function Login() {
                   <FiLock size={18} />
                   {t('auth.password')}
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  required
-                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    required
+                    autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  </button>
+                </div>
               </div>
 
               {/* Confirm Password (Sign Up only) */}
@@ -170,16 +343,35 @@ function Login() {
                     <FiLock size={18} />
                     {t('auth.confirmPassword')}
                   </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    required
-                    autoComplete="new-password"
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      required
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Forgot Password Link (Sign In only) */}
+              {!isSignUp && (
+                <div className="forgot-password-link">
+                  <Link to="/forgot-password">
+                    {t('auth.forgotPassword')}
+                  </Link>
                 </div>
               )}
 

@@ -8,9 +8,8 @@ namespace YouAndMeExpensesAPI.Controllers
     /// Chatbot API Controller
     /// Provides intelligent financial assistant capabilities
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class ChatbotController : ControllerBase
+    public class ChatbotController : BaseApiController
     {
         private readonly IChatbotService _chatbotService;
         private readonly ILogger<ChatbotController> _logger;
@@ -28,14 +27,10 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="request">Chatbot query request</param>
         /// <returns>Chatbot response</returns>
         [HttpPost("query")]
-        public async Task<ActionResult<ChatbotResponse>> ProcessQuery(
-            [FromHeader(Name = "X-User-Id")] string userId,
-            [FromBody] ChatbotQuery request)
+        public async Task<IActionResult> ProcessQuery([FromBody] ChatbotQuery request)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (string.IsNullOrWhiteSpace(request.Query))
             {
@@ -44,7 +39,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var response = await _chatbotService.ProcessQueryAsync(userId, request.Query);
+                var response = await _chatbotService.ProcessQueryAsync(userId.ToString(), request.Query, request.History);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -60,17 +55,14 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="userId">User ID from auth</param>
         /// <returns>List of suggested questions</returns>
         [HttpGet("suggestions")]
-        public async Task<ActionResult<List<string>>> GetSuggestions(
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetSuggestions()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var suggestions = await _chatbotService.GetSuggestedQuestionsAsync(userId);
+                var suggestions = await _chatbotService.GetSuggestedQuestionsAsync(userId.ToString());
                 return Ok(suggestions);
             }
             catch (Exception ex)

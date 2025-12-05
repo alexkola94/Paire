@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Models;
 
@@ -5,9 +6,9 @@ namespace YouAndMeExpensesAPI.Data
 {
     /// <summary>
     /// Entity Framework DbContext for the application
-    /// Uses PostgreSQL hosted on Supabase
+    /// Uses PostgreSQL and ASP.NET Core Identity
     /// </summary>
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<ApplicationUser>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -19,22 +20,38 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<LoanPayment> LoanPayments { get; set; }
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<Partnership> Partnerships { get; set; }
+        public DbSet<PartnershipInvitation> PartnershipInvitations { get; set; }
         public DbSet<Budget> Budgets { get; set; }
         public DbSet<SavingsGoal> SavingsGoals { get; set; }
         public DbSet<RecurringBill> RecurringBills { get; set; }
         public DbSet<ReminderPreferences> ReminderPreferences { get; set; }
         public DbSet<ShoppingList> ShoppingLists { get; set; }
         public DbSet<ShoppingListItem> ShoppingListItems { get; set; }
+        public DbSet<DataClearingRequest> DataClearingRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Ignore Supabase SDK types that EF Core shouldn't manage
-            modelBuilder.Ignore<Supabase.SupabaseOptions>();
-            modelBuilder.Ignore<Supabase.Client>();
-            modelBuilder.Ignore<Supabase.Postgrest.ClientOptions>();
-            modelBuilder.Ignore<Supabase.Postgrest.Client>();
+            // ============================================
+            // APPLICATION USER (AspNetUsers) CONFIGURATION
+            // ============================================
+            // Explicitly configure custom properties on ApplicationUser
+            // to ensure they are properly tracked and saved
+            modelBuilder.Entity<ApplicationUser>(entity =>
+            {
+                entity.Property(e => e.DisplayName)
+                    .HasMaxLength(255);
+                entity.Property(e => e.AvatarUrl);
+                entity.Property(e => e.CreatedAt);
+                entity.Property(e => e.UpdatedAt);
+                entity.Property(e => e.EmailNotificationsEnabled);
+                entity.Property(e => e.EmailVerificationToken);
+                entity.Property(e => e.PasswordResetToken);
+                entity.Property(e => e.PasswordResetTokenExpires);
+                entity.Property(e => e.TwoFactorSecret);
+                entity.Property(e => e.BackupCodes);
+            });
 
             // ============================================
             // TRANSACTIONS TABLE
@@ -160,6 +177,28 @@ namespace YouAndMeExpensesAPI.Data
             });
 
             // ============================================
+            // PARTNERSHIP INVITATIONS TABLE
+            // ============================================
+            modelBuilder.Entity<PartnershipInvitation>(entity =>
+            {
+                entity.ToTable("partnership_invitations");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.InviterId).HasColumnName("inviter_id").IsRequired();
+                entity.Property(e => e.InviteeEmail).HasColumnName("invitee_email").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.Token).HasColumnName("token").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(50).IsRequired();
+                entity.Property(e => e.ExpiresAt).HasColumnName("expires_at").IsRequired();
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.AcceptedAt).HasColumnName("accepted_at");
+
+                entity.HasIndex(e => e.InviterId);
+                entity.HasIndex(e => e.InviteeEmail);
+                entity.HasIndex(e => e.Token).IsUnique();
+                entity.HasIndex(e => e.Status);
+            });
+
+            // ============================================
             // BUDGETS TABLE
             // ============================================
             modelBuilder.Entity<Budget>(entity =>
@@ -197,6 +236,9 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.TargetDate).HasColumnName("target_date");
                 entity.Property(e => e.Priority).HasColumnName("priority").HasMaxLength(50).HasDefaultValue("medium");
                 entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(100);
+                entity.Property(e => e.Icon).HasColumnName("icon");
+                entity.Property(e => e.Color).HasColumnName("color");
+                entity.Property(e => e.Notes).HasColumnName("notes");
                 entity.Property(e => e.IsAchieved).HasColumnName("is_achieved").HasDefaultValue(false);
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -221,7 +263,9 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.NextDueDate).HasColumnName("next_due_date");
                 entity.Property(e => e.AutoPay).HasColumnName("auto_pay").HasDefaultValue(false);
                 entity.Property(e => e.ReminderDays).HasColumnName("reminder_days").HasDefaultValue(3);
-                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                // Note: IsActive is set in code, not via database default
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+                entity.Property(e => e.Notes).HasColumnName("notes");
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
 
@@ -250,6 +294,81 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasIndex(e => e.UserId).IsUnique();
+            });
+
+            // ============================================
+            // SHOPPING LISTS TABLE
+            // ============================================
+            modelBuilder.Entity<ShoppingList>(entity =>
+            {
+                entity.ToTable("shopping_lists");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                // Convert string UserId to Guid for database (UUID column)
+                entity.Property(e => e.UserId)
+                    .HasColumnName("user_id")
+                    .IsRequired()
+                    .HasConversion(
+                        v => Guid.Parse(v), // Convert string to Guid when storing
+                        v => v.ToString()); // Convert Guid to string when reading
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.Category).HasColumnName("category");
+                entity.Property(e => e.IsCompleted).HasColumnName("is_completed").HasDefaultValue(false);
+                entity.Property(e => e.CompletedDate).HasColumnName("completed_date");
+                entity.Property(e => e.EstimatedTotal).HasColumnName("estimated_total").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.ActualTotal).HasColumnName("actual_total").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+            });
+
+            // ============================================
+            // SHOPPING LIST ITEMS TABLE
+            // ============================================
+            modelBuilder.Entity<ShoppingListItem>(entity =>
+            {
+                entity.ToTable("shopping_list_items");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShoppingListId).HasColumnName("shopping_list_id").IsRequired();
+                entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+                entity.Property(e => e.Quantity).HasColumnName("quantity").HasDefaultValue(1);
+                entity.Property(e => e.Unit).HasColumnName("unit");
+                entity.Property(e => e.EstimatedPrice).HasColumnName("estimated_price").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.ActualPrice).HasColumnName("actual_price").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.IsChecked).HasColumnName("is_checked").HasDefaultValue(false);
+                entity.Property(e => e.Category).HasColumnName("category");
+                entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.ShoppingListId);
+            });
+
+            // ============================================
+            // DATA CLEARING REQUESTS TABLE
+            // ============================================
+            modelBuilder.Entity<DataClearingRequest>(entity =>
+            {
+                entity.ToTable("data_clearing_requests");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.RequesterUserId).HasColumnName("requester_user_id").IsRequired();
+                entity.Property(e => e.PartnerUserId).HasColumnName("partner_user_id");
+                // Note: RequesterConfirmed and PartnerConfirmed are set in code, not via database defaults
+                entity.Property(e => e.RequesterConfirmed).HasColumnName("requester_confirmed");
+                entity.Property(e => e.PartnerConfirmed).HasColumnName("partner_confirmed");
+                entity.Property(e => e.ConfirmationToken).HasColumnName("confirmation_token").HasMaxLength(255);
+                entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(50).HasDefaultValue("pending");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+                entity.Property(e => e.ExecutedAt).HasColumnName("executed_at");
+                entity.Property(e => e.Notes).HasColumnName("notes");
+
+                entity.HasIndex(e => e.RequesterUserId);
+                entity.HasIndex(e => e.ConfirmationToken);
+                entity.HasIndex(e => e.Status);
             });
         }
     }

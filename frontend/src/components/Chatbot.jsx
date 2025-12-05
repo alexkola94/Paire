@@ -16,6 +16,7 @@ function Chatbot() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [suggestions, setSuggestions] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const messagesEndRef = useRef(null)
 
 
@@ -27,6 +28,12 @@ function Chatbot() {
       loadSuggestions()
       addBotMessage("Hi! 👋 I'm your financial assistant. Ask me anything about your expenses, income, or financial insights!")
     }
+    // Scroll to bottom when opening chat
+    if (isOpen) {
+      setTimeout(() => {
+        scrollToBottom()
+      }, 100)
+    }
   }, [isOpen])
 
   /**
@@ -35,6 +42,18 @@ function Chatbot() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  /**
+   * Auto-scroll to bottom when chat is reopened from minimized state
+   */
+  useEffect(() => {
+    if (!isMinimized && isOpen) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        scrollToBottom()
+      }, 100)
+    }
+  }, [isMinimized])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -69,6 +88,11 @@ function Chatbot() {
         timestamp: new Date()
       }
     ])
+    
+    // Increment unread count if chat is closed or minimized
+    if (!isOpen || isMinimized) {
+      setUnreadCount(prev => prev + 1)
+    }
   }
 
   /**
@@ -147,6 +171,10 @@ function Chatbot() {
   const toggleChat = () => {
     setIsOpen(!isOpen)
     setIsMinimized(false)
+    // Clear unread count when opening chat
+    if (!isOpen) {
+      setUnreadCount(0)
+    }
   }
 
   /**
@@ -154,6 +182,10 @@ function Chatbot() {
    */
   const minimizeChat = () => {
     setIsMinimized(!isMinimized)
+    // Clear unread count when maximizing
+    if (isMinimized) {
+      setUnreadCount(0)
+    }
   }
 
   /**
@@ -175,8 +207,8 @@ function Chatbot() {
           aria-label={t('chatbot.open')}
         >
           <FiMessageCircle style={{ width: '24px', height: '24px' }} />
-          {suggestions.length > 0 && (
-            <span className="chatbot-badge">{suggestions.length}</span>
+          {unreadCount > 0 && (
+            <span className="chatbot-badge">{unreadCount}</span>
           )}
         </button>
       )}
@@ -187,7 +219,12 @@ function Chatbot() {
           {/* Header */}
           <div className="chatbot-header">
             <div className="chatbot-header-info">
-              <div className="chatbot-avatar">💰</div>
+              <div className="chatbot-avatar">
+                💰
+                {isMinimized && unreadCount > 0 && (
+                  <span className="chatbot-badge chatbot-badge-minimized">{unreadCount}</span>
+                )}
+              </div>
               <div>
                 <h3>{t('chatbot.title', 'Financial Assistant')}</h3>
                 <p className="chatbot-status">
@@ -319,14 +356,19 @@ function Chatbot() {
                   onKeyPress={handleKeyPress}
                   disabled={loading}
                 />
-                <button
+                <span
                   className="chatbot-send-btn"
-                  onClick={() => sendMessage()}
-                  disabled={loading || !input.trim()}
+                  onClick={() => !loading && input.trim() && sendMessage()}
                   aria-label={t('chatbot.send')}
+                  role="button"
+                  tabIndex={0}
+                  style={{
+                    opacity: loading || !input.trim() ? 0.5 : 1,
+                    cursor: loading || !input.trim() ? 'not-allowed' : 'pointer'
+                  }}
                 >
-                  <FiSend style={{ width: '20px', height: '20px' }} />
-                </button>
+                  <FiSend size={20} />
+                </span>
               </div>
 
               {/* Footer */}

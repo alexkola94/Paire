@@ -8,7 +8,7 @@ namespace YouAndMeExpensesAPI.Services
     /// </summary>
     public interface IChatbotService
     {
-        Task<ChatbotResponse> ProcessQueryAsync(string userId, string query);
+        Task<ChatbotResponse> ProcessQueryAsync(string userId, string query, List<ChatMessage>? history = null);
         Task<List<string>> GetSuggestedQuestionsAsync(string userId);
     }
 }

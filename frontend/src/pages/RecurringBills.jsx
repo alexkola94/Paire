@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck, 
-  FiClock, FiDollarSign, FiAlertCircle, FiRepeat 
+  FiClock, FiAlertCircle, FiRepeat 
 } from 'react-icons/fi'
 import { recurringBillService } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
+import ConfirmationModal from '../components/ConfirmationModal'
 import './RecurringBills.css'
 
 /**
@@ -19,6 +20,7 @@ function RecurringBills() {
   const [summary, setSummary] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editingBill, setEditingBill] = useState(null)
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, billId: null })
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -173,24 +175,41 @@ function RecurringBills() {
       amount: bill.amount.toString(),
       category: bill.category,
       frequency: bill.frequency,
-      dueDay: bill.dueDay.toString(),
-      autoPay: bill.autoPay,
-      reminderDays: bill.reminderDays.toString(),
-      isActive: bill.isActive,
+      // Handle both camelCase and snake_case property names
+      dueDay: (bill.dueDay ?? bill.due_day ?? '').toString(),
+      autoPay: bill.autoPay ?? bill.auto_pay ?? false,
+      reminderDays: (bill.reminderDays ?? bill.reminder_days ?? '3').toString(),
+      isActive: bill.isActive ?? bill.is_active ?? true,
       notes: bill.notes || ''
     })
     setShowForm(true)
   }
 
   /**
+   * Open delete confirmation modal
+   */
+  const openDeleteModal = (billId) => {
+    setDeleteModal({ isOpen: true, billId })
+  }
+
+  /**
+   * Close delete confirmation modal
+   */
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, billId: null })
+  }
+
+  /**
    * Handle delete bill
    */
-  const handleDelete = async (id) => {
-    if (!confirm(t('recurringBills.confirmDelete'))) return
+  const handleDelete = async () => {
+    const { billId } = deleteModal
+    if (!billId) return
 
     try {
-      await recurringBillService.delete(id)
+      await recurringBillService.delete(billId)
       await loadData()
+      closeDeleteModal()
     } catch (error) {
       console.error('Error deleting bill:', error)
       alert(t('recurringBills.errorDeleting'))
@@ -231,11 +250,11 @@ function RecurringBills() {
     return <div className="loading">{t('common.loading')}</div>
   }
 
-  // Separate active and inactive bills
-  const activeBills = bills.filter(b => b.isActive)
-  const overdueBills = activeBills.filter(b => isOverdue(b.nextDueDate))
-  const upcomingBills = activeBills.filter(b => isDueSoon(b.nextDueDate) && !isOverdue(b.nextDueDate))
-  const laterBills = activeBills.filter(b => !isDueSoon(b.nextDueDate) && !isOverdue(b.nextDueDate))
+  // Separate active and inactive bills (handle both camelCase and snake_case)
+  const activeBills = bills.filter(b => (b.isActive ?? b.is_active) !== false)
+  const overdueBills = activeBills.filter(b => isOverdue(b.nextDueDate || b.next_due_date))
+  const upcomingBills = activeBills.filter(b => isDueSoon(b.nextDueDate || b.next_due_date) && !isOverdue(b.nextDueDate || b.next_due_date))
+  const laterBills = activeBills.filter(b => !isDueSoon(b.nextDueDate || b.next_due_date) && !isOverdue(b.nextDueDate || b.next_due_date))
 
   return (
     <div className="recurring-bills-page">
@@ -269,7 +288,7 @@ function RecurringBills() {
 
           <div className="summary-card">
             <div className="summary-icon monthly">
-              <FiDollarSign />
+              <span style={{ fontSize: '24px', fontWeight: 'bold' }}>€</span>
             </div>
             <div className="summary-content">
               <h3>{t('recurringBills.monthlyTotal')}</h3>
@@ -309,7 +328,7 @@ function RecurringBills() {
                   key={bill.id}
                   bill={bill}
                   onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
@@ -334,7 +353,7 @@ function RecurringBills() {
                   key={bill.id}
                   bill={bill}
                   onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
@@ -359,7 +378,7 @@ function RecurringBills() {
                   key={bill.id}
                   bill={bill}
                   onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
@@ -420,6 +439,7 @@ function RecurringBills() {
                     required
                     step="0.01"
                     min="0"
+                    max="1000000"
                     placeholder="0.00"
                   />
                 </div>
@@ -534,6 +554,17 @@ function RecurringBills() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        title={t('recurringBills.deleteBill')}
+        message={t('recurringBills.confirmDelete')}
+        confirmText={t('common.delete')}
+        variant="danger"
+      />
     </div>
   )
 }
@@ -542,7 +573,7 @@ function RecurringBills() {
  * Bill Card Component
  */
 function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatDueDate, getDaysUntil, t, status }) {
-  const daysUntil = getDaysUntil(bill.nextDueDate)
+  const daysUntil = getDaysUntil(bill.nextDueDate || bill.next_due_date)
   const icon = getCategoryIcon(bill.category)
 
   return (
@@ -573,12 +604,12 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatD
 
       <div className="bill-amount">
         <span className="amount">{formatCurrency(bill.amount)}</span>
-        {bill.autoPay && <span className="auto-pay-badge">{t('recurringBills.autoPayEnabled')}</span>}
+        {(bill.autoPay ?? bill.auto_pay) && <span className="auto-pay-badge">{t('recurringBills.autoPayEnabled')}</span>}
       </div>
 
       <div className="bill-due-date">
         <FiCalendar />
-        <span>{t('recurringBills.dueOn')} {formatDueDate(bill.nextDueDate)}</span>
+        <span>{t('recurringBills.dueOn')} {formatDueDate(bill.nextDueDate || bill.next_due_date)}</span>
         {daysUntil >= 0 ? (
           <span className="days-until">
             {daysUntil === 0 ? t('recurringBills.today') : 

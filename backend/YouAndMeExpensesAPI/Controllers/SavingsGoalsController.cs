@@ -10,9 +10,8 @@ namespace YouAndMeExpensesAPI.Controllers
     /// Helps users track financial goals and savings progress
     /// Uses Entity Framework Core for data access
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class SavingsGoalsController : ControllerBase
+    public class SavingsGoalsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger<SavingsGoalsController> _logger;
@@ -24,26 +23,69 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets all savings goals for the authenticated user
+        /// Gets all savings goals for the authenticated user and their partner (if partnership exists)
+        /// Includes user profile information to show who created each goal
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<SavingsGoal>>> GetSavingsGoals([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetSavingsGoals()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Get savings goals from user and partner(s)
                 var goals = await _dbContext.SavingsGoals
-                    .Where(g => g.UserId == userId)
+                    .Where(g => allUserIds.Contains(g.UserId))
                     .OrderByDescending(g => g.Priority == "high")
                     .ThenByDescending(g => g.Priority == "medium")
                     .ThenBy(g => g.TargetDate)
                     .ToListAsync();
 
-                return Ok(goals);
+                // Get user profiles for all goal creators
+                var userIds = goals.Select(g => g.UserId).Distinct().ToList();
+                var userProfiles = await _dbContext.UserProfiles
+                    .Where(up => userIds.Contains(up.Id.ToString()))
+                    .ToListAsync();
+
+                // Create a dictionary for quick lookup
+                var profileDict = userProfiles.ToDictionary(
+                    p => p.Id.ToString(),
+                    p => new
+                    {
+                        id = p.Id,
+                        email = p.Email,
+                        display_name = p.DisplayName,
+                        avatar_url = p.AvatarUrl
+                    }
+                );
+
+                // Enrich goals with user profile data (using camelCase for frontend compatibility)
+                var enrichedGoals = goals.Select(g => new
+                {
+                    id = g.Id,
+                    userId = g.UserId,
+                    name = g.Name,
+                    targetAmount = g.TargetAmount,
+                    currentAmount = g.CurrentAmount,
+                    priority = g.Priority,
+                    category = g.Category,
+                    icon = g.Icon,
+                    color = g.Color,
+                    notes = g.Notes,
+                    targetDate = g.TargetDate,
+                    isAchieved = g.IsAchieved,
+                    createdAt = g.CreatedAt,
+                    updatedAt = g.UpdatedAt,
+                    user_profiles = profileDict.ContainsKey(g.UserId) ? profileDict[g.UserId] : null
+                }).ToList();
+
+                return Ok(enrichedGoals);
             }
             catch (Exception ex)
             {
@@ -53,22 +95,56 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets a specific savings goal by ID
+        /// Helper method to get partner user IDs for the current user
+        /// </summary>
+        /// <param name="userId">Current user ID</param>
+        /// <returns>List of partner user IDs as strings</returns>
+        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
+        {
+            try
+            {
+                var partnership = await _dbContext.Partnerships
+                    .FirstOrDefaultAsync(p =>
+                        (p.User1Id == userId || p.User2Id == userId) &&
+                        p.Status == "active");
+
+                if (partnership == null)
+                {
+                    return new List<string>();
+                }
+
+                // Return the partner's ID
+                var partnerId = partnership.User1Id == userId
+                    ? partnership.User2Id
+                    : partnership.User1Id;
+
+                return new List<string> { partnerId.ToString() };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
+        /// Gets a specific savings goal by ID (must belong to user or partner)
         /// </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<SavingsGoal>> GetSavingsGoal(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetSavingsGoal(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var goal = await _dbContext.SavingsGoals
-                    .FirstOrDefaultAsync(g => g.Id == id && g.UserId == userId);
+                    .FirstOrDefaultAsync(g => g.Id == id && allUserIds.Contains(g.UserId));
 
                 if (goal == null)
                 {
@@ -88,14 +164,10 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Creates a new savings goal
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<SavingsGoal>> CreateSavingsGoal(
-            [FromBody] SavingsGoal goal,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> CreateSavingsGoal([FromBody] SavingsGoal goal)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             // Validate goal
             if (goal.TargetAmount <= 0)
@@ -118,7 +190,7 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 // Set goal properties
                 goal.Id = Guid.NewGuid();
-                goal.UserId = userId;
+                goal.UserId = userId.ToString();
                 goal.CreatedAt = DateTime.UtcNow;
                 goal.UpdatedAt = DateTime.UtcNow;
                 goal.IsAchieved = false; // New goals are not achieved
@@ -161,15 +233,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Updates an existing savings goal
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult<SavingsGoal>> UpdateSavingsGoal(
+        public async Task<IActionResult> UpdateSavingsGoal(
             Guid id,
-            [FromBody] SavingsGoal goal,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] SavingsGoal goal)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (id != goal.Id)
             {
@@ -178,8 +247,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to update the savings goal
                 var existingGoal = await _dbContext.SavingsGoals
-                    .FirstOrDefaultAsync(g => g.Id == id && g.UserId == userId);
+                    .FirstOrDefaultAsync(g => g.Id == id && allUserIds.Contains(g.UserId));
 
                 if (existingGoal == null)
                 {
@@ -240,22 +315,24 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Deletes a savings goal
+        /// Deletes a savings goal (must belong to user or partner)
         /// </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteSavingsGoal(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> DeleteSavingsGoal(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Allow user or partner to delete the savings goal
                 var goal = await _dbContext.SavingsGoals
-                    .FirstOrDefaultAsync(g => g.Id == id && g.UserId == userId);
+                    .FirstOrDefaultAsync(g => g.Id == id && allUserIds.Contains(g.UserId));
 
                 if (goal == null)
                 {
@@ -278,15 +355,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Add money to a savings goal (deposits)
         /// </summary>
         [HttpPost("{id}/deposit")]
-        public async Task<ActionResult<SavingsGoal>> AddDeposit(
+        public async Task<IActionResult> AddDeposit(
             Guid id,
-            [FromBody] DepositRequest request,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] DepositRequest request)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (request.Amount <= 0)
             {
@@ -296,7 +370,7 @@ namespace YouAndMeExpensesAPI.Controllers
             try
             {
                 var goal = await _dbContext.SavingsGoals
-                    .FirstOrDefaultAsync(g => g.Id == id && g.UserId == userId);
+                    .FirstOrDefaultAsync(g => g.Id == id && g.UserId == userId.ToString());
 
                 if (goal == null)
                 {
@@ -328,15 +402,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Withdraw money from a savings goal
         /// </summary>
         [HttpPost("{id}/withdraw")]
-        public async Task<ActionResult<SavingsGoal>> Withdraw(
+        public async Task<IActionResult> Withdraw(
             Guid id,
-            [FromBody] WithdrawRequest request,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] WithdrawRequest request)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (request.Amount <= 0)
             {
@@ -346,7 +417,7 @@ namespace YouAndMeExpensesAPI.Controllers
             try
             {
                 var goal = await _dbContext.SavingsGoals
-                    .FirstOrDefaultAsync(g => g.Id == id && g.UserId == userId);
+                    .FirstOrDefaultAsync(g => g.Id == id && g.UserId == userId.ToString());
 
                 if (goal == null)
                 {
@@ -384,17 +455,20 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Get savings goals summary statistics
         /// </summary>
         [HttpGet("summary")]
-        public async Task<ActionResult> GetSummary([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetSummary()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var goals = await _dbContext.SavingsGoals
-                    .Where(g => g.UserId == userId)
+                    .Where(g => allUserIds.Contains(g.UserId))
                     .ToListAsync();
 
                 var summary = new

@@ -1,0 +1,39 @@
+# Docker ignore file
+# Prevents unnecessary files from being copied to Docker image
+
+# Build artifacts
+bin/
+obj/
+out/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userprefs
+
+# Rider
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Environment files
+appsettings.json
+appsettings.Development.json
+*.env
+
+# Database
+*.db
+*.sqlite
+
+# Test results
+TestResults/
+

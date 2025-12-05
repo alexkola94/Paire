@@ -153,11 +153,15 @@ _ReSharper*/
 *.nuget.props
 *.nuget.targets
 
-# appsettings (keep example)
+# appsettings (keep example only)
+appsettings.json
 appsettings.Development.json
 appsettings.Production.json
-!appsettings.json
 !appsettings.Example.json
+
+# Environment files
+.env.production
+.env.development
 
 # ================================
 # Supabase

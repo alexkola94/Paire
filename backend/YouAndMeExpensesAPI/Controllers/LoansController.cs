@@ -1,46 +1,101 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
-using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
     /// <summary>
     /// API controller for managing loans between couple
     /// All endpoints require authentication and user context
+    /// Uses Entity Framework Core for data access
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class LoansController : ControllerBase
+    public class LoansController : BaseApiController
     {
-        private readonly ISupabaseService _supabaseService;
+        private readonly AppDbContext _dbContext;
         private readonly ILogger<LoansController> _logger;
 
         public LoansController(
-            ISupabaseService supabaseService,
+            AppDbContext dbContext,
             ILogger<LoansController> logger)
         {
-            _supabaseService = supabaseService;
+            _dbContext = dbContext;
             _logger = logger;
         }
 
         /// <summary>
-        /// Gets all loans for the authenticated user
+        /// Gets all loans for the authenticated user and their partner (if partnership exists)
+        /// Includes user profile information to show who created each loan
         /// </summary>
-        /// <param name="userId">User ID from auth token</param>
-        /// <returns>List of loans</returns>
+        /// <returns>List of loans with user profile data</returns>
         [HttpGet]
-        public async Task<ActionResult<List<Loan>>> GetLoans([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetLoans()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                _logger.LogWarning("GetLoans called without user ID");
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var loans = await _supabaseService.GetLoansAsync(userId);
-                return Ok(loans);
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Get loans from user and partner(s)
+                var loans = await _dbContext.Loans
+                    .Where(l => allUserIds.Contains(l.UserId))
+                    .OrderByDescending(l => l.CreatedAt)
+                    .ToListAsync();
+
+                // Get user profiles for all loan creators
+                var userIds = loans.Select(l => l.UserId).Distinct().ToList();
+                var userProfiles = await _dbContext.UserProfiles
+                    .Where(up => userIds.Contains(up.Id.ToString()))
+                    .ToListAsync();
+
+                // Create a dictionary for quick lookup
+                var profileDict = userProfiles.ToDictionary(
+                    p => p.Id.ToString(),
+                    p => new
+                    {
+                        id = p.Id,
+                        email = p.Email,
+                        display_name = p.DisplayName,
+                        avatar_url = p.AvatarUrl
+                    }
+                );
+
+                // Enrich loans with user profile data (using camelCase for frontend compatibility)
+                var enrichedLoans = loans.Select(l => new
+                {
+                    id = l.Id,
+                    userId = l.UserId,
+                    lentBy = l.LentBy,
+                    borrowedBy = l.BorrowedBy,
+                    amount = l.Amount,
+                    description = l.Description,
+                    date = l.Date,
+                    durationYears = l.DurationYears,
+                    durationMonths = l.DurationMonths,
+                    interestRate = l.InterestRate,
+                    hasInstallments = l.HasInstallments,
+                    installmentAmount = l.InstallmentAmount,
+                    installmentFrequency = l.InstallmentFrequency,
+                    totalPaid = l.TotalPaid,
+                    remainingAmount = l.RemainingAmount,
+                    nextPaymentDate = l.NextPaymentDate,
+                    dueDate = l.DueDate,
+                    isSettled = l.IsSettled,
+                    settledDate = l.SettledDate,
+                    category = l.Category,
+                    notes = l.Notes,
+                    createdAt = l.CreatedAt,
+                    updatedAt = l.UpdatedAt,
+                    user_profiles = profileDict.ContainsKey(l.UserId) ? profileDict[l.UserId] : null
+                }).ToList();
+
+                return Ok(enrichedLoans);
             }
             catch (Exception ex)
             {
@@ -50,24 +105,59 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets a specific loan by ID
+        /// Helper method to get partner user IDs for the current user
+        /// </summary>
+        /// <param name="userId">Current user ID</param>
+        /// <returns>List of partner user IDs as strings</returns>
+        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
+        {
+            try
+            {
+                var partnership = await _dbContext.Partnerships
+                    .FirstOrDefaultAsync(p =>
+                        (p.User1Id == userId || p.User2Id == userId) &&
+                        p.Status == "active");
+
+                if (partnership == null)
+                {
+                    return new List<string>();
+                }
+
+                // Return the partner's ID
+                var partnerId = partnership.User1Id == userId
+                    ? partnership.User2Id
+                    : partnership.User1Id;
+
+                return new List<string> { partnerId.ToString() };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
+        /// Gets a specific loan by ID (must belong to user or partner)
         /// </summary>
         /// <param name="id">Loan ID</param>
         /// <param name="userId">User ID from auth token</param>
         /// <returns>Loan details</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Loan>> GetLoan(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetLoan(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var loan = await _supabaseService.GetLoanByIdAsync(id, userId);
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                var loan = await _dbContext.Loans
+                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
                 
                 if (loan == null)
                 {
@@ -90,14 +180,10 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="userId">User ID from auth token</param>
         /// <returns>Created loan</returns>
         [HttpPost]
-        public async Task<ActionResult<Loan>> CreateLoan(
-            [FromBody] Loan loan,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> CreateLoan([FromBody] Loan loan)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             // Validate loan
             if (loan.Amount <= 0)
@@ -117,15 +203,37 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Ensure user ID matches
-                loan.UserId = userId;
+                // Set loan properties
+                loan.Id = Guid.NewGuid();
+                loan.UserId = userId.ToString();
+                loan.CreatedAt = DateTime.UtcNow;
+                loan.UpdatedAt = DateTime.UtcNow;
+                
+                // Initialize TotalPaid to 0 for new loans
+                loan.TotalPaid = 0;
+                
+                // Calculate RemainingAmount based on Amount and TotalPaid
+                // This ensures consistency regardless of what the frontend sends
+                loan.RemainingAmount = loan.Amount - loan.TotalPaid;
+                
+                // If loan is marked as settled, ensure RemainingAmount is 0
+                if (loan.IsSettled)
+                {
+                    loan.RemainingAmount = 0;
+                    loan.SettledDate = loan.SettledDate ?? DateTime.UtcNow;
+                }
+                else
+                {
+                    loan.SettledDate = null;
+                }
 
-                var createdLoan = await _supabaseService.CreateLoanAsync(loan);
+                _dbContext.Loans.Add(loan);
+                await _dbContext.SaveChangesAsync();
                 
                 return CreatedAtAction(
                     nameof(GetLoan),
-                    new { id = createdLoan.Id },
-                    createdLoan);
+                    new { id = loan.Id },
+                    loan);
             }
             catch (Exception ex)
             {
@@ -142,14 +250,22 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="userId">User ID from auth token</param>
         /// <returns>Updated loan</returns>
         [HttpPut("{id}")]
-        public async Task<ActionResult<Loan>> UpdateLoan(
+        public async Task<IActionResult> UpdateLoan(
             Guid id,
-            [FromBody] Loan loan,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] Loan loan)
         {
-            if (string.IsNullOrEmpty(userId))
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            // Set the loan ID from route parameter if not provided in body
+            if (loan == null)
             {
-                return Unauthorized(new { message = "User ID is required" });
+                return BadRequest(new { message = "Loan data is required" });
+            }
+
+            if (loan.Id == Guid.Empty)
+            {
+                loan.Id = id;
             }
 
             if (id != loan.Id)
@@ -165,11 +281,64 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Ensure user ID matches
-                loan.UserId = userId;
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
 
-                var updatedLoan = await _supabaseService.UpdateLoanAsync(loan);
-                return Ok(updatedLoan);
+                // Allow user or partner to update the loan
+                var existingLoan = await _dbContext.Loans
+                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
+
+                if (existingLoan == null)
+                {
+                    return NotFound(new { message = $"Loan {id} not found" });
+                }
+
+                // Update properties
+                existingLoan.Amount = loan.Amount;
+                existingLoan.LentBy = loan.LentBy ?? existingLoan.LentBy;
+                existingLoan.BorrowedBy = loan.BorrowedBy ?? existingLoan.BorrowedBy;
+                existingLoan.Description = loan.Description ?? existingLoan.Description;
+                
+                // Handle due date if provided
+                if (loan.DueDate.HasValue)
+                {
+                    existingLoan.DueDate = loan.DueDate;
+                }
+                
+                // Update settled status
+                existingLoan.IsSettled = loan.IsSettled;
+                if (loan.IsSettled && !existingLoan.SettledDate.HasValue)
+                {
+                    existingLoan.SettledDate = DateTime.UtcNow;
+                }
+                else if (!loan.IsSettled)
+                {
+                    existingLoan.SettledDate = null;
+                }
+                else if (loan.SettledDate.HasValue)
+                {
+                    existingLoan.SettledDate = loan.SettledDate;
+                }
+                
+                // Recalculate RemainingAmount based on Amount and TotalPaid
+                // This ensures consistency when the loan amount is updated
+                existingLoan.RemainingAmount = existingLoan.Amount - existingLoan.TotalPaid;
+                
+                // Update settled status based on remaining amount (override if needed)
+                if (existingLoan.RemainingAmount <= 0)
+                {
+                    existingLoan.IsSettled = true;
+                    existingLoan.RemainingAmount = 0;
+                    existingLoan.SettledDate = existingLoan.SettledDate ?? DateTime.UtcNow;
+                }
+                
+                existingLoan.UpdatedAt = DateTime.UtcNow;
+
+                await _dbContext.SaveChangesAsync();
+                
+                return Ok(existingLoan);
             }
             catch (Exception ex)
             {
@@ -185,23 +354,23 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="userId">User ID from auth token</param>
         /// <returns>Success status</returns>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteLoan(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> DeleteLoan(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var deleted = await _supabaseService.DeleteLoanAsync(id, userId);
+                var loan = await _dbContext.Loans
+                    .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId.ToString());
                 
-                if (!deleted)
+                if (loan == null)
                 {
                     return NotFound(new { message = $"Loan {id} not found" });
                 }
+
+                _dbContext.Loans.Remove(loan);
+                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }
@@ -218,16 +387,16 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="userId">User ID from auth token</param>
         /// <returns>Loan summary</returns>
         [HttpGet("summary")]
-        public async Task<ActionResult> GetLoanSummary([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetLoanSummary()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var loans = await _supabaseService.GetLoansAsync(userId);
+                var loans = await _dbContext.Loans
+                    .Where(l => l.UserId == userId.ToString())
+                    .ToListAsync();
 
                 // Calculate totals by person
                 var summary = loans
@@ -264,18 +433,15 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="userId">User ID from auth token</param>
         /// <returns>Updated loan</returns>
         [HttpPost("{id}/settle")]
-        public async Task<ActionResult<Loan>> SettleLoan(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> SettleLoan(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
-                var loan = await _supabaseService.GetLoanByIdAsync(id, userId);
+                var loan = await _dbContext.Loans
+                    .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId.ToString());
                 
                 if (loan == null)
                 {
@@ -289,9 +455,11 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 loan.IsSettled = true;
                 loan.SettledDate = DateTime.UtcNow;
+                loan.UpdatedAt = DateTime.UtcNow;
 
-                var updatedLoan = await _supabaseService.UpdateLoanAsync(loan);
-                return Ok(updatedLoan);
+                await _dbContext.SaveChangesAsync();
+                
+                return Ok(loan);
             }
             catch (Exception ex)
             {

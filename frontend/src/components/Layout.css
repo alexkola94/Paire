@@ -30,7 +30,7 @@
    ================================ */
 
 .layout-header {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #6c5ce7 0%, #4a3f8f 100%);
   color: white;
   padding: var(--spacing-md);
   box-shadow: var(--shadow-md);
@@ -51,6 +51,27 @@
 .header-left {
   flex: 1;
   min-width: 0; /* Allow text truncation */
+}
+
+/* Paire brand header styling */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.header-logo {
+  flex-shrink: 0;
+  filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: transform 0.3s ease;
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
+.header-text {
+  min-width: 0;
 }
 
 .app-title {

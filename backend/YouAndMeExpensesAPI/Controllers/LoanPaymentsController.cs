@@ -10,9 +10,8 @@ namespace YouAndMeExpensesAPI.Controllers
     /// Tracks individual payments made towards loans
     /// Uses Entity Framework Core for data access
     /// </summary>
-    [ApiController]
     [Route("api/[controller]")]
-    public class LoanPaymentsController : ControllerBase
+    public class LoanPaymentsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
         private readonly ILogger<LoanPaymentsController> _logger;
@@ -24,22 +23,33 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets all loan payments for a specific loan
+        /// Gets all loan payments for a specific loan (loan must belong to user or partner)
         /// </summary>
         [HttpGet("by-loan/{loanId}")]
-        public async Task<ActionResult<List<LoanPayment>>> GetLoanPayments(
-            Guid loanId,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetLoanPayments(Guid loanId)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Verify loan belongs to user or partner
+                var loan = await _dbContext.Loans
+                    .FirstOrDefaultAsync(l => l.Id == loanId && allUserIds.Contains(l.UserId));
+
+                if (loan == null)
+                {
+                    return NotFound(new { message = $"Loan {loanId} not found" });
+                }
+
+                // Get payments for this loan (from both user and partner)
                 var payments = await _dbContext.LoanPayments
-                    .Where(p => p.LoanId == loanId && p.UserId == userId)
+                    .Where(p => p.LoanId == loanId && allUserIds.Contains(p.UserId))
                     .OrderByDescending(p => p.PaymentDate)
                     .ToListAsync();
 
@@ -53,20 +63,23 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets all loan payments for the authenticated user
+        /// Gets all loan payments for the authenticated user and their partner (if partnership exists)
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<LoanPayment>>> GetAllPayments([FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetAllPayments()
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var payments = await _dbContext.LoanPayments
-                    .Where(p => p.UserId == userId)
+                    .Where(p => allUserIds.Contains(p.UserId))
                     .OrderByDescending(p => p.PaymentDate)
                     .ToListAsync();
 
@@ -80,22 +93,23 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets a specific loan payment by ID
+        /// Gets a specific loan payment by ID (must belong to user or partner)
         /// </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<LoanPayment>> GetLoanPayment(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetLoanPayment(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var payment = await _dbContext.LoanPayments
-                    .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+                    .FirstOrDefaultAsync(p => p.Id == id && allUserIds.Contains(p.UserId));
 
                 if (payment == null)
                 {
@@ -115,14 +129,10 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Creates a new loan payment and updates the loan
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<LoanPayment>> CreateLoanPayment(
-            [FromBody] LoanPayment payment,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> CreateLoanPayment([FromBody] LoanPayment payment)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             // Validate payment
             if (payment.Amount <= 0)
@@ -132,9 +142,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Verify the loan exists and belongs to the user
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                // Verify the loan exists and belongs to the user or partner
                 var loan = await _dbContext.Loans
-                    .FirstOrDefaultAsync(l => l.Id == payment.LoanId && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == payment.LoanId && allUserIds.Contains(l.UserId));
 
                 if (loan == null)
                 {
@@ -143,7 +158,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 // Set payment properties
                 payment.Id = Guid.NewGuid();
-                payment.UserId = userId;
+                payment.UserId = userId.ToString();
                 payment.CreatedAt = DateTime.UtcNow;
 
                 // Ensure PaymentDate is UTC
@@ -189,15 +204,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Updates an existing loan payment
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult<LoanPayment>> UpdateLoanPayment(
+        public async Task<IActionResult> UpdateLoanPayment(
             Guid id,
-            [FromBody] LoanPayment payment,
-            [FromHeader(Name = "X-User-Id")] string userId)
+            [FromBody] LoanPayment payment)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             if (id != payment.Id)
             {
@@ -206,8 +218,13 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var existingPayment = await _dbContext.LoanPayments
-                    .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+                    .FirstOrDefaultAsync(p => p.Id == id && allUserIds.Contains(p.UserId));
 
                 if (existingPayment == null)
                 {
@@ -278,19 +295,20 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Deletes a loan payment and updates the loan
         /// </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteLoanPayment(
-            Guid id,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> DeleteLoanPayment(Guid id)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var payment = await _dbContext.LoanPayments
-                    .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+                    .FirstOrDefaultAsync(p => p.Id == id && allUserIds.Contains(p.UserId));
 
                 if (payment == null)
                 {
@@ -333,19 +351,20 @@ namespace YouAndMeExpensesAPI.Controllers
         /// Get payment summary for a specific loan
         /// </summary>
         [HttpGet("summary/{loanId}")]
-        public async Task<ActionResult> GetLoanPaymentSummary(
-            Guid loanId,
-            [FromHeader(Name = "X-User-Id")] string userId)
+        public async Task<IActionResult> GetLoanPaymentSummary(Guid loanId)
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "User ID is required" });
-            }
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
 
             try
             {
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
                 var loan = await _dbContext.Loans
-                    .FirstOrDefaultAsync(l => l.Id == loanId && l.UserId == userId);
+                    .FirstOrDefaultAsync(l => l.Id == loanId && allUserIds.Contains(l.UserId));
 
                 if (loan == null)
                 {
@@ -353,7 +372,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
 
                 var payments = await _dbContext.LoanPayments
-                    .Where(p => p.LoanId == loanId && p.UserId == userId)
+                    .Where(p => p.LoanId == loanId && allUserIds.Contains(p.UserId))
                     .ToListAsync();
 
                 var summary = new
@@ -378,6 +397,39 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 _logger.LogError(ex, "Error getting loan payment summary for loan {LoanId}", loanId);
                 return StatusCode(500, new { message = "Error retrieving payment summary", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Helper method to get partner user IDs for the current user
+        /// </summary>
+        /// <param name="userId">Current user ID</param>
+        /// <returns>List of partner user IDs as strings</returns>
+        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
+        {
+            try
+            {
+                var partnership = await _dbContext.Partnerships
+                    .FirstOrDefaultAsync(p =>
+                        (p.User1Id == userId || p.User2Id == userId) &&
+                        p.Status == "active");
+
+                if (partnership == null)
+                {
+                    return new List<string>();
+                }
+
+                // Return the partner's ID
+                var partnerId = partnership.User1Id == userId
+                    ? partnership.User2Id
+                    : partnership.User1Id;
+
+                return new List<string> { partnerId.ToString() };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
+                return new List<string>();
             }
         }
     }
