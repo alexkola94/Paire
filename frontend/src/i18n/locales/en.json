@@ -240,7 +240,12 @@
     "loansGiven": "Loans Given",
     "loansReceived": "Loans Received",
     "paidBack": "Paid Back",
-    "outstanding": "Outstanding"
+    "outstanding": "Outstanding",
+    "solo": "Solo",
+    "partner": "Partner",
+    "together": "Together",
+    "noCategoryData": "No category data available",
+    "noCategoryDataDescription": "Add expenses to see spending breakdown by category"
   },
   "partnership": {
     "title": "Partnership",
@@ -330,6 +335,7 @@
     "open": "Open chat",
     "close": "Close chat",
     "minimize": "Minimize chat",
+    "reveal": "Reveal chatbot",
     "send": "Send message",
     "placeholder": "Ask me anything...",
     "tryAsking": "Try asking:",
@@ -490,7 +496,14 @@
       "pieces": "pcs",
       "pack": "pack",
       "box": "box"
-    }
+    },
+    "uploadList": "Upload List",
+    "uploading": "Uploading...",
+    "uploadSuccess": "Successfully imported {{count}} items from {{fileName}}",
+    "uploadError": "Error uploading file: {{error}}",
+    "checkItem": "Check item",
+    "uncheckItem": "Uncheck item",
+    "toggleSidebar": "Toggle sidebar"
   },
   "savingsGoals": {
     "title": "Savings Goals",
@@ -637,7 +650,10 @@
     "useAuthenticatorCode": "Use Authenticator Code",
     "backupCodeRequired": "Please enter a backup code",
     "backupCodeHelp": "Enter one of your backup recovery codes. Each code can only be used once.",
-    "authenticatorHelp": "Open your authenticator app and enter the current 6-digit code for You & Me Expenses."
+    "authenticatorHelp": "Open your authenticator app and enter the current 6-digit code for You & Me Expenses.",
+    "verificationSuccess": "Verification successful!",
+    "redirecting": "Redirecting to app...",
+    "verifying": "Verifying..."
   },
   "emailConfirmation": {
     "confirmingTitle": "Confirming Your Email",

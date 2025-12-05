@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck, 
-  FiClock, FiAlertCircle, FiRepeat 
+  FiClock, FiAlertCircle, FiRepeat, FiX
 } from 'react-icons/fi'
 import { recurringBillService } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
@@ -408,11 +408,17 @@ function RecurringBills() {
       {showForm && (
         <div className="modal-overlay" onClick={resetForm}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+            <div className="modal-header form-header">
               <h2>
                 {editingBill ? t('recurringBills.editBill') : t('recurringBills.addBill')}
               </h2>
-              <button className="close-btn" onClick={resetForm}>&times;</button>
+              <button 
+                className="form-close-btn" 
+                onClick={resetForm}
+                aria-label={t('common.close')}
+              >
+                <FiX size={24} />
+              </button>
             </div>
 
             <form onSubmit={handleSubmit}>

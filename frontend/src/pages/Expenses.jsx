@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiFileText } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiX } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
@@ -165,7 +165,7 @@ function Expenses() {
             onClick={() => setShowForm(true)}
             className="btn btn-primary"
           >
-            <FiPlus size={20} />
+            <FiPlus />
             {t('expenses.addExpense')}
           </button>
         )}
@@ -173,15 +173,22 @@ function Expenses() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="form-modal">
+        <div className="form-modal" onClick={(e) => e.target === e.currentTarget && closeForm()}>
           <div className="card form-card">
-            <div className="card-header">
+            <div className="card-header form-header">
               <h2>
                 {editingExpense 
                   ? t('expenses.editExpense')
                   : t('expenses.addExpense')
                 }
               </h2>
+              <button
+                className="form-close-btn"
+                onClick={closeForm}
+                aria-label={t('common.close')}
+              >
+                <FiX size={24} />
+              </button>
             </div>
             <TransactionForm
               transaction={editingExpense}
@@ -202,7 +209,7 @@ function Expenses() {
             onClick={() => setShowForm(true)}
             className="btn btn-primary"
           >
-            <FiPlus size={20} />
+            <FiPlus />
             {t('expenses.addExpense')}
           </button>
         </div>
@@ -231,9 +238,6 @@ function Expenses() {
                   <span className="added-by">
                     {' • ' + t('dashboard.addedBy') + ' '}
                     {expense.user_profiles.display_name}
-                    {expense.user_profiles.email && (
-                      <span className="added-by-email"> ({expense.user_profiles.email})</span>
-                    )}
                   </span>
                 )}
               </div>

@@ -340,7 +340,8 @@
   }
 
   .budgets-page .page-header .btn {
-    width: 100%;
+    width: auto;
+    min-width: fit-content;
   }
 
   .budget-header {

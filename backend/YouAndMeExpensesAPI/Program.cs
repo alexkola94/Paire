@@ -92,8 +92,8 @@ builder.Services.AddCors(options =>
                         hostname.StartsWith("10.") || 
                         (hostname.StartsWith("172.") && IsPrivateIPRange(hostname)))
                     {
-                        // Allow common development ports (3000-3010, 5173, 5038)
-                        return (port >= 3000 && port <= 3010) || port == 5173 || port == 5038;
+                        // Allow common development ports (3000-3010, 5173, 5038, 5039)
+                        return (port >= 3000 && port <= 3010) || port == 5173 || port == 5038 || port == 5039;
                     }
                 }
                 catch

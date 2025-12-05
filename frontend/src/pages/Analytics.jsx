@@ -6,11 +6,13 @@ import {
   FiPieChart,
   FiBarChart2,
   FiActivity,
-  FiCalendar
+  FiCalendar,
+  FiFilter
 } from 'react-icons/fi'
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import { Pie, Line, Bar } from 'react-chartjs-2'
-import { analyticsService } from '../services/api'
+import { analyticsService, transactionService } from '../services/api'
+import { getStoredUser } from '../services/auth'
 import { format, subDays } from 'date-fns'
 import './Analytics.css'
 
@@ -38,13 +40,15 @@ function Analytics() {
   const [loanAnalytics, setLoanAnalytics] = useState(null)
   const [comparativeAnalytics, setComparativeAnalytics] = useState(null)
   const [dateRange, setDateRange] = useState('month') // 'week', 'month', 'year'
+  const [viewFilter, setViewFilter] = useState('together') // 'solo', 'partner', 'together'
+  const [allTransactions, setAllTransactions] = useState([])
 
   /**
-   * Load analytics data on mount and when date range changes
+   * Load analytics data on mount and when date range or filter changes
    */
   useEffect(() => {
     loadAnalytics()
-  }, [dateRange])
+  }, [dateRange, viewFilter])
 
   /**
    * Get date range based on selection
@@ -74,6 +78,154 @@ function Analytics() {
   }
 
   /**
+   * Filter transactions based on view filter (Solo/Partner/Together)
+   */
+  const filterTransactions = (transactions) => {
+    if (!transactions || transactions.length === 0) return []
+    
+    const currentUser = getStoredUser()
+    if (!currentUser) return transactions
+
+    const currentUserId = currentUser.id
+    const currentUserEmail = currentUser.email?.toLowerCase()
+    
+    return transactions.filter(transaction => {
+      // Check by user_id first (more reliable)
+      const transactionUserId = transaction.user_id || transaction.userId
+      const isCurrentUserById = transactionUserId === currentUserId
+      
+      // Fallback to email check if user_id doesn't match
+      const userEmail = transaction.user_profiles?.email?.toLowerCase() || 
+                        transaction.userProfiles?.email?.toLowerCase()
+      const isCurrentUserByEmail = userEmail === currentUserEmail
+      
+      // Determine transaction ownership
+      const isCurrentUser = isCurrentUserById || isCurrentUserByEmail
+      const isPartner = !isCurrentUser && (transactionUserId || userEmail)
+
+      switch (viewFilter) {
+        case 'solo':
+          return isCurrentUser
+        case 'partner':
+          return isPartner
+        case 'together':
+          return true // Show all transactions
+        default:
+          return true
+      }
+    })
+  }
+
+  /**
+   * Calculate analytics from filtered transactions
+   */
+  const calculateAnalyticsFromTransactions = (transactions) => {
+    if (!transactions || transactions.length === 0) {
+      return {
+        totalIncome: 0,
+        totalExpenses: 0,
+        balance: 0,
+        averageDailySpending: 0,
+        categoryBreakdown: [],
+        incomeExpenseTrend: [],
+        monthlyComparison: []
+      }
+    }
+
+    // Filter expenses only
+    const expenses = transactions.filter(t => t.type === 'expense')
+    const income = transactions.filter(t => t.type === 'income')
+
+    // Calculate totals
+    const totalIncome = income.reduce((sum, t) => sum + (t.amount || 0), 0)
+    const totalExpenses = expenses.reduce((sum, t) => sum + (t.amount || 0), 0)
+    const balance = totalIncome - totalExpenses
+
+    // Calculate average daily spending
+    const range = getDateRange()
+    const startDate = new Date(range.start)
+    const endDate = new Date(range.end)
+    const daysDiff = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)))
+    const averageDailySpending = totalExpenses / daysDiff
+
+    // Category breakdown
+    const categoryMap = {}
+    expenses.forEach(expense => {
+      const category = expense.category || 'other'
+      const amount = expense.amount || 0
+      if (!categoryMap[category]) {
+        categoryMap[category] = 0
+      }
+      categoryMap[category] += amount
+    })
+
+    const categoryBreakdown = Object.entries(categoryMap)
+      .map(([category, amount]) => ({
+        category,
+        amount,
+        percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0
+      }))
+      .sort((a, b) => b.amount - a.amount)
+
+    // Income vs Expenses trend (by day)
+    const trendMap = {}
+    transactions.forEach(t => {
+      const date = format(new Date(t.date), 'yyyy-MM-dd')
+      if (!trendMap[date]) {
+        trendMap[date] = { date, income: 0, expenses: 0 }
+      }
+      if (t.type === 'income') {
+        trendMap[date].income += t.amount || 0
+      } else if (t.type === 'expense') {
+        trendMap[date].expenses += t.amount || 0
+      }
+    })
+
+    const incomeExpenseTrend = Object.values(trendMap)
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+
+    // Monthly comparison
+    const monthlyMap = {}
+    transactions.forEach(t => {
+      const date = new Date(t.date)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      if (!monthlyMap[monthKey]) {
+        monthlyMap[monthKey] = {
+          month: format(date, 'MMM'),
+          year: date.getFullYear(),
+          income: 0,
+          expenses: 0
+        }
+      }
+      if (t.type === 'income') {
+        monthlyMap[monthKey].income += t.amount || 0
+      } else if (t.type === 'expense') {
+        monthlyMap[monthKey].expenses += t.amount || 0
+      }
+    })
+
+    const monthlyComparison = Object.values(monthlyMap)
+      .map(month => ({
+        ...month,
+        balance: month.income - month.expenses
+      }))
+      .sort((a, b) => {
+        if (a.year !== b.year) return b.year - a.year
+        return new Date(`${a.month} 1, ${a.year}`) - new Date(`${b.month} 1, ${b.year}`)
+      })
+
+    return {
+      totalIncome,
+      totalExpenses,
+      balance,
+      averageDailySpending,
+      categoryBreakdown,
+      incomeExpenseTrend,
+      monthlyComparison
+    }
+  }
+
+  /**
    * Fetch analytics from backend
    */
   const loadAnalytics = async () => {
@@ -81,18 +233,36 @@ function Analytics() {
       setLoading(true)
       const range = getDateRange()
       
-      console.log('📊 Loading analytics for date range:', range)
+      console.log('📊 Loading analytics for date range:', range, 'filter:', viewFilter)
 
-      // Fetch all analytics separately to handle individual failures
+      // Fetch all transactions first to filter them
       try {
-        console.log('💰 Fetching financial analytics...')
-        const financial = await analyticsService.getFinancialAnalytics(range.start, range.end)
-        console.log('✅ Financial analytics loaded:', financial)
-        setAnalytics(financial)
+        console.log('📝 Fetching all transactions...')
+        const allTransactions = await transactionService.getAll({
+          startDate: range.start,
+          endDate: range.end
+        })
+        console.log('✅ Transactions loaded:', allTransactions?.length)
+        setAllTransactions(allTransactions || [])
+        
+        // Filter transactions based on view filter
+        const filteredTransactions = filterTransactions(allTransactions || [])
+        console.log('✅ Filtered transactions:', filteredTransactions.length, 'filter:', viewFilter)
+        
+        // Calculate analytics from filtered transactions
+        const calculatedAnalytics = calculateAnalyticsFromTransactions(filteredTransactions)
+        console.log('✅ Calculated analytics:', calculatedAnalytics)
+        setAnalytics(calculatedAnalytics)
       } catch (error) {
-        console.error('❌ Error loading financial analytics:', error)
-        console.error('Error details:', error.message, error.stack)
-        setAnalytics(null)
+        console.error('❌ Error loading transactions:', error)
+        // Fallback to API if transaction filtering fails
+        try {
+          const financial = await analyticsService.getFinancialAnalytics(range.start, range.end)
+          setAnalytics(financial)
+        } catch (apiError) {
+          console.error('❌ Error loading financial analytics:', apiError)
+          setAnalytics(null)
+        }
       }
 
       try {
@@ -138,22 +308,37 @@ function Analytics() {
    * Prepare category breakdown pie chart data
    */
   const getCategoryChartData = () => {
-    if (!analytics || !analytics.categoryBreakdown) return null
+    if (!analytics || !analytics.categoryBreakdown || analytics.categoryBreakdown.length === 0) return null
 
-    const categories = analytics.categoryBreakdown.slice(0, 6) // Top 6 categories
+    // Show all categories, not just top 6
+    const categories = analytics.categoryBreakdown
+
+    // Generate colors for all categories
+    const colorPalette = [
+      '#6C5CE7', // Primary purple
+      '#10B981', // Success green
+      '#F59E0B', // Warning orange
+      '#EF4444', // Error red
+      '#8B5CF6', // Purple
+      '#EC4899', // Pink
+      '#06B6D4', // Cyan
+      '#84CC16', // Lime
+      '#F97316', // Orange
+      '#6366F1', // Indigo
+      '#14B8A6', // Teal
+      '#A855F7'  // Violet
+    ]
+
+    // Repeat colors if needed
+    const colors = categories.map((_, index) => 
+      colorPalette[index % colorPalette.length]
+    )
 
     return {
       labels: categories.map(c => t(`categories.${c.category}`) || c.category),
       datasets: [{
         data: categories.map(c => c.amount),
-        backgroundColor: [
-          '#4F46E5', // Primary
-          '#10B981', // Success
-          '#F59E0B', // Warning
-          '#EF4444', // Error
-          '#8B5CF6', // Purple
-          '#EC4899'  // Pink
-        ],
+        backgroundColor: colors,
         borderWidth: 2,
         borderColor: '#fff'
       }]
@@ -247,18 +432,35 @@ function Analytics() {
           <p className="page-subtitle">{t('analytics.subtitle')}</p>
         </div>
         
-        {/* Date Range Selector */}
-        <div className="date-range-selector">
-          <FiCalendar size={18} />
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="date-range-select"
-          >
-            <option value="week">{t('analytics.lastWeek')}</option>
-            <option value="month">{t('analytics.thisMonth')}</option>
-            <option value="year">{t('analytics.thisYear')}</option>
-          </select>
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* View Filter */}
+          <div className="date-range-selector">
+            <FiFilter size={18} />
+            <select
+              value={viewFilter}
+              onChange={(e) => setViewFilter(e.target.value)}
+              className="date-range-select"
+            >
+              <option value="together">{t('analytics.together')}</option>
+              <option value="solo">{t('analytics.solo')}</option>
+              <option value="partner">{t('analytics.partner')}</option>
+            </select>
+          </div>
+          
+          {/* Date Range Selector */}
+          <div className="date-range-selector">
+            <FiCalendar size={18} />
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="date-range-select"
+            >
+              <option value="week">{t('analytics.lastWeek')}</option>
+              <option value="month">{t('analytics.thisMonth')}</option>
+              <option value="year">{t('analytics.thisYear')}</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -311,35 +513,51 @@ function Analytics() {
 
       {/* Charts Grid */}
       <div className="charts-grid">
-        {/* Category Breakdown Pie Chart */}
-        {analytics && analytics.categoryBreakdown && analytics.categoryBreakdown.length > 0 && (
-          <div className="card chart-card">
-            <div className="card-header">
-              <h2>
-                <FiPieChart size={24} />
-                {t('analytics.categoryBreakdown')}
-              </h2>
-            </div>
-            <div className="chart-container pie-chart">
-              <Pie data={getCategoryChartData()} options={chartOptions} />
-            </div>
-            
-            {/* Category List */}
-            <div className="category-list">
-              {analytics.categoryBreakdown.slice(0, 6).map((cat, index) => (
-                <div key={index} className="category-item">
-                  <span className="category-name">
-                    {t(`categories.${cat.category}`) || cat.category}
-                  </span>
-                  <span className="category-amount">
-                    {formatCurrency(cat.amount)}
-                    <small> ({cat.percentage.toFixed(1)}%)</small>
-                  </span>
-                </div>
-              ))}
-            </div>
+        {/* Category Breakdown Pie Chart - Always show, even if empty */}
+        <div className="card chart-card">
+          <div className="card-header">
+            <h2>
+              <FiPieChart size={24} />
+              {t('analytics.categoryBreakdown')}
+            </h2>
           </div>
-        )}
+          {analytics && analytics.categoryBreakdown && analytics.categoryBreakdown.length > 0 ? (
+            <>
+              <div className="chart-container pie-chart">
+                <Pie data={getCategoryChartData()} options={chartOptions} />
+              </div>
+            
+              {/* Category List - Show all categories */}
+              <div className="category-list">
+                {analytics.categoryBreakdown.map((cat, index) => (
+                  <div key={index} className="category-item">
+                    <div className="category-info">
+                      <span 
+                        className="category-color-indicator"
+                        style={{ 
+                          backgroundColor: getCategoryChartData()?.datasets[0]?.backgroundColor[index] || '#6C5CE7'
+                        }}
+                      />
+                      <span className="category-name">
+                        {t(`categories.${cat.category}`) || cat.category}
+                      </span>
+                    </div>
+                    <span className="category-amount">
+                      {formatCurrency(cat.amount)}
+                      <small> ({cat.percentage.toFixed(1)}%)</small>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="empty-chart-state">
+              <FiPieChart size={64} />
+              <h3>{t('analytics.noCategoryData')}</h3>
+              <p>{t('analytics.noCategoryDataDescription')}</p>
+            </div>
+          )}
+        </div>
 
         {/* Income vs Expenses Trend */}
         {analytics && analytics.incomeExpenseTrend && analytics.incomeExpenseTrend.length > 0 && (

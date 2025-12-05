@@ -7,6 +7,89 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ================================
+   Form Modal
+   ================================ */
+
+.form-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-md);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.form-card {
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  z-index: 10;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.form-close-btn {
+  background: var(--bg-tertiary);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.form-close-btn:hover {
+  background: var(--error);
+  color: white;
+  transform: scale(1.1);
+}
+
+.form-close-btn:active {
+  transform: scale(0.95);
+}
+
 /* ================================
    Income Grid
    ================================ */
@@ -134,7 +217,37 @@
   }
 
   .page-header button {
+    width: auto;
+    min-width: fit-content;
+  }
+
+  .form-modal {
+    padding: 0;
+    align-items: flex-start;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .form-card {
+    max-height: 100vh;
+    border-radius: 0;
     width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .form-header {
+    padding: var(--spacing-md);
+    margin: 0;
+  }
+
+  .form-header h2 {
+    font-size: 1.25rem;
+    margin: 0;
+  }
+
+  .form-close-btn {
+    width: 36px;
+    height: 36px;
   }
 }
 

@@ -31,10 +31,17 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <summary>
         /// Gets all transactions for the authenticated user and their partner (if partnership exists)
         /// Includes user profile information to show who created each transaction
+        /// Supports filtering by type (income/expense) and date range (startDate/endDate)
         /// </summary>
+        /// <param name="type">Optional: Filter by transaction type (income or expense)</param>
+        /// <param name="startDate">Optional: Filter transactions from this date (inclusive)</param>
+        /// <param name="endDate">Optional: Filter transactions until this date (inclusive)</param>
         /// <returns>List of transactions with user profile data</returns>
         [HttpGet]
-        public async Task<IActionResult> GetTransactions()
+        public async Task<IActionResult> GetTransactions(
+            [FromQuery] string? type = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
         {
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return error;
@@ -46,9 +53,48 @@ namespace YouAndMeExpensesAPI.Controllers
                 var allUserIds = new List<string> { userId.ToString() };
                 allUserIds.AddRange(partnerIds);
 
-                // Get transactions from user and partner(s)
-                var transactions = await _dbContext.Transactions
-                    .Where(t => allUserIds.Contains(t.UserId))
+                // Build query with filters
+                var query = _dbContext.Transactions
+                    .Where(t => allUserIds.Contains(t.UserId));
+
+                // Filter by transaction type if provided
+                if (!string.IsNullOrEmpty(type))
+                {
+                    // Normalize type to lowercase for comparison
+                    var normalizedType = type.ToLowerInvariant();
+                    if (normalizedType == "income" || normalizedType == "expense")
+                    {
+                        // Use EF.Functions.ILike for case-insensitive comparison that can be translated to SQL
+                        query = query.Where(t => EF.Functions.ILike(t.Type, normalizedType));
+                    }
+                    else
+                    {
+                        return BadRequest(new { message = "Invalid type parameter. Must be 'income' or 'expense'." });
+                    }
+                }
+
+                // Filter by date range if provided
+                if (startDate.HasValue)
+                {
+                    // Ensure UTC for PostgreSQL compatibility
+                    var startDateUtc = startDate.Value.Kind == DateTimeKind.Utc 
+                        ? startDate.Value 
+                        : startDate.Value.ToUniversalTime();
+                    query = query.Where(t => t.Date >= startDateUtc);
+                }
+
+                if (endDate.HasValue)
+                {
+                    // Include the entire end date (set to end of day) and ensure UTC
+                    var endDateValue = endDate.Value.Kind == DateTimeKind.Utc 
+                        ? endDate.Value 
+                        : endDate.Value.ToUniversalTime();
+                    var endOfDay = endDateValue.Date.AddDays(1).AddTicks(-1);
+                    query = query.Where(t => t.Date <= endOfDay);
+                }
+
+                // Get transactions with ordering
+                var transactions = await query
                     .OrderByDescending(t => t.Date)
                     .ToListAsync();
 
@@ -201,6 +247,18 @@ namespace YouAndMeExpensesAPI.Controllers
                 transaction.UserId = userId.ToString();
                 transaction.CreatedAt = DateTime.UtcNow;
                 transaction.UpdatedAt = DateTime.UtcNow;
+                
+                // Ensure Date is UTC for PostgreSQL compatibility
+                if (transaction.Date.Kind != DateTimeKind.Utc)
+                {
+                    transaction.Date = transaction.Date.ToUniversalTime();
+                }
+                
+                // Ensure RecurrenceEndDate is UTC if provided
+                if (transaction.RecurrenceEndDate.HasValue && transaction.RecurrenceEndDate.Value.Kind != DateTimeKind.Utc)
+                {
+                    transaction.RecurrenceEndDate = transaction.RecurrenceEndDate.Value.ToUniversalTime();
+                }
 
                 _dbContext.Transactions.Add(transaction);
                 await _dbContext.SaveChangesAsync();
@@ -263,11 +321,28 @@ namespace YouAndMeExpensesAPI.Controllers
                 existingTransaction.Amount = transaction.Amount;
                 existingTransaction.Category = transaction.Category;
                 existingTransaction.Description = transaction.Description;
-                existingTransaction.Date = transaction.Date;
+                
+                // Ensure Date is UTC for PostgreSQL compatibility
+                existingTransaction.Date = transaction.Date.Kind == DateTimeKind.Utc 
+                    ? transaction.Date 
+                    : transaction.Date.ToUniversalTime();
+                
                 existingTransaction.PaidBy = transaction.PaidBy;
                 existingTransaction.IsRecurring = transaction.IsRecurring;
                 existingTransaction.RecurrencePattern = transaction.RecurrencePattern;
-                existingTransaction.RecurrenceEndDate = transaction.RecurrenceEndDate;
+                
+                // Ensure RecurrenceEndDate is UTC if provided
+                if (transaction.RecurrenceEndDate.HasValue)
+                {
+                    existingTransaction.RecurrenceEndDate = transaction.RecurrenceEndDate.Value.Kind == DateTimeKind.Utc 
+                        ? transaction.RecurrenceEndDate.Value 
+                        : transaction.RecurrenceEndDate.Value.ToUniversalTime();
+                }
+                else
+                {
+                    existingTransaction.RecurrenceEndDate = null;
+                }
+                
                 existingTransaction.UpdatedAt = DateTime.UtcNow;
 
                 await _dbContext.SaveChangesAsync();

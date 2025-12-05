@@ -212,7 +212,7 @@ function Budgets() {
             onClick={() => setShowForm(true)}
             className="btn btn-primary"
           >
-            <FiPlus size={20} />
+            <FiPlus />
             {t('budgets.addBudget')}
           </button>
         )}
@@ -306,7 +306,7 @@ function Budgets() {
             onClick={() => setShowForm(true)}
             className="btn btn-primary"
           >
-            <FiPlus size={20} />
+            <FiPlus />
             {t('budgets.addFirstBudget')}
           </button>
         </div>

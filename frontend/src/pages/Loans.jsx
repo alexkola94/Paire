@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDown } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDown, FiX } from 'react-icons/fi'
 import { loanService, loanPaymentService } from '../services/api'
 import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -336,7 +336,7 @@ function Loans() {
             onClick={() => setShowForm(true)}
             className="btn btn-primary"
           >
-            <FiPlus size={20} />
+            <FiPlus />
             {t('loans.addLoan')}
           </button>
         )}
@@ -344,15 +344,22 @@ function Loans() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="form-modal">
+        <div className="form-modal" onClick={(e) => e.target === e.currentTarget && closeForm()}>
           <div className="card form-card">
-            <div className="card-header">
+            <div className="card-header form-header">
               <h2>
                 {editingLoan 
                   ? t('loans.editLoan')
                   : t('loans.addLoan')
                 }
               </h2>
+              <button
+                className="form-close-btn"
+                onClick={closeForm}
+                aria-label={t('common.close')}
+              >
+                <FiX size={24} />
+              </button>
             </div>
             
             <form onSubmit={handleSubmit} className="loan-form">
@@ -510,7 +517,7 @@ function Loans() {
             onClick={() => setShowForm(true)}
             className="btn btn-primary"
           >
-            <FiPlus size={20} />
+            <FiPlus />
             {t('loans.addLoan')}
           </button>
         </div>
@@ -567,9 +574,6 @@ function Loans() {
                 {loan.user_profiles && (
                   <div className="loan-added-by">
                     Added by {loan.user_profiles.display_name}
-                    {loan.user_profiles.email && (
-                      <span className="added-by-email"> ({loan.user_profiles.email})</span>
-                    )}
                   </div>
                 )}
 

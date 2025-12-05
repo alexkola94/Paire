@@ -21,6 +21,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
   const [verificationCode, setVerificationCode] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false); // Success state for animation
+  const [isExiting, setIsExiting] = useState(false); // Exit animation state
   const hasAutoVerified = useRef(false);
   const isVerifyingRef = useRef(false);
   const hasCalledOnSuccess = useRef(false); // Prevent multiple success calls
@@ -116,11 +118,21 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       localStorage.setItem('refresh_token', data.refreshToken || '');
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Notify parent component of successful login (only once)
-      if (onSuccess && !hasCalledOnSuccess.current) {
-        hasCalledOnSuccess.current = true;
-        onSuccess(data);
-      }
+      // Show success animation before navigating
+      setIsSuccess(true);
+      
+      // Wait for success animation to play, then trigger exit animation
+      setTimeout(() => {
+        setIsExiting(true);
+        
+        // After exit animation, notify parent and navigate
+        setTimeout(() => {
+          if (onSuccess && !hasCalledOnSuccess.current) {
+            hasCalledOnSuccess.current = true;
+            onSuccess(data);
+          }
+        }, 300); // Match CSS exit animation duration
+      }, 800); // Success animation duration
     } catch (err) {
       // Handle different error types
       let errorMessage;
@@ -176,11 +188,21 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       localStorage.setItem('refresh_token', data.refreshToken || '');
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Notify parent component of successful login (only once)
-      if (onSuccess && !hasCalledOnSuccess.current) {
-        hasCalledOnSuccess.current = true;
-        onSuccess(data);
-      }
+      // Show success animation before navigating
+      setIsSuccess(true);
+      
+      // Wait for success animation to play, then trigger exit animation
+      setTimeout(() => {
+        setIsExiting(true);
+        
+        // After exit animation, notify parent and navigate
+        setTimeout(() => {
+          if (onSuccess && !hasCalledOnSuccess.current) {
+            hasCalledOnSuccess.current = true;
+            onSuccess(data);
+          }
+        }, 300); // Match CSS exit animation duration
+      }, 800); // Success animation duration
     } catch (err) {
       setError(err.message);
       hasAutoVerified.current = false;
@@ -248,8 +270,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
   }, [error]);
 
   return (
-    <div className="two-factor-verification">
-      <div className="verification-container">
+    <div className={`two-factor-verification ${isExiting ? 'exiting' : ''}`}>
+      <div className={`verification-container ${isSuccess ? 'success' : ''} ${isExiting ? 'exiting' : ''}`}>
         {/* Header */}
         <div className="verification-header">
           <div className="security-icon">
@@ -367,10 +389,23 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
             />
 
             {/* Loading indicator when verifying */}
-            {loading && (
+            {loading && !isSuccess && (
               <div className="verifying-indicator">
                 <span className="loading-spinner"></span>
                 <span>{t('twoFactor.verifying') || 'Verifying...'}</span>
+              </div>
+            )}
+
+            {/* Success indicator */}
+            {isSuccess && (
+              <div className="success-indicator">
+                <div className="success-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <span className="success-text">{t('twoFactor.verificationSuccess') || 'Verification successful!'}</span>
+                <span className="success-subtext">{t('twoFactor.redirecting') || 'Redirecting to app...'}</span>
               </div>
             )}
 

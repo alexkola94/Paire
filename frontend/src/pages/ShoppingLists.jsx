@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   FiShoppingCart, FiPlus, FiEdit, FiTrash2, FiCheck, 
-  FiSquare, FiCheckSquare, FiPackage, FiList
+  FiSquare, FiCheckSquare, FiPackage, FiList, FiUpload, FiX
 } from 'react-icons/fi'
 import { formatCurrency } from '../utils/formatCurrency'
 import { shoppingListService } from '../services/api'
@@ -24,6 +24,9 @@ function ShoppingLists() {
   const [editingItem, setEditingItem] = useState(null)
   const [deleteListModal, setDeleteListModal] = useState({ isOpen: false, listId: null })
   const [deleteItemModal, setDeleteItemModal] = useState({ isOpen: false, itemId: null })
+  const [uploading, setUploading] = useState(false)
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [togglingItems, setTogglingItems] = useState(new Set()) // Track items being toggled to prevent double-tap
   
   const [listFormData, setListFormData] = useState({
     name: '',
@@ -62,6 +65,30 @@ function ShoppingLists() {
   useEffect(() => {
     loadLists()
   }, [])
+
+  // Add/remove body class when fullscreen is active on mobile
+  useEffect(() => {
+    const updateBodyClass = () => {
+      const isMobile = window.innerWidth <= 768
+      if (isMobile && selectedList) {
+        document.body.classList.add('shopping-list-fullscreen')
+      } else {
+        document.body.classList.remove('shopping-list-fullscreen')
+      }
+    }
+
+    // Initial check
+    updateBodyClass()
+
+    // Listen for resize events
+    window.addEventListener('resize', updateBodyClass)
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener('resize', updateBodyClass)
+      document.body.classList.remove('shopping-list-fullscreen')
+    }
+  }, [selectedList])
 
   const loadLists = async () => {
     try {
@@ -187,14 +214,73 @@ function ShoppingLists() {
     }
   }
 
-  const handleToggleItem = async (itemId) => {
+  const handleToggleItem = async (itemId, event) => {
     if (!selectedList) return
     
+    // Prevent double-tap/double-click
+    if (togglingItems.has(itemId)) {
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      return
+    }
+    
+    // Stop propagation to prevent event bubbling, but don't always prevent default
+    // (preventDefault on touch can interfere with scrolling)
+    if (event) {
+      event.stopPropagation()
+      // Only prevent default for touch events on the checkbox itself
+      if (event.type === 'touchstart' && event.target.closest('.item-checkbox')) {
+        event.preventDefault()
+      }
+    }
+    
+    // Mark item as being toggled
+    setTogglingItems(prev => new Set(prev).add(itemId))
+    
     try {
+      // Optimistic update - update UI immediately for instant feedback
+      const updatedItems = selectedList.items.map(item => 
+        item.id === itemId 
+          ? { ...item, isChecked: !item.isChecked }
+          : item
+      )
+      
+      const checkedCount = updatedItems.filter(item => item.isChecked).length
+      
+      // Update state immediately with new checked count
+      setSelectedList(prev => ({
+        ...prev,
+        items: updatedItems,
+        checkedCount: checkedCount,
+        itemCount: prev.itemCount || prev.items.length
+      }))
+      
+      // Then update on server
       await shoppingListService.toggleItem(selectedList.list.id, itemId)
-      await loadListDetails(selectedList.list.id)
+      
+      // Reload to ensure sync with server (but don't wait for it to update UI)
+      loadListDetails(selectedList.list.id).catch(err => {
+        console.error('Error reloading list details:', err)
+      })
     } catch (error) {
       console.error('Error toggling item:', error)
+      // Revert optimistic update on error by reloading
+      try {
+        await loadListDetails(selectedList.list.id)
+      } catch (reloadError) {
+        console.error('Error reloading after toggle failure:', reloadError)
+      }
+    } finally {
+      // Remove from toggling set after a short delay to allow for rapid successive taps
+      setTimeout(() => {
+        setTogglingItems(prev => {
+          const next = new Set(prev)
+          next.delete(itemId)
+          return next
+        })
+      }, 300)
     }
   }
 
@@ -309,6 +395,164 @@ function ShoppingLists() {
     setShowItemForm(true)
   }
 
+  /**
+   * Parse uploaded file content
+   * Supports: plain text (one item per line), CSV, JSON
+   */
+  const parseFileContent = async (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      
+      reader.onload = (e) => {
+        try {
+          const content = e.target.result
+          const fileName = file.name.toLowerCase()
+          let items = []
+
+          // Check file type
+          if (fileName.endsWith('.json')) {
+            // Parse JSON format
+            const data = JSON.parse(content)
+            if (Array.isArray(data)) {
+              items = data.map(item => ({
+                name: item.name || item.item || item.text || '',
+                quantity: item.quantity || item.qty || 1,
+                unit: item.unit || '',
+                estimatedPrice: item.price || item.estimatedPrice || item.cost || null,
+                category: item.category || '',
+                notes: item.notes || item.note || ''
+              }))
+            } else if (data.items && Array.isArray(data.items)) {
+              items = data.items.map(item => ({
+                name: item.name || item.item || item.text || '',
+                quantity: item.quantity || item.qty || 1,
+                unit: item.unit || '',
+                estimatedPrice: item.price || item.estimatedPrice || item.cost || null,
+                category: item.category || '',
+                notes: item.notes || item.note || ''
+              }))
+            }
+          } else if (fileName.endsWith('.csv')) {
+            // Parse CSV format
+            const lines = content.split('\n').filter(line => line.trim())
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+            
+            for (let i = 1; i < lines.length; i++) {
+              const values = lines[i].split(',').map(v => v.trim())
+              const item = {}
+              
+              headers.forEach((header, index) => {
+                item[header] = values[index] || ''
+              })
+              
+              items.push({
+                name: item.name || item.item || item.text || values[0] || '',
+                quantity: parseInt(item.quantity || item.qty || values[1] || '1') || 1,
+                unit: item.unit || values[2] || '',
+                estimatedPrice: parseFloat(item.price || item.cost || item.estimatedprice || values[3] || '0') || null,
+                category: item.category || '',
+                notes: item.notes || item.note || ''
+              })
+            }
+          } else {
+            // Parse plain text (one item per line)
+            const lines = content.split('\n')
+              .map(line => line.trim())
+              .filter(line => line.length > 0)
+            
+            items = lines.map((line, index) => {
+              // Try to parse: "Item Name, Quantity, Unit, Price"
+              const parts = line.split(',').map(p => p.trim())
+              
+              return {
+                name: parts[0] || line,
+                quantity: parseInt(parts[1]) || 1,
+                unit: parts[2] || '',
+                estimatedPrice: parseFloat(parts[3]) || null,
+                category: '',
+                notes: ''
+              }
+            })
+          }
+
+          // Filter out items with empty names
+          items = items.filter(item => item.name && item.name.length > 0)
+          
+          if (items.length === 0) {
+            reject(new Error('No valid items found in file'))
+            return
+          }
+
+          resolve(items)
+        } catch (error) {
+          reject(new Error(`Error parsing file: ${error.message}`))
+        }
+      }
+
+      reader.onerror = () => {
+        reject(new Error('Error reading file'))
+      }
+
+      // Read as text
+      reader.readAsText(file)
+    })
+  }
+
+  /**
+   * Handle file upload and create shopping list
+   */
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    try {
+      setUploading(true)
+      
+      // Parse file content
+      const items = await parseFileContent(file)
+      
+      // Create list name from file name (remove extension)
+      const listName = file.name.replace(/\.[^/.]+$/, '') || 'Imported List'
+      
+      // Create the shopping list
+      const newList = await shoppingListService.create({
+        name: listName,
+        category: null,
+        notes: `Imported from ${file.name}`
+      })
+
+      // Add all items to the list
+      for (const item of items) {
+        try {
+          await shoppingListService.addItem(newList.id, {
+            name: item.name,
+            quantity: item.quantity || 1,
+            unit: item.unit || null,
+            estimatedPrice: item.estimatedPrice || null,
+            category: item.category || null,
+            notes: item.notes || null
+          })
+        } catch (itemError) {
+          console.error(`Error adding item "${item.name}":`, itemError)
+          // Continue with other items even if one fails
+        }
+      }
+
+      // Reload lists and select the new list
+      await loadLists()
+      await loadListDetails(newList.id)
+      
+      alert(t('shoppingLists.uploadSuccess', { count: items.length, fileName: file.name }))
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      alert(t('shoppingLists.uploadError', { error: error.message }))
+    } finally {
+      setUploading(false)
+      // Reset file input
+      e.target.value = ''
+    }
+  }
+
   if (loading) {
     return <div className="loading">{t('common.loading')}</div>
   }
@@ -324,15 +568,28 @@ function ShoppingLists() {
             <FiShoppingCart className="page-icon" />
             {t('shoppingLists.title')}
           </h1>
-          <button className="btn btn-primary" onClick={() => setShowListForm(true)}>
-            <FiPlus /> {t('shoppingLists.newList')}
-          </button>
+          <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
+            <label className="btn btn-secondary" style={{ cursor: 'pointer', margin: 0 }}>
+              <input
+                type="file"
+                accept=".txt,.csv,.json"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                style={{ display: 'none' }}
+              />
+              <FiUpload />
+              {uploading ? t('shoppingLists.uploading') : t('shoppingLists.uploadList')}
+            </label>
+            <button className="btn btn-primary" onClick={() => setShowListForm(true)}>
+              <FiPlus /> {t('shoppingLists.newList')}
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="shopping-content">
         {/* Lists Sidebar */}
-        <div className="lists-sidebar">
+        <div className={`lists-sidebar ${showSidebar ? 'mobile-open' : ''} ${selectedList ? 'hidden-on-mobile' : ''}`}>
           <div className="lists-section">
             <h3>{t('shoppingLists.activeLists')} ({activeLists.length})</h3>
             {activeLists.length === 0 ? (
@@ -349,7 +606,10 @@ function ShoppingLists() {
                   <div
                     key={list.id}
                     className={`list-card ${selectedList?.list.id === list.id ? 'selected' : ''}`}
-                    onClick={() => loadListDetails(list.id)}
+                    onClick={() => {
+                      loadListDetails(list.id)
+                      setShowSidebar(false)
+                    }}
                   >
                     <div className="list-card-header">
                       <div className="list-title-section">
@@ -357,9 +617,6 @@ function ShoppingLists() {
                         {list.userProfiles && (
                           <div className="list-added-by">
                             {t('shoppingLists.addedBy')} {list.userProfiles.display_name || list.userProfiles.displayName}
-                            {list.userProfiles.email && (
-                              <span className="added-by-email"> ({list.userProfiles.email})</span>
-                            )}
                           </div>
                         )}
                       </div>
@@ -423,14 +680,14 @@ function ShoppingLists() {
         </div>
 
         {/* Items Panel */}
-        <div className="items-panel">
+        <div className={`items-panel ${selectedList ? 'mobile-fullscreen' : ''}`}>
           {selectedList ? (
             <>
-              <div className="items-header">
-                <div>
+              <div className="items-header sticky-header">
+                <div className="header-main">
                   <h2>{selectedList.list.name}</h2>
                   <div className="items-stats">
-                    <span>
+                    <span className="progress-badge">
                       {selectedList.checkedCount} / {selectedList.itemCount} {t('shoppingLists.items')}
                     </span>
                     {selectedList.list.estimatedTotal && (
@@ -440,19 +697,33 @@ function ShoppingLists() {
                     )}
                   </div>
                 </div>
-                <div className="items-actions">
-                  <button className="btn btn-sm btn-primary" onClick={() => setShowItemForm(true)}>
-                    <FiPlus /> {t('shoppingLists.addItem')}
+                <div className="header-actions">
+                  <button 
+                    className="mobile-close-btn"
+                    onClick={() => {
+                      setSelectedList(null)
+                      setShowSidebar(false)
+                    }}
+                    aria-label={t('common.close')}
+                    title={t('common.back')}
+                  >
+                    <FiX />
                   </button>
-                  {!selectedList.list.isCompleted && selectedList.items.length > 0 && (
-                    <button
-                      className="btn btn-sm btn-success"
-                      onClick={() => handleCompleteList(selectedList.list.id)}
-                    >
-                      <FiCheck /> {t('shoppingLists.completeList')}
-                    </button>
-                  )}
                 </div>
+              </div>
+              
+              <div className="items-actions-bar">
+                <button className="btn btn-sm btn-primary" onClick={() => setShowItemForm(true)}>
+                  <FiPlus /> {t('shoppingLists.addItem')}
+                </button>
+                {!selectedList.list.isCompleted && selectedList.items.length > 0 && (
+                  <button
+                    className="btn btn-sm btn-success"
+                    onClick={() => handleCompleteList(selectedList.list.id)}
+                  >
+                    <FiCheck /> {t('shoppingLists.completeList')}
+                  </button>
+                )}
               </div>
 
               <div className="items-list">
@@ -467,13 +738,27 @@ function ShoppingLists() {
                   </div>
                 ) : (
                   selectedList.items.map(item => (
-                    <div key={item.id} className={`item-card ${item.isChecked ? 'checked' : ''}`}>
-                      <button
+                    <div 
+                      key={item.id} 
+                      className={`item-card ${item.isChecked ? 'checked' : ''}`}
+                    >
+                      <div
                         className="item-checkbox"
-                        onClick={() => handleToggleItem(item.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleToggleItem(item.id, e)
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
+                          handleToggleItem(item.id, e)
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={item.isChecked ? t('shoppingLists.uncheckItem') : t('shoppingLists.checkItem')}
                       >
-                        {item.isChecked ? <FiCheckSquare size={24} /> : <FiSquare size={24} />}
-                      </button>
+                        {item.isChecked ? <FiCheckSquare size={28} /> : <FiSquare size={28} />}
+                      </div>
                       
                       <div className="item-content">
                         <div className="item-main">
@@ -492,16 +777,18 @@ function ShoppingLists() {
                         )}
                       </div>
 
-                      <div className="item-actions">
+                      <div className="item-actions" onClick={(e) => e.stopPropagation()}>
                         <button
                           className="icon-btn"
                           onClick={() => handleEditItem(item)}
+                          aria-label={t('common.edit')}
                         >
                           <FiEdit />
                         </button>
                         <button
                           className="icon-btn danger"
                           onClick={() => openDeleteItemModal(item.id)}
+                          aria-label={t('common.delete')}
                         >
                           <FiTrash2 />
                         </button>
@@ -513,9 +800,38 @@ function ShoppingLists() {
             </>
           ) : (
             <div className="empty-selection">
-              <FiShoppingCart size={64} />
-              <h3>{t('shoppingLists.selectList')}</h3>
-              <p>{t('shoppingLists.selectListDescription')}</p>
+              {activeLists.length > 0 ? (
+                <>
+                  <FiShoppingCart size={64} />
+                  <h3>{t('shoppingLists.selectList')}</h3>
+                  <p>{t('shoppingLists.selectListDescription')}</p>
+                  <div className="mobile-lists-preview">
+                    <h4>{t('shoppingLists.activeLists')} ({activeLists.length})</h4>
+                    <div className="mobile-lists-grid">
+                      {activeLists.map(list => (
+                        <div
+                          key={list.id}
+                          className="mobile-list-card"
+                          onClick={() => loadListDetails(list.id)}
+                        >
+                          <h5>{list.name}</h5>
+                          {list.estimatedTotal && (
+                            <div className="mobile-list-estimate">
+                              {formatCurrency(list.estimatedTotal)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <FiShoppingCart size={64} />
+                  <h3>{t('shoppingLists.selectList')}</h3>
+                  <p>{t('shoppingLists.selectListDescription')}</p>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -705,3 +1021,4 @@ function ShoppingLists() {
 }
 
 export default ShoppingLists
+

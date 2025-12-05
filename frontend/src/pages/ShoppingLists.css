@@ -19,6 +19,27 @@
   gap: var(--spacing-md);
 }
 
+/* File upload button styling */
+.shopping-lists-page .header-content label.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  margin: 0;
+}
+
+.shopping-lists-page .header-content label.btn:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.shopping-lists-page .header-content > div {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .shopping-lists-page .page-header h1 {
   display: flex;
   align-items: center;
@@ -45,6 +66,50 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xl);
+  transition: var(--transition);
+}
+
+
+/* Mobile close button in items panel (top right) */
+.mobile-close-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.mobile-close-btn:active {
+  transform: scale(0.9);
+  background: var(--error-dark);
+  color: white;
+}
+
+.mobile-close-btn:hover {
+  background: var(--bg-tertiary);
+  transform: scale(1.05);
+}
+
+.mobile-close-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Items actions bar (separate from header on mobile) */
+.items-actions-bar {
+  display: none;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--bg-tertiary);
+  margin-bottom: var(--spacing-md);
 }
 
 .lists-section {
@@ -251,6 +316,7 @@
   border-radius: var(--radius-md);
   border-left: 3px solid var(--primary);
   transition: var(--transition);
+  position: relative;
 }
 
 .item-card:hover {
@@ -259,7 +325,7 @@
 }
 
 .item-card.checked {
-  opacity: 0.6;
+  opacity: 0.7;
   background: var(--bg-tertiary);
   border-left-color: var(--success-dark);
 }
@@ -267,6 +333,15 @@
 .item-card.checked .item-content h4 {
   text-decoration: line-through;
   color: var(--text-light);
+}
+
+/* Smooth animation for checked state */
+.item-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.item-card.checked .item-content {
+  transition: opacity 0.2s ease-in-out;
 }
 
 /* Item Checkbox */
@@ -279,11 +354,16 @@
   padding: 0;
   transition: var(--transition);
   margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
 }
 
 .item-checkbox:hover {
   color: var(--success-dark);
   transform: scale(1.1);
+  background: var(--bg-tertiary);
 }
 
 .item-card.checked .item-checkbox {
@@ -359,6 +439,64 @@
   text-align: center;
   color: var(--text-light);
   padding: var(--spacing-xl) * 2;
+}
+
+/* Mobile lists preview in empty state */
+.mobile-lists-preview {
+  width: 100%;
+  max-width: 600px;
+  margin-top: var(--spacing-xl);
+  text-align: left;
+}
+
+.mobile-lists-preview h4 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-align: center;
+}
+
+.mobile-lists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.mobile-list-card {
+  padding: var(--spacing-md);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--primary);
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.mobile-list-card:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-md);
+  background: var(--bg-secondary);
+}
+
+.mobile-list-card h5 {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-list-estimate {
+  font-size: 0.875rem;
+  color: var(--primary);
+  font-weight: 600;
+  margin-top: var(--spacing-xs);
 }
 
 .empty-selection svg {
@@ -465,7 +603,7 @@
   justify-content: center;
   border: none;
   background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-secondary);
@@ -645,71 +783,511 @@
 @media (max-width: 768px) {
   .shopping-content {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
 
   .lists-sidebar {
     order: 2;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none; /* Hide sidebar by default on mobile */
+  }
+  
+  /* Show sidebar only when explicitly opened (mobile-open class) */
+  .lists-sidebar.mobile-open {
+    display: flex;
   }
 
   .items-panel {
     order: 1;
-    min-height: 400px;
+    min-height: calc(100vh - 200px);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+  
+  /* Ensure empty selection is visible on mobile */
+  .items-panel:not(.mobile-fullscreen) .empty-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 60vh;
+    padding: var(--spacing-lg);
+  }
+  
+  /* Mobile lists preview styling */
+  .mobile-lists-preview {
+    width: 100%;
+    margin-top: var(--spacing-lg);
+  }
+  
+  .mobile-lists-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .mobile-list-card {
+    padding: var(--spacing-md);
+    min-height: 60px;
+  }
+  
+  .mobile-list-card h5 {
+    font-size: 1rem;
+  }
+
+  /* Sticky header for mobile */
+  .items-header.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-secondary);
+    padding: var(--spacing-md);
+    margin: calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1) var(--spacing-md);
+    border-radius: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* In fullscreen mode, adjust header margins */
+  .items-panel.mobile-fullscreen .items-header.sticky-header {
+    margin: calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1) 0;
+    border-radius: 0;
+    padding-top: calc(var(--spacing-md) + env(safe-area-inset-top, 0px));
+  }
+  
+  /* Ensure close button is visible and accessible */
+  .items-panel.mobile-fullscreen .mobile-close-btn {
+    position: relative;
+    z-index: 11;
+  }
+
+  .items-panel.mobile-fullscreen .items-actions-bar {
+    margin: 0 calc(var(--spacing-md) * -1) var(--spacing-md);
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+
+  /* Fullscreen items panel on mobile when list is selected */
+  .items-panel.mobile-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    border-radius: 0;
+    padding: var(--spacing-md);
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+    animation: slideInRight 0.3s ease-out;
+    box-shadow: none;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  /* Hide sidebar when viewing items in fullscreen */
+  .shopping-content:has(.items-panel.mobile-fullscreen) .lists-sidebar {
+    display: none;
+  }
+  
+  /* Alternative selector for browsers that don't support :has() */
+  .shopping-content .items-panel.mobile-fullscreen ~ .lists-sidebar {
+    display: none;
+  }
+
+  /* Mobile sidebar overlay */
+  .lists-sidebar.mobile-open {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    background: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Show mobile close button */
+  .mobile-close-btn {
+    display: flex;
+  }
+
+  /* Show items actions bar */
+  .items-actions-bar {
+    display: flex;
   }
 
   .items-header {
-    flex-direction: column;
-    gap: var(--spacing-md);
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    padding-bottom: var(--spacing-md);
+    margin-bottom: 0;
   }
 
-  .items-actions {
+  .items-header .header-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .items-header .header-actions {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  /* Hide original items-actions in header on mobile */
+  .items-header .items-actions {
+    display: none;
+  }
+
+  .items-header h2 {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .items-stats {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    font-size: 0.875rem;
+  }
+
+  .header-main {
+    width: 100%;
+  }
+
+  .items-header h2 {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .progress-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--primary);
+    color: white;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  .items-actions-bar {
     width: 100%;
     justify-content: stretch;
   }
 
-  .items-actions button {
+  .items-actions-bar button {
     flex: 1;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+  }
+
+  /* Ultra-optimized item cards for mobile */
+  .items-list {
+    flex: 1;
+    gap: var(--spacing-md);
+    padding: 0;
+    max-height: none;
+    padding-bottom: var(--spacing-xl);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Ensure proper scrolling in fullscreen mode */
+    min-height: 0;
+  }
+
+  /* When in fullscreen, adjust list height */
+  .items-panel.mobile-fullscreen .items-list {
+    max-height: calc(100vh - 200px);
+    padding-bottom: calc(var(--spacing-xl) * 2);
   }
 
   .item-card {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    padding: var(--spacing-lg);
+    min-height: 80px;
+    cursor: default;
+    position: relative;
+    border-left-width: 4px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y;
+    -webkit-touch-callout: none;
   }
 
+  /* Visual feedback for tapping */
+  .item-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .item-card:active::before {
+    opacity: 0.1;
+  }
+
+  /* Larger checkbox for mobile - minimum 48px touch target */
+  .item-checkbox {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    margin: 0;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    transition: var(--transition);
+    flex-shrink: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    pointer-events: auto;
+  }
+
+  .item-checkbox:active {
+    transform: scale(0.95);
+    background: var(--primary);
+  }
+
+  .item-checkbox:focus {
+    outline: none;
+  }
+
+  .item-checkbox svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .item-card.checked .item-checkbox {
+    background: var(--success-dark);
+    color: white;
+  }
+
+  /* Item content optimized for mobile */
+  .item-content {
+    flex: 1;
+    min-width: 0;
+    padding: 0 var(--spacing-md);
+  }
+
+  .item-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .item-main h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .item-quantity {
+    font-size: 0.875rem;
+    padding: 2px 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+  }
+
+  .item-price {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-top: var(--spacing-xs);
+  }
+
+  .item-notes {
+    font-size: 0.8125rem;
+    margin-top: var(--spacing-xs);
+    line-height: 1.4;
+  }
+
+  /* Hide item actions on mobile by default, show on long press or swipe */
   .item-actions {
-    opacity: 1;
-    width: 100%;
-    justify-content: flex-end;
+    opacity: 0;
+    position: absolute;
+    right: var(--spacing-md);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-secondary);
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
   }
 
+  .item-card:active .item-actions,
+  .item-card.show-actions .item-actions {
+    opacity: 1;
+  }
+
+  .item-actions .icon-btn {
+    width: 36px;
+    height: 36px;
+    margin: 0 var(--spacing-xs);
+  }
+
+  /* Form optimizations */
   .form-row {
     grid-template-columns: 1fr;
   }
 
   .form-actions {
     flex-direction: column-reverse;
+    gap: var(--spacing-sm);
   }
 
   .form-actions button {
     width: 100%;
+    padding: 14px 20px;
+    font-size: 1rem;
   }
 
   .shopping-lists-page .header-content {
     flex-direction: column;
     align-items: stretch;
+    gap: var(--spacing-sm);
   }
 
-  .shopping-lists-page .header-content button {
+  .shopping-lists-page .header-content > div {
     width: 100%;
+    flex-direction: row;
+    gap: var(--spacing-sm);
+  }
+
+  .shopping-lists-page .header-content button,
+  .shopping-lists-page .header-content label.btn {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+  }
+
+  /* Modal optimizations for mobile */
+  .modal-overlay {
+    padding: var(--spacing-md);
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation: slideUpMobile 0.3s ease-out;
+  }
+
+  @keyframes slideUpMobile {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .modal-header {
+    padding: var(--spacing-lg);
+  }
+
+  .modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .modal-content form {
+    padding: var(--spacing-lg);
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 14px 16px;
+    font-size: 1rem;
   }
 }
 
+/* Extra small mobile devices */
 @media (max-width: 480px) {
-  .item-main {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-xs);
+  .items-panel {
+    padding: var(--spacing-sm);
+  }
+
+  .items-header.sticky-header {
+    padding: var(--spacing-sm);
+    margin: calc(var(--spacing-sm) * -1) calc(var(--spacing-sm) * -1) var(--spacing-sm);
+  }
+
+  .item-card {
+    padding: var(--spacing-md);
+    min-height: 68px;
+  }
+
+  .item-checkbox {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  .item-checkbox svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .item-main h4 {
+    font-size: 1rem;
+  }
+
+  .items-header h2 {
+    font-size: 1.125rem;
   }
 
   .list-actions {
     opacity: 1;
+  }
+
+  .lists-sidebar {
+    max-height: 250px;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+  .items-panel {
+    min-height: calc(100vh - 150px);
+  }
+
+  .lists-sidebar {
+    max-height: 200px;
   }
 }

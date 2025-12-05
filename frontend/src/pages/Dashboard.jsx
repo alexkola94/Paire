@@ -187,9 +187,6 @@ function Dashboard() {
                       <span className="added-by">
                         {' • ' + t('dashboard.addedBy') + ' '}
                         {transaction.user_profiles.display_name}
-                        {transaction.user_profiles.email && (
-                          <span className="added-by-email"> ({transaction.user_profiles.email})</span>
-                        )}
                       </span>
                     )}
                   </p>

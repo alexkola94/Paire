@@ -7,6 +7,14 @@
   z-index: 1000;
 }
 
+/* Hide chatbot when shopping list is in fullscreen mode on mobile */
+body.shopping-list-fullscreen .chatbot-container {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 /* Ensure SVG icons render properly */
 .chatbot-container svg {
   display: inline-block !important;
@@ -20,6 +28,48 @@
 .chatbot-header svg,
 .chatbot-header-btn svg {
   color: white !important;
+}
+
+/* ==========================================
+   MOBILE REVEAL BUTTON
+   ========================================== */
+
+.chatbot-reveal-btn {
+  position: fixed;
+  right: 0;
+  bottom: 20px;
+  width: 40px;
+  height: 80px;
+  border-radius: 20px 0 0 20px;
+  background: linear-gradient(135deg, #6c5ce7 0%, #4a3f8f 100%);
+  border: none;
+  border-left: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -4px 0 12px rgba(108, 92, 231, 0.4);
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 999;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.chatbot-reveal-btn:hover {
+  width: 45px;
+  box-shadow: -6px 0 20px rgba(108, 92, 231, 0.6);
+  transform: translateX(-5px);
+}
+
+.chatbot-reveal-btn:active {
+  transform: translateX(-2px);
+}
+
+.chatbot-reveal-btn svg {
+  transform: rotate(90deg);
+  writing-mode: initial;
+  text-orientation: initial;
 }
 
 /* ==========================================
@@ -43,6 +93,22 @@
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
   transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   animation: chatbot-pulse 2s infinite;
+}
+
+/* Mobile revealed state - slide up from bottom */
+.chatbot-fab.chatbot-fab-revealed {
+  animation: chatbot-fab-reveal 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes chatbot-fab-reveal {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .chatbot-fab:hover {
@@ -94,6 +160,18 @@
   min-width: 16px;
 }
 
+/* Badge on reveal button */
+.chatbot-badge-reveal {
+  position: absolute;
+  top: 8px;
+  left: -8px;
+  font-size: 10px;
+  padding: 2px 5px;
+  min-width: 16px;
+  writing-mode: initial;
+  text-orientation: initial;
+}
+
 @keyframes chatbot-pulse {
   0%, 100% {
     box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
@@ -132,6 +210,24 @@
   box-shadow: 0 4px 20px rgba(108, 92, 231, 0.3), 
               0 2px 8px rgba(0, 0, 0, 0.1);
   animation: chatbot-minimize-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Mobile: Hide minimized chatbot outside viewport */
+.chatbot-window.minimized.chatbot-mobile {
+  bottom: -120px;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55),
+              bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Show minimized chatbot when revealed on mobile */
+.chatbot-window.minimized.chatbot-mobile.chatbot-revealed {
+  bottom: 20px;
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .chatbot-window.minimized .chatbot-header {

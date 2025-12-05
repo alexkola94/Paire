@@ -406,11 +406,12 @@
 
 .deposit-form input {
   flex: 1;
-  padding: 8px 12px;
+  padding: 14px 18px;
   border: 2px solid var(--bg-tertiary);
   border-radius: var(--radius-md);
-  font-size: 0.875rem;
+  font-size: 1rem;
   transition: var(--transition);
+  min-height: 48px;
 }
 
 .deposit-form input:focus {
@@ -479,10 +480,10 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1000;
-  padding: var(--spacing-lg);
+  padding: 0;
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -490,17 +491,18 @@
   background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  max-width: 600px;
+  max-width: 100%;
   width: 100%;
-  max-height: 90vh;
+  max-height: 95vh;
   overflow-y: auto;
   animation: slideUp 0.3s ease-out;
+  margin: var(--spacing-md);
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(100%);
   }
   to {
     opacity: 1;
@@ -508,17 +510,32 @@
   }
 }
 
+/* Tablet: Center modal animation */
+@media (min-width: 768px) {
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg);
   border-bottom: 1px solid var(--bg-tertiary);
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .close-btn {
@@ -530,7 +547,7 @@
   justify-content: center;
   border: none;
   background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-secondary);
@@ -544,11 +561,11 @@
 }
 
 /* ================================
-   Form Styles
+   Form Styles - Mobile First
    ================================ */
 
 .modal-content form {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg);
 }
 
 .form-group {
@@ -560,14 +577,14 @@
   margin-bottom: var(--spacing-sm);
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border: 2px solid var(--bg-tertiary);
   border-radius: var(--radius-md);
   font-size: 1rem;
@@ -575,6 +592,11 @@
   transition: var(--transition);
   background: var(--bg-primary);
   color: var(--text-primary);
+  line-height: 1.5;
+  /* Mobile: Ensure touch-friendly size */
+  min-height: 48px;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .form-group input:focus,
@@ -583,11 +605,14 @@
   outline: none;
   border-color: var(--primary);
   background: var(--bg-secondary);
+  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
+  transform: translateY(-1px);
 }
 
 .form-group textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 100px;
+  line-height: 1.6;
 }
 
 .form-row {
@@ -598,11 +623,17 @@
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-md);
+  flex-direction: column-reverse;
+  gap: var(--spacing-sm);
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--bg-tertiary);
+}
+
+.form-actions button {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1rem;
 }
 
 /* ================================
@@ -632,10 +663,53 @@
 }
 
 /* ================================
-   Responsive Design - Tablet
+   Responsive Design - Tablet (768px+)
    ================================ */
 
 @media (min-width: 768px) {
+  .modal-overlay {
+    align-items: center;
+    padding: var(--spacing-lg);
+  }
+
+  .modal-content {
+    max-width: 600px;
+    margin: 0;
+  }
+
+  .modal-header {
+    padding: var(--spacing-xl);
+  }
+
+  .modal-header h2 {
+    font-size: 1.75rem;
+  }
+
+  .modal-content form {
+    padding: var(--spacing-xl);
+  }
+
+  .form-group label {
+    font-size: 1rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 16px 20px;
+    font-size: 1.0625rem;
+  }
+
+  .form-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .form-actions button {
+    width: auto;
+    min-width: 120px;
+  }
+
   .summary-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -670,47 +744,71 @@
 }
 
 /* ================================
-   Responsive Design - Mobile
+   Mobile Base Styles (already applied above)
+   Additional mobile-specific adjustments
    ================================ */
 
-@media (max-width: 767px) {
+.savings-goals-page .header-content {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.savings-goals-page .header-content button {
+  width: 100%;
+}
+
+.goal-amount {
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.goal-quick-actions {
+  flex-direction: column;
+}
+
+.deposit-form {
+  flex-direction: column;
+}
+
+.summary-card {
+  flex-direction: column;
+  text-align: center;
+}
+
+.summary-value {
+  font-size: 1.75rem;
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) {
   .savings-goals-page .header-content {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
   }
 
   .savings-goals-page .header-content button {
-    width: 100%;
+    width: auto;
   }
 
   .goal-amount {
-    flex-direction: column;
-    gap: var(--spacing-md);
+    flex-direction: row;
   }
 
   .goal-quick-actions {
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .deposit-form {
-    flex-direction: column;
-  }
-
-  .form-actions {
-    flex-direction: column-reverse;
-  }
-
-  .form-actions button {
-    width: 100%;
+    flex-direction: row;
   }
 
   .summary-card {
-    flex-direction: column;
-    text-align: center;
+    flex-direction: row;
+    text-align: left;
   }
 
   .summary-value {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 }
 

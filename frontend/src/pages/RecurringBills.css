@@ -423,31 +423,47 @@
   border-bottom: 1px solid var(--bg-tertiary);
 }
 
+.modal-header.form-header {
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  z-index: 10;
+  margin: 0;
+}
+
 .modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
 }
 
-.close-btn {
-  width: 32px;
-  height: 32px;
+.close-btn,
+.form-close-btn {
+  width: 40px;
+  height: 40px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-secondary);
   transition: var(--transition);
+  flex-shrink: 0;
 }
 
-.close-btn:hover {
-  background: var(--error-dark);
+.close-btn:hover,
+.form-close-btn:hover {
+  background: var(--error);
   color: white;
-  transform: rotate(90deg);
+  transform: scale(1.1);
+}
+
+.close-btn:active,
+.form-close-btn:active {
+  transform: scale(0.95);
 }
 
 /* ================================
@@ -456,6 +472,12 @@
 
 .modal-content form {
   padding: var(--spacing-xl);
+}
+
+/* Ensure form has proper spacing */
+.modal-content {
+  display: flex;
+  flex-direction: column;
 }
 
 .form-group {
@@ -474,7 +496,7 @@
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border: 2px solid var(--bg-tertiary);
   border-radius: var(--radius-md);
   font-size: 1rem;
@@ -482,6 +504,8 @@
   transition: var(--transition);
   background: var(--bg-primary);
   color: var(--text-primary);
+  min-height: 48px;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -516,11 +540,28 @@
   gap: var(--spacing-sm);
   margin-bottom: 0;
   cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.checkbox-group label:hover {
+  background: var(--bg-tertiary);
 }
 
 .checkbox-group input[type="checkbox"] {
-  width: auto;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+  -webkit-appearance: auto;
+  appearance: auto;
 }
 
 .form-row {
@@ -661,17 +702,107 @@
     width: 100%;
   }
 
+  /* Modal Mobile Optimization */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-start;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .modal-content {
+    max-height: 100vh;
+    border-radius: 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-header.form-header {
+    padding: var(--spacing-md);
+    margin: 0;
+  }
+
+  .modal-header.form-header h2 {
+    font-size: 1.25rem;
+    margin: 0;
+  }
+
+  .form-close-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .modal-content form {
+    padding: var(--spacing-md);
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-group label {
+    font-size: 0.9375rem;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 14px 18px;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+
+  .form-group textarea {
+    min-height: 100px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
   .form-actions {
     flex-direction: column-reverse;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
   }
 
   .form-actions button {
     width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+
+  .checkbox-group {
+    padding: var(--spacing-sm) 0;
+  }
+
+  .checkbox-group label {
+    font-size: 0.9375rem;
+    padding: var(--spacing-md);
+    min-height: 48px;
+    gap: var(--spacing-md);
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    flex-shrink: 0;
   }
 
   .summary-card {
     flex-direction: column;
     text-align: center;
+    padding: var(--spacing-md);
   }
 
   .summary-value {

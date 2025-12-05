@@ -17,7 +17,22 @@ function Chatbot() {
   const [loading, setLoading] = useState(false)
   const [suggestions, setSuggestions] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [isRevealed, setIsRevealed] = useState(false) // For mobile reveal state
+  const [isMobile, setIsMobile] = useState(false)
   const messagesEndRef = useRef(null)
+
+  /**
+   * Detect mobile viewport
+   */
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
 
   /**
@@ -171,6 +186,14 @@ function Chatbot() {
   const toggleChat = () => {
     setIsOpen(!isOpen)
     setIsMinimized(false)
+    // On mobile, when closing, reset revealed state
+    if (isMobile && isOpen) {
+      setIsRevealed(false)
+    }
+    // On mobile, reveal when opening
+    if (isMobile && !isOpen) {
+      setIsRevealed(true)
+    }
     // Clear unread count when opening chat
     if (!isOpen) {
       setUnreadCount(0)
@@ -181,10 +204,45 @@ function Chatbot() {
    * Minimize chat window
    */
   const minimizeChat = () => {
-    setIsMinimized(!isMinimized)
+    const willBeMinimized = !isMinimized
+    setIsMinimized(willBeMinimized)
+    // On mobile, reset revealed state when minimized so reveal button appears again
+    if (isMobile && willBeMinimized) {
+      setIsRevealed(false)
+      setIsOpen(false) // Also close the chat on mobile when minimized
+    }
     // Clear unread count when maximizing
     if (isMinimized) {
       setUnreadCount(0)
+    }
+  }
+
+  /**
+   * Reveal chatbot on mobile (iOS-like behavior)
+   * Opens chat immediately when reveal button is pressed
+   */
+  const revealChatbot = () => {
+    setIsRevealed(true)
+    // Open chat immediately
+    if (!isOpen) {
+      setIsOpen(true)
+    }
+    // If chatbot is minimized, maximize it when revealed
+    if (isMinimized) {
+      setIsMinimized(false)
+    }
+    // Clear unread count when opening
+    setUnreadCount(0)
+  }
+
+  /**
+   * Handle chatbot FAB click
+   */
+  const handleFabClick = () => {
+    if (isMobile && !isRevealed) {
+      revealChatbot()
+    } else {
+      toggleChat()
     }
   }
 
@@ -199,11 +257,25 @@ function Chatbot() {
 
   return (
     <div className="chatbot-container">
-      {/* Floating Action Button */}
-      {!isOpen && (
+      {/* Mobile Reveal Button - Visible when chatbot is hidden or minimized on mobile */}
+      {isMobile && ((!isOpen && !isRevealed) || (isMinimized && !isRevealed)) && (
         <button
-          className="chatbot-fab"
-          onClick={toggleChat}
+          className="chatbot-reveal-btn"
+          onClick={revealChatbot}
+          aria-label={t('chatbot.reveal', 'Reveal chatbot')}
+        >
+          <FiMessageCircle style={{ width: '20px', height: '20px' }} />
+          {unreadCount > 0 && (
+            <span className="chatbot-badge chatbot-badge-reveal">{unreadCount}</span>
+          )}
+        </button>
+      )}
+
+      {/* Floating Action Button - Hidden on mobile until revealed */}
+      {!isOpen && (!isMobile || isRevealed) && (
+        <button
+          className={`chatbot-fab ${isMobile && isRevealed ? 'chatbot-fab-revealed' : ''}`}
+          onClick={handleFabClick}
           aria-label={t('chatbot.open')}
         >
           <FiMessageCircle style={{ width: '24px', height: '24px' }} />
@@ -213,9 +285,9 @@ function Chatbot() {
         </button>
       )}
 
-      {/* Chat Window */}
-      {isOpen && (
-        <div className={`chatbot-window ${isMinimized ? 'minimized' : ''}`}>
+      {/* Chat Window - On mobile, only show if revealed */}
+      {isOpen && (!isMobile || isRevealed) && (
+        <div className={`chatbot-window ${isMinimized ? 'minimized' : ''} ${isMobile ? 'chatbot-mobile' : ''} ${isMobile && isRevealed ? 'chatbot-revealed' : ''}`}>
           {/* Header */}
           <div className="chatbot-header">
             <div className="chatbot-header-info">

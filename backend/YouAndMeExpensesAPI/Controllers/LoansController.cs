@@ -209,6 +209,29 @@ namespace YouAndMeExpensesAPI.Controllers
                 loan.CreatedAt = DateTime.UtcNow;
                 loan.UpdatedAt = DateTime.UtcNow;
                 
+                // Convert all DateTime values to UTC to avoid PostgreSQL timestamp issues
+                // PostgreSQL requires DateTime values to be UTC when using timestamp with time zone
+                if (loan.Date.Kind != DateTimeKind.Utc)
+                {
+                    loan.Date = loan.Date.Kind == DateTimeKind.Unspecified 
+                        ? DateTime.SpecifyKind(loan.Date, DateTimeKind.Utc) 
+                        : loan.Date.ToUniversalTime();
+                }
+                
+                if (loan.DueDate.HasValue && loan.DueDate.Value.Kind != DateTimeKind.Utc)
+                {
+                    loan.DueDate = loan.DueDate.Value.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(loan.DueDate.Value, DateTimeKind.Utc)
+                        : loan.DueDate.Value.ToUniversalTime();
+                }
+                
+                if (loan.NextPaymentDate.HasValue && loan.NextPaymentDate.Value.Kind != DateTimeKind.Utc)
+                {
+                    loan.NextPaymentDate = loan.NextPaymentDate.Value.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(loan.NextPaymentDate.Value, DateTimeKind.Utc)
+                        : loan.NextPaymentDate.Value.ToUniversalTime();
+                }
+                
                 // Initialize TotalPaid to 0 for new loans
                 loan.TotalPaid = 0;
                 
@@ -220,7 +243,13 @@ namespace YouAndMeExpensesAPI.Controllers
                 if (loan.IsSettled)
                 {
                     loan.RemainingAmount = 0;
-                    loan.SettledDate = loan.SettledDate ?? DateTime.UtcNow;
+                    loan.SettledDate = loan.SettledDate.HasValue 
+                        ? (loan.SettledDate.Value.Kind != DateTimeKind.Utc
+                            ? (loan.SettledDate.Value.Kind == DateTimeKind.Unspecified
+                                ? DateTime.SpecifyKind(loan.SettledDate.Value, DateTimeKind.Utc)
+                                : loan.SettledDate.Value.ToUniversalTime())
+                            : loan.SettledDate)
+                        : DateTime.UtcNow;
                 }
                 else
                 {
@@ -301,10 +330,30 @@ namespace YouAndMeExpensesAPI.Controllers
                 existingLoan.BorrowedBy = loan.BorrowedBy ?? existingLoan.BorrowedBy;
                 existingLoan.Description = loan.Description ?? existingLoan.Description;
                 
-                // Handle due date if provided
+                // Convert Date to UTC if provided
+                if (loan.Date != default && loan.Date.Kind != DateTimeKind.Utc)
+                {
+                    existingLoan.Date = loan.Date.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(loan.Date, DateTimeKind.Utc)
+                        : loan.Date.ToUniversalTime();
+                }
+                
+                // Handle due date if provided - convert to UTC
                 if (loan.DueDate.HasValue)
                 {
-                    existingLoan.DueDate = loan.DueDate;
+                    existingLoan.DueDate = loan.DueDate.Value.Kind != DateTimeKind.Utc
+                        ? (loan.DueDate.Value.Kind == DateTimeKind.Unspecified
+                            ? DateTime.SpecifyKind(loan.DueDate.Value, DateTimeKind.Utc)
+                            : loan.DueDate.Value.ToUniversalTime())
+                        : loan.DueDate;
+                }
+                
+                // Handle next payment date if provided - convert to UTC
+                if (loan.NextPaymentDate.HasValue && loan.NextPaymentDate.Value.Kind != DateTimeKind.Utc)
+                {
+                    existingLoan.NextPaymentDate = loan.NextPaymentDate.Value.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(loan.NextPaymentDate.Value, DateTimeKind.Utc)
+                        : loan.NextPaymentDate.Value.ToUniversalTime();
                 }
                 
                 // Update settled status
@@ -319,7 +368,11 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
                 else if (loan.SettledDate.HasValue)
                 {
-                    existingLoan.SettledDate = loan.SettledDate;
+                    existingLoan.SettledDate = loan.SettledDate.Value.Kind != DateTimeKind.Utc
+                        ? (loan.SettledDate.Value.Kind == DateTimeKind.Unspecified
+                            ? DateTime.SpecifyKind(loan.SettledDate.Value, DateTimeKind.Utc)
+                            : loan.SettledDate.Value.ToUniversalTime())
+                        : loan.SettledDate;
                 }
                 
                 // Recalculate RemainingAmount based on Amount and TotalPaid
