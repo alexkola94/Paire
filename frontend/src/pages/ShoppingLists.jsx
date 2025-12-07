@@ -863,6 +863,12 @@ function ShoppingLists() {
                     // Determine swipe direction for styling
                     const isSwipeRight = swipeOffset > 0 && !swipe.isChecked
                     const isSwipeLeft = swipeOffset < 0 && swipe.isChecked
+                    // Calculate swipe progress for animation (0-100%)
+                    const swipeProgress = isSwipeRight 
+                      ? Math.min(100, (swipeOffset / 80) * 100) 
+                      : isSwipeLeft 
+                      ? Math.min(100, (Math.abs(swipeOffset) / 80) * 100) 
+                      : 0
                     
                     return (
                       <div 
@@ -889,6 +895,33 @@ function ShoppingLists() {
                           transition: swipe.isSwiping ? 'none' : 'transform 0.3s ease-out'
                         }}
                       >
+                        {/* Swipe action indicator - appears on the left when swiping right to check */}
+                        {isSwipeRight && (
+                          <div 
+                            className="swipe-indicator swipe-check-indicator"
+                            style={{
+                              opacity: Math.min(1, swipeProgress / 50), // Show earlier
+                              transform: `translate(${-swipeOffset + 16}px, -50%) scale(${Math.min(1, swipeProgress / 60)})`,
+                              left: 0
+                            }}
+                          >
+                            <FiCheck size={24} />
+                          </div>
+                        )}
+                        
+                        {/* Swipe action indicator - appears on the right when swiping left to uncheck */}
+                        {isSwipeLeft && (
+                          <div 
+                            className="swipe-indicator swipe-uncheck-indicator"
+                            style={{
+                              opacity: Math.min(1, swipeProgress / 50), // Show earlier
+                              transform: `translate(${-swipeOffset - 16}px, -50%) scale(${Math.min(1, swipeProgress / 60)})`,
+                              right: 0
+                            }}
+                          >
+                            <FiX size={24} />
+                          </div>
+                        )}
                         <div
                           className="item-checkbox"
                           onClick={(e) => {

@@ -302,8 +302,10 @@
   flex-direction: column;
   gap: var(--spacing-md);
   overflow-y: auto;
+  overflow-x: visible; /* Allow swipe indicator to be visible */
   max-height: calc(100vh - 400px);
   padding-right: var(--spacing-xs);
+  padding-left: 0; /* No left padding to allow indicator visibility */
 }
 
 /* Item Card */
@@ -319,6 +321,7 @@
   position: relative;
   /* Allow vertical scrolling, enable horizontal swipe detection on mobile */
   touch-action: pan-y;
+  overflow: hidden; /* Hide overflow by default */
 }
 
 /* Swipe animation state */
@@ -330,6 +333,41 @@
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
+  overflow: visible; /* Allow swipe indicator to be visible when swiping */
+}
+
+/* Swipe action indicator (Apple Mail style) */
+.swipe-indicator {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  z-index: 10;
+  transition: opacity 0.1s ease, transform 0.1s ease;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+/* Check indicator on the left when swiping right - positioned in the white space */
+.swipe-check-indicator {
+  left: 16px; /* Positioned near left edge, becomes visible in white space as card slides right */
+  background: var(--success-dark);
+  color: white;
+  box-shadow: 0 2px 6px rgba(46, 125, 50, 0.3);
+  transform: translateY(-50%);
+}
+
+/* Uncheck indicator on the right when swiping left - positioned in the white space */
+.swipe-uncheck-indicator {
+  right: 16px; /* Positioned near right edge, becomes visible in white space as card slides left */
+  background: var(--error-dark);
+  color: white;
+  box-shadow: 0 2px 6px rgba(211, 47, 47, 0.3);
+  transform: translateY(-50%);
 }
 
 .item-card:hover {
@@ -1022,56 +1060,28 @@
 
   /* Swipe gesture visual feedback on mobile */
   .item-card.swiping {
-    opacity: 0.9;
+    opacity: 0.95;
     box-shadow: var(--shadow-lg);
   }
 
-  /* Visual indicator for swipe right (to check) */
-  .item-card.swiping.swipe-right::after {
-    content: '';
-    position: absolute;
-    left: var(--spacing-lg);
-    top: 50%;
-    transform: translateY(-50%);
+  /* Mobile swipe indicator sizing */
+  .swipe-indicator {
     width: 40px;
     height: 40px;
-    border-radius: var(--radius-full);
-    background: var(--success-dark);
-    opacity: 0.3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-    /* Add checkmark icon visual hint */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
-    background-size: 20px 20px;
-    background-position: center;
-    background-repeat: no-repeat;
   }
 
-  /* Visual indicator for swipe left (to uncheck) */
-  .item-card.swiping.swipe-left::after {
-    content: '';
-    position: absolute;
-    right: var(--spacing-lg);
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-full);
-    background: var(--bg-tertiary);
-    opacity: 0.4;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-    /* Add X icon visual hint for uncheck */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'%3E%3C/line%3E%3Cline x1='6' y1='6' x2='18' y2='18'%3E%3C/line%3E%3C/svg%3E");
-    background-size: 20px 20px;
-    background-position: center;
-    background-repeat: no-repeat;
+  .swipe-indicator svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Position checkmark in the white space on mobile */
+  .swipe-check-indicator {
+    left: 10px;
+  }
+
+  .swipe-uncheck-indicator {
+    right: var(--spacing-md);
   }
 
   /* When in fullscreen, adjust list height */
