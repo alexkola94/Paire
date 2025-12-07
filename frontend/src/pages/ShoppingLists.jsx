@@ -27,6 +27,7 @@ function ShoppingLists() {
   const [uploading, setUploading] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [togglingItems, setTogglingItems] = useState(new Set()) // Track items being toggled to prevent double-tap
+  const [swipeState, setSwipeState] = useState({}) // Track swipe gestures per item
   
   const [listFormData, setListFormData] = useState({
     name: '',
@@ -212,6 +213,125 @@ function ShoppingLists() {
       console.error('Error saving item:', error)
       alert(t('shoppingLists.errorSavingItem'))
     }
+  }
+
+  /**
+   * Handle swipe gesture detection for mobile
+   * Swipe right to check (if unchecked), swipe left to uncheck (if checked)
+   */
+  const handleSwipeStart = (itemId, e) => {
+    // Only handle swipe on mobile devices (touch events)
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return
+    
+    // Don't start swipe if clicking on interactive elements
+    if (e.target.closest('button') || e.target.closest('.icon-btn')) return
+    
+    // Get current item state
+    const item = selectedList?.items.find(i => i.id === itemId)
+    if (!item) return
+    
+    const touch = e.touches[0]
+    setSwipeState(prev => ({
+      ...prev,
+      [itemId]: {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        currentX: touch.clientX,
+        isSwiping: false,
+        isChecked: item.isChecked
+      }
+    }))
+  }
+
+  const handleSwipeMove = (itemId, e) => {
+    // Only handle swipe on mobile devices
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return
+    
+    const touch = e.touches[0]
+    const swipe = swipeState[itemId]
+    if (!swipe) return
+
+    const deltaX = touch.clientX - swipe.startX
+    const deltaY = Math.abs(touch.clientY - swipe.startY)
+    const absDeltaX = Math.abs(deltaX)
+
+    // Only consider it a swipe if horizontal movement is significantly greater than vertical
+    // This prevents accidental triggers during vertical scrolling
+    const horizontalDominance = absDeltaX > deltaY * 1.5
+
+    if (absDeltaX > 20 && horizontalDominance) {
+      // Determine if swipe direction matches the allowed action
+      // Swipe right allowed only if unchecked (to check it)
+      // Swipe left allowed only if checked (to uncheck it)
+      const swipeRightAllowed = !swipe.isChecked && deltaX > 0
+      const swipeLeftAllowed = swipe.isChecked && deltaX < 0
+
+      if (swipeRightAllowed || swipeLeftAllowed) {
+        // Prevent default scrolling while actively swiping horizontally
+        if (!swipe.isSwiping && absDeltaX > 40) {
+          e.preventDefault()
+          setSwipeState(prev => ({
+            ...prev,
+            [itemId]: {
+              ...prev[itemId],
+              isSwiping: true
+            }
+          }))
+        }
+
+        // Update current position for visual feedback (only if we're actually swiping)
+        if (swipe.isSwiping || absDeltaX > 40) {
+          setSwipeState(prev => ({
+            ...prev,
+            [itemId]: {
+              ...prev[itemId],
+              currentX: touch.clientX,
+              isSwiping: true
+            }
+          }))
+        }
+      }
+    } else if (deltaY > 30) {
+      // If vertical movement dominates, cancel swipe detection
+      setSwipeState(prev => {
+        const next = { ...prev }
+        delete next[itemId]
+        return next
+      })
+    }
+  }
+
+  const handleSwipeEnd = (itemId, e) => {
+    // Only handle swipe on mobile devices
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return
+    
+    const swipe = swipeState[itemId]
+    if (!swipe) {
+      return
+    }
+
+    const touch = e.changedTouches[0]
+    const deltaX = touch.clientX - swipe.startX
+    const absDeltaX = Math.abs(deltaX)
+
+    // Require minimum 60px swipe distance to prevent accidental toggles
+    if (swipe.isSwiping && absDeltaX > 60) {
+      // Swipe right to check (if item is unchecked)
+      if (!swipe.isChecked && deltaX > 60) {
+        handleToggleItem(itemId, e)
+      }
+      // Swipe left to uncheck (if item is checked)
+      else if (swipe.isChecked && deltaX < -60) {
+        handleToggleItem(itemId, e)
+      }
+    }
+
+    // Reset swipe state
+    setSwipeState(prev => {
+      const next = { ...prev }
+      delete next[itemId]
+      return next
+    })
   }
 
   const handleToggleItem = async (itemId, event) => {
@@ -737,28 +857,55 @@ function ShoppingLists() {
                     </button>
                   </div>
                 ) : (
-                  selectedList.items.map(item => (
-                    <div 
-                      key={item.id} 
-                      className={`item-card ${item.isChecked ? 'checked' : ''}`}
-                    >
-                      <div
-                        className="item-checkbox"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleToggleItem(item.id, e)
-                        }}
+                  selectedList.items.map(item => {
+                    const swipe = swipeState[item.id] || {}
+                    const swipeOffset = swipe.isSwiping ? (swipe.currentX - swipe.startX) : 0
+                    // Determine swipe direction for styling
+                    const isSwipeRight = swipeOffset > 0 && !swipe.isChecked
+                    const isSwipeLeft = swipeOffset < 0 && swipe.isChecked
+                    
+                    return (
+                      <div 
+                        key={item.id} 
+                        className={`item-card ${item.isChecked ? 'checked' : ''} ${swipe.isSwiping ? 'swiping' : ''} ${isSwipeRight ? 'swipe-right' : ''} ${isSwipeLeft ? 'swipe-left' : ''}`}
                         onTouchStart={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                          handleToggleItem(item.id, e)
+                          // Don't interfere with checkbox touch events
+                          if (!e.target.closest('.item-checkbox')) {
+                            handleSwipeStart(item.id, e)
+                          }
                         }}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={item.isChecked ? t('shoppingLists.uncheckItem') : t('shoppingLists.checkItem')}
+                        onTouchMove={(e) => {
+                          if (!e.target.closest('.item-checkbox')) {
+                            handleSwipeMove(item.id, e)
+                          }
+                        }}
+                        onTouchEnd={(e) => {
+                          if (!e.target.closest('.item-checkbox')) {
+                            handleSwipeEnd(item.id, e)
+                          }
+                        }}
+                        style={{
+                          transform: swipe.isSwiping ? `translateX(${swipeOffset}px)` : 'none',
+                          transition: swipe.isSwiping ? 'none' : 'transform 0.3s ease-out'
+                        }}
                       >
-                        {item.isChecked ? <FiCheckSquare size={28} /> : <FiSquare size={28} />}
-                      </div>
+                        <div
+                          className="item-checkbox"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleItem(item.id, e)
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation()
+                            e.preventDefault()
+                            handleToggleItem(item.id, e)
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={item.isChecked ? t('shoppingLists.uncheckItem') : t('shoppingLists.checkItem')}
+                        >
+                          {item.isChecked ? <FiCheckSquare size={28} /> : <FiSquare size={28} />}
+                        </div>
                       
                       <div className="item-content">
                         <div className="item-main">
@@ -794,7 +941,8 @@ function ShoppingLists() {
                         </button>
                       </div>
                     </div>
-                  ))
+                  )
+                  })
                 )}
               </div>
             </>
