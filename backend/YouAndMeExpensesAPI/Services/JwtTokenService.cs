@@ -105,6 +105,24 @@ namespace YouAndMeExpensesAPI.Services
                 return null;
             }
         }
+
+        /// <summary>
+        /// Extract token ID (JTI) from token
+        /// </summary>
+        public string? GetTokenId(string token)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtToken = tokenHandler.ReadJwtToken(token);
+                return jwtToken.Id;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting token ID");
+                return null;
+            }
+        }
     }
 }
 

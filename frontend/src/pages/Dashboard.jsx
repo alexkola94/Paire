@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { 
@@ -9,11 +9,13 @@ import {
 import { transactionService } from '../services/api'
 import { format } from 'date-fns'
 import SecurityBadge from '../components/SecurityBadge'
+import LogoLoader from '../components/LogoLoader'
 import './Dashboard.css'
 
 /**
  * Dashboard Page Component
  * Displays financial overview and recent transactions
+ * Optimized with React.memo and useMemo for better performance
  */
 function Dashboard() {
   const { t } = useTranslation()
@@ -25,69 +27,67 @@ function Dashboard() {
   })
   const [recentTransactions, setRecentTransactions] = useState([])
 
-  /**
-   * Load dashboard data on component mount
-   */
-  useEffect(() => {
-    loadDashboardData()
-  }, [])
+  // Memoize date calculations to avoid recalculation on every render
+  const dateRange = useMemo(() => {
+    const now = new Date()
+    return {
+      startOfMonth: new Date(now.getFullYear(), now.getMonth(), 1),
+      endOfMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    }
+  }, []) // Only calculate once on mount
 
   /**
    * Fetch summary and recent transactions
+   * Memoized with useCallback to prevent unnecessary re-renders
    */
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       
-      // Get current month dates
-      const now = new Date()
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-
-      console.log('🔍 Dashboard Debug - Date Range:', {
-        now: now.toISOString(),
-        startOfMonth: startOfMonth.toISOString(),
-        endOfMonth: endOfMonth.toISOString(),
-        currentMonth: now.getMonth() + 1,
-        currentYear: now.getFullYear()
-      })
-
       // Fetch summary for current month
-      console.log('📊 Fetching summary...')
       const summaryData = await transactionService.getSummary(
-        startOfMonth.toISOString(),
-        endOfMonth.toISOString()
+        dateRange.startOfMonth.toISOString(),
+        dateRange.endOfMonth.toISOString()
       )
-      console.log('✅ Summary received:', summaryData)
       setSummary(summaryData)
 
       // Fetch recent transactions (last 10)
-      console.log('📝 Fetching transactions...')
       const transactions = await transactionService.getAll()
-      console.log('✅ Transactions received:', transactions?.length, 'transactions')
       setRecentTransactions(transactions.slice(0, 10))
     } catch (error) {
       console.error('❌ Error loading dashboard data:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [dateRange.startOfMonth, dateRange.endOfMonth])
+
+  /**
+   * Load dashboard data on component mount
+   */
+  useEffect(() => {
+    loadDashboardData()
+  }, [loadDashboardData])
 
   /**
    * Format currency for display
+   * Memoized to avoid creating new formatter on every render
    */
-  const formatCurrency = (amount) => {
+  const formatCurrency = useCallback((amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'EUR'
     }).format(amount)
-  }
+  }, [])
+
+  // Memoize recent transactions to prevent unnecessary re-renders
+  const memoizedTransactions = useMemo(() => {
+    return recentTransactions
+  }, [recentTransactions])
 
   if (loading) {
     return (
       <div className="page-loading">
-        <div className="spinner"></div>
-        <p>{t('common.loading')}</p>
+        <LogoLoader size="medium" />
       </div>
     )
   }
@@ -167,35 +167,13 @@ function Dashboard() {
           </div>
         ) : (
           <div className="transactions-list">
-            {recentTransactions.map((transaction) => (
-              <div 
-                key={transaction.id} 
-                className={`transaction-item ${transaction.type}`}
-              >
-                <div className="transaction-icon">
-                  {transaction.type === 'income' ? (
-                    <FiTrendingUp size={20} />
-                  ) : (
-                    <FiTrendingDown size={20} />
-                  )}
-                </div>
-                <div className="transaction-details">
-                  <h4>{transaction.description || transaction.category}</h4>
-                  <p className="transaction-date">
-                    {format(new Date(transaction.date), 'MMM dd, yyyy')}
-                    {transaction.user_profiles && (
-                      <span className="added-by">
-                        {' • ' + t('dashboard.addedBy') + ' '}
-                        {transaction.user_profiles.display_name}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <div className={`transaction-amount ${transaction.type}`}>
-                  {transaction.type === 'income' ? '+' : '-'}
-                  {formatCurrency(Math.abs(transaction.amount))}
-                </div>
-              </div>
+            {memoizedTransactions.map((transaction) => (
+              <TransactionItem
+                key={transaction.id}
+                transaction={transaction}
+                formatCurrency={formatCurrency}
+                t={t}
+              />
             ))}
           </div>
         )}
@@ -204,5 +182,45 @@ function Dashboard() {
   )
 }
 
-export default Dashboard
+/**
+ * Transaction Item Component
+ * Memoized to prevent re-renders when parent updates
+ */
+const TransactionItem = memo(({ transaction, formatCurrency, t }) => {
+  const formattedDate = useMemo(() => {
+    return format(new Date(transaction.date), 'MMM dd, yyyy')
+  }, [transaction.date])
+
+  return (
+    <div className={`transaction-item ${transaction.type}`}>
+      <div className="transaction-icon">
+        {transaction.type === 'income' ? (
+          <FiTrendingUp size={20} />
+        ) : (
+          <FiTrendingDown size={20} />
+        )}
+      </div>
+      <div className="transaction-details">
+        <h4>{transaction.description || transaction.category}</h4>
+        <p className="transaction-date">
+          {formattedDate}
+          {transaction.user_profiles && (
+            <span className="added-by">
+              {' • ' + t('dashboard.addedBy') + ' '}
+              {transaction.user_profiles.display_name}
+            </span>
+          )}
+        </p>
+      </div>
+      <div className={`transaction-amount ${transaction.type}`}>
+        {transaction.type === 'income' ? '+' : '-'}
+        {formatCurrency(Math.abs(transaction.amount))}
+      </div>
+    </div>
+  )
+})
+
+TransactionItem.displayName = 'TransactionItem'
+
+export default memo(Dashboard)
 

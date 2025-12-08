@@ -410,6 +410,13 @@
   width: 100%;
   margin: 0 auto;
   padding: var(--spacing-md);
+  background-color: var(--bg-primary);
+  min-height: calc(100vh - var(--header-height, 60px));
+  /* Smooth transitions */
+  transition: background-color 0.2s ease;
+  /* Prevent white flash */
+  position: relative;
+  z-index: 1;
 }
 
 /* ================================

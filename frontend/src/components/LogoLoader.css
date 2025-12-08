@@ -1,0 +1,340 @@
+/* ================================
+   LogoLoader Component Styles
+   Smooth, branded loading animation
+   ================================ */
+
+.logo-loader-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Full-screen loading overlay */
+.logo-loader-container--fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 100vh;
+  background: var(--bg-primary, #fafafa);
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out;
+  /* Ensure it covers everything */
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Main loader wrapper */
+.logo-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md, 1rem);
+}
+
+/* Logo wrapper with animations */
+.logo-loader__wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Smooth transitions for all properties */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Logo image with smooth rotation */
+.logo-loader__image {
+  position: relative;
+  z-index: 2;
+  /* Smooth rotation animation */
+  animation: logoRotate 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  /* Smooth transitions */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  /* Performance optimization */
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  /* Prevent image selection */
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+
+/* Smooth rotation animation */
+@keyframes logoRotate {
+  0% {
+    transform: rotate(0deg) translateZ(0) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) translateZ(0) scale(1.05);
+  }
+  100% {
+    transform: rotate(360deg) translateZ(0) scale(1);
+  }
+}
+
+/* Animated ring around logo */
+.logo-loader__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateZ(0);
+  border: 3px solid transparent;
+  border-top-color: var(--primary, #6c5ce7);
+  border-right-color: var(--primary, #6c5ce7);
+  border-radius: 50%;
+  /* Smooth rotation with pulse */
+  animation: ringRotate 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite,
+             ringPulse 2s ease-in-out infinite;
+  /* Performance optimization */
+  will-change: transform, opacity;
+  z-index: 1;
+}
+
+/* Ring rotation animation */
+@keyframes ringRotate {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) translateZ(0);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) translateZ(0);
+  }
+}
+
+/* Ring pulse animation for breathing effect */
+@keyframes ringPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1) translateZ(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1) translateZ(0);
+  }
+}
+
+/* Loading text */
+.logo-loader__text {
+  margin: 0;
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-align: center;
+  /* Smooth fade-in animation */
+  animation: textFadeIn 0.5s ease-out 0.2s both;
+  /* Smooth transitions */
+  transition: color 0.3s ease;
+}
+
+@keyframes textFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+/* ================================
+   Size Variants
+   ================================ */
+
+/* Small size (for buttons, inline) */
+.logo-loader--small .logo-loader__wrapper {
+  width: 24px;
+  height: 24px;
+}
+
+.logo-loader--small .logo-loader__image {
+  width: 20px;
+  height: 20px;
+}
+
+.logo-loader--small .logo-loader__ring {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+}
+
+.logo-loader--small .logo-loader__text {
+  font-size: 0.75rem;
+  margin-top: var(--spacing-xs, 0.5rem);
+}
+
+/* Medium size (default, for page loading) */
+.logo-loader--medium .logo-loader__wrapper {
+  width: 80px;
+  height: 80px;
+}
+
+.logo-loader--medium .logo-loader__image {
+  width: 64px;
+  height: 64px;
+}
+
+.logo-loader--medium .logo-loader__ring {
+  width: 80px;
+  height: 80px;
+  border-width: 3px;
+}
+
+.logo-loader--medium .logo-loader__text {
+  font-size: 0.9375rem;
+}
+
+/* Large size (for full-screen loading) */
+.logo-loader--large .logo-loader__wrapper {
+  width: 120px;
+  height: 120px;
+}
+
+.logo-loader--large .logo-loader__image {
+  width: 100px;
+  height: 100px;
+}
+
+.logo-loader--large .logo-loader__ring {
+  width: 120px;
+  height: 120px;
+  border-width: 4px;
+}
+
+.logo-loader--large .logo-loader__text {
+  font-size: 1.125rem;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Mobile - 480px and below */
+@media (max-width: 480px) {
+  .logo-loader--medium .logo-loader__wrapper {
+    width: 64px;
+    height: 64px;
+  }
+
+  .logo-loader--medium .logo-loader__image {
+    width: 52px;
+    height: 52px;
+  }
+
+  .logo-loader--medium .logo-loader__ring {
+    width: 64px;
+    height: 64px;
+  }
+
+  .logo-loader--large .logo-loader__wrapper {
+    width: 100px;
+    height: 100px;
+  }
+
+  .logo-loader--large .logo-loader__image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .logo-loader--large .logo-loader__ring {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+/* Tablet - 768px and up */
+@media (min-width: 768px) {
+  .logo-loader--medium .logo-loader__wrapper {
+    width: 96px;
+    height: 96px;
+  }
+
+  .logo-loader--medium .logo-loader__image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .logo-loader--medium .logo-loader__ring {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+/* Desktop - 1024px and up */
+@media (min-width: 1024px) {
+  .logo-loader--large .logo-loader__wrapper {
+    width: 140px;
+    height: 140px;
+  }
+
+  .logo-loader--large .logo-loader__image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .logo-loader--large .logo-loader__ring {
+    width: 140px;
+    height: 140px;
+  }
+}
+
+/* ================================
+   Dark Mode Support (if theme supports it)
+   ================================ */
+
+@media (prefers-color-scheme: dark) {
+  .logo-loader-container--fullscreen {
+    background: var(--bg-primary-dark, #1a1a1a);
+  }
+
+  .logo-loader__text {
+    color: var(--text-secondary-dark, #9ca3af);
+  }
+}
+
+/* ================================
+   Reduced Motion Support (Accessibility)
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-loader__image {
+    animation: none;
+    transform: none;
+  }
+
+  .logo-loader__ring {
+    animation: ringPulse 2s ease-in-out infinite;
+  }
+
+  .logo-loader__text {
+    animation: none;
+  }
+}
+
+/* ================================
+   High Performance Mode
+   ================================ */
+
+/* Optimize for low-end devices */
+@media (max-width: 480px) {
+  .logo-loader__image,
+  .logo-loader__ring {
+    /* Reduce animation complexity on mobile */
+    animation-duration: 1.8s;
+  }
+}
+

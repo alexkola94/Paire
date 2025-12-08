@@ -64,6 +64,16 @@ namespace YouAndMeExpensesAPI.Models
         [Column("notes")]
         public string? Notes { get; set; }
 
+        // Bank sync tracking
+        [Column("bank_transaction_id")]
+        public string? BankTransactionId { get; set; } // External transaction ID from bank
+
+        [Column("bank_account_id")]
+        public string? BankAccountId { get; set; } // Bank account ID this transaction came from
+
+        [Column("is_bank_synced")]
+        public bool IsBankSynced { get; set; } // Flag to indicate this came from bank sync
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 

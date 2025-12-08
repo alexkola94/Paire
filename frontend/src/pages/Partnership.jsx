@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiUsers, FiUserPlus, FiUserX, FiMail, FiCalendar, FiTrendingUp } from 'react-icons/fi'
+import { FiUsers, FiUserPlus, FiUserX, FiMail, FiCalendar, FiTrendingUp, FiX } from 'react-icons/fi'
 import { partnershipService, profileService } from '../services/api'
 import { getStoredUser } from '../services/auth'
 import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
+import LogoLoader from '../components/LogoLoader'
+import FormSection from '../components/FormSection'
 import './Partnership.css'
 
 /**
@@ -239,8 +241,7 @@ function Partnership() {
   if (loading) {
     return (
       <div className="page-loading">
-        <div className="spinner"></div>
-        <p>{t('common.loading')}</p>
+        <LogoLoader size="medium" />
       </div>
     )
   }
@@ -366,7 +367,7 @@ function Partnership() {
               <h2>{t('partnership.noPartnership')}</h2>
               <p>{t('partnership.noPartnershipDescription')}</p>
 
-              {!showInviteForm ? (
+              {!showInviteForm && (
                 <button
                   onClick={() => setShowInviteForm(true)}
                   className="btn btn-primary"
@@ -374,53 +375,9 @@ function Partnership() {
                   <FiUserPlus size={20} />
                   {t('partnership.invitePartner')}
                 </button>
-              ) : (
-              <form onSubmit={handleInvitePartner} className="invite-form">
-                <div className="form-group">
-                  <label htmlFor="partner-email">
-                    <FiMail size={18} />
-                    {t('partnership.partnerEmail')}
-                  </label>
-                  <input
-                    type="email"
-                    id="partner-email"
-                    value={partnerEmail}
-                    onChange={(e) => setPartnerEmail(e.target.value)}
-                    placeholder={t('partnership.emailPlaceholder')}
-                    required
-                    autoComplete="email"
-                    disabled={saving}
-                  />
-                  <small className="form-hint">
-                    {t('partnership.emailHint')}
-                  </small>
-                </div>
-
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowInviteForm(false)
-                      setPartnerEmail('')
-                    }}
-                    className="btn btn-secondary"
-                    disabled={saving}
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={saving || !partnerEmail}
-                  >
-                    <FiUserPlus size={18} />
-                    {saving ? t('common.saving') : t('partnership.sendInvite')}
-                  </button>
-                </div>
-              </form>
-            )}
+              )}
+            </div>
           </div>
-        </div>
         </>
       )}
 
@@ -456,6 +413,72 @@ function Partnership() {
           </div>
         </div>
       </div>
+
+      {/* Invite Form Modal */}
+      {showInviteForm && (
+        <div className="form-modal" onClick={(e) => e.target === e.currentTarget && !saving && (setShowInviteForm(false), setPartnerEmail(''))}>
+          <div className="card form-card">
+            <div className="card-header form-header">
+              <h2>{t('partnership.invitePartner')}</h2>
+              <button
+                className="form-close-btn"
+                onClick={() => {
+                  setShowInviteForm(false)
+                  setPartnerEmail('')
+                }}
+                aria-label={t('common.close')}
+                disabled={saving}
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleInvitePartner} className="invite-form">
+              <div className="form-group">
+                <label htmlFor="partner-email">
+                  <FiMail size={18} />
+                  {t('partnership.partnerEmail')}
+                </label>
+                <input
+                  type="email"
+                  id="partner-email"
+                  value={partnerEmail}
+                  onChange={(e) => setPartnerEmail(e.target.value)}
+                  placeholder={t('partnership.emailPlaceholder')}
+                  required
+                  autoComplete="email"
+                  disabled={saving}
+                />
+                <small className="form-hint">
+                  {t('partnership.emailHint')}
+                </small>
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowInviteForm(false)
+                    setPartnerEmail('')
+                  }}
+                  className="btn btn-secondary"
+                  disabled={saving}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={saving || !partnerEmail}
+                >
+                  <FiUserPlus size={18} />
+                  {saving ? t('common.saving') : t('partnership.sendInvite')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Disconnect Confirmation Modal */}
       <ConfirmationModal

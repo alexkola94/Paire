@@ -166,5 +166,43 @@
     "import": "Importar",
     "select": "Seleccionar...",
     "viewAll": "Ver Todo"
+  },
+  "profile": {
+    "openBanking": {
+      "title": "Conexiones Bancarias",
+      "connectedAccounts": "Cuentas Conectadas",
+      "disconnectAll": "Desconectar Todo",
+      "connectDescription": "Conecta tu cuenta bancaria para importar transacciones automáticamente.",
+      "selectBank": "Selecciona tu banco...",
+      "connect": "Conectar",
+      "connecting": "Conectando...",
+      "connectionSuccess": "¡Cuenta bancaria conectada exitosamente!",
+      "connectionError": "Error al conectar el banco. Por favor intenta de nuevo.",
+      "popupBlocked": "Popup bloqueado. Por favor permite popups para este sitio.",
+      "windowClosed": "La ventana de autorización fue cerrada. Si completaste la autorización, tu cuenta se conectará en breve.",
+      "timeout": "La autorización expiró. Por favor intenta de nuevo.",
+      "disconnectConfirm": "¿Estás seguro de que quieres desconectar todas las cuentas bancarias?",
+      "disconnectSuccess": "Desconectado exitosamente",
+      "disconnectError": "Error al desconectar",
+      "disconnectAccount": "Desconectar esta cuenta",
+      "disconnectAccountConfirm": "¿Estás seguro de que quieres desconectar {{account}}?",
+      "disconnectAccountSuccess": "Cuenta desconectada exitosamente",
+      "disconnectAccountError": "Error al desconectar la cuenta",
+      "iban": "IBAN",
+      "accountType": "Tipo",
+      "lastUpdated": "Última actualización",
+      "balanceNotAvailable": "N/D",
+      "never": "Nunca",
+      "unknownBank": "Banco desconocido",
+      "callback": {
+        "processing": "Procesando Autorización...",
+        "processingMessage": "Por favor espera mientras completamos tu conexión bancaria.",
+        "bankError": "La autorización bancaria fue cancelada o falló.",
+        "missingParams": "Faltan parámetros de autorización.",
+        "notLoggedIn": "Debes estar conectado para completar la autorización bancaria.",
+        "connectionFailed": "Error al completar la conexión bancaria. Por favor intenta de nuevo.",
+        "closing": "Esta ventana se cerrará automáticamente..."
+      }
+    }
   }
 }

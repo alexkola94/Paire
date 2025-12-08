@@ -21,6 +21,11 @@ namespace YouAndMeExpensesAPI.Services
         /// Validate token and get user ID
         /// </summary>
         string? ValidateToken(string token);
+
+        /// <summary>
+        /// Extract token ID (JTI) from token
+        /// </summary>
+        string? GetTokenId(string token);
     }
 }
 

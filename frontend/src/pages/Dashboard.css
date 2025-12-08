@@ -305,6 +305,11 @@
   justify-content: center;
   min-height: 400px;
   gap: var(--spacing-md);
+  background-color: var(--bg-primary);
+  /* Smooth transitions */
+  transition: background-color 0.2s ease;
+  /* Prevent white flash */
+  width: 100%;
 }
 
 /* ================================

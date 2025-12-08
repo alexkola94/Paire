@@ -1,12 +1,13 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense, memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { 
-  FiHome, 
-  FiTrendingDown, 
-  FiTrendingUp, 
-  FiUser, 
-  FiMenu, 
+import PageTransition from './PageTransition'
+import {
+  FiHome,
+  FiTrendingDown,
+  FiTrendingUp,
+  FiUser,
+  FiMenu,
   FiX,
   FiLogOut,
   FiBarChart2,
@@ -19,14 +20,14 @@ import {
   FiChevronDown
 } from 'react-icons/fi'
 
-// Euro icon component to replace dollar sign
-const EuroIcon = ({ size = 24, className = '', style = {} }) => {
+// Euro icon component to replace dollar sign - memoized to prevent re-renders
+const EuroIcon = memo(({ size = 24, className = '', style = {} }) => {
   const iconSize = style?.width || style?.height || size
   return (
-    <span 
-      className={`euro-icon ${className}`} 
-      style={{ 
-        fontSize: typeof iconSize === 'string' ? iconSize : `${iconSize}px`, 
+    <span
+      className={`euro-icon ${className}`}
+      style={{
+        fontSize: typeof iconSize === 'string' ? iconSize : `${iconSize}px`,
         fontWeight: 'bold',
         display: 'inline-flex',
         alignItems: 'center',
@@ -37,9 +38,13 @@ const EuroIcon = ({ size = 24, className = '', style = {} }) => {
       €
     </span>
   )
-}
+})
+EuroIcon.displayName = 'EuroIcon'
+
 import { authService } from '../services/auth'
-import Chatbot from './Chatbot'
+import LogoLoader from './LogoLoader'
+// Lazy load Chatbot - it's not critical for initial render
+const Chatbot = lazy(() => import('./Chatbot'))
 import './Layout.css'
 
 /**
@@ -48,15 +53,16 @@ import './Layout.css'
  * Mobile-first approach with responsive navigation
  */
 function Layout() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const moreMenuRef = useRef(null)
 
+  // Memoize navigation items to prevent recreation on every render
   // Primary navigation items (always visible on desktop)
-  // These are the most frequently used features - accessed daily
-  const mainNavItems = [
+  // Include i18n.language in dependencies to update immediately when language changes
+  const mainNavItems = useMemo(() => [
     { path: '/dashboard', icon: FiHome, label: t('navigation.dashboard') },
     { path: '/expenses', icon: FiTrendingDown, label: t('navigation.expenses') },
     { path: '/income', icon: FiTrendingUp, label: t('navigation.income') },
@@ -64,21 +70,21 @@ function Layout() {
     { path: '/recurring-bills', icon: FiBell, label: t('navigation.recurringBills') },
     { path: '/shopping-lists', icon: FiShoppingCart, label: t('navigation.shoppingLists') },
     { path: '/loans', icon: EuroIcon, label: t('navigation.loans') },
-  ]
+  ], [t, i18n.language])
 
   // Secondary navigation items (inside "More" dropdown on desktop)
-  // Less frequently used features - accessed weekly/monthly or occasionally
-  const moreNavItems = [
+  // Include i18n.language in dependencies to update immediately when language changes
+  const moreNavItems = useMemo(() => [
     { path: '/analytics', icon: FiBarChart2, label: t('navigation.analytics') },
     { path: '/partnership', icon: FiUsers, label: t('navigation.partnership') },
     { path: '/savings-goals', icon: FiPieChart, label: t('navigation.savingsGoals') },
-  ]
+  ], [t, i18n.language])
 
-  // All navigation items (for mobile menu)
-  const allNavItems = [...mainNavItems, ...moreNavItems]
+  // All navigation items (for mobile menu) - memoized
+  const allNavItems = useMemo(() => [...mainNavItems, ...moreNavItems], [mainNavItems, moreNavItems])
 
-  // Handle logout
-  const handleLogout = async () => {
+  // Memoize handlers with useCallback to prevent unnecessary re-renders
+  const handleLogout = useCallback(async () => {
     try {
       await authService.signOut()
       // Force reload to update session state in App.jsx
@@ -86,17 +92,15 @@ function Layout() {
     } catch (error) {
       console.error('Error signing out:', error)
     }
-  }
+  }, [])
 
-  // Toggle mobile menu
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen)
-  }
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen(prev => !prev)
+  }, [])
 
-  // Close mobile menu when navigation link is clicked
-  const closeMobileMenu = () => {
+  const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false)
-  }
+  }, [])
 
   // Close more menu when clicking outside
   useEffect(() => {
@@ -110,29 +114,25 @@ function Layout() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Toggle more menu
-  const toggleMoreMenu = () => {
-    setMoreMenuOpen(!moreMenuOpen)
-  }
+  const toggleMoreMenu = useCallback(() => {
+    setMoreMenuOpen(prev => !prev)
+  }, [])
 
-  // Handle more menu navigation
-  const handleMoreNavigation = (path) => {
+  const handleMoreNavigation = useCallback((path) => {
     navigate(path)
     setMoreMenuOpen(false)
     closeMobileMenu()
-  }
+  }, [navigate, closeMobileMenu])
 
-  // Navigate to reminders
-  const handleNavigation = (path) => {
+  const handleNavigation = useCallback((path) => {
     navigate(path)
     closeMobileMenu()
-  }
+  }, [navigate, closeMobileMenu])
 
-  // Navigate to profile directly
-  const handleProfileNavigation = () => {
+  const handleProfileNavigation = useCallback(() => {
     navigate('/profile')
     closeMobileMenu()
-  }
+  }, [navigate, closeMobileMenu])
 
   return (
     <div className="layout">
@@ -141,9 +141,9 @@ function Layout() {
         <div className="header-content">
           <div className="header-left">
             <div className="header-brand">
-              <img 
-                src="/paire-logo.svg" 
-                alt="Paire" 
+              <img
+                src="/paire-logo.svg"
+                alt="Paire"
                 className="header-logo"
                 width="36"
                 height="36"
@@ -154,11 +154,11 @@ function Layout() {
               </div>
             </div>
           </div>
-          
+
           {/* Header actions - right side */}
           <div className="header-actions">
             {/* Notifications bell - desktop only */}
-            <span 
+            <span
               className="header-icon-btn desktop-only"
               onClick={() => handleNavigation('/reminders')}
               aria-label={t('navigation.reminders')}
@@ -170,7 +170,7 @@ function Layout() {
             </span>
 
             {/* Profile button - desktop only */}
-            <span 
+            <span
               className="header-icon-btn desktop-only"
               onClick={handleProfileNavigation}
               aria-label={t('navigation.profile')}
@@ -182,7 +182,7 @@ function Layout() {
             </span>
 
             {/* Logout button - desktop only */}
-            <span 
+            <span
               className="header-icon-btn desktop-only"
               onClick={handleLogout}
               aria-label={t('auth.logout')}
@@ -194,7 +194,7 @@ function Layout() {
             </span>
 
             {/* Mobile menu toggle */}
-            <span 
+            <span
               className="mobile-menu-toggle"
               onClick={toggleMobileMenu}
               aria-label="Toggle menu"
@@ -215,7 +215,7 @@ function Layout() {
             <li key={item.path}>
               <NavLink
                 to={item.path}
-                className={({ isActive }) => 
+                className={({ isActive }) =>
                   `nav-link ${isActive ? 'active' : ''}`
                 }
                 onClick={closeMobileMenu}
@@ -229,23 +229,23 @@ function Layout() {
 
           {/* More dropdown - Desktop/Tablet */}
           <li className="more-menu-container desktop-only" ref={moreMenuRef}>
-            <button 
+            <button
               className={`nav-link more-btn ${moreMenuOpen ? 'active' : ''}`}
               onClick={toggleMoreMenu}
               title={t('navigation.more')}
             >
               <FiMoreHorizontal style={{ width: '20px', height: '20px' }} className="nav-icon" />
               <span className="nav-label">{t('navigation.more')}</span>
-              <FiChevronDown 
-                style={{ width: '16px', height: '16px' }} 
-                className={`more-chevron ${moreMenuOpen ? 'open' : ''}`} 
+              <FiChevronDown
+                style={{ width: '16px', height: '16px' }}
+                className={`more-chevron ${moreMenuOpen ? 'open' : ''}`}
               />
             </button>
-            
+
             {moreMenuOpen && (
               <div className="more-dropdown">
                 {moreNavItems.map((item) => (
-                  <button 
+                  <button
                     key={item.path}
                     className="more-dropdown-item"
                     onClick={() => handleMoreNavigation(item.path)}
@@ -268,7 +268,7 @@ function Layout() {
             <li key={item.path} className="mobile-only">
               <NavLink
                 to={item.path}
-                className={({ isActive }) => 
+                className={({ isActive }) =>
                   `nav-link ${isActive ? 'active' : ''}`
                 }
                 onClick={closeMobileMenu}
@@ -279,7 +279,7 @@ function Layout() {
               </NavLink>
             </li>
           ))}
-          
+
           {/* Mobile section divider for account */}
           <li className="mobile-section-divider mobile-only">
             <span className="section-label">{t('navigation.account')}</span>
@@ -289,7 +289,7 @@ function Layout() {
           <li className="mobile-only">
             <NavLink
               to="/reminders"
-              className={({ isActive }) => 
+              className={({ isActive }) =>
                 `nav-link ${isActive ? 'active' : ''}`
               }
               onClick={closeMobileMenu}
@@ -301,7 +301,7 @@ function Layout() {
           <li className="mobile-only">
             <NavLink
               to="/profile"
-              className={({ isActive }) => 
+              className={({ isActive }) =>
                 `nav-link ${isActive ? 'active' : ''}`
               }
               onClick={closeMobileMenu}
@@ -310,10 +310,10 @@ function Layout() {
               <span className="nav-label">{t('navigation.profile')}</span>
             </NavLink>
           </li>
-          
+
           {/* Mobile logout button */}
           <li className="mobile-only">
-            <button 
+            <button
               className="nav-link logout-mobile"
               onClick={handleLogout}
             >
@@ -324,25 +324,33 @@ function Layout() {
         </ul>
       </nav>
 
+
+
       {/* Main Content */}
       <main className="layout-main">
-        <Outlet />
+        <PageTransition>
+          <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LogoLoader /></div>}>
+            <Outlet />
+          </Suspense>
+        </PageTransition>
       </main>
 
       {/* Overlay for mobile menu */}
       {mobileMenuOpen && (
-        <div 
+        <div
           className="mobile-overlay"
           onClick={closeMobileMenu}
           aria-hidden="true"
         />
       )}
 
-      {/* Floating Chatbot - Available on all pages */}
-      <Chatbot />
+      {/* Floating Chatbot - Available on all pages - Lazy loaded */}
+      <Suspense fallback={null}>
+        <Chatbot />
+      </Suspense>
     </div>
   )
 }
 
-export default Layout
+export default memo(Layout)
 

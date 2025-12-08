@@ -7,6 +7,10 @@ import {
 import { savingsGoalService } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
 import ConfirmationModal from '../components/ConfirmationModal'
+import CurrencyInput from '../components/CurrencyInput'
+import DateInput from '../components/DateInput'
+import CategorySelector from '../components/CategorySelector'
+import FormSection from '../components/FormSection'
 import './SavingsGoals.css'
 
 /**
@@ -494,65 +498,49 @@ function SavingsGoals() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>{t('savingsGoals.goalName')} *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder={t('savingsGoals.goalNamePlaceholder')}
-                />
-              </div>
-
-              <div className="form-row">
+              {/* Basic Information Section */}
+              <FormSection title={t('transaction.formSections.basicInfo')}>
                 <div className="form-group">
-                  <label>{t('savingsGoals.targetAmount')} *</label>
+                  <label>{t('savingsGoals.goalName')} *</label>
                   <input
-                    type="number"
-                    name="targetAmount"
-                    value={formData.targetAmount}
+                    type="text"
+                    name="name"
+                    value={formData.name}
                     onChange={handleChange}
                     required
-                    step="0.01"
-                    min="0"
-                    max="1000000"
-                    placeholder="10000"
+                    placeholder={t('savingsGoals.goalNamePlaceholder')}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>{t('savingsGoals.currentAmount')}</label>
-                  <input
-                    type="number"
-                    name="currentAmount"
+                <div className="form-row">
+                  <CurrencyInput
+                    value={formData.targetAmount}
+                    onChange={handleChange}
+                    name="targetAmount"
+                    id="targetAmount"
+                    label={`${t('savingsGoals.targetAmount')} *`}
+                    required
+                    quickAmounts={[1000, 5000, 10000, 50000]}
+                  />
+
+                  <CurrencyInput
                     value={formData.currentAmount}
                     onChange={handleChange}
-                    step="0.01"
-                    min="0"
-                    max="1000000"
-                    placeholder="0"
+                    name="currentAmount"
+                    id="currentAmount"
+                    label={t('savingsGoals.currentAmount')}
+                    quickAmounts={[]}
                   />
                 </div>
-              </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('savingsGoals.category')}</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                  >
-                    <option value="">{t('savingsGoals.selectCategory')}</option>
-                    {categories.map(cat => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.icon} {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CategorySelector
+                  value={formData.category}
+                  onChange={handleChange}
+                  name="category"
+                  categories={categories.map(c => c.value)}
+                  type="expense"
+                  label={t('savingsGoals.category')}
+                />
 
                 <div className="form-group">
                   <label>{t('savingsGoals.priority')}</label>
@@ -568,17 +556,20 @@ function SavingsGoals() {
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label>{t('savingsGoals.targetDate')}</label>
-                <input
-                  type="date"
-                  name="targetDate"
+                <DateInput
                   value={formData.targetDate}
                   onChange={handleChange}
+                  name="targetDate"
+                  id="targetDate"
+                  label={t('savingsGoals.targetDate')}
+                  required={false}
+                  showQuickButtons={true}
                 />
-              </div>
+              </FormSection>
+
+              {/* Customization Section */}
+              <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.icon || !!formData.notes}>
 
               <div className="form-row">
                 <div className="form-group">
@@ -614,6 +605,7 @@ function SavingsGoals() {
                   placeholder={t('savingsGoals.notesPlaceholder')}
                 />
               </div>
+              </FormSection>
 
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={resetForm}>

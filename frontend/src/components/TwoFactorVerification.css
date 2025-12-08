@@ -353,11 +353,22 @@
   border: 2px solid var(--primary-light);
   border-top-color: var(--primary);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite, pulse 2s ease-in-out infinite;
+  animation: spinSmoothVerifying 1s cubic-bezier(0.4, 0, 0.2, 1) infinite, pulse 2s ease-in-out infinite;
   /* Mobile performance optimization */
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   will-change: transform;
+}
+
+@keyframes spinSmoothVerifying {
+  0% {
+    transform: rotate(0deg) translateZ(0);
+    -webkit-transform: rotate(0deg) translateZ(0);
+  }
+  100% {
+    transform: rotate(360deg) translateZ(0);
+    -webkit-transform: rotate(360deg) translateZ(0);
+  }
 }
 
 @keyframes fadeInUp {
@@ -373,18 +384,27 @@
   }
 }
 
-/* Loading Spinner */
+/* Loading Spinner - Enhanced with smoother animations */
 .loading-spinner {
   width: 20px;
   height: 20px;
   border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spinSmooth 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  /* Performance optimization */
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  transition: opacity 0.3s ease;
 }
 
-@keyframes spin {
-  to { 
+@keyframes spinSmooth {
+  0% {
+    transform: rotate(0deg) translateZ(0);
+    -webkit-transform: rotate(0deg) translateZ(0);
+  }
+  100% {
     transform: rotate(360deg) translateZ(0);
     -webkit-transform: rotate(360deg) translateZ(0);
   }

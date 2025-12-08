@@ -60,6 +60,16 @@
     "addedBy": "Added by"
   },
   "expenses": {
+    "createdSuccess": "Expense created successfully",
+    "updatedSuccess": "Expense updated successfully",
+    "savedSuccess": "Saved successfully!",
+    "createError": "Failed to create expense",
+    "updateError": "Failed to update expense",
+    "deleteError": "Failed to delete expense",
+    "formClosed": "Form closed",
+    "undoSuccess": "Action undone",
+    "undoError": "Failed to undo action",
+    "undoAvailable": "Action can be undone",
     "title": "Expenses",
     "addExpense": "Add Expense",
     "editExpense": "Edit Expense",
@@ -136,12 +146,65 @@
     "category": "Category",
     "description": "Description",
     "descriptionPlaceholder": "Add a description...",
+    "descriptionSuggestions": "Description suggestions",
     "date": "Date",
     "type": "Type",
     "attachment": "Attachment",
     "uploadReceipt": "Upload Receipt",
     "deleteAttachment": "Delete Attachment",
     "viewAttachment": "View Attachment",
+    "quickAmount": "Quick amount: €{{amount}}",
+    "quickDate": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This Week"
+    },
+    "formSections": {
+      "basicInfo": "Basic Information",
+      "additionalDetails": "Additional Details",
+      "advanced": "Advanced Features",
+      "optional": "Optional"
+    },
+    "duplicateWarning": {
+      "title": "Similar transaction found ({{count}})",
+      "message": "A similar transaction was found in your recent history. Are you sure you want to add this?",
+      "proceed": "Yes, Add",
+      "dismiss": "Dismiss"
+    },
+    "noDescription": "No description",
+    "smartSuggestions": {
+      "title": "Smart Suggestions",
+      "recentTransactions": "Recent Transactions",
+      "quickFill": "Quick Fill",
+      "suggestedCategory": "Suggested Category"
+    },
+    "recurring": {
+      "makeRecurring": "Make this transaction recurring",
+      "pattern": "Repeat Pattern",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "endDate": "End Date (Optional)",
+      "endDateHint": "Leave empty to repeat indefinitely"
+    },
+    "split": {
+      "splitTransaction": "Split this transaction",
+      "splitType": "Split Type",
+      "equal": "Equal",
+      "percentage": "Percentage",
+      "custom": "Custom",
+      "yourPercentage": "Your Share",
+      "you": "You",
+      "paidBy": "Paid By",
+      "me": "Me"
+    },
+    "tags": {
+      "label": "Tags",
+      "placeholder": "Add a tag...",
+      "maxReached": "Maximum tags reached",
+      "count": "{{count}} of {{max}} tags"
+    },
     "fileSizeError": "File size must be less than 5MB",
     "invalidAmount": "Please enter a valid amount",
     "errorOccurred": "An error occurred",
@@ -214,6 +277,42 @@
       "expiresAt": "Request expires at",
       "cancelRequest": "Cancel Request",
       "requestCancelled": "Data clearing request has been cancelled."
+    },
+    "openBanking": {
+      "title": "Bank Connections",
+      "connectedAccounts": "Connected Accounts",
+      "disconnectAll": "Disconnect All",
+      "connectDescription": "Connect your bank account to automatically import transactions.",
+      "selectBank": "Select your bank...",
+      "connect": "Connect",
+      "connecting": "Connecting...",
+      "connectionSuccess": "Bank account connected successfully!",
+      "connectionError": "Failed to connect bank. Please try again.",
+      "popupBlocked": "Popup blocked. Please allow popups for this site.",
+      "windowClosed": "Authorization window was closed. If you completed the authorization, your account will be connected shortly.",
+      "timeout": "Authorization timed out. Please try again.",
+      "disconnectConfirm": "Are you sure you want to disconnect all bank accounts?",
+      "disconnectSuccess": "Disconnected successfully",
+      "disconnectError": "Failed to disconnect",
+      "disconnectAccount": "Disconnect this account",
+      "disconnectAccountConfirm": "Are you sure you want to disconnect {{account}}?",
+      "disconnectAccountSuccess": "Account disconnected successfully",
+      "disconnectAccountError": "Failed to disconnect account",
+      "iban": "IBAN",
+      "accountType": "Type",
+      "lastUpdated": "Last updated",
+      "balanceNotAvailable": "N/A",
+      "never": "Never",
+      "unknownBank": "Unknown Bank",
+      "callback": {
+        "processing": "Processing Authorization...",
+        "processingMessage": "Please wait while we complete your bank connection.",
+        "bankError": "Bank authorization was cancelled or failed.",
+        "missingParams": "Missing authorization parameters.",
+        "notLoggedIn": "You must be logged in to complete bank authorization.",
+        "connectionFailed": "Failed to complete bank connection. Please try again.",
+        "closing": "This window will close automatically..."
+      }
     }
   },
   "analytics": {
@@ -588,7 +687,36 @@
     "viewAll": "View All",
     "close": "Close",
     "processing": "Processing...",
-    "optional": "Optional"
+    "optional": "Optional",
+    "undo": "Undo"
+  },
+  "validation": {
+    "required": "{{field}} is required",
+    "minLength": "{{field}} must be at least {{min}} characters",
+    "maxLength": "{{field}} must be no more than {{max}} characters",
+    "minValue": "{{field}} must be at least {{min}}",
+    "maxValue": "{{field}} must be no more than {{max}}",
+    "email": "Please enter a valid email address",
+    "url": "Please enter a valid URL",
+    "number": "Please enter a valid number",
+    "positiveNumber": "Please enter a positive number",
+    "date": "Please enter a valid date",
+    "pattern": "Please enter a valid value",
+    "words": "words"
+  },
+  "fileUpload": {
+    "dropzoneLabel": "File upload drop zone",
+    "selectFile": "Select file",
+    "dropHere": "Drop file here",
+    "clickOrDrag": "Click to upload or drag and drop",
+    "supportedFormats": "Supported formats: {{formats}}",
+    "maxSize": "Max size: {{size}}",
+    "sizeError": "File size must be less than {{max}}MB",
+    "typeError": "File type not supported. Accepted types: {{types}}",
+    "preview": "File preview",
+    "attachedFile": "Attached file",
+    "remove": "Remove file",
+    "uploadComplete": "Upload complete"
   },
   "confirmationModal": {
     "deleteTitle": "Confirm Deletion",

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FiTarget, FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiAlertCircle, FiCheckCircle } from 'react-icons/fi'
 import { budgetService, transactionService } from '../services/api'
 import ConfirmationModal from '../components/ConfirmationModal'
+import LogoLoader from '../components/LogoLoader'
 import './Budgets.css'
 
 /**
@@ -190,8 +191,7 @@ function Budgets() {
   if (loading) {
     return (
       <div className="page-loading">
-        <div className="spinner"></div>
-        <p>{t('common.loading')}</p>
+        <LogoLoader size="medium" />
       </div>
     )
   }

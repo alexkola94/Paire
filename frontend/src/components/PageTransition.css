@@ -1,0 +1,54 @@
+/* ================================
+   PageTransition Component Styles
+   Smooth transitions between routes
+   ================================ */
+
+.page-transition {
+  width: 100%;
+  min-height: 100%;
+  /* Smooth fade in animation */
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Performance optimization */
+  will-change: opacity;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Mobile - faster transitions for better performance */
+@media (max-width: 480px) {
+  .page-transition {
+    transition-duration: 0.12s;
+  }
+}
+
+/* ================================
+   Reduced Motion Support
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    transition: none;
+  }
+  
+  .page-transition--fadeIn,
+  .page-transition--fadeOut {
+    opacity: 1;
+    transform: none;
+  }
+}
+

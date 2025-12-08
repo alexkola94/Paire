@@ -1,4 +1,6 @@
 import { getToken, getStoredUser } from './auth'
+import { isTokenExpired } from '../utils/tokenUtils'
+import { sessionManager } from './sessionManager'
 
 /**
  * API Service for database operations
@@ -27,6 +29,17 @@ const getCurrentUser = () => {
 }
 
 /**
+ * Handle session expiration - clear session and notify app
+ */
+const handleSessionExpiration = () => {
+  sessionManager.clearSession()
+  // Dispatch event to notify App.jsx
+  window.dispatchEvent(new CustomEvent('session-invalidated', {
+    detail: { reason: 'Session expired' }
+  }))
+}
+
+/**
  * Make authenticated API request to backend
  * @param {string} url - API endpoint URL
  * @param {Object} options - Fetch options
@@ -34,6 +47,14 @@ const getCurrentUser = () => {
  */
 const apiRequest = async (url, options = {}) => {
   const token = getToken()
+  
+  // Check if token is expired before making request
+  if (token && isTokenExpired(token)) {
+    console.warn('Token expired, clearing session')
+    handleSessionExpiration()
+    throw new Error('Session expired. Please log in again.')
+  }
+  
   // Get URL dynamically on each request to ensure it uses current window location
   let backendApiUrl = getBackendApiUrl()
   
@@ -72,6 +93,15 @@ const apiRequest = async (url, options = {}) => {
       ...options,
       headers
     })
+
+    // Handle 401 Unauthorized - session expired or invalid
+    if (response.status === 401) {
+      console.warn('Received 401 Unauthorized, clearing session')
+      handleSessionExpiration()
+      const errorData = await response.text().catch(() => '')
+      const errorMessage = errorData || 'Session expired. Please log in again.'
+      throw new Error(errorMessage)
+    }
 
     // For DELETE requests, don't try to parse JSON if there's no content
     if (options.method === 'DELETE' && response.status === 204) {
@@ -390,14 +420,18 @@ export const analyticsService = {
 
 export const chatbotService = {
   async sendQuery(query, history = []) {
+    // Get language from localStorage
+    const language = localStorage.getItem('language') || 'en'
     return await apiRequest('/api/chatbot/query', {
       method: 'POST',
-      body: JSON.stringify({ query, history })
+      body: JSON.stringify({ query, history, language })
     })
   },
 
   async getSuggestions() {
-    return await apiRequest('/api/chatbot/suggestions')
+    // Get language from localStorage
+    const language = localStorage.getItem('language') || 'en'
+    return await apiRequest(`/api/chatbot/suggestions?language=${language}`)
   }
 }
 

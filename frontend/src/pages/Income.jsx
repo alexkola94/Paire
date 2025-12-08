@@ -5,6 +5,7 @@ import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
+import LogoLoader from '../components/LogoLoader'
 import './Income.css'
 
 /**
@@ -144,8 +145,7 @@ function Income() {
   if (loading) {
     return (
       <div className="page-loading">
-        <div className="spinner"></div>
-        <p>{t('common.loading')}</p>
+        <LogoLoader size="medium" />
       </div>
     )
   }

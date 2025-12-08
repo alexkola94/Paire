@@ -19,17 +19,17 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   // Setup state
   const [setupMode, setSetupMode] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [secret, setSecret] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  
+
   // Backup codes state
   const [showBackupCodes, setShowBackupCodes] = useState(false);
   const [backupCodes, setBackupCodes] = useState([]);
-  
+
   // Disable state
   const [showDisableModal, setShowDisableModal] = useState(false);
   const [disablePassword, setDisablePassword] = useState('');
@@ -40,7 +40,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
   const handleStartSetup = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       const token = getToken();
       const response = await fetch(`${getBackendUrl()}/api/auth/2fa/setup`, {
@@ -101,7 +101,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
       setSuccess(t('twoFactor.enableSuccess'));
       setSetupMode(false);
       setVerificationCode('');
-      
+
       // Notify parent component
       if (onStatusChange) {
         onStatusChange(true);
@@ -145,7 +145,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
       setSuccess(t('twoFactor.disableSuccess'));
       setShowDisableModal(false);
       setDisablePassword('');
-      
+
       // Notify parent component
       if (onStatusChange) {
         onStatusChange(false);
@@ -257,7 +257,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
           <div className="setup-step">
             <h4>{t('twoFactor.step1')}</h4>
             <p>{t('twoFactor.step1Description')}</p>
-            
+
             {qrCode && (
               <div className="qr-code-container">
                 <img src={qrCode} alt="QR Code" className="qr-code" />
@@ -273,7 +273,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
           <div className="setup-step">
             <h4>{t('twoFactor.step2')}</h4>
             <p>{t('twoFactor.step2Description')}</p>
-            
+
             <div className="otp-container">
               <OtpInput
                 value={verificationCode}
@@ -289,7 +289,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
               <button
                 onClick={handleEnableTwoFactor}
                 disabled={loading || verificationCode.length !== 6}
-                className="btn btn-primary"
+                className="btn btn-success"
               >
                 {loading ? t('common.loading') : t('twoFactor.verifyAndEnable')}
               </button>
@@ -314,7 +314,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
         <div className="backup-codes-container">
           <h4>{t('twoFactor.backupCodes')}</h4>
           <p className="warning-text">{t('twoFactor.backupCodesWarning')}</p>
-          
+
           <div className="backup-codes-grid">
             {backupCodes.map((code, index) => (
               <div key={index} className="backup-code">
@@ -330,8 +330,8 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
             <button onClick={handleCopyBackupCodes} className="btn btn-secondary">
               {t('twoFactor.copyCodes')}
             </button>
-            <button 
-              onClick={() => setShowBackupCodes(false)} 
+            <button
+              onClick={() => setShowBackupCodes(false)}
               className="btn btn-primary"
             >
               {t('twoFactor.savedCodes')}
@@ -347,7 +347,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
             <button
               onClick={handleStartSetup}
               disabled={loading}
-              className="btn btn-primary"
+              className="btn btn-success"
             >
               {loading ? t('common.loading') : t('twoFactor.enableButton')}
             </button>
@@ -378,7 +378,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
           <div className="modal-content">
             <h3>{t('twoFactor.disableConfirmTitle')}</h3>
             <p>{t('twoFactor.disableConfirmDescription')}</p>
-            
+
             <input
               type="password"
               placeholder={t('twoFactor.enterPassword')}

@@ -41,7 +41,12 @@ function Chatbot() {
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       loadSuggestions()
-      addBotMessage("Hi! 👋 I'm your financial assistant. Ask me anything about your expenses, income, or financial insights!")
+      // Get language from localStorage for welcome message
+      const language = localStorage.getItem('language') || 'en'
+      const welcomeMessage = language === 'el'
+        ? "Γεια σας! 👋 Είμαι ο οικονομικός σας βοηθός. Ρωτήστε με οτιδήποτε για τα έξοδα, τα έσοδα ή τις οικονομικές σας αναλύσεις!"
+        : "Hi! 👋 I'm your financial assistant. Ask me anything about your expenses, income, or financial insights!"
+      addBotMessage(welcomeMessage)
     }
     // Scroll to bottom when opening chat
     if (isOpen) {
@@ -153,10 +158,12 @@ function Chatbot() {
         response.actionLink
       )
     } catch (error) {
-      addBotMessage(
-        'Sorry, I encountered an error. Please try again.',
-        'error'
-      )
+      // Get language from localStorage for error message
+      const language = localStorage.getItem('language') || 'en'
+      const errorMessage = language === 'el'
+        ? 'Λυπάμαι, αντιμετώπισα ένα σφάλμα. Παρακαλώ δοκιμάστε ξανά.'
+        : 'Sorry, I encountered an error. Please try again.'
+      addBotMessage(errorMessage, 'error')
       console.error('Chatbot error:', error)
     } finally {
       setLoading(false)

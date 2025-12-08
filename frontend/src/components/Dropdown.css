@@ -1,0 +1,364 @@
+/* ================================
+   Dropdown Component Styles
+   Modern, accessible dropdown with smooth animations
+   Mobile-First Responsive Design
+   ================================ */
+
+/* ================================
+   Base Styles - Mobile First
+   ================================ */
+
+.custom-dropdown {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  min-width: 0; /* Allow flexibility on mobile */
+}
+
+/* Dropdown Button - Mobile First */
+/* White background with purple theme colors - matches app theme */
+.custom-dropdown__button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs, 0.5rem);
+  /* Mobile-friendly padding and touch target */
+  padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+  min-height: 44px; /* Minimum touch target size */
+  /* WHITE BACKGROUND - matches app theme */
+  background: #ffffff !important;
+  border: 2px solid rgba(108, 92, 231, 0.25);
+  border-radius: var(--radius-md, 12px);
+  /* PURPLE TEXT - theme color */
+  color: #6c5ce7 !important;
+  font-size: 0.875rem; /* Mobile font size */
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  /* Subtle shadow for depth */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  /* Performance optimization */
+  will-change: transform, box-shadow, border-color;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  /* Better touch interaction */
+  -webkit-tap-highlight-color: rgba(108, 92, 231, 0.1);
+}
+
+/* Button content wrapper */
+.custom-dropdown__button-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 0.5rem);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Icon in button */
+.custom-dropdown__icon {
+  display: flex;
+  align-items: center;
+  color: var(--primary, #6c5ce7);
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
+  opacity: 0.9;
+}
+
+/* Selected text - Theme color */
+.custom-dropdown__selected {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--primary, #6c5ce7); /* Theme color */
+  font-weight: 600;
+}
+
+/* Chevron icon - Theme color */
+.custom-dropdown__chevron {
+  color: var(--primary, #6c5ce7);
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  opacity: 0.8;
+}
+
+.custom-dropdown__chevron--open {
+  transform: rotate(180deg) translateZ(0);
+  -webkit-transform: rotate(180deg) translateZ(0);
+}
+
+/* Hover state - Desktop only with enhanced shadowing */
+/* WHITE background maintained, purple text darkens */
+@media (hover: hover) {
+  .custom-dropdown__button:hover {
+    border-color: #6c5ce7;
+    /* WHITE BACKGROUND - always white */
+    background: #ffffff !important;
+    /* Enhanced shadowing effect */
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.25),
+                0 2px 8px rgba(108, 92, 231, 0.15),
+                0 0 0 1px rgba(108, 92, 231, 0.1);
+    transform: translateY(-2px) translateZ(0);
+    -webkit-transform: translateY(-2px) translateZ(0);
+    /* PURPLE TEXT - stays purple */
+    color: #6c5ce7 !important;
+  }
+
+  .custom-dropdown__button:hover .custom-dropdown__icon {
+    transform: scale(1.15);
+    color: #4a3f8f; /* Darker purple on hover */
+  }
+
+  .custom-dropdown__button:hover .custom-dropdown__chevron {
+    color: #4a3f8f; /* Darker purple on hover */
+    opacity: 1;
+  }
+
+  .custom-dropdown__button:hover .custom-dropdown__selected {
+    color: #4a3f8f; /* Darker purple on hover */
+  }
+}
+
+/* Active state for mobile touch - WHITE background */
+.custom-dropdown__button:active {
+  transform: scale(0.98) translateZ(0);
+  -webkit-transform: scale(0.98) translateZ(0);
+  background: #ffffff !important; /* WHITE */
+  color: #6c5ce7 !important; /* PURPLE */
+  box-shadow: 0 2px 6px rgba(108, 92, 231, 0.2);
+}
+
+/* Focus state - WHITE background, PURPLE text */
+.custom-dropdown__button:focus {
+  border-color: #6c5ce7;
+  background: #ffffff !important; /* WHITE */
+  color: #6c5ce7 !important; /* PURPLE */
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15),
+              0 2px 8px rgba(108, 92, 231, 0.2),
+              0 4px 12px rgba(108, 92, 231, 0.1);
+}
+
+/* Active/Open state - WHITE background, PURPLE text */
+.custom-dropdown--open .custom-dropdown__button {
+  border-color: #6c5ce7;
+  background: #ffffff !important; /* WHITE */
+  color: #6c5ce7 !important; /* PURPLE */
+  /* Enhanced shadow for open state */
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15),
+              0 4px 16px rgba(108, 92, 231, 0.25),
+              0 2px 8px rgba(108, 92, 231, 0.15);
+}
+
+.custom-dropdown--open .custom-dropdown__chevron {
+  opacity: 1;
+  color: var(--primary-dark, #4a3f8f);
+}
+
+/* Dropdown Menu */
+.custom-dropdown__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary, #ffffff);
+  border: 2px solid rgba(108, 92, 231, 0.2);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  overflow: hidden;
+  /* Smooth animations */
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Performance optimization */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  /* Max height for scrolling */
+  max-height: 250px; /* Smaller on mobile */
+  overflow-y: auto;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) translateZ(0);
+    -webkit-transform: translateY(-8px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+    -webkit-transform: translateY(0) translateZ(0);
+  }
+}
+
+/* Dropdown Option - Mobile First */
+.custom-dropdown__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs, 0.5rem);
+  /* Mobile-friendly touch target */
+  padding: var(--spacing-md, 1rem);
+  min-height: 44px; /* Minimum touch target */
+  background: transparent;
+  border: none;
+  color: var(--primary, #6c5ce7); /* Theme color instead of black */
+  font-size: 0.875rem; /* Mobile font size */
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  /* Performance optimization */
+  will-change: background-color, color;
+  /* Better touch interaction */
+  -webkit-tap-highlight-color: rgba(108, 92, 231, 0.1);
+}
+
+/* Selected option */
+.custom-dropdown__option--selected {
+  background: linear-gradient(135deg, #6c5ce7 0%, #5a4dd6 100%);
+  color: white;
+  font-weight: 600;
+}
+
+.custom-dropdown__option--selected .custom-dropdown__check {
+  color: white;
+  font-weight: 700;
+}
+
+/* Active state for mobile touch */
+.custom-dropdown__option:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Focused/Hover state - Desktop only */
+@media (hover: hover) {
+  .custom-dropdown__option:hover,
+  .custom-dropdown__option--focused {
+    background: linear-gradient(135deg, #f0e6ff 0%, #e8dfff 100%);
+    color: var(--primary-dark, #4a3f8f);
+    font-weight: 600;
+    transform: translateX(4px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Don't override selected state on hover */
+  .custom-dropdown__option--selected:hover,
+  .custom-dropdown__option--selected.custom-dropdown__option--focused {
+    background: linear-gradient(135deg, #6c5ce7 0%, #5a4dd6 100%);
+    color: white;
+    transform: translateX(0);
+  }
+}
+
+/* Check mark for selected option */
+.custom-dropdown__check {
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+  opacity: 1;
+}
+
+/* ================================
+   Tablet - 768px and up
+   ================================ */
+
+@media (min-width: 768px) {
+  .custom-dropdown {
+    min-width: 160px;
+  }
+
+  .custom-dropdown__button {
+    padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+    font-size: 0.9375rem;
+    gap: var(--spacing-sm, 0.5rem);
+  }
+
+  .custom-dropdown__option {
+    padding: var(--spacing-md, 1rem);
+    font-size: 0.9375rem;
+  }
+
+  .custom-dropdown__menu {
+    max-height: 300px;
+  }
+}
+
+/* ================================
+   Desktop - 1024px and up
+   ================================ */
+
+@media (min-width: 1024px) {
+  .custom-dropdown {
+    min-width: 180px;
+  }
+
+  .custom-dropdown__button {
+    padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.25rem);
+  }
+}
+
+/* ================================
+   Dark Mode Support - DISABLED
+   Keep white background to match app theme
+   ================================ */
+
+/* Dark mode disabled - always use white background to match app theme */
+/* @media (prefers-color-scheme: dark) {
+  ... removed to keep white background always
+} */
+
+/* ================================
+   Reduced Motion Support (Accessibility)
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-dropdown__button,
+  .custom-dropdown__option,
+  .custom-dropdown__chevron,
+  .custom-dropdown__menu {
+    transition: none;
+    animation: none;
+  }
+
+  .custom-dropdown__chevron--open {
+    transform: rotate(180deg) translateZ(0);
+  }
+
+  .custom-dropdown__option:hover,
+  .custom-dropdown__option--focused {
+    transform: none;
+  }
+}
+
+/* ================================
+   Scrollbar Styling (for long lists)
+   ================================ */
+
+.custom-dropdown__menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-dropdown__menu::-webkit-scrollbar-track {
+  background: var(--bg-tertiary, #f5f5f5);
+  border-radius: 3px;
+}
+
+.custom-dropdown__menu::-webkit-scrollbar-thumb {
+  background: var(--primary-light, #a29bfe);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.custom-dropdown__menu::-webkit-scrollbar-thumb:hover {
+  background: var(--primary, #6c5ce7);
+}

@@ -1,5 +1,26 @@
 /* Two-Factor Authentication Setup Styles */
 .two-factor-setup {
+  /* Map local variables to global theme variables */
+  --primary-color: var(--primary);
+  --primary-light: var(--primary-light);
+  /* Ensure this matches global if needed, or define a lighter shade */
+  --card-bg: var(--bg-secondary);
+  --bg-secondary: var(--bg-tertiary);
+  /* Use tertiary for inner containers/inputs to distinguish from card bg */
+  --text-primary: var(--text-primary);
+  --text-secondary: var(--text-secondary);
+  --border-color: #e0e0e0;
+
+  --error-bg: var(--error);
+  --error-text: #721c24;
+  /* Darker red for text */
+  --error-color: var(--error-dark);
+
+  --success-bg: var(--success);
+  --success-text: #155724;
+  /* Darker green for text */
+  --success-color: var(--success-dark);
+
   background: var(--card-bg);
   border-radius: 12px;
   padding: 2rem;
@@ -67,6 +88,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -270,7 +292,7 @@
   margin-top: 1.5rem;
 }
 
-.btn {
+.two-factor-setup .btn {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
@@ -283,45 +305,54 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.btn:hover:not(:disabled) {
+.two-factor-setup .btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.btn:active:not(:disabled) {
+.two-factor-setup .btn:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.btn:disabled {
+.two-factor-setup .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), #45a049);
+.two-factor-setup .btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #45a049, #388e3c);
+.two-factor-setup .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
 }
 
-.btn-secondary {
+.two-factor-setup .btn-secondary {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 2px solid var(--border-color);
 }
 
-.btn-secondary:hover:not(:disabled) {
+.two-factor-setup .btn-secondary:hover:not(:disabled) {
   background: var(--border-color);
 }
 
-.btn-danger {
+.two-factor-setup .btn-success {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+}
+
+.two-factor-setup .btn-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, #45a049, #388e3c);
+}
+
+.two-factor-setup .btn-danger {
   background: linear-gradient(135deg, #f44336, #d32f2f);
   color: white;
 }
 
-.btn-danger:hover:not(:disabled) {
+.two-factor-setup .btn-danger:hover:not(:disabled) {
   background: linear-gradient(135deg, #d32f2f, #c62828);
 }
 
@@ -345,6 +376,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -365,6 +397,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -383,7 +416,7 @@
   line-height: 1.6;
 }
 
-.input-field {
+.two-factor-setup .input-field {
   width: 100%;
   padding: 0.75rem;
   border: 2px solid var(--border-color);
@@ -394,7 +427,7 @@
   transition: all 0.3s ease;
 }
 
-.input-field:focus {
+.two-factor-setup .input-field:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
@@ -432,7 +465,7 @@
     flex-direction: column;
   }
 
-  .btn {
+  .two-factor-setup .btn {
     width: 100%;
   }
 }
@@ -474,9 +507,8 @@
     padding: 1rem;
   }
 
-  .modal-content {
+  .two-factor-setup .modal-content {
     padding: 1.5rem;
     width: 95%;
   }
 }
-

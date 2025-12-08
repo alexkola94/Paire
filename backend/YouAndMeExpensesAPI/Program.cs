@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
@@ -30,6 +31,31 @@ builder.Services.AddSwaggerGen(options =>
         Title = "Paire API",
         Version = "v1",
         Description = "Backend API for Paire - Personal Finance Management for Couples"
+    });
+    
+    // Add JWT Bearer authentication to Swagger
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 
@@ -189,6 +215,7 @@ if (string.IsNullOrEmpty(jwtSecret))
 
 builder.Services.Configure<JwtSettings>(jwtSettings);
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -248,11 +275,30 @@ builder.Services.AddScoped<IChatbotService, ChatbotService>();
 builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 
 // =====================================================
+// Configure Enable Banking Open Banking Service
+// =====================================================
+
+// Configure Enable Banking settings
+builder.Services.Configure<EnableBankingSettings>(builder.Configuration.GetSection("EnableBanking"));
+
+// Register HTTP client factory for Enable Banking API calls
+builder.Services.AddHttpClient();
+
+// Register Enable Banking service
+builder.Services.AddScoped<IEnableBankingService, EnableBankingService>();
+
+// Register Bank Transaction Import Service
+builder.Services.AddScoped<IBankTransactionImportService, BankTransactionImportService>();
+
+// =====================================================
 // Configure Background Services (Optional - Uncomment to enable)
 // =====================================================
 
 // Uncomment the line below to enable daily reminder checks at 9 AM
 // builder.Services.AddHostedService<ReminderBackgroundService>();
+
+// Uncomment the line below to enable automatic bank transaction sync every 6 hours
+// builder.Services.AddHostedService<BankTransactionSyncBackgroundService>();
 
 // =====================================================
 // Build the Application
@@ -277,6 +323,12 @@ if (app.Environment.IsDevelopment())
 
 // Enable CORS
 app.UseCors("AllowFrontend");
+
+// Secure headers middleware (add security headers to all responses)
+app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SecureHeadersMiddleware>();
+
+// Session validation middleware (must be after CORS, before authentication)
+app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SessionValidationMiddleware>();
 
 // Enable HTTPS Redirection (only in production)
 if (!app.Environment.IsDevelopment())

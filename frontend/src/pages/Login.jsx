@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 import { authService } from '../services/auth'
+import { sessionManager } from '../services/sessionManager'
 import TwoFactorVerification from '../components/TwoFactorVerification'
 import './Login.css'
 
@@ -125,16 +126,12 @@ function Login() {
           setUserEmail(formData.email)
         } else {
           // No 2FA required - login successful
-          // Ensure localStorage is written
-          await new Promise(resolve => setTimeout(resolve, 100))
+          // Session is already stored by authService.storeAuthData
+          // The storeSession() method automatically broadcasts SESSION_CREATED
+          // which will invalidate other tabs with the same user
           
           // Trigger event to notify App.jsx that session has changed
-          window.dispatchEvent(new CustomEvent('auth-storage-change', {
-            detail: {
-              key: 'auth_token',
-              newValue: localStorage.getItem('auth_token')
-            }
-          }))
+          window.dispatchEvent(new CustomEvent('auth-storage-change'))
           
           // Delay to let App.jsx process the event
           await new Promise(resolve => setTimeout(resolve, 150))
@@ -142,8 +139,7 @@ function Login() {
           // Check if there's a redirect URL
           const targetPath = redirectUrl || '/dashboard'
           
-          // Use navigate for desktop, but fallback to window.location for mobile if needed
-          // For now, use navigate as it's faster and works on desktop
+          // Navigate to dashboard
           navigate(targetPath, { replace: true })
         }
       }
@@ -170,38 +166,26 @@ function Login() {
       handle2FASuccessRef.current = true;
       
       // Token is already stored by TwoFactorVerification component
-      // Ensure localStorage is written (mobile browsers may need more time)
+      // Ensure sessionStorage is written (mobile browsers may need more time)
       await new Promise(resolve => setTimeout(resolve, 200))
       
-      // Verify tokens are actually stored
-      const token = localStorage.getItem('auth_token')
-      const user = localStorage.getItem('user')
+      // Verify tokens are actually stored in sessionStorage
+      const token = sessionManager.getToken()
+      const user = sessionManager.getCurrentUser()
       
       if (!token || !user) {
         console.error('Tokens not stored properly after 2FA verification')
         throw new Error('Failed to store authentication data')
       }
       
-      // Trigger a custom event to notify App.jsx that session has changed
-      // This ensures App.jsx detects the new authentication state
-      window.dispatchEvent(new CustomEvent('auth-storage-change', {
-        detail: {
-          key: 'auth_token',
-          newValue: token
-        }
-      }))
-      
-      // Also trigger a storage event (works across tabs)
-      try {
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'auth_token',
-          newValue: token,
-          storageArea: localStorage
-        }))
-      } catch (e) {
-        // Some browsers may not allow creating StorageEvent manually
-        console.warn('Could not dispatch StorageEvent:', e)
+      // Broadcast session invalidation to other tabs if same user
+      const currentUserId = sessionManager.getCurrentUserId()
+      if (currentUserId && currentUserId === user.id) {
+        sessionManager.broadcastSessionInvalidation(user.id)
       }
+      
+      // Trigger a custom event to notify App.jsx that session has changed
+      window.dispatchEvent(new CustomEvent('auth-storage-change'))
       
       // Detect if we're on a mobile device
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)

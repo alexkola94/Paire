@@ -1,0 +1,104 @@
+/**
+ * Bank Callback Page Styles
+ * Minimal styling for popup callback page
+ */
+
+.bank-callback-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--bg-primary, #ffffff);
+  transition: background-color 0.3s ease;
+}
+
+.bank-callback-content {
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.bank-callback-content h2 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  transition: color 0.3s ease;
+}
+
+.bank-callback-content p {
+  margin: 0.5rem 0;
+  color: var(--text-secondary, #666);
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
+}
+
+.closing-message {
+  font-size: 0.85rem;
+  color: var(--text-tertiary, #999);
+  margin-top: 1rem;
+  transition: color 0.3s ease;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: var(--success-color, #10b981);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  animation: scaleIn 0.3s ease;
+  transition: background-color 0.3s ease;
+}
+
+.error-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: var(--error-color, #ef4444);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  animation: scaleIn 0.3s ease;
+  transition: background-color 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .bank-callback-page {
+    padding: 1rem;
+  }
+
+  .bank-callback-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .success-icon,
+  .error-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 1.75rem;
+  }
+}
+

@@ -39,7 +39,8 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var response = await _chatbotService.ProcessQueryAsync(userId.ToString(), request.Query, request.History);
+                var language = request.Language ?? "en";
+                var response = await _chatbotService.ProcessQueryAsync(userId.ToString(), request.Query, request.History, language);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -55,14 +56,14 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="userId">User ID from auth</param>
         /// <returns>List of suggested questions</returns>
         [HttpGet("suggestions")]
-        public async Task<IActionResult> GetSuggestions()
+        public async Task<IActionResult> GetSuggestions([FromQuery] string? language = "en")
         {
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return error;
 
             try
             {
-                var suggestions = await _chatbotService.GetSuggestedQuestionsAsync(userId.ToString());
+                var suggestions = await _chatbotService.GetSuggestedQuestionsAsync(userId.ToString(), language ?? "en");
                 return Ok(suggestions);
             }
             catch (Exception ex)

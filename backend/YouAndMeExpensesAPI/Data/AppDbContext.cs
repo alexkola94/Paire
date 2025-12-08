@@ -28,6 +28,9 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<ShoppingList> ShoppingLists { get; set; }
         public DbSet<ShoppingListItem> ShoppingListItems { get; set; }
         public DbSet<DataClearingRequest> DataClearingRequests { get; set; }
+        public DbSet<BankConnection> BankConnections { get; set; }
+        public DbSet<StoredBankAccount> BankAccounts { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -77,12 +80,17 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.SplitPercentage).HasColumnName("split_percentage").HasColumnType("decimal(5,2)");
                 entity.Property(e => e.Tags).HasColumnName("tags");
                 entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.BankTransactionId).HasColumnName("bank_transaction_id");
+                entity.Property(e => e.BankAccountId).HasColumnName("bank_account_id");
+                entity.Property(e => e.IsBankSynced).HasColumnName("is_bank_synced").HasDefaultValue(false);
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.Date);
                 entity.HasIndex(e => e.Type);
+                entity.HasIndex(e => e.BankTransactionId);
+                entity.HasIndex(e => e.IsBankSynced);
             });
 
             // ============================================
@@ -369,6 +377,86 @@ namespace YouAndMeExpensesAPI.Data
                 entity.HasIndex(e => e.RequesterUserId);
                 entity.HasIndex(e => e.ConfirmationToken);
                 entity.HasIndex(e => e.Status);
+            });
+
+            // ============================================
+            // BANK CONNECTIONS TABLE
+            // ============================================
+            modelBuilder.Entity<BankConnection>(entity =>
+            {
+                entity.ToTable("bank_connections");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.AccessToken).HasColumnName("access_token").IsRequired();
+                entity.Property(e => e.RefreshToken).HasColumnName("refresh_token");
+                entity.Property(e => e.TokenExpiresAt).HasColumnName("token_expires_at");
+                entity.Property(e => e.BankName).HasColumnName("bank_name");
+                entity.Property(e => e.AccountIds).HasColumnName("account_ids");
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                entity.Property(e => e.LastSyncAt).HasColumnName("last_sync_at");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            // ============================================
+            // BANK ACCOUNTS TABLE
+            // ============================================
+            modelBuilder.Entity<StoredBankAccount>(entity =>
+            {
+                entity.ToTable("bank_accounts");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.BankConnectionId).HasColumnName("bank_connection_id").IsRequired();
+                entity.Property(e => e.AccountId).HasColumnName("account_id").IsRequired();
+                entity.Property(e => e.Iban).HasColumnName("iban");
+                entity.Property(e => e.AccountName).HasColumnName("account_name");
+                entity.Property(e => e.AccountType).HasColumnName("account_type");
+                entity.Property(e => e.Currency).HasColumnName("currency");
+                entity.Property(e => e.BankName).HasColumnName("bank_name");
+                entity.Property(e => e.CurrentBalance).HasColumnName("current_balance").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.LastBalanceUpdate).HasColumnName("last_balance_update");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.BankConnectionId);
+                entity.HasIndex(e => e.AccountId);
+                
+                // Foreign key relationship
+                entity.HasOne<BankConnection>()
+                    .WithMany()
+                    .HasForeignKey(e => e.BankConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // USER SESSIONS TABLE
+            // ============================================
+            modelBuilder.Entity<UserSession>(entity =>
+            {
+                entity.ToTable("user_sessions");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.TokenId).HasColumnName("token_id").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.RefreshTokenHash).HasColumnName("refresh_token_hash").HasMaxLength(255);
+                entity.Property(e => e.IpAddress).HasColumnName("ip_address").HasMaxLength(45);
+                entity.Property(e => e.UserAgent).HasColumnName("user_agent").HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.ExpiresAt).HasColumnName("expires_at").IsRequired();
+                entity.Property(e => e.LastAccessedAt).HasColumnName("last_accessed_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                entity.Property(e => e.RevokedAt).HasColumnName("revoked_at");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.TokenId).IsUnique();
+                entity.HasIndex(e => e.IsActive);
+                entity.HasIndex(e => e.ExpiresAt);
             });
         }
     }

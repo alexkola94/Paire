@@ -21,6 +21,7 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
         private readonly ITwoFactorAuthService _twoFactorAuthService;
+        private readonly ISessionService _sessionService;
         private readonly AppDbContext _context;
         private readonly ILogger<AuthController> _logger;
         private readonly IConfiguration _configuration;
@@ -31,6 +32,7 @@ namespace YouAndMeExpensesAPI.Controllers
             IJwtTokenService jwtTokenService,
             IEmailService emailService,
             ITwoFactorAuthService twoFactorAuthService,
+            ISessionService sessionService,
             AppDbContext context,
             ILogger<AuthController> logger,
             IConfiguration configuration)
@@ -40,6 +42,7 @@ namespace YouAndMeExpensesAPI.Controllers
             _jwtTokenService = jwtTokenService;
             _emailService = emailService;
             _twoFactorAuthService = twoFactorAuthService;
+            _sessionService = sessionService;
             _context = context;
             _logger = logger;
             _configuration = configuration;
@@ -185,6 +188,31 @@ namespace YouAndMeExpensesAPI.Controllers
                 // No 2FA required - generate tokens and complete login
                 var accessToken = _jwtTokenService.GenerateAccessToken(user);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
+                var tokenId = _jwtTokenService.GetTokenId(accessToken);
+
+                // Revoke all existing sessions for this user (except current if same user logs in again)
+                if (!string.IsNullOrEmpty(tokenId))
+                {
+                    await _sessionService.RevokeAllUserSessionsAsync(user.Id, tokenId);
+                }
+
+                // Get IP address and user agent for session tracking
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var userAgent = Request.Headers["User-Agent"].ToString();
+
+                // Create new session
+                var expiresAt = DateTime.UtcNow.AddMinutes(60);
+                if (!string.IsNullOrEmpty(tokenId))
+                {
+                    await _sessionService.CreateSessionAsync(
+                        user.Id,
+                        tokenId,
+                        refreshToken,
+                        ipAddress,
+                        userAgent,
+                        expiresAt
+                    );
+                }
 
                 // Update user's last login
                 user.UpdatedAt = DateTime.UtcNow;
@@ -205,7 +233,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 {
                     Token = accessToken,
                     RefreshToken = refreshToken,
-                    Expires = DateTime.UtcNow.AddMinutes(60),
+                    Expires = expiresAt,
                     User = userDto
                 };
 
@@ -405,18 +433,34 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Logout (client should discard token)
-        /// With JWT authentication, logout is primarily client-side
-        /// This endpoint is optional and doesn't require authorization
+        /// Logout - Revoke current session
+        /// Revokes the current session on the server side
         /// </summary>
-        [AllowAnonymous]
+        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            // For JWT tokens, logout is handled client-side
-            // SignOutAsync here doesn't do much for JWT, but kept for consistency
-            await _signInManager.SignOutAsync();
-            return Ok(new { message = "Logged out successfully" });
+            try
+            {
+                // Extract token ID from current request
+                var tokenId = _jwtTokenService.GetTokenId(Request.Headers["Authorization"].ToString().Replace("Bearer ", ""));
+                
+                if (!string.IsNullOrEmpty(tokenId))
+                {
+                    // Revoke the current session
+                    await _sessionService.RevokeSessionAsync(tokenId);
+                    _logger.LogInformation($"Session revoked: {tokenId}");
+                }
+
+                await _signInManager.SignOutAsync();
+                return Ok(new { message = "Logged out successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout");
+                // Still return success even if revocation fails
+                return Ok(new { message = "Logged out successfully" });
+            }
         }
 
         /// <summary>
@@ -636,6 +680,31 @@ namespace YouAndMeExpensesAPI.Controllers
                 // Generate tokens and complete login
                 var accessToken = _jwtTokenService.GenerateAccessToken(user);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
+                var tokenId = _jwtTokenService.GetTokenId(accessToken);
+
+                // Revoke all existing sessions for this user
+                if (!string.IsNullOrEmpty(tokenId))
+                {
+                    await _sessionService.RevokeAllUserSessionsAsync(user.Id, tokenId);
+                }
+
+                // Get IP address and user agent for session tracking
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var userAgent = Request.Headers["User-Agent"].ToString();
+
+                // Create new session
+                var expiresAt = DateTime.UtcNow.AddMinutes(60);
+                if (!string.IsNullOrEmpty(tokenId))
+                {
+                    await _sessionService.CreateSessionAsync(
+                        user.Id,
+                        tokenId,
+                        refreshToken,
+                        ipAddress,
+                        userAgent,
+                        expiresAt
+                    );
+                }
 
                 // Update user's last login
                 user.UpdatedAt = DateTime.UtcNow;
@@ -656,7 +725,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 {
                     Token = accessToken,
                     RefreshToken = refreshToken,
-                    Expires = DateTime.UtcNow.AddMinutes(60),
+                    Expires = expiresAt,
                     User = userDto
                 };
 
@@ -723,6 +792,31 @@ namespace YouAndMeExpensesAPI.Controllers
                 // Generate tokens and complete login
                 var accessToken = _jwtTokenService.GenerateAccessToken(user);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
+                var tokenId = _jwtTokenService.GetTokenId(accessToken);
+
+                // Revoke all existing sessions for this user
+                if (!string.IsNullOrEmpty(tokenId))
+                {
+                    await _sessionService.RevokeAllUserSessionsAsync(user.Id, tokenId);
+                }
+
+                // Get IP address and user agent for session tracking
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var userAgent = Request.Headers["User-Agent"].ToString();
+
+                // Create new session
+                var expiresAt = DateTime.UtcNow.AddMinutes(60);
+                if (!string.IsNullOrEmpty(tokenId))
+                {
+                    await _sessionService.CreateSessionAsync(
+                        user.Id,
+                        tokenId,
+                        refreshToken,
+                        ipAddress,
+                        userAgent,
+                        expiresAt
+                    );
+                }
 
                 // Update user's last login
                 user.UpdatedAt = DateTime.UtcNow;
@@ -743,7 +837,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 {
                     Token = accessToken,
                     RefreshToken = refreshToken,
-                    Expires = DateTime.UtcNow.AddMinutes(60),
+                    Expires = expiresAt,
                     User = userDto
                 };
 

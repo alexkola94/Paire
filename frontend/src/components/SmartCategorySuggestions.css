@@ -1,0 +1,104 @@
+/* ================================
+   Smart Category Suggestions Component Styles
+   ================================ */
+
+.smart-category-suggestions {
+  padding: var(--spacing-md);
+  background: var(--secondary);
+  border: 2px solid var(--primary-light);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.smart-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.smart-category-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.smart-category-dismiss {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.smart-category-dismiss:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.smart-category-list {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.smart-category-item {
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--primary-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.smart-category-item:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.smart-category-item:active {
+  transform: translateY(0);
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .smart-category-suggestions {
+    padding: var(--spacing-sm);
+  }
+
+  .smart-category-list {
+    flex-direction: column;
+  }
+
+  .smart-category-item {
+    width: 100%;
+    text-align: center;
+  }
+}
+

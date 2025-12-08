@@ -8,6 +8,31 @@
   gap: var(--spacing-lg);
 }
 
+/* Desktop: Better spacing and layout */
+@media (min-width: 1024px) {
+  .transaction-form {
+    gap: calc(var(--spacing-xl) * 1.5);
+    padding: var(--spacing-xl);
+  }
+
+  /* Better spacing for form groups within sections */
+  .transaction-form .form-group {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  /* Two-column layout for related fields on desktop */
+  .transaction-form .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-xl);
+  }
+
+  /* Better spacing for form sections */
+  .transaction-form > * {
+    margin-bottom: calc(var(--spacing-xl) * 1.5);
+  }
+}
+
 /* ================================
    File Upload
    ================================ */

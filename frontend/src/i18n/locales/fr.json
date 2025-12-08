@@ -166,5 +166,43 @@
     "import": "Importer",
     "select": "Sélectionner...",
     "viewAll": "Voir Tout"
+  },
+  "profile": {
+    "openBanking": {
+      "title": "Connexions Bancaires",
+      "connectedAccounts": "Comptes Connectés",
+      "disconnectAll": "Tout Déconnecter",
+      "connectDescription": "Connectez votre compte bancaire pour importer automatiquement les transactions.",
+      "selectBank": "Sélectionnez votre banque...",
+      "connect": "Connecter",
+      "connecting": "Connexion...",
+      "connectionSuccess": "Compte bancaire connecté avec succès!",
+      "connectionError": "Échec de la connexion bancaire. Veuillez réessayer.",
+      "popupBlocked": "Popup bloqué. Veuillez autoriser les popups pour ce site.",
+      "windowClosed": "La fenêtre d'autorisation a été fermée. Si vous avez terminé l'autorisation, votre compte sera connecté sous peu.",
+      "timeout": "L'autorisation a expiré. Veuillez réessayer.",
+      "disconnectConfirm": "Êtes-vous sûr de vouloir déconnecter tous les comptes bancaires?",
+      "disconnectSuccess": "Déconnecté avec succès",
+      "disconnectError": "Échec de la déconnexion",
+      "disconnectAccount": "Déconnecter ce compte",
+      "disconnectAccountConfirm": "Êtes-vous sûr de vouloir déconnecter {{account}}?",
+      "disconnectAccountSuccess": "Compte déconnecté avec succès",
+      "disconnectAccountError": "Échec de la déconnexion du compte",
+      "iban": "IBAN",
+      "accountType": "Type",
+      "lastUpdated": "Dernière mise à jour",
+      "balanceNotAvailable": "N/D",
+      "never": "Jamais",
+      "unknownBank": "Banque inconnue",
+      "callback": {
+        "processing": "Traitement de l'autorisation...",
+        "processingMessage": "Veuillez patienter pendant que nous complétons votre connexion bancaire.",
+        "bankError": "L'autorisation bancaire a été annulée ou a échoué.",
+        "missingParams": "Paramètres d'autorisation manquants.",
+        "notLoggedIn": "Vous devez être connecté pour compléter l'autorisation bancaire.",
+        "connectionFailed": "Échec de la connexion bancaire. Veuillez réessayer.",
+        "closing": "Cette fenêtre se fermera automatiquement..."
+      }
+    }
   }
 }

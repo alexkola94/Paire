@@ -28,6 +28,10 @@
   z-index: 1000;
   padding: var(--spacing-md);
   animation: fadeIn 0.3s ease-out;
+  transition: var(--transition);
+  /* Ensure modal is always on top and not clipped */
+  overflow: visible;
+  pointer-events: auto;
 }
 
 .form-card {
@@ -37,6 +41,7 @@
   overflow-y: auto;
   animation: slideUp 0.3s ease-out;
   position: relative;
+  transition: var(--transition);
 }
 
 .form-header {
@@ -278,6 +283,56 @@
   .expenses-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+
+  /* Desktop: Position form modal on the right side - no overlay since list is visible */
+  .form-modal {
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0;
+    background: transparent;
+  }
+
+  .form-card {
+    max-width: 500px;
+    width: 500px;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Ensure form header doesn't shrink */
+  .form-card .form-header,
+  .form-card .card-header.form-header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* Ensure form content is scrollable - target TransactionForm */
+  .form-card .transaction-form {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-xl);
+    min-height: 0; /* Important for flex children to allow scrolling */
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
 }
 
 /* Mobile optimization */
@@ -286,14 +341,34 @@
     padding: 0;
     align-items: flex-start;
     background: rgba(0, 0, 0, 0.7);
+    /* Enable touch gestures */
+    touch-action: pan-y;
   }
 
   .form-card {
     max-height: 100vh;
-    border-radius: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     width: 100%;
     max-width: 100%;
     margin: 0;
+    /* Smooth transitions for swipe */
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    /* Add handle indicator for swipe */
+    position: relative;
+  }
+
+  /* Swipe handle indicator */
+  .form-card::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    z-index: 1;
   }
 
   .form-header {
@@ -341,6 +416,76 @@
 @media (min-width: 768px) and (max-width: 1023px) {
   .empty-state {
     padding: var(--spacing-xl) var(--spacing-xl);
+  }
+}
+
+/* ================================
+   Phase 5: Undo Banner
+   ================================ */
+
+.undo-banner {
+  position: fixed;
+  bottom: var(--spacing-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 9998;
+  animation: slideUpBanner 0.3s ease-out;
+}
+
+@keyframes slideUpBanner {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.undo-banner span {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.btn-undo {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-undo:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .undo-banner {
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    transform: none;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .btn-undo {
+    width: 100%;
   }
 }
 

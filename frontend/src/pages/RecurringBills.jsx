@@ -7,6 +7,9 @@ import {
 import { recurringBillService } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
 import ConfirmationModal from '../components/ConfirmationModal'
+import CurrencyInput from '../components/CurrencyInput'
+import CategorySelector from '../components/CategorySelector'
+import FormSection from '../components/FormSection'
 import './RecurringBills.css'
 
 /**
@@ -422,50 +425,38 @@ function RecurringBills() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>{t('recurringBills.billName')} *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder={t('recurringBills.billNamePlaceholder')}
-                />
-              </div>
-
-              <div className="form-row">
+              {/* Basic Information Section */}
+              <FormSection title={t('transaction.formSections.basicInfo')}>
                 <div className="form-group">
-                  <label>{t('recurringBills.amount')} *</label>
+                  <label>{t('recurringBills.billName')} *</label>
                   <input
-                    type="number"
-                    name="amount"
-                    value={formData.amount}
+                    type="text"
+                    name="name"
+                    value={formData.name}
                     onChange={handleChange}
                     required
-                    step="0.01"
-                    min="0"
-                    max="1000000"
-                    placeholder="0.00"
+                    placeholder={t('recurringBills.billNamePlaceholder')}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>{t('recurringBills.category')}</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                  >
-                    <option value="">{t('recurringBills.selectCategory')}</option>
-                    {categories.map(cat => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.icon} {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                <CurrencyInput
+                  value={formData.amount}
+                  onChange={handleChange}
+                  name="amount"
+                  id="amount"
+                  label={`${t('recurringBills.amount')} *`}
+                  required
+                />
+
+                <CategorySelector
+                  value={formData.category}
+                  onChange={handleChange}
+                  name="category"
+                  categories={categories.map(c => c.value)}
+                  type="expense"
+                  label={t('recurringBills.category')}
+                />
+              </FormSection>
 
               <div className="form-row">
                 <div className="form-group">

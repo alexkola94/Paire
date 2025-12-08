@@ -7,6 +7,9 @@ import {
 import { formatCurrency } from '../utils/formatCurrency'
 import { shoppingListService } from '../services/api'
 import ConfirmationModal from '../components/ConfirmationModal'
+import CurrencyInput from '../components/CurrencyInput'
+import CategorySelector from '../components/CategorySelector'
+import FormSection from '../components/FormSection'
 import './ShoppingLists.css'
 
 /**
@@ -1028,40 +1031,41 @@ function ShoppingLists() {
             </div>
 
             <form onSubmit={handleListSubmit}>
-              <div className="form-group">
-                <label>{t('shoppingLists.listName')} *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={listFormData.name}
-                  onChange={handleListChange}
-                  required
-                  placeholder={t('shoppingLists.listNamePlaceholder')}
-                />
-              </div>
+              <FormSection title={t('transaction.formSections.basicInfo')}>
+                <div className="form-group">
+                  <label>{t('shoppingLists.listName')} *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={listFormData.name}
+                    onChange={handleListChange}
+                    required
+                    placeholder={t('shoppingLists.listNamePlaceholder')}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>{t('shoppingLists.category')}</label>
-                <select name="category" value={listFormData.category} onChange={handleListChange}>
-                  <option value="">{t('shoppingLists.selectCategory')}</option>
-                  {categories.map(cat => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.icon} {cat.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>{t('shoppingLists.notes')}</label>
-                <textarea
-                  name="notes"
-                  value={listFormData.notes}
+                <CategorySelector
+                  value={listFormData.category}
                   onChange={handleListChange}
-                  rows="3"
-                  placeholder={t('shoppingLists.notesPlaceholder')}
+                  name="category"
+                  categories={categories.map(c => c.value)}
+                  type="expense"
+                  label={t('shoppingLists.category')}
                 />
-              </div>
+              </FormSection>
+
+              <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!listFormData.notes}>
+                <div className="form-group">
+                  <label>{t('shoppingLists.notes')}</label>
+                  <textarea
+                    name="notes"
+                    value={listFormData.notes}
+                    onChange={handleListChange}
+                    rows="3"
+                    placeholder={t('shoppingLists.notesPlaceholder')}
+                  />
+                </div>
+              </FormSection>
 
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={resetListForm}>
@@ -1086,82 +1090,80 @@ function ShoppingLists() {
             </div>
 
             <form onSubmit={handleItemSubmit}>
-              <div className="form-group">
-                <label>{t('shoppingLists.itemName')} *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={itemFormData.name}
-                  onChange={handleItemChange}
-                  required
-                  placeholder={t('shoppingLists.itemNamePlaceholder')}
-                />
-              </div>
-
-              <div className="form-row">
+              {/* Basic Information Section */}
+              <FormSection title={t('transaction.formSections.basicInfo')}>
                 <div className="form-group">
-                  <label>{t('shoppingLists.quantity')} *</label>
+                  <label>{t('shoppingLists.itemName')} *</label>
                   <input
-                    type="number"
-                    name="quantity"
-                    value={itemFormData.quantity}
+                    type="text"
+                    name="name"
+                    value={itemFormData.name}
                     onChange={handleItemChange}
                     required
-                    min="1"
-                    step="1"
+                    placeholder={t('shoppingLists.itemNamePlaceholder')}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>{t('shoppingLists.unit')}</label>
-                  <select name="unit" value={itemFormData.unit} onChange={handleItemChange}>
-                    <option value="">{t('shoppingLists.selectUnit')}</option>
-                    {units.map(unit => (
-                      <option key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('shoppingLists.quantity')} *</label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      value={itemFormData.quantity}
+                      onChange={handleItemChange}
+                      required
+                      min="1"
+                      step="1"
+                    />
+                  </div>
 
-              <div className="form-group">
-                <label>{t('shoppingLists.estimatedPrice')}</label>
-                <input
-                  type="number"
-                  name="estimatedPrice"
+                  <div className="form-group">
+                    <label>{t('shoppingLists.unit')}</label>
+                    <select name="unit" value={itemFormData.unit} onChange={handleItemChange}>
+                      <option value="">{t('shoppingLists.selectUnit')}</option>
+                      {units.map(unit => (
+                        <option key={unit.value} value={unit.value}>
+                          {unit.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <CurrencyInput
                   value={itemFormData.estimatedPrice}
                   onChange={handleItemChange}
-                  step="0.01"
-                  min="0"
-                  max="1000000"
-                  placeholder="0.00"
+                  name="estimatedPrice"
+                  id="estimatedPrice"
+                  label={t('shoppingLists.estimatedPrice')}
+                  quickAmounts={[]}
                 />
                 <small>{t('shoppingLists.priceHint')}</small>
-              </div>
 
-              <div className="form-group">
-                <label>{t('shoppingLists.category')}</label>
-                <select name="category" value={itemFormData.category} onChange={handleItemChange}>
-                  <option value="">{t('shoppingLists.selectCategory')}</option>
-                  {categories.map(cat => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.icon} {cat.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>{t('shoppingLists.notes')}</label>
-                <textarea
-                  name="notes"
-                  value={itemFormData.notes}
+                <CategorySelector
+                  value={itemFormData.category}
                   onChange={handleItemChange}
-                  rows="2"
-                  placeholder={t('shoppingLists.itemNotesPlaceholder')}
+                  name="category"
+                  categories={categories.map(c => c.value)}
+                  type="expense"
+                  label={t('shoppingLists.category')}
                 />
-              </div>
+              </FormSection>
+
+              {/* Additional Details Section */}
+              <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!itemFormData.notes}>
+                <div className="form-group">
+                  <label>{t('shoppingLists.notes')}</label>
+                  <textarea
+                    name="notes"
+                    value={itemFormData.notes}
+                    onChange={handleItemChange}
+                    rows="2"
+                    placeholder={t('shoppingLists.itemNotesPlaceholder')}
+                  />
+                </div>
+              </FormSection>
 
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={resetItemForm}>

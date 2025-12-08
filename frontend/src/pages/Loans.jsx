@@ -4,6 +4,10 @@ import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDow
 import { loanService, loanPaymentService } from '../services/api'
 import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
+import LogoLoader from '../components/LogoLoader'
+import CurrencyInput from '../components/CurrencyInput'
+import DateInput from '../components/DateInput'
+import FormSection from '../components/FormSection'
 import './Loans.css'
 
 /**
@@ -315,8 +319,7 @@ function Loans() {
   if (loading) {
     return (
       <div className="page-loading">
-        <div className="spinner"></div>
-        <p>{t('common.loading')}</p>
+        <LogoLoader size="medium" />
       </div>
     )
   }
@@ -363,128 +366,125 @@ function Loans() {
             </div>
             
             <form onSubmit={handleSubmit} className="loan-form">
-              {/* Loan Type */}
-              <div className="form-group">
-                <label>{t('loans.type')}</label>
-                <div className="radio-group">
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="given"
-                      checked={formData.type === 'given'}
-                      onChange={handleChange}
-                    />
-                    <span>{t('loans.moneyLent')}</span>
-                  </label>
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="received"
-                      checked={formData.type === 'received'}
-                      onChange={handleChange}
-                    />
-                    <span>{t('loans.moneyBorrowed')}</span>
-                  </label>
+              {/* Basic Information Section */}
+              <FormSection title={t('transaction.formSections.basicInfo')}>
+                {/* Loan Type */}
+                <div className="form-group">
+                  <label>{t('loans.type')}</label>
+                  <div className="radio-group">
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="given"
+                        checked={formData.type === 'given'}
+                        onChange={handleChange}
+                      />
+                      <span>{t('loans.moneyLent')}</span>
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="type"
+                        value="received"
+                        checked={formData.type === 'received'}
+                        onChange={handleChange}
+                      />
+                      <span>{t('loans.moneyBorrowed')}</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              {/* Party Name */}
-              <div className="form-group">
-                <label htmlFor={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}>
-                  {formData.type === 'given' ? t('loans.borrower') : t('loans.lender')} *
-                </label>
-                <input
-                  type="text"
-                  id={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
-                  name={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
-                  value={formData.type === 'given' ? formData.borrowedBy : formData.lentBy}
-                  onChange={handleChange}
-                  placeholder={t('loans.enterName')}
-                  required
-                />
-              </div>
+                {/* Party Name */}
+                <div className="form-group">
+                  <label htmlFor={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}>
+                    {formData.type === 'given' ? t('loans.borrower') : t('loans.lender')} *
+                  </label>
+                  <input
+                    type="text"
+                    id={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
+                    name={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
+                    value={formData.type === 'given' ? formData.borrowedBy : formData.lentBy}
+                    onChange={handleChange}
+                    placeholder={t('loans.enterName')}
+                    required
+                  />
+                </div>
 
-              {/* Total Amount */}
-              <div className="form-group">
-                <label htmlFor="amount">{t('loans.totalAmount')} *</label>
-                <input
-                  type="number"
-                  id="amount"
-                  name="amount"
+                {/* Total Amount */}
+                <CurrencyInput
                   value={formData.amount}
                   onChange={handleChange}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  max="1000000"
+                  name="amount"
+                  id="amount"
+                  label={`${t('loans.totalAmount')} *`}
                   required
+                  disabled={formLoading}
                 />
-              </div>
 
-              {/* Remaining Amount */}
-              <div className="form-group">
-                <label htmlFor="remainingAmount">{t('loans.remainingAmount')} *</label>
-                <input
-                  type="number"
-                  id="remainingAmount"
-                  name="remainingAmount"
-                  value={formData.remainingAmount}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  max="1000000"
-                  required
-                  readOnly={!editingLoan} // Read-only for new loans (auto-calculated)
-                  title={!editingLoan ? "Remaining amount equals total amount for new loans" : ""}
-                />
-                {!editingLoan && (
-                  <small className="form-hint">
-                    For new loans, remaining amount equals total amount
-                  </small>
-                )}
-              </div>
+                {/* Remaining Amount */}
+                <div className="form-group">
+                  <CurrencyInput
+                    value={formData.remainingAmount}
+                    onChange={handleChange}
+                    name="remainingAmount"
+                    id="remainingAmount"
+                    label={`${t('loans.remainingAmount')} *`}
+                    required
+                    disabled={formLoading || !editingLoan}
+                    quickAmounts={[]}
+                  />
+                  {!editingLoan && (
+                    <small className="form-hint">
+                      For new loans, remaining amount equals total amount
+                    </small>
+                  )}
+                </div>
 
-              {/* Due Date */}
-              <div className="form-group">
-                <label htmlFor="dueDate">{t('loans.dueDate')}</label>
-                <input
-                  type="date"
-                  id="dueDate"
-                  name="dueDate"
+                {/* Due Date */}
+                <DateInput
                   value={formData.dueDate}
                   onChange={handleChange}
+                  name="dueDate"
+                  id="dueDate"
+                  label={t('loans.dueDate')}
+                  required={false}
+                  disabled={formLoading}
+                  showQuickButtons={true}
                 />
-              </div>
+              </FormSection>
 
-              {/* Status */}
-              <div className="form-group">
-                <label htmlFor="isSettled">{t('loans.status')}</label>
-                <select
-                  id="isSettled"
-                  name="isSettled"
-                  value={formData.isSettled}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isSettled: e.target.value === 'true' }))}
-                >
-                  <option value="false">Active</option>
-                  <option value="true">Settled</option>
-                </select>
-              </div>
+              {/* Additional Details Section */}
+              <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.description || formData.isSettled}>
+                {/* Status */}
+                <div className="form-group">
+                  <label htmlFor="isSettled">{t('loans.status')}</label>
+                  <select
+                    id="isSettled"
+                    name="isSettled"
+                    value={formData.isSettled}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isSettled: e.target.value === 'true' }))}
+                    disabled={formLoading}
+                  >
+                    <option value="false">Active</option>
+                    <option value="true">Settled</option>
+                  </select>
+                </div>
 
-              {/* Description */}
-              <div className="form-group">
-                <label htmlFor="description">{t('transaction.description')}</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder={t('loans.additionalNotes')}
-                  rows="3"
-                />
-              </div>
+                {/* Description */}
+                <div className="form-group">
+                  <label htmlFor="description">{t('transaction.description')}</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder={t('loans.additionalNotes')}
+                    rows="3"
+                    disabled={formLoading}
+                  />
+                </div>
+              </FormSection>
 
               {/* Form Actions */}
               <div className="form-actions">

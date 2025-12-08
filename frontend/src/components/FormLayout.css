@@ -1,0 +1,85 @@
+/* ================================
+   Form Layout Component Styles
+   ================================ */
+
+.form-layout {
+  display: grid;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+/* Auto columns - responsive based on content */
+.form-layout-auto {
+  grid-template-columns: 1fr;
+}
+
+/* Fixed column layouts */
+.form-layout-2 {
+  grid-template-columns: 1fr;
+}
+
+.form-layout-3 {
+  grid-template-columns: 1fr;
+}
+
+/* Gap sizes */
+.form-layout-gap-sm {
+  gap: var(--spacing-sm);
+}
+
+.form-layout-gap-md {
+  gap: var(--spacing-md);
+}
+
+.form-layout-gap-lg {
+  gap: var(--spacing-lg);
+}
+
+.form-layout-gap-xl {
+  gap: var(--spacing-xl);
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 768px) {
+  .form-layout-auto {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-layout-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-layout-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop: Optimized layouts */
+@media (min-width: 1024px) {
+  .form-layout-auto {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-layout-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-layout-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Increase gap on desktop for better breathing room */
+  .form-layout-gap-lg {
+    gap: var(--spacing-xl);
+  }
+
+  .form-layout-gap-xl {
+    gap: calc(var(--spacing-xl) * 1.5);
+  }
+}
+
+/* Full-width items */
+.form-layout-item-full {
+  grid-column: 1 / -1;
+}
+

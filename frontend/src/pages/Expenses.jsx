@@ -1,10 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiPlus, FiEdit, FiTrash2, FiFileText, FiX } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
+import LogoLoader from '../components/LogoLoader'
+import useSwipeGesture from '../hooks/useSwipeGesture'
+import useFocusTrap from '../hooks/useFocusTrap'
+import useScreenReader from '../hooks/useScreenReader'
+import useToast from '../hooks/useToast'
+import useUndo from '../hooks/useUndo'
+import ToastContainer from '../components/ToastContainer'
+import SuccessAnimation from '../components/SuccessAnimation'
+import LoadingProgress from '../components/LoadingProgress'
 import './Expenses.css'
 
 /**
@@ -19,6 +28,15 @@ function Expenses() {
   const [editingExpense, setEditingExpense] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, expense: null })
+  
+  // Phase 4: Mobile & Accessibility hooks
+  const { announce } = useScreenReader()
+  const { toasts, showSuccess, showError, removeToast } = useToast()
+  
+  // Phase 5: Polish & Advanced UX
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+  const [showLoadingProgress, setShowLoadingProgress] = useState(false)
+  const { performAction: performUndoableAction, undo, canUndo } = useUndo()
 
   /**
    * Load expenses on mount
@@ -48,11 +66,42 @@ function Expenses() {
   const handleCreate = async (expenseData) => {
     try {
       setFormLoading(true)
-      await transactionService.create(expenseData)
-      await loadExpenses()
+      setShowLoadingProgress(true)
+      
+      const createdExpense = await transactionService.create(expenseData)
+      
+      // Phase 5: Success animation
+      setShowLoadingProgress(false)
       setShowForm(false)
+      setShowSuccessAnimation(true)
+      
+      showSuccess(t('expenses.createdSuccess'))
+      announce(t('expenses.createdSuccess'))
+      
+      // Phase 5: Undo functionality
+      performUndoableAction(
+        async () => {
+          await loadExpenses()
+        },
+        async () => {
+          // Undo: delete the created expense
+          try {
+            await transactionService.delete(createdExpense.id)
+            await loadExpenses()
+            showSuccess(t('expenses.undoSuccess'))
+            announce(t('expenses.undoSuccess'))
+          } catch (error) {
+            console.error('Error undoing expense creation:', error)
+            showError(t('expenses.undoError'))
+          }
+        },
+        5000 // 5 seconds to undo
+      )
     } catch (error) {
       console.error('Error creating expense:', error)
+      setShowLoadingProgress(false)
+      showError(t('expenses.createError'))
+      announce(t('expenses.createError'), 'assertive')
       throw error
     } finally {
       setFormLoading(false)
@@ -65,12 +114,46 @@ function Expenses() {
   const handleUpdate = async (expenseData) => {
     try {
       setFormLoading(true)
+      setShowLoadingProgress(true)
+      
+      // Save old data for undo
+      const oldExpenseData = { ...editingExpense }
+      
       await transactionService.update(editingExpense.id, expenseData)
-      await loadExpenses()
+      
+      // Phase 5: Success animation
+      setShowLoadingProgress(false)
       setEditingExpense(null)
       setShowForm(false)
+      setShowSuccessAnimation(true)
+      
+      showSuccess(t('expenses.updatedSuccess'))
+      announce(t('expenses.updatedSuccess'))
+      
+      // Phase 5: Undo functionality
+      performUndoableAction(
+        async () => {
+          await loadExpenses()
+        },
+        async () => {
+          // Undo: restore old data
+          try {
+            await transactionService.update(editingExpense.id, oldExpenseData)
+            await loadExpenses()
+            showSuccess(t('expenses.undoSuccess'))
+            announce(t('expenses.undoSuccess'))
+          } catch (error) {
+            console.error('Error undoing expense update:', error)
+            showError(t('expenses.undoError'))
+          }
+        },
+        5000 // 5 seconds to undo
+      )
     } catch (error) {
       console.error('Error updating expense:', error)
+      setShowLoadingProgress(false)
+      showError(t('expenses.updateError'))
+      announce(t('expenses.updateError'), 'assertive')
       throw error
     } finally {
       setFormLoading(false)
@@ -100,16 +183,43 @@ function Expenses() {
 
     try {
       setFormLoading(true)
+      setShowLoadingProgress(true)
+      
+      // Save expense data for undo
+      const expenseToDelete = { ...expense }
+      
       // Delete attachment if exists
       if (expense.attachment_path) {
         await storageService.deleteFile(expense.attachment_path)
       }
       
       await transactionService.delete(expense.id)
+      
+      setShowLoadingProgress(false)
       await loadExpenses()
       closeDeleteModal()
+      
+      // Phase 5: Undo functionality
+      performUndoableAction(
+        () => {},
+        async () => {
+          // Undo: restore deleted expense
+          try {
+            await transactionService.create(expenseToDelete)
+            await loadExpenses()
+            showSuccess(t('expenses.undoSuccess'))
+            announce(t('expenses.undoSuccess'))
+          } catch (error) {
+            console.error('Error undoing expense deletion:', error)
+            showError(t('expenses.undoError'))
+          }
+        },
+        5000 // 5 seconds to undo
+      )
     } catch (error) {
       console.error('Error deleting expense:', error)
+      setShowLoadingProgress(false)
+      showError(t('expenses.deleteError'))
     } finally {
       setFormLoading(false)
     }
@@ -129,7 +239,38 @@ function Expenses() {
   const closeForm = () => {
     setShowForm(false)
     setEditingExpense(null)
+    announce(t('expenses.formClosed'))
   }
+
+  // Focus trap for accessibility
+  const focusTrapRef = useFocusTrap(showForm)
+  
+  // Swipe gesture for mobile (swipe down to close)
+  const { elementRef: swipeRef, style: swipeStyle } = useSwipeGesture(
+    () => {
+      if (showForm) {
+        closeForm()
+      }
+    },
+    100
+  )
+
+  /**
+   * Handle keyboard shortcuts
+   */
+  useEffect(() => {
+    if (!showForm) return
+
+    const handleKeyDown = (e) => {
+      // Esc to close form
+      if (e.key === 'Escape') {
+        closeForm()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showForm])
 
   /**
    * Format currency
@@ -144,8 +285,7 @@ function Expenses() {
   if (loading) {
     return (
       <div className="page-loading">
-        <div className="spinner"></div>
-        <p>{t('common.loading')}</p>
+        <LogoLoader size="medium" />
       </div>
     )
   }
@@ -173,10 +313,23 @@ function Expenses() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="form-modal" onClick={(e) => e.target === e.currentTarget && closeForm()}>
-          <div className="card form-card">
+        <div 
+          className="form-modal" 
+          onClick={(e) => e.target === e.currentTarget && closeForm()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="form-title"
+        >
+          <div 
+            className="card form-card"
+            ref={(node) => {
+              focusTrapRef.current = node
+              swipeRef.current = node
+            }}
+            style={swipeStyle}
+          >
             <div className="card-header form-header">
-              <h2>
+              <h2 id="form-title">
                 {editingExpense 
                   ? t('expenses.editExpense')
                   : t('expenses.addExpense')
@@ -186,6 +339,7 @@ function Expenses() {
                 className="form-close-btn"
                 onClick={closeForm}
                 aria-label={t('common.close')}
+                type="button"
               >
                 <FiX size={24} />
               </button>
@@ -198,6 +352,37 @@ function Expenses() {
               loading={formLoading}
             />
           </div>
+        </div>
+      )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {/* Phase 5: Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        onComplete={() => setShowSuccessAnimation(false)}
+        message={t('expenses.savedSuccess')}
+      />
+
+      {/* Phase 5: Loading Progress */}
+      {showLoadingProgress && (
+        <LoadingProgress
+          message={formLoading ? t('common.saving') : t('common.loading')}
+        />
+      )}
+
+      {/* Phase 5: Undo Banner */}
+      {canUndo && (
+        <div className="undo-banner">
+          <span>{t('expenses.undoAvailable')}</span>
+          <button
+            type="button"
+            onClick={undo}
+            className="btn btn-sm btn-undo"
+          >
+            {t('common.undo')}
+          </button>
         </div>
       )}
 

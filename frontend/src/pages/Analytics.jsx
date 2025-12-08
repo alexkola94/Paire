@@ -14,6 +14,8 @@ import { Pie, Line, Bar } from 'react-chartjs-2'
 import { analyticsService, transactionService } from '../services/api'
 import { getStoredUser } from '../services/auth'
 import { format, subDays } from 'date-fns'
+import LogoLoader from '../components/LogoLoader'
+import Dropdown from '../components/Dropdown'
 import './Analytics.css'
 
 // Register Chart.js components
@@ -414,8 +416,7 @@ function Analytics() {
   if (loading) {
     return (
       <div className="page-loading">
-        <div className="spinner"></div>
-        <p>{t('common.loading')}</p>
+        <LogoLoader size="medium" />
       </div>
     )
   }
@@ -433,34 +434,32 @@ function Analytics() {
         </div>
         
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="analytics-filters">
           {/* View Filter */}
-          <div className="date-range-selector">
-            <FiFilter size={18} />
-            <select
-              value={viewFilter}
-              onChange={(e) => setViewFilter(e.target.value)}
-              className="date-range-select"
-            >
-              <option value="together">{t('analytics.together')}</option>
-              <option value="solo">{t('analytics.solo')}</option>
-              <option value="partner">{t('analytics.partner')}</option>
-            </select>
-          </div>
+          <Dropdown
+            icon={<FiFilter size={18} />}
+            options={[
+              { value: 'together', label: t('analytics.together') },
+              { value: 'solo', label: t('analytics.solo') },
+              { value: 'partner', label: t('analytics.partner') }
+            ]}
+            value={viewFilter}
+            onChange={(value) => setViewFilter(value)}
+            className="analytics-filter"
+          />
           
           {/* Date Range Selector */}
-          <div className="date-range-selector">
-            <FiCalendar size={18} />
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="date-range-select"
-            >
-              <option value="week">{t('analytics.lastWeek')}</option>
-              <option value="month">{t('analytics.thisMonth')}</option>
-              <option value="year">{t('analytics.thisYear')}</option>
-            </select>
-          </div>
+          <Dropdown
+            icon={<FiCalendar size={18} />}
+            options={[
+              { value: 'week', label: t('analytics.lastWeek') },
+              { value: 'month', label: t('analytics.thisMonth') },
+              { value: 'year', label: t('analytics.thisYear') }
+            ]}
+            value={dateRange}
+            onChange={(value) => setDateRange(value)}
+            className="analytics-filter"
+          />
         </div>
       </div>
 

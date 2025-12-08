@@ -1,0 +1,163 @@
+/* ================================
+   Duplicate Detection Component Styles
+   ================================ */
+
+.duplicate-detection {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--warning);
+  border: 2px solid var(--warning-dark);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.duplicate-detection-icon {
+  flex-shrink: 0;
+  color: var(--warning-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-full);
+}
+
+.duplicate-detection-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.duplicate-detection-title {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+}
+
+.duplicate-detection-message {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.duplicate-detection-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.duplicate-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.duplicate-amount {
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 70px;
+}
+
+.duplicate-description {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.duplicate-date {
+  color: var(--text-light);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.duplicate-detection-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.duplicate-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 8px 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.duplicate-action-btn.proceed {
+  background: var(--success-dark);
+  color: white;
+}
+
+.duplicate-action-btn.proceed:hover {
+  background: var(--success);
+  transform: translateY(-1px);
+}
+
+.duplicate-action-btn.dismiss {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--bg-tertiary);
+}
+
+.duplicate-action-btn.dismiss:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .duplicate-detection {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .duplicate-detection-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .duplicate-action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .duplicate-item {
+    flex-wrap: wrap;
+  }
+
+  .duplicate-date {
+    width: 100%;
+  }
+}
+

@@ -215,6 +215,143 @@ namespace YouAndMeExpensesAPI.Services
             }
         };
 
+        // Greek pattern definitions for query recognition
+        private readonly Dictionary<string, List<string>> _greekQueryPatterns = new()
+        {
+            // Spending queries (Greek)
+            ["total_spending"] = new() { 
+                "πόσο.*ξόδεψα", "συνολικά.*έξοδα", "τι.*ξόδεψα", "έξοδα.*σύνολο",
+                "χρήματα.*ξόδεψα", "ξόδεψα.*μέχρι.*τώρα", "δαπάνες"
+            },
+            ["category_spending"] = new() { 
+                "ξόδεψα.*για (\\w+)", "έξοδα.*για (\\w+)", 
+                "πόσο.*(φαγητό|τροφές|μεταφορικά|ψυχαγωγία|λογαριασμοί|ψώνια|εστιατόριο|υγεία|κοινόχρηστα)",
+                "δαπάνες.*για (\\w+)", "(\\w+).*έξοδα", "(\\w+).*δαπάνες"
+            },
+            ["monthly_spending"] = new() { 
+                "ξόδεψα.*μήνα", "έξοδα.*μήνα", "μηνιαία.*έξοδα",
+                "αυτό.*μήνα.*έξοδα", "μήνας.*δαπάνες"
+            },
+            ["daily_average"] = new() { 
+                "μέσος.*ημέρα", "ημερήσιος.*μέσος", "έξοδα.*ανά.*ημέρα",
+                "ανά.*ημέρα.*έξοδα", "ημερήσια.*έξοδα", "ημέρα.*μέσος"
+            },
+            
+            // Income queries (Greek)
+            ["total_income"] = new() { 
+                "πόσο.*έβγαλα", "συνολικά.*έσοδα", "τι.*έσοδα", "έσοδα.*σύνολο",
+                "κερδισμένα", "χρήματα.*έβγαλα", "έσοδα", "έβγαλα.*μέχρι.*τώρα"
+            },
+            ["income_sources"] = new() { 
+                "έσοδα.*από", "από.*που.*έσοδα", "πηγές.*εσόδων",
+                "πηγές.*κερδών", "από.*που.*χρήματα"
+            },
+            
+            // Balance queries (Greek)
+            ["current_balance"] = new() { 
+                "τι.*υπόλοιπο", "τρέχον.*υπόλοιπο", "πόσο.*έμεινε", "υπόλοιπο.*τώρα",
+                "υπόλοιπα.*χρήματα", "καθαρό.*υπόλοιπο", "οικονομική.*θέση"
+            },
+            ["savings"] = new() { 
+                "αποταμιεύσεις", "αποταμιευμένα.*χρήματα", "πόσο.*αποταμιεύσα",
+                "ποσό.*αποταμίευσης", "χρήματα.*αποταμιεύθηκαν"
+            },
+            
+            // Comparison queries (Greek)
+            ["compare_months"] = new() { 
+                "σύγκρινε.*μήνα", "προηγούμενος.*μήνας.*αυτό.*μήνα", "σύγκριση.*μήνα",
+                "έναντι.*προηγούμενος.*μήνας", "vs.*προηγούμενος.*μήνας", "μήνας.*πάνω.*μήνας"
+            },
+            ["compare_partners"] = new() { 
+                "ποιος.*ξόδεψε.*περισσότερο", "σύγκρισε.*έξοδα", "σύγκριση.*συνεργάτες",
+                "έξοδα.*μεταξύ", "ποιος.*πλήρωσε.*περισσότερο"
+            },
+            
+            // Loan queries (Greek)
+            ["total_loans"] = new() { 
+                "συνολικά.*δάνεια", "πόσο.*οφείλω", "δάνεια.*σύνολο",
+                "ποσό.*χρέους", "εκκρεμή.*δάνεια"
+            },
+            ["loan_status"] = new() { 
+                "κατάσταση.*δανείου", "ενεργά.*δάνεια", "εκκρεμή.*δάνεια",
+                "περίληψη.*δανείου", "κατάσταση.*χρέους"
+            },
+            ["next_payment"] = new() { 
+                "επόμενη.*πληρωμή", "πότε.*πληρώσω", "πληρωμή.*οφείλεται",
+                "επερχόμενη.*πληρωμή", "πότε.*πληρωμή.*οφείλεται"
+            },
+            
+            // Budget queries (Greek)
+            ["budget_status"] = new() { 
+                "κατάσταση.*προϋπολογισμού", "εντός.*προϋπολογισμού", "πάνω.*από.*προϋπολογισμό", "προϋπολογισμός.*υπόλοιπο",
+                "πρόοδος.*προϋπολογισμού", "όριο.*δαπανών", "υγεία.*προϋπολογισμού"
+            },
+            ["budget_categories"] = new() { 
+                "προϋπολογισμός.*για (\\w+)", "προϋπολογισμός.*(τροφές|φαγητό|μεταφορικά|ψυχαγωγία)",
+                "(\\w+).*προϋπολογισμός", "όριο.*για (\\w+)"
+            },
+            
+            // Insights and suggestions (Greek)
+            ["spending_insights"] = new() { 
+                "ανάλυση", "πες.*μου.*έξοδα", "οικονομική.*υγεία",
+                "οικονομικές.*συνήθειες", "μοτίβο.*δαπανών", "οικονομική.*επισκόπηση"
+            },
+            ["save_money"] = new() { 
+                "πώς.*αποταμιεύσω", "αποταμιεύω.*χρήματα", "μείωσε.*έξοδα", "κόψε.*κόστος",
+                "αποταμιεύω.*περισσότερο", "συμβουλές.*αποταμίευσης", "μείωσε.*δαπάνες"
+            },
+            ["spending_trends"] = new() { 
+                "τάση.*δαπανών", "μοτίβο.*δαπανών", "δαπάνες.*με.*το.*χρόνο", "μοτίβο.*εξόδων"
+            },
+            
+            // Top spenders (Greek)
+            ["top_expenses"] = new() { 
+                "δείξε.*κύρια.*έξοδα", "δείξε.*μεγαλύτερα.*έξοδα", "κύρια.*έξοδα", "μεγαλύτερα.*έξοδα", 
+                "υψηλότερες.*δαπάνες", "περισσότερα.*ξόδεψα", "μεγαλύτερες.*δαπάνες", "σημαντικά.*έξοδα",
+                "δείξε.*έξοδα", "κύρια.*δαπάνες"
+            },
+            ["top_categories"] = new() { 
+                "κύριες.*κατηγορίες", "ποια.*κατηγορία", "ξόδεψα.*περισσότερο.*για",
+                "κύριες.*κατηγορίες", "πρωταρχικά.*έξοδα"
+            },
+            
+            // Goals (Greek)
+            ["savings_goals"] = new() { 
+                "στόχος.*αποταμίευσης", "πρόοδος.*στόχου", "πόσο.*κοντά.*στόχος",
+                "στόχος.*αποταμίευσης", "κατάσταση.*στόχου", "πρόοδος.*προς"
+            },
+            ["predict_spending"] = new() { 
+                "πρόβλεψη.*δαπανών", "πρόβλεψη.*εξόδων", "εκτίμηση.*μήνα",
+                "μελλοντικές.*δαπάνες", "προβλεπόμενα.*έξοδα", "αναμενόμενα.*έξοδα"
+            },
+            
+            // Loan Scenarios (Greek)
+            ["loan_payoff_scenario"] = new() {
+                "πλήρωσε.*περισσότερο.*δάνειο", "επιπλέον.*πληρωμή.*δάνειο", "ξεπλήρωσε.*γρηγορότερα",
+                "πόσο.*χρόνο.*ξεπληρώσω", "χρέος.*ελεύθερος.*πότε", "χρόνος.*ξεπληρωμής.*δανείου",
+                "αύξησε.*πληρωμή.*δανείου", "επιτάχυνε.*δάνειο", "χρόνια.*για.*πληρωμή",
+                "ξεπλήρωσε.*νωρίτερα", "επιπλέον.*πληρωμή.*δανείου"
+            },
+            ["debt_free_timeline"] = new() {
+                "πότε.*χρέος.*ελεύθερος", "ημερομηνία.*χρέος.*ελεύθερος", "ξεπλήρωσε.*όλα.*χρέη",
+                "εξάλειψε.*χρέος", "ελευθερία.*χρέους", "καθάρισε.*όλα.*δάνεια"
+            },
+            
+            // Help (Greek)
+            ["help"] = new() { 
+                "βοήθεια", "τι.*μπορώ.*να.*κάνω", "εντολές", "δυνατότητες",
+                "πώς.*χρησιμοποιώ", "τι.*ερωτήσεις", "οδηγός"
+            }
+        };
+
+        /// <summary>
+        /// Get query patterns based on language
+        /// </summary>
+        private Dictionary<string, List<string>> GetQueryPatterns(string language)
+        {
+            return language == "el" ? _greekQueryPatterns : _queryPatterns;
+        }
+
         public ChatbotService(
             AppDbContext dbContext,
             IAnalyticsService analyticsService,
@@ -228,11 +365,11 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Process user query and generate response with conversation context
         /// </summary>
-        public async Task<ChatbotResponse> ProcessQueryAsync(string userId, string query, List<ChatMessage>? history = null)
+        public async Task<ChatbotResponse> ProcessQueryAsync(string userId, string query, List<ChatMessage>? history = null, string language = "en")
         {
             try
             {
-                _logger.LogInformation("Processing chatbot query for user {UserId}: {Query}", userId, query);
+                _logger.LogInformation("Processing chatbot query for user {UserId}: {Query} (Language: {Language})", userId, query, language);
 
                 var normalizedQuery = query.ToLowerInvariant().Trim();
                 
@@ -240,12 +377,12 @@ namespace YouAndMeExpensesAPI.Services
                 var contextualQuery = EnhanceQueryWithContext(normalizedQuery, history);
                 
                 // Detect multiple intents in the query
-                var intents = DetectMultipleIntents(contextualQuery, normalizedQuery);
+                var intents = DetectMultipleIntents(contextualQuery, normalizedQuery, language);
                 
                 // If multiple intents detected, handle them
                 if (intents.Count > 1)
                 {
-                    return await HandleMultipleIntentsAsync(userId, intents, normalizedQuery);
+                    return await HandleMultipleIntentsAsync(userId, intents, normalizedQuery, language);
                 }
                 
                 // Single intent - use the primary one
@@ -256,7 +393,7 @@ namespace YouAndMeExpensesAPI.Services
                 // If confidence is low, try fuzzy matching
                 if (confidence < 0.6 && queryType == "unknown")
                 {
-                    var fuzzyMatch = FuzzyMatchQuery(normalizedQuery);
+                    var fuzzyMatch = FuzzyMatchQuery(normalizedQuery, language);
                     if (fuzzyMatch.confidence > 0.4)
                     {
                         queryType = fuzzyMatch.queryType;
@@ -267,55 +404,58 @@ namespace YouAndMeExpensesAPI.Services
                 // Generate response based on query type
                 return queryType switch
                 {
-                    "total_spending" => await GetTotalSpendingAsync(userId, normalizedQuery),
-                    "category_spending" => await GetCategorySpendingAsync(userId, normalizedQuery),
-                    "monthly_spending" => await GetMonthlySpendingAsync(userId),
-                    "daily_average" => await GetDailyAverageAsync(userId),
-                    "total_income" => await GetTotalIncomeAsync(userId),
-                    "income_sources" => await GetIncomeSourcesAsync(userId),
-                    "current_balance" => await GetCurrentBalanceAsync(userId),
-                    "savings" => await GetSavingsAsync(userId),
-                    "compare_months" => await CompareMonthsAsync(userId),
-                    "compare_partners" => await ComparePartnersAsync(userId),
-                    "total_loans" => await GetTotalLoansAsync(userId),
-                    "loan_status" => await GetLoanStatusAsync(userId),
-                    "next_payment" => await GetNextPaymentAsync(userId),
-                    "budget_status" => await GetBudgetStatusAsync(userId),
-                    "budget_categories" => await GetBudgetCategoryAsync(userId, normalizedQuery),
-                    "spending_insights" => await GetSpendingInsightsAsync(userId),
-                    "save_money" => await GetSavingSuggestionsAsync(userId),
-                    "spending_trends" => await GetSpendingTrendsAsync(userId),
-                    "top_expenses" => await GetTopExpensesAsync(userId),
-                    "top_categories" => await GetTopCategoriesAsync(userId),
-                    "savings_goals" => await GetSavingsGoalsAsync(userId),
-                    "predict_spending" => await PredictSpendingAsync(userId),
+                    "total_spending" => await GetTotalSpendingAsync(userId, normalizedQuery, language),
+                    "category_spending" => await GetCategorySpendingAsync(userId, normalizedQuery, language),
+                    "monthly_spending" => await GetMonthlySpendingAsync(userId, language),
+                    "daily_average" => await GetDailyAverageAsync(userId, language),
+                    "total_income" => await GetTotalIncomeAsync(userId, language),
+                    "income_sources" => await GetIncomeSourcesAsync(userId, language),
+                    "current_balance" => await GetCurrentBalanceAsync(userId, language),
+                    "savings" => await GetSavingsAsync(userId, language),
+                    "compare_months" => await CompareMonthsAsync(userId, language),
+                    "compare_partners" => await ComparePartnersAsync(userId, language),
+                    "total_loans" => await GetTotalLoansAsync(userId, language),
+                    "loan_status" => await GetLoanStatusAsync(userId, language),
+                    "next_payment" => await GetNextPaymentAsync(userId, language),
+                    "budget_status" => await GetBudgetStatusAsync(userId, language),
+                    "budget_categories" => await GetBudgetCategoryAsync(userId, normalizedQuery, language),
+                    "spending_insights" => await GetSpendingInsightsAsync(userId, language),
+                    "save_money" => await GetSavingSuggestionsAsync(userId, language),
+                    "spending_trends" => await GetSpendingTrendsAsync(userId, language),
+                    "top_expenses" => await GetTopExpensesAsync(userId, language),
+                    "top_categories" => await GetTopCategoriesAsync(userId, language),
+                    "savings_goals" => await GetSavingsGoalsAsync(userId, language),
+                    "predict_spending" => await PredictSpendingAsync(userId, language),
                     // Powerful What-If Scenarios
-                    "loan_payoff_scenario" => await GetLoanPayoffScenarioAsync(userId, normalizedQuery),
-                    "debt_free_timeline" => await GetDebtFreeTimelineAsync(userId),
-                    "what_if_reduce_spending" => await GetWhatIfReduceSpendingAsync(userId, normalizedQuery),
-                    "category_optimization" => await GetCategoryOptimizationAsync(userId, normalizedQuery),
-                    "financial_milestones" => await GetFinancialMilestonesAsync(userId),
-                    "wealth_projection" => await GetWealthProjectionAsync(userId),
+                    "loan_payoff_scenario" => await GetLoanPayoffScenarioAsync(userId, normalizedQuery, language),
+                    "debt_free_timeline" => await GetDebtFreeTimelineAsync(userId, language),
+                    "what_if_reduce_spending" => await GetWhatIfReduceSpendingAsync(userId, normalizedQuery, language),
+                    "category_optimization" => await GetCategoryOptimizationAsync(userId, normalizedQuery, language),
+                    "financial_milestones" => await GetFinancialMilestonesAsync(userId, language),
+                    "wealth_projection" => await GetWealthProjectionAsync(userId, language),
                     // Extended Financial Expertise
-                    "tax_planning" => await GetTaxPlanningTipsAsync(userId),
-                    "financial_health_score" => await GetFinancialHealthScoreAsync(userId),
-                    "subscription_analysis" => await GetSubscriptionAnalysisAsync(userId),
-                    "bill_negotiation" => GetBillNegotiationTipsAsync(),
+                    "tax_planning" => await GetTaxPlanningTipsAsync(userId, language),
+                    "financial_health_score" => await GetFinancialHealthScoreAsync(userId, language),
+                    "subscription_analysis" => await GetSubscriptionAnalysisAsync(userId, language),
+                    "bill_negotiation" => GetBillNegotiationTipsAsync(language),
                     // TODO: Implement these methods when needed
                     // "investment_advice" => GetInvestmentBasicsAsync(),
                     // "seasonal_spending" => await GetSeasonalSpendingAsync(userId),
                     // "financial_ratios" => await GetFinancialRatiosAsync(userId),
                     // "money_tips" => GetMoneyTipsAsync(),
-                    "help" => GetHelpResponse(),
-                    _ => GetUnknownResponse(normalizedQuery, history)
+                    "help" => GetHelpResponse(language),
+                    _ => GetUnknownResponse(normalizedQuery, history, language)
                 };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing chatbot query");
+                var errorMessage = language == "el" 
+                    ? "Συνέβη ένα σφάλμα κατά την επεξεργασία του αιτήματός σας. Παρακαλώ δοκιμάστε ξανά."
+                    : "I encountered an error processing your request. Please try again.";
                 return new ChatbotResponse
                 {
-                    Message = "I encountered an error processing your request. Please try again.",
+                    Message = errorMessage,
                     Type = "error"
                 };
             }
@@ -324,7 +464,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get suggested questions for user
         /// </summary>
-        public async Task<List<string>> GetSuggestedQuestionsAsync(string userId)
+        public async Task<List<string>> GetSuggestedQuestionsAsync(string userId, string language = "en")
         {
             try
             {
@@ -333,54 +473,104 @@ namespace YouAndMeExpensesAPI.Services
                 var hasLoans = await HasActiveLoansAsync(userId);
                 var hasBudgets = await HasBudgetsAsync(userId);
 
-                var suggestions = new List<string>
-                {
-                    "How much did I spend this month?",
-                    "What's my current balance?"
-                };
+                var suggestions = language == "el"
+                    ? new List<string>
+                    {
+                        "Πόσο ξόδεψα αυτόν τον μήνα;",
+                        "Ποιο είναι το τρέχον υπόλοιπό μου;"
+                    }
+                    : new List<string>
+                    {
+                        "How much did I spend this month?",
+                        "What's my current balance?"
+                    };
 
                 if (hasTransactions)
                 {
-                    suggestions.AddRange(new[]
+                    if (language == "el")
                     {
-                        "Show me my top expenses",
-                        "What's my daily average spending?",
-                        "Give me spending insights"
-                    });
+                        suggestions.AddRange(new[]
+                        {
+                            "Δείξε μου τα κύρια έξοδά μου",
+                            "Ποιος είναι ο ημερήσιος μέσος όρος των δαπανών μου;",
+                            "Δώσε μου ανάλυση των δαπανών"
+                        });
+                    }
+                    else
+                    {
+                        suggestions.AddRange(new[]
+                        {
+                            "Show me my top expenses",
+                            "What's my daily average spending?",
+                            "Give me spending insights"
+                        });
+                    }
                 }
 
                 if (hasLoans)
                 {
-                    suggestions.Add("What's my loan status?");
-                    suggestions.Add("When is my next payment?");
+                    if (language == "el")
+                    {
+                        suggestions.Add("Ποια είναι η κατάσταση των δανείων μου;");
+                        suggestions.Add("Πότε είναι η επόμενη πληρωμή μου;");
+                    }
+                    else
+                    {
+                        suggestions.Add("What's my loan status?");
+                        suggestions.Add("When is my next payment?");
+                    }
                 }
 
                 if (hasBudgets)
                 {
-                    suggestions.Add("Am I within budget?");
+                    suggestions.Add(language == "el" 
+                        ? "Είμαι εντός προϋπολογισμού;" 
+                        : "Am I within budget?");
                 }
 
-                suggestions.AddRange(new[]
+                if (language == "el")
                 {
-                    "How can I save money?",
-                    "Compare my spending with last month",
-                    "What if I pay extra on my loan?",
-                    "Show my wealth projection",
-                    "When will I be debt-free?",
-                    "What are my financial milestones?"
-                });
+                    suggestions.AddRange(new[]
+                    {
+                        "Πώς μπορώ να αποταμιεύσω χρήματα;",
+                        "Σύγκρινε τις δαπάνες μου με τον προηγούμενο μήνα",
+                        "Τι θα γίνει αν πληρώσω επιπλέον στο δάνειό μου;",
+                        "Δείξε μου την προβολή πλούτου μου",
+                        "Πότε θα είμαι χρέος-ελεύθερος;",
+                        "Ποια είναι τα οικονομικά μου ορόσημα;"
+                    });
+                }
+                else
+                {
+                    suggestions.AddRange(new[]
+                    {
+                        "How can I save money?",
+                        "Compare my spending with last month",
+                        "What if I pay extra on my loan?",
+                        "Show my wealth projection",
+                        "When will I be debt-free?",
+                        "What are my financial milestones?"
+                    });
+                }
 
                 return suggestions.Take(8).ToList();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting suggested questions");
-                return new List<string>
-                {
-                    "How much did I spend this month?",
-                    "What's my current balance?",
-                    "Show me my spending insights"
-                };
+                return language == "el"
+                    ? new List<string>
+                    {
+                        "Πόσο ξόδεψα αυτόν τον μήνα;",
+                        "Ποιο είναι το τρέχον υπόλοιπό μου;",
+                        "Δείξε μου ανάλυση των δαπανών μου"
+                    }
+                    : new List<string>
+                    {
+                        "How much did I spend this month?",
+                        "What's my current balance?",
+                        "Show me my spending insights"
+                    };
             }
         }
 
@@ -444,16 +634,17 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Match user query to a pattern type with confidence scoring
         /// </summary>
-        private (string queryType, double confidence) MatchQueryPatternWithConfidence(string contextualQuery, string originalQuery)
+        private (string queryType, double confidence) MatchQueryPatternWithConfidence(string contextualQuery, string originalQuery, string language = "en")
         {
             var bestMatch = ("unknown", 0.0);
             var matches = new List<(string type, double score)>();
+            var patterns = GetQueryPatterns(language);
 
-            foreach (var (type, patterns) in _queryPatterns)
+            foreach (var (type, patternList) in patterns)
             {
                 double maxScore = 0.0;
                 
-                foreach (var pattern in patterns)
+                foreach (var pattern in patternList)
                 {
                     // Exact regex match gets highest score
                     if (Regex.IsMatch(contextualQuery, pattern, RegexOptions.IgnoreCase))
@@ -523,7 +714,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Fuzzy match query using Levenshtein distance and keyword similarity
         /// </summary>
-        private (string queryType, double confidence) FuzzyMatchQuery(string query)
+        private (string queryType, double confidence) FuzzyMatchQuery(string query, string language = "en")
         {
             var queryWords = query.Split(new[] { ' ', '.', ',', '!', '?', ':', ';' }, 
                 StringSplitOptions.RemoveEmptyEntries)
@@ -532,10 +723,11 @@ namespace YouAndMeExpensesAPI.Services
                 .ToList();
 
             var bestMatch = ("unknown", 0.0);
+            var patterns = GetQueryPatterns(language);
 
-            foreach (var (type, patterns) in _queryPatterns)
+            foreach (var (type, patternList) in patterns)
             {
-                foreach (var pattern in patterns)
+                foreach (var pattern in patternList)
                 {
                     var patternKeywords = ExtractKeywordsFromPattern(pattern);
                     if (!patternKeywords.Any()) continue;
@@ -562,12 +754,14 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Detect multiple intents in a single query
         /// </summary>
-        private List<(string queryType, double confidence)> DetectMultipleIntents(string contextualQuery, string originalQuery)
+        private List<(string queryType, double confidence)> DetectMultipleIntents(string contextualQuery, string originalQuery, string language = "en")
         {
             var intents = new List<(string queryType, double confidence)>();
             
-            // Split query by common separators (and, also, plus, comma, etc.)
-            var separators = new[] { " and ", " also ", " plus ", ", ", " & ", " as well as " };
+            // Split query by common separators (language-specific)
+            var separators = language == "el" 
+                ? new[] { " και ", " επίσης ", " συν ", ", ", " & ", " καθώς και " }
+                : new[] { " and ", " also ", " plus ", ", ", " & ", " as well as " };
             var parts = new List<string> { originalQuery };
             
             foreach (var sep in separators)
@@ -593,7 +787,7 @@ namespace YouAndMeExpensesAPI.Services
             {
                 foreach (var part in parts)
                 {
-                    var (type, confidence) = MatchQueryPatternWithConfidence(part, part);
+                    var (type, confidence) = MatchQueryPatternWithConfidence(part, part, language);
                     if (type != "unknown" && confidence > 0.5)
                     {
                         intents.Add((type, confidence));
@@ -603,19 +797,29 @@ namespace YouAndMeExpensesAPI.Services
             else
             {
                 // Single query - check for multiple intents using keyword detection
-                var (primaryType, primaryConfidence) = MatchQueryPatternWithConfidence(contextualQuery, originalQuery);
+                var (primaryType, primaryConfidence) = MatchQueryPatternWithConfidence(contextualQuery, originalQuery, language);
                 intents.Add((primaryType, primaryConfidence));
                 
-                // Check for secondary intents (e.g., "show spending and compare with last month")
-                var secondaryKeywords = new Dictionary<string, string>
-                {
-                    ["compare"] = "compare_months",
-                    ["trend"] = "spending_trends",
-                    ["predict"] = "predict_spending",
-                    ["optimize"] = "category_optimization",
-                    ["save"] = "save_money",
-                    ["insight"] = "spending_insights"
-                };
+                // Check for secondary intents (language-specific keywords)
+                var secondaryKeywords = language == "el"
+                    ? new Dictionary<string, string>
+                    {
+                        ["σύγκρινε"] = "compare_months",
+                        ["τάση"] = "spending_trends",
+                        ["πρόβλεψη"] = "predict_spending",
+                        ["βελτιστοποίησε"] = "category_optimization",
+                        ["αποταμιεύω"] = "save_money",
+                        ["ανάλυση"] = "spending_insights"
+                    }
+                    : new Dictionary<string, string>
+                    {
+                        ["compare"] = "compare_months",
+                        ["trend"] = "spending_trends",
+                        ["predict"] = "predict_spending",
+                        ["optimize"] = "category_optimization",
+                        ["save"] = "save_money",
+                        ["insight"] = "spending_insights"
+                    };
                 
                 foreach (var (keyword, intentType) in secondaryKeywords)
                 {
@@ -638,7 +842,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Handle queries with multiple intents by combining responses
         /// </summary>
-        private async Task<ChatbotResponse> HandleMultipleIntentsAsync(string userId, List<(string queryType, double confidence)> intents, string query)
+        private async Task<ChatbotResponse> HandleMultipleIntentsAsync(string userId, List<(string queryType, double confidence)> intents, string query, string language = "en")
         {
             var responses = new List<ChatbotResponse>();
             
@@ -649,14 +853,14 @@ namespace YouAndMeExpensesAPI.Services
                 {
                     var response = intent.queryType switch
                     {
-                        "total_spending" => await GetTotalSpendingAsync(userId, query),
-                        "category_spending" => await GetCategorySpendingAsync(userId, query),
-                        "compare_months" => await CompareMonthsAsync(userId),
-                        "spending_trends" => await GetSpendingTrendsAsync(userId),
-                        "spending_insights" => await GetSpendingInsightsAsync(userId),
-                        "top_expenses" => await GetTopExpensesAsync(userId),
-                        "save_money" => await GetSavingSuggestionsAsync(userId),
-                        "predict_spending" => await PredictSpendingAsync(userId),
+                        "total_spending" => await GetTotalSpendingAsync(userId, query, language),
+                        "category_spending" => await GetCategorySpendingAsync(userId, query, language),
+                        "compare_months" => await CompareMonthsAsync(userId, language),
+                        "spending_trends" => await GetSpendingTrendsAsync(userId, language),
+                        "spending_insights" => await GetSpendingInsightsAsync(userId, language),
+                        "top_expenses" => await GetTopExpensesAsync(userId, language),
+                        "save_money" => await GetSavingSuggestionsAsync(userId, language),
+                        "predict_spending" => await PredictSpendingAsync(userId, language),
                         _ => null
                     };
                     
@@ -673,7 +877,7 @@ namespace YouAndMeExpensesAPI.Services
             
             if (!responses.Any())
             {
-                return GetUnknownResponse(query);
+                return GetUnknownResponse(query, null, language);
             }
             
             // Combine responses
@@ -682,8 +886,10 @@ namespace YouAndMeExpensesAPI.Services
                 return responses[0];
             }
             
-            // Combine multiple responses
-            var combinedMessage = "Here's what I found:\n\n";
+            // Combine multiple responses (language-specific)
+            var combinedMessage = language == "el"
+                ? "Αυτά που βρήκα:\n\n"
+                : "Here's what I found:\n\n";
             for (int i = 0; i < responses.Count; i++)
             {
                 combinedMessage += $"**{i + 1}.** {responses[i].Message}\n\n";
@@ -697,12 +903,16 @@ namespace YouAndMeExpensesAPI.Services
                 .Take(4)
                 .ToList();
             
+            var defaultQuickActions = language == "el"
+                ? new List<string> { "Δείξε περισσότερες λεπτομέρειες", "Δώσε μου ανάλυση" }
+                : new List<string> { "Show more details", "Give me insights" };
+            
             return new ChatbotResponse
             {
                 Message = combinedMessage.Trim(),
                 Type = responses.Any(r => r.Type == "warning") ? "warning" : "insight",
                 Data = responses.Select(r => r.Data).ToList(),
-                QuickActions = allQuickActions.Any() ? allQuickActions : new List<string> { "Show more details", "Give me insights" },
+                QuickActions = allQuickActions.Any() ? allQuickActions : defaultQuickActions,
                 ActionLink = responses.FirstOrDefault(r => !string.IsNullOrEmpty(r.ActionLink))?.ActionLink
             };
         }
@@ -743,9 +953,9 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get total spending for a period with enhanced insights
         /// </summary>
-        private async Task<ChatbotResponse> GetTotalSpendingAsync(string userId, string query)
+        private async Task<ChatbotResponse> GetTotalSpendingAsync(string userId, string query, string language = "en")
         {
-            var period = ExtractTimePeriod(query);
+            var period = ExtractTimePeriod(query, language);
             var (start, end) = GetDateRange(period);
 
             var transactions = await _dbContext.Transactions
@@ -772,7 +982,21 @@ namespace YouAndMeExpensesAPI.Services
             var changePercent = prevTotal > 0 ? (change / prevTotal) * 100 : 0;
 
             // Generate personalized message
-            var message = GenerateSpendingMessage(total, count, avgPerTransaction, change, changePercent, period);
+            var message = GenerateSpendingMessage(total, count, avgPerTransaction, change, changePercent, period, language);
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε μου έξοδα ανά κατηγορία",
+                    "Ποια είναι τα κύρια έξοδά μου;",
+                    "Πώς μπορώ να αποταμιεύσω χρήματα;"
+                }
+                : new List<string>
+                {
+                    "Show me spending by category",
+                    "What are my top expenses?",
+                    "How can I save money?"
+                };
 
             return new ChatbotResponse
             {
@@ -791,12 +1015,7 @@ namespace YouAndMeExpensesAPI.Services
                     changePercent,
                     dailyAverage = periodDays > 0 ? total / periodDays : 0
                 },
-                QuickActions = new List<string>
-                {
-                    "Show me spending by category",
-                    "What are my top expenses?",
-                    "How can I save money?"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/expenses"
             };
         }
@@ -804,34 +1023,65 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Generate personalized spending message with insights
         /// </summary>
-        private string GenerateSpendingMessage(decimal total, int count, decimal avg, decimal change, decimal changePercent, string period)
+        private string GenerateSpendingMessage(decimal total, int count, decimal avg, decimal change, decimal changePercent, string period, string language = "en")
         {
             var messages = new List<string>();
             
-            // Main spending info
-            if (count == 0)
+            if (language == "el")
             {
-                return $"Great news! You haven't spent anything {period}. Keep it up! 🎉";
-            }
-
-            messages.Add($"You've spent **${total:N2}** {period} across {count} transaction{(count != 1 ? "s" : "")}.");
-            messages.Add($"That's an average of **${avg:N2}** per transaction.");
-
-            // Comparison insight
-            if (Math.Abs(changePercent) > 5)
-            {
-                if (change > 0)
+                // Main spending info (Greek)
+                if (count == 0)
                 {
-                    messages.Add($"\n⚠️ You're spending **{Math.Abs(changePercent):F1}%** more than the previous period (${Math.Abs(change):N2} increase).");
+                    return $"Τελευταία νέα! Δεν έχετε ξοδέψει τίποτα {period}. Συνεχίστε έτσι! 🎉";
+                }
+
+                messages.Add($"Έχετε ξοδέψει **${total:N2}** {period} σε {count} συναλλαγή{(count != 1 ? "ές" : "")}.");
+                messages.Add($"Αυτό είναι ένας μέσος όρος **${avg:N2}** ανά συναλλαγή.");
+
+                // Comparison insight (Greek)
+                if (Math.Abs(changePercent) > 5)
+                {
+                    if (change > 0)
+                    {
+                        messages.Add($"\n⚠️ Ξοδεύετε **{Math.Abs(changePercent):F1}%** περισσότερο από την προηγούμενη περίοδο (${Math.Abs(change):N2} αύξηση).");
+                    }
+                    else
+                    {
+                        messages.Add($"\n✅ Καλή δουλειά! Ξοδεύετε **{Math.Abs(changePercent):F1}%** λιγότερο από την προηγούμενη περίοδο (${Math.Abs(change):N2} αποταμιεύτηκαν).");
+                    }
                 }
                 else
                 {
-                    messages.Add($"\n✅ Great job! You're spending **{Math.Abs(changePercent):F1}%** less than the previous period (${Math.Abs(change):N2} saved).");
+                    messages.Add($"\n📊 Οι δαπάνες σας είναι συνεπείς με την προηγούμενη περίοδο.");
                 }
             }
             else
             {
-                messages.Add($"\n📊 Your spending is consistent with the previous period.");
+                // Main spending info (English)
+                if (count == 0)
+                {
+                    return $"Great news! You haven't spent anything {period}. Keep it up! 🎉";
+                }
+
+                messages.Add($"You've spent **${total:N2}** {period} across {count} transaction{(count != 1 ? "s" : "")}.");
+                messages.Add($"That's an average of **${avg:N2}** per transaction.");
+
+                // Comparison insight (English)
+                if (Math.Abs(changePercent) > 5)
+                {
+                    if (change > 0)
+                    {
+                        messages.Add($"\n⚠️ You're spending **{Math.Abs(changePercent):F1}%** more than the previous period (${Math.Abs(change):N2} increase).");
+                    }
+                    else
+                    {
+                        messages.Add($"\n✅ Great job! You're spending **{Math.Abs(changePercent):F1}%** less than the previous period (${Math.Abs(change):N2} saved).");
+                    }
+                }
+                else
+                {
+                    messages.Add($"\n📊 Your spending is consistent with the previous period.");
+                }
             }
 
             return string.Join(" ", messages);
@@ -840,7 +1090,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get spending by category with enhanced insights
         /// </summary>
-        private async Task<ChatbotResponse> GetCategorySpendingAsync(string userId, string query)
+        private async Task<ChatbotResponse> GetCategorySpendingAsync(string userId, string query, string language = "en")
         {
             var category = ExtractCategory(query);
             var now = DateTime.UtcNow;
@@ -877,7 +1127,21 @@ namespace YouAndMeExpensesAPI.Services
             // Generate personalized message
             var message = GenerateCategorySpendingMessage(
                 category, categoryTotal, percentage, transactionCount, 
-                avgPerTransaction, monthlyChange, monthlyChangePercent);
+                avgPerTransaction, monthlyChange, monthlyChangePercent, language);
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε όλες τις κατηγορίες",
+                    "Σύγκρινε με τον προηγούμενο μήνα",
+                    "Πώς μπορώ να το μειώσω;"
+                }
+                : new List<string>
+                {
+                    "Show all categories",
+                    "Compare with last month",
+                    "How can I reduce this?"
+                };
 
             return new ChatbotResponse
             {
@@ -893,12 +1157,7 @@ namespace YouAndMeExpensesAPI.Services
                     monthlyChange,
                     monthlyChangePercent
                 },
-                QuickActions = new List<string>
-                {
-                    "Show all categories",
-                    "Compare with last month",
-                    "How can I reduce this?"
-                }
+                QuickActions = quickActions
             };
         }
 
@@ -907,38 +1166,74 @@ namespace YouAndMeExpensesAPI.Services
         /// </summary>
         private string GenerateCategorySpendingMessage(
             string category, decimal total, decimal percentage, int count,
-            decimal avg, decimal change, decimal changePercent)
+            decimal avg, decimal change, decimal changePercent, string language = "en")
         {
             var messages = new List<string>();
 
-            if (count == 0)
+            if (language == "el")
             {
-                return $"You haven't spent anything on {category} this month. 🎯";
-            }
-
-            messages.Add($"You've spent **${total:N2}** on **{category}** this month ({percentage:F1}% of total spending).");
-            messages.Add($"That's {count} transaction{(count != 1 ? "s" : "")} with an average of **${avg:N2}** each.");
-
-            // Add insight based on percentage
-            if (percentage > 40)
-            {
-                messages.Add($"\n⚠️ This category represents a significant portion of your spending. Consider reviewing if this aligns with your priorities.");
-            }
-            else if (percentage > 25)
-            {
-                messages.Add($"\n📊 This is one of your major spending categories.");
-            }
-
-            // Monthly comparison
-            if (Math.Abs(changePercent) > 10)
-            {
-                if (change > 0)
+                if (count == 0)
                 {
-                    messages.Add($"\n📈 Up **{Math.Abs(changePercent):F1}%** from last month (${Math.Abs(change):N2} increase).");
+                    return $"Δεν έχετε ξοδέψει τίποτα για {category} αυτόν τον μήνα. 🎯";
                 }
-                else
+
+                messages.Add($"Έχετε ξοδέψει **${total:N2}** για **{category}** αυτόν τον μήνα ({percentage:F1}% των συνολικών δαπανών).");
+                messages.Add($"Αυτό είναι {count} συναλλαγή{(count != 1 ? "ές" : "")} με μέσο όρο **${avg:N2}** η καθεμία.");
+
+                // Add insight based on percentage (Greek)
+                if (percentage > 40)
                 {
-                    messages.Add($"\n✅ Down **{Math.Abs(changePercent):F1}%** from last month (${Math.Abs(change):N2} saved)!");
+                    messages.Add($"\n⚠️ Αυτή η κατηγορία αντιπροσωπεύει σημαντικό μέρος των δαπανών σας. Σκεφτείτε να εξετάσετε αν αυτό ευθυγραμμίζεται με τις προτεραιότητές σας.");
+                }
+                else if (percentage > 25)
+                {
+                    messages.Add($"\n📊 Αυτή είναι μία από τις κύριες κατηγορίες δαπανών σας.");
+                }
+
+                // Monthly comparison (Greek)
+                if (Math.Abs(changePercent) > 10)
+                {
+                    if (change > 0)
+                    {
+                        messages.Add($"\n📈 Αύξηση **{Math.Abs(changePercent):F1}%** από τον προηγούμενο μήνα (${Math.Abs(change):N2} αύξηση).");
+                    }
+                    else
+                    {
+                        messages.Add($"\n✅ Μείωση **{Math.Abs(changePercent):F1}%** από τον προηγούμενο μήνα (${Math.Abs(change):N2} αποταμιεύτηκαν)!");
+                    }
+                }
+            }
+            else
+            {
+                if (count == 0)
+                {
+                    return $"You haven't spent anything on {category} this month. 🎯";
+                }
+
+                messages.Add($"You've spent **${total:N2}** on **{category}** this month ({percentage:F1}% of total spending).");
+                messages.Add($"That's {count} transaction{(count != 1 ? "s" : "")} with an average of **${avg:N2}** each.");
+
+                // Add insight based on percentage
+                if (percentage > 40)
+                {
+                    messages.Add($"\n⚠️ This category represents a significant portion of your spending. Consider reviewing if this aligns with your priorities.");
+                }
+                else if (percentage > 25)
+                {
+                    messages.Add($"\n📊 This is one of your major spending categories.");
+                }
+
+                // Monthly comparison
+                if (Math.Abs(changePercent) > 10)
+                {
+                    if (change > 0)
+                    {
+                        messages.Add($"\n📈 Up **{Math.Abs(changePercent):F1}%** from last month (${Math.Abs(change):N2} increase).");
+                    }
+                    else
+                    {
+                        messages.Add($"\n✅ Down **{Math.Abs(changePercent):F1}%** from last month (${Math.Abs(change):N2} saved)!");
+                    }
                 }
             }
 
@@ -948,7 +1243,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get current balance
         /// </summary>
-        private async Task<ChatbotResponse> GetCurrentBalanceAsync(string userId)
+        private async Task<ChatbotResponse> GetCurrentBalanceAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var start = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -962,21 +1257,34 @@ namespace YouAndMeExpensesAPI.Services
             var expenses = transactions.Where(t => t.Type == "expense").Sum(t => t.Amount);
             var balance = income - expenses;
 
-            var message = balance >= 0
-                ? $"Your current balance this month is ${balance:N2}. You're doing great! 💰"
-                : $"Your current balance this month is -${Math.Abs(balance):N2}. Consider reviewing your expenses.";
+            var message = language == "el"
+                ? (balance >= 0
+                    ? $"Το τρέχον υπόλοιπό σας αυτόν τον μήνα είναι ${balance:N2}. Τα πάτε πολύ καλά! 💰"
+                    : $"Το τρέχον υπόλοιπό σας αυτόν τον μήνα είναι -${Math.Abs(balance):N2}. Σκεφτείτε να εξετάσετε τα έξοδά σας.")
+                : (balance >= 0
+                    ? $"Your current balance this month is ${balance:N2}. You're doing great! 💰"
+                    : $"Your current balance this month is -${Math.Abs(balance):N2}. Consider reviewing your expenses.");
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε μου πού ξόδεψα",
+                    "Πώς μπορώ να αποταμιεύσω χρήματα;",
+                    "Σύγκρινε με τον προηγούμενο μήνα"
+                }
+                : new List<string>
+                {
+                    "Show me where I spent",
+                    "How can I save money?",
+                    "Compare with last month"
+                };
 
             return new ChatbotResponse
             {
                 Message = message,
                 Type = balance >= 0 ? "insight" : "warning",
                 Data = new { income, expenses, balance },
-                QuickActions = new List<string>
-                {
-                    "Show me where I spent",
-                    "How can I save money?",
-                    "Compare with last month"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/dashboard"
             };
         }
@@ -984,7 +1292,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get comprehensive spending insights with actionable recommendations
         /// </summary>
-        private async Task<ChatbotResponse> GetSpendingInsightsAsync(string userId)
+        private async Task<ChatbotResponse> GetSpendingInsightsAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -994,85 +1302,182 @@ namespace YouAndMeExpensesAPI.Services
             );
 
             var insights = new List<string>();
-            insights.Add("📊 **Financial Health Snapshot**\n");
-
-            // Balance status
-            if (analytics.Balance >= 0)
+            
+            if (language == "el")
             {
-                var savingsRate = analytics.TotalIncome > 0 
-                    ? (analytics.Balance / analytics.TotalIncome) * 100 
-                    : 0;
-                insights.Add($"✅ **Current Balance:** ${analytics.Balance:N2}");
-                insights.Add($"💰 **Savings Rate:** {savingsRate:F1}% of income");
-                
-                if (savingsRate >= 20)
+                insights.Add("📊 **Στιγμιότυπο Οικονομικής Υγείας**\n");
+
+                // Balance status (Greek)
+                if (analytics.Balance >= 0)
                 {
-                    insights.Add("🌟 Excellent! You're meeting the 20% savings goal!");
-                }
-                else if (savingsRate >= 10)
-                {
-                    insights.Add("👍 Good start! Try to increase your savings rate to 20%.");
+                    var savingsRate = analytics.TotalIncome > 0 
+                        ? (analytics.Balance / analytics.TotalIncome) * 100 
+                        : 0;
+                    insights.Add($"✅ **Τρέχον Υπόλοιπο:** ${analytics.Balance:N2}");
+                    insights.Add($"💰 **Ρυθμός Αποταμίευσης:** {savingsRate:F1}% των εσόδων");
+                    
+                    if (savingsRate >= 20)
+                    {
+                        insights.Add("🌟 Εξαιρετικά! Φτάνετε τον στόχο αποταμίευσης 20%!");
+                    }
+                    else if (savingsRate >= 10)
+                    {
+                        insights.Add("👍 Καλή αρχή! Προσπαθήστε να αυξήσετε τον ρυθμό αποταμίευσης στο 20%.");
+                    }
+                    else
+                    {
+                        insights.Add("💡 Συμβουλή: Στόχος να αποταμιεύετε τουλάχιστον 20% των εσόδων σας.");
+                    }
                 }
                 else
                 {
-                    insights.Add("💡 Tip: Aim to save at least 20% of your income.");
+                    insights.Add($"⚠️ **Ελλείμμα Προϋπολογισμού:** ${Math.Abs(analytics.Balance):N2}");
+                    insights.Add("⚡ Ξοδεύετε περισσότερα από όσα κερδίζετε. Εξετάστε τα έξοδά σας!");
+                }
+
+                // Spending patterns (Greek)
+                insights.Add($"\n📈 **Μοτίβα Δαπανών:**");
+                insights.Add($"• Συνολικά Έξοδα: ${analytics.TotalExpenses:N2}");
+                insights.Add($"• Ημερήσιος Μέσος Όρος: ${analytics.AverageDailySpending:N2}");
+                
+                if (analytics.AverageDailySpending > 100)
+                {
+                    var monthlySavings = (analytics.AverageDailySpending - 100) * 30;
+                    insights.Add($"💡 Η μείωση των ημερήσιων δαπανών κατά ${(analytics.AverageDailySpending - 100):N2} θα μπορούσε να αποταμιεύσει ${monthlySavings:N2}/μήνα!");
+                }
+
+                // Top spending categories (Greek)
+                if (analytics.CategoryBreakdown.Any())
+                {
+                    insights.Add($"\n🎯 **Κύριες Κατηγορίες Δαπανών:**");
+                    var topThree = analytics.CategoryBreakdown.Take(3).ToList();
+                    for (int i = 0; i < topThree.Count; i++)
+                    {
+                        var cat = topThree[i];
+                        var emoji = GetCategoryEmoji(cat.Category);
+                        insights.Add($"{i + 1}. {emoji} **{cat.Category}**: ${cat.Amount:N2} ({cat.Percentage:F1}%)");
+                    }
+
+                    // Alert if any category is too high (Greek)
+                    var topCategory = topThree.First();
+                    if (topCategory.Percentage > 50)
+                    {
+                        insights.Add($"\n⚠️ Η {topCategory.Category} κυριαρχεί στις δαπάνες σας. Σκεφτείτε να διαφοροποιήσετε!");
+                    }
+                }
+
+                // Spending velocity (trend) (Greek)
+                var daysInMonth = now.Day;
+                var projectedMonthEnd = (analytics.TotalExpenses / daysInMonth) * DateTime.DaysInMonth(now.Year, now.Month);
+                var monthlyAvg = 2000m; // Could be calculated from historical data
+                
+                insights.Add($"\n📊 **Τάση Δαπανών:**");
+                insights.Add($"• Προβλεπόμενο Τέλος Μήνα: ${projectedMonthEnd:N2}");
+                
+                if (projectedMonthEnd > monthlyAvg)
+                {
+                    insights.Add($"⚠️ Είστε σε πορεία να υπερβείτε τις τυπικές μηνιαίες δαπάνες σας κατά ${(projectedMonthEnd - monthlyAvg):N2}");
+                }
+                else
+                {
+                    insights.Add($"✅ Είστε σε πορεία για ένα φιλικό προς τον προϋπολογισμό μήνα!");
                 }
             }
             else
             {
-                insights.Add($"⚠️ **Budget Deficit:** ${Math.Abs(analytics.Balance):N2}");
-                insights.Add("⚡ You're spending more than you're earning. Review your expenses!");
-            }
+                insights.Add("📊 **Financial Health Snapshot**\n");
 
-            // Spending patterns
-            insights.Add($"\n📈 **Spending Patterns:**");
-            insights.Add($"• Total Expenses: ${analytics.TotalExpenses:N2}");
-            insights.Add($"• Daily Average: ${analytics.AverageDailySpending:N2}");
-            
-            if (analytics.AverageDailySpending > 100)
-            {
-                var monthlySavings = (analytics.AverageDailySpending - 100) * 30;
-                insights.Add($"💡 Reducing daily spending by ${(analytics.AverageDailySpending - 100):N2} could save ${monthlySavings:N2}/month!");
-            }
-
-            // Top spending categories
-            if (analytics.CategoryBreakdown.Any())
-            {
-                insights.Add($"\n🎯 **Top Spending Categories:**");
-                var topThree = analytics.CategoryBreakdown.Take(3).ToList();
-                for (int i = 0; i < topThree.Count; i++)
+                // Balance status
+                if (analytics.Balance >= 0)
                 {
-                    var cat = topThree[i];
-                    var emoji = GetCategoryEmoji(cat.Category);
-                    insights.Add($"{i + 1}. {emoji} **{cat.Category}**: ${cat.Amount:N2} ({cat.Percentage:F1}%)");
+                    var savingsRate = analytics.TotalIncome > 0 
+                        ? (analytics.Balance / analytics.TotalIncome) * 100 
+                        : 0;
+                    insights.Add($"✅ **Current Balance:** ${analytics.Balance:N2}");
+                    insights.Add($"💰 **Savings Rate:** {savingsRate:F1}% of income");
+                    
+                    if (savingsRate >= 20)
+                    {
+                        insights.Add("🌟 Excellent! You're meeting the 20% savings goal!");
+                    }
+                    else if (savingsRate >= 10)
+                    {
+                        insights.Add("👍 Good start! Try to increase your savings rate to 20%.");
+                    }
+                    else
+                    {
+                        insights.Add("💡 Tip: Aim to save at least 20% of your income.");
+                    }
+                }
+                else
+                {
+                    insights.Add($"⚠️ **Budget Deficit:** ${Math.Abs(analytics.Balance):N2}");
+                    insights.Add("⚡ You're spending more than you're earning. Review your expenses!");
                 }
 
-                // Alert if any category is too high
-                var topCategory = topThree.First();
-                if (topCategory.Percentage > 50)
+                // Spending patterns
+                insights.Add($"\n📈 **Spending Patterns:**");
+                insights.Add($"• Total Expenses: ${analytics.TotalExpenses:N2}");
+                insights.Add($"• Daily Average: ${analytics.AverageDailySpending:N2}");
+                
+                if (analytics.AverageDailySpending > 100)
                 {
-                    insights.Add($"\n⚠️ {topCategory.Category} dominates your spending. Consider diversifying!");
+                    var monthlySavings = (analytics.AverageDailySpending - 100) * 30;
+                    insights.Add($"💡 Reducing daily spending by ${(analytics.AverageDailySpending - 100):N2} could save ${monthlySavings:N2}/month!");
                 }
-            }
 
-            // Spending velocity (trend)
-            var daysInMonth = now.Day;
-            var projectedMonthEnd = (analytics.TotalExpenses / daysInMonth) * DateTime.DaysInMonth(now.Year, now.Month);
-            var monthlyAvg = 2000m; // Could be calculated from historical data
-            
-            insights.Add($"\n📊 **Spending Trend:**");
-            insights.Add($"• Projected Month-End: ${projectedMonthEnd:N2}");
-            
-            if (projectedMonthEnd > monthlyAvg)
-            {
-                insights.Add($"⚠️ You're on track to exceed your typical monthly spending by ${(projectedMonthEnd - monthlyAvg):N2}");
-            }
-            else
-            {
-                insights.Add($"✅ You're on track for a budget-friendly month!");
+                // Top spending categories
+                if (analytics.CategoryBreakdown.Any())
+                {
+                    insights.Add($"\n🎯 **Top Spending Categories:**");
+                    var topThree = analytics.CategoryBreakdown.Take(3).ToList();
+                    for (int i = 0; i < topThree.Count; i++)
+                    {
+                        var cat = topThree[i];
+                        var emoji = GetCategoryEmoji(cat.Category);
+                        insights.Add($"{i + 1}. {emoji} **{cat.Category}**: ${cat.Amount:N2} ({cat.Percentage:F1}%)");
+                    }
+
+                    // Alert if any category is too high
+                    var topCategory = topThree.First();
+                    if (topCategory.Percentage > 50)
+                    {
+                        insights.Add($"\n⚠️ {topCategory.Category} dominates your spending. Consider diversifying!");
+                    }
+                }
+
+                // Spending velocity (trend)
+                var daysInMonth = now.Day;
+                var projectedMonthEnd = (analytics.TotalExpenses / daysInMonth) * DateTime.DaysInMonth(now.Year, now.Month);
+                var monthlyAvg = 2000m; // Could be calculated from historical data
+                
+                insights.Add($"\n📊 **Spending Trend:**");
+                insights.Add($"• Projected Month-End: ${projectedMonthEnd:N2}");
+                
+                if (projectedMonthEnd > monthlyAvg)
+                {
+                    insights.Add($"⚠️ You're on track to exceed your typical monthly spending by ${(projectedMonthEnd - monthlyAvg):N2}");
+                }
+                else
+                {
+                    insights.Add($"✅ You're on track for a budget-friendly month!");
+                }
             }
 
             var message = string.Join("\n", insights);
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Πώς μπορώ να αποταμιεύσω χρήματα;",
+                    "Δείξε κύρια έξοδα",
+                    "Σύγκρινε με τον προηγούμενο μήνα"
+                }
+                : new List<string>
+                {
+                    "How can I save money?",
+                    "Show top expenses",
+                    "Compare with last month"
+                };
 
             return new ChatbotResponse
             {
@@ -1081,16 +1486,11 @@ namespace YouAndMeExpensesAPI.Services
                 Data = new
                 {
                     analytics,
-                    projectedMonthEnd,
+                    projectedMonthEnd = (analytics.TotalExpenses / now.Day) * DateTime.DaysInMonth(now.Year, now.Month),
                     savingsRate = analytics.TotalIncome > 0 ? (analytics.Balance / analytics.TotalIncome) * 100 : 0,
                     daysRemaining = DateTime.DaysInMonth(now.Year, now.Month) - now.Day
                 },
-                QuickActions = new List<string>
-                {
-                    "How can I save money?",
-                    "Show top expenses",
-                    "Compare with last month"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/analytics"
             };
         }
@@ -1118,7 +1518,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get personalized money-saving suggestions with actionable advice
         /// </summary>
-        private async Task<ChatbotResponse> GetSavingSuggestionsAsync(string userId)
+        private async Task<ChatbotResponse> GetSavingSuggestionsAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -1130,59 +1530,108 @@ namespace YouAndMeExpensesAPI.Services
             );
 
             var suggestions = new List<string>();
-            suggestions.Add("💡 **Personalized Money-Saving Tips**\n");
-
             var potentialSavings = 0m;
 
-            // Analyze categories for savings opportunities
-            suggestions.Add("🎯 **Based on Your Spending Patterns:**\n");
-            
-            foreach (var category in analytics.CategoryBreakdown.Take(5))
+            if (language == "el")
             {
-                if (category.Percentage > 35)
-                {
-                    var savings = category.Amount * 0.15m; // 15% reduction
-                    potentialSavings += savings;
-                    var emoji = GetCategoryEmoji(category.Category);
-                    suggestions.Add($"{emoji} **{category.Category}** ({category.Percentage:F0}% of spending)");
-                    suggestions.Add($"   • Save ${savings:N2}/month with a 15% reduction");
-                    suggestions.Add(GetCategorySavingTip(category.Category));
-                    suggestions.Add("");
-                }
-                else if (category.Percentage > 20)
-                {
-                    var savings = category.Amount * 0.10m; // 10% reduction
-                    potentialSavings += savings;
-                    var emoji = GetCategoryEmoji(category.Category);
-                    suggestions.Add($"{emoji} **{category.Category}**");
-                    suggestions.Add($"   • Potential savings: ${savings:N2}/month");
-                    suggestions.Add(GetCategorySavingTip(category.Category));
-                    suggestions.Add("");
-                }
-            }
-
-            // Daily spending suggestions
-            if (analytics.AverageDailySpending > 100)
-            {
-                var targetDaily = analytics.AverageDailySpending * 0.85m;
-                var monthlySavings = (analytics.AverageDailySpending - targetDaily) * 30;
-                potentialSavings += monthlySavings;
+                suggestions.Add("💡 **Προσωποποιημένες Συμβουλές Αποταμίευσης**\n");
+                suggestions.Add("🎯 **Βασισμένο στα Μοτίβα Δαπανών σας:**\n");
                 
-                suggestions.Add($"📊 **Daily Spending Challenge:**");
-                suggestions.Add($"   • Current: ${analytics.AverageDailySpending:N2}/day");
-                suggestions.Add($"   • Target: ${targetDaily:N2}/day");
-                suggestions.Add($"   • Monthly Savings: ${monthlySavings:N2}");
-                suggestions.Add("");
-            }
+                foreach (var category in analytics.CategoryBreakdown.Take(5))
+                {
+                    if (category.Percentage > 35)
+                    {
+                        var savings = category.Amount * 0.15m;
+                        potentialSavings += savings;
+                        var emoji = GetCategoryEmoji(category.Category);
+                        suggestions.Add($"{emoji} **{category.Category}** ({category.Percentage:F0}% των δαπανών)");
+                        suggestions.Add($"   • Αποταμιεύστε ${savings:N2}/μήνα με 15% μείωση");
+                        suggestions.Add(GetCategorySavingTip(category.Category, language));
+                        suggestions.Add("");
+                    }
+                    else if (category.Percentage > 20)
+                    {
+                        var savings = category.Amount * 0.10m;
+                        potentialSavings += savings;
+                        var emoji = GetCategoryEmoji(category.Category);
+                        suggestions.Add($"{emoji} **{category.Category}**");
+                        suggestions.Add($"   • Δυνητική αποταμίευση: ${savings:N2}/μήνα");
+                        suggestions.Add(GetCategorySavingTip(category.Category, language));
+                        suggestions.Add("");
+                    }
+                }
 
-            // General tips
-            suggestions.Add("💰 **Quick Wins:**");
-            suggestions.Add("✓ Cancel unused subscriptions");
-            suggestions.Add("✓ Set up automatic savings (pay yourself first!)");
-            suggestions.Add("✓ Use the 24-hour rule for non-essential purchases");
-            suggestions.Add("✓ Meal prep on Sundays to reduce dining out");
-            suggestions.Add("✓ Compare prices and use cashback apps");
-            suggestions.Add("✓ Set spending alerts for your main categories\n");
+                if (analytics.AverageDailySpending > 100)
+                {
+                    var targetDaily = analytics.AverageDailySpending * 0.85m;
+                    var monthlySavings = (analytics.AverageDailySpending - targetDaily) * 30;
+                    potentialSavings += monthlySavings;
+                    
+                    suggestions.Add($"📊 **Πρόκληση Ημερήσιων Δαπανών:**");
+                    suggestions.Add($"   • Τρέχον: ${analytics.AverageDailySpending:N2}/ημέρα");
+                    suggestions.Add($"   • Στόχος: ${targetDaily:N2}/ημέρα");
+                    suggestions.Add($"   • Μηνιαία Αποταμίευση: ${monthlySavings:N2}");
+                    suggestions.Add("");
+                }
+
+                suggestions.Add("💰 **Γρήγορες Νίκες:**");
+                suggestions.Add("✓ Ακύρωση αχρησιμοποίητων συνδρομών");
+                suggestions.Add("✓ Ρύθμιση αυτόματης αποταμίευσης (πληρώστε πρώτα τον εαυτό σας!)");
+                suggestions.Add("✓ Χρησιμοποιήστε τον κανόνα 24 ωρών για μη απαραίτητες αγορές");
+                suggestions.Add("✓ Προετοιμασία γευμάτων τις Κυριακές για μείωση εξόδων εστιατορίου");
+                suggestions.Add("✓ Σύγκριση τιμών και χρήση εφαρμογών cashback");
+                suggestions.Add("✓ Ρύθμιση ειδοποιήσεων δαπανών για τις κύριες κατηγορίες σας\n");
+            }
+            else
+            {
+                suggestions.Add("💡 **Personalized Money-Saving Tips**\n");
+                suggestions.Add("🎯 **Based on Your Spending Patterns:**\n");
+                
+                foreach (var category in analytics.CategoryBreakdown.Take(5))
+                {
+                    if (category.Percentage > 35)
+                    {
+                        var savings = category.Amount * 0.15m;
+                        potentialSavings += savings;
+                        var emoji = GetCategoryEmoji(category.Category);
+                        suggestions.Add($"{emoji} **{category.Category}** ({category.Percentage:F0}% of spending)");
+                        suggestions.Add($"   • Save ${savings:N2}/month with a 15% reduction");
+                        suggestions.Add(GetCategorySavingTip(category.Category, language));
+                        suggestions.Add("");
+                    }
+                    else if (category.Percentage > 20)
+                    {
+                        var savings = category.Amount * 0.10m;
+                        potentialSavings += savings;
+                        var emoji = GetCategoryEmoji(category.Category);
+                        suggestions.Add($"{emoji} **{category.Category}**");
+                        suggestions.Add($"   • Potential savings: ${savings:N2}/month");
+                        suggestions.Add(GetCategorySavingTip(category.Category, language));
+                        suggestions.Add("");
+                    }
+                }
+
+                if (analytics.AverageDailySpending > 100)
+                {
+                    var targetDaily = analytics.AverageDailySpending * 0.85m;
+                    var monthlySavings = (analytics.AverageDailySpending - targetDaily) * 30;
+                    potentialSavings += monthlySavings;
+                    
+                    suggestions.Add($"📊 **Daily Spending Challenge:**");
+                    suggestions.Add($"   • Current: ${analytics.AverageDailySpending:N2}/day");
+                    suggestions.Add($"   • Target: ${targetDaily:N2}/day");
+                    suggestions.Add($"   • Monthly Savings: ${monthlySavings:N2}");
+                    suggestions.Add("");
+                }
+
+                suggestions.Add("💰 **Quick Wins:**");
+                suggestions.Add("✓ Cancel unused subscriptions");
+                suggestions.Add("✓ Set up automatic savings (pay yourself first!)");
+                suggestions.Add("✓ Use the 24-hour rule for non-essential purchases");
+                suggestions.Add("✓ Meal prep on Sundays to reduce dining out");
+                suggestions.Add("✓ Compare prices and use cashback apps");
+                suggestions.Add("✓ Set spending alerts for your main categories\n");
+            }
 
             // 50/30/20 rule analysis
             if (analytics.TotalIncome > 0)
@@ -1191,33 +1640,80 @@ namespace YouAndMeExpensesAPI.Services
                 var wants = analytics.TotalIncome * 0.3m;
                 var savings = analytics.TotalIncome * 0.2m;
                 
-                suggestions.Add("📈 **50/30/20 Budget Rule:**");
-                suggestions.Add($"   Based on income of ${analytics.TotalIncome:N2}:");
-                suggestions.Add($"   • Needs (50%): ${needs:N2}");
-                suggestions.Add($"   • Wants (30%): ${wants:N2}");
-                suggestions.Add($"   • Savings (20%): ${savings:N2}");
-                
-                var actualSavings = analytics.Balance;
-                var savingsRate = analytics.TotalIncome > 0 ? (actualSavings / analytics.TotalIncome) * 100 : 0;
-                
-                if (savingsRate < 20)
+                if (language == "el")
                 {
-                    var gap = savings - actualSavings;
-                    suggestions.Add($"\n   ⚡ You're saving {savingsRate:F1}%. Increase by ${gap:N2} to reach 20%!");
-                    potentialSavings += gap;
+                    suggestions.Add("📈 **Κανόνας Προϋπολογισμού 50/30/20:**");
+                    suggestions.Add($"   Βάσει εσόδων ${analytics.TotalIncome:N2}:");
+                    suggestions.Add($"   • Ανάγκες (50%): ${needs:N2}");
+                    suggestions.Add($"   • Επιθυμίες (30%): ${wants:N2}");
+                    suggestions.Add($"   • Αποταμιεύσεις (20%): ${savings:N2}");
+                    
+                    var actualSavings = analytics.Balance;
+                    var savingsRate = analytics.TotalIncome > 0 ? (actualSavings / analytics.TotalIncome) * 100 : 0;
+                    
+                    if (savingsRate < 20)
+                    {
+                        var gap = savings - actualSavings;
+                        suggestions.Add($"\n   ⚡ Αποταμιεύετε {savingsRate:F1}%. Αυξήστε κατά ${gap:N2} για να φτάσετε 20%!");
+                        potentialSavings += gap;
+                    }
+                    else
+                    {
+                        suggestions.Add($"\n   ✅ Υπερβαίνετε τον στόχο αποταμίευσης 20%! Εξαιρετικά!");
+                    }
                 }
                 else
                 {
-                    suggestions.Add($"\n   ✅ You're exceeding the 20% savings target! Amazing!");
+                    suggestions.Add("📈 **50/30/20 Budget Rule:**");
+                    suggestions.Add($"   Based on income of ${analytics.TotalIncome:N2}:");
+                    suggestions.Add($"   • Needs (50%): ${needs:N2}");
+                    suggestions.Add($"   • Wants (30%): ${wants:N2}");
+                    suggestions.Add($"   • Savings (20%): ${savings:N2}");
+                    
+                    var actualSavings = analytics.Balance;
+                    var savingsRate = analytics.TotalIncome > 0 ? (actualSavings / analytics.TotalIncome) * 100 : 0;
+                    
+                    if (savingsRate < 20)
+                    {
+                        var gap = savings - actualSavings;
+                        suggestions.Add($"\n   ⚡ You're saving {savingsRate:F1}%. Increase by ${gap:N2} to reach 20%!");
+                        potentialSavings += gap;
+                    }
+                    else
+                    {
+                        suggestions.Add($"\n   ✅ You're exceeding the 20% savings target! Amazing!");
+                    }
                 }
             }
 
             // Total potential
             if (potentialSavings > 0)
             {
-                suggestions.Add($"\n🎉 **Total Potential Savings:** ${potentialSavings:N2}/month");
-                suggestions.Add($"   That's ${potentialSavings * 12:N2} per year!");
+                if (language == "el")
+                {
+                    suggestions.Add($"\n🎉 **Συνολική Δυνητική Αποταμίευση:** ${potentialSavings:N2}/μήνα");
+                    suggestions.Add($"   Αυτό είναι ${potentialSavings * 12:N2} ετησίως!");
+                }
+                else
+                {
+                    suggestions.Add($"\n🎉 **Total Potential Savings:** ${potentialSavings:N2}/month");
+                    suggestions.Add($"   That's ${potentialSavings * 12:N2} per year!");
+                }
             }
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Ρύθμιση προϋπολογισμού",
+                    "Δημιουργία στόχου αποταμίευσης",
+                    "Δείξε τα κύρια έξοδά μου"
+                }
+                : new List<string>
+                {
+                    "Set up a budget",
+                    "Create a savings goal",
+                    "Show my top expenses"
+                };
 
             return new ChatbotResponse
             {
@@ -1230,12 +1726,7 @@ namespace YouAndMeExpensesAPI.Services
                     categoryBreakdown = analytics.CategoryBreakdown,
                     currentSavingsRate = analytics.TotalIncome > 0 ? (analytics.Balance / analytics.TotalIncome) * 100 : 0
                 },
-                QuickActions = new List<string>
-                {
-                    "Set up a budget",
-                    "Create a savings goal",
-                    "Show my top expenses"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/budgets"
             };
         }
@@ -1243,32 +1734,56 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get category-specific saving tips
         /// </summary>
-        private string GetCategorySavingTip(string category)
+        private string GetCategorySavingTip(string category, string language = "en")
         {
-            return category.ToLower() switch
+            if (language == "el")
             {
-                var c when c.Contains("food") || c.Contains("groceries") => 
-                    "   💡 Tip: Meal plan, buy in bulk, use loyalty cards",
-                var c when c.Contains("dining") || c.Contains("restaurant") => 
-                    "   💡 Tip: Cook at home 2-3 more times/week, pack lunch",
-                var c when c.Contains("transport") || c.Contains("travel") => 
-                    "   💡 Tip: Carpool, use public transport, combine trips",
-                var c when c.Contains("entertainment") || c.Contains("fun") => 
-                    "   💡 Tip: Find free activities, use streaming services wisely",
-                var c when c.Contains("shopping") || c.Contains("clothes") => 
-                    "   💡 Tip: Wait 24hrs before buying, shop sales, buy secondhand",
-                var c when c.Contains("bills") || c.Contains("utilities") => 
-                    "   💡 Tip: Review subscriptions, negotiate rates, save energy",
-                var c when c.Contains("health") => 
-                    "   💡 Tip: Use generic brands, preventive care, compare pharmacies",
-                _ => "   💡 Tip: Track expenses, set a budget, find alternatives"
-            };
+                return category.ToLower() switch
+                {
+                    var c when c.Contains("food") || c.Contains("groceries") || c.Contains("τροφ") => 
+                        "   💡 Συμβουλή: Σχεδιασμός γευμάτων, αγορά χύμα, χρήση καρτών αφοσίωσης",
+                    var c when c.Contains("dining") || c.Contains("restaurant") || c.Contains("εστιατόριο") => 
+                        "   💡 Συμβουλή: Μαγείρεψτε στο σπίτι 2-3 φορές περισσότερο/εβδομάδα, φτιάξτε μεσημεριανό",
+                    var c when c.Contains("transport") || c.Contains("travel") || c.Contains("μεταφορ") => 
+                        "   💡 Συμβουλή: Συνεπιβάτης, χρήση δημόσιων μεταφορών, συνδυασμός διαδρομών",
+                    var c when c.Contains("entertainment") || c.Contains("fun") || c.Contains("ψυχαγωγ") => 
+                        "   💡 Συμβουλή: Βρείτε δωρεάν δραστηριότητες, χρησιμοποιήστε υπηρεσίες streaming με σύνεση",
+                    var c when c.Contains("shopping") || c.Contains("clothes") || c.Contains("ψώνια") => 
+                        "   💡 Συμβουλή: Περιμένετε 24 ώρες πριν αγοράσετε, αγοράστε σε προσφορές, αγοράστε μεταχειρισμένα",
+                    var c when c.Contains("bills") || c.Contains("utilities") || c.Contains("λογαριασμ") => 
+                        "   💡 Συμβουλή: Εξετάστε συνδρομές, διαπραγματευτείτε τιμές, εξοικονομήστε ενέργεια",
+                    var c when c.Contains("health") || c.Contains("υγεία") => 
+                        "   💡 Συμβουλή: Χρησιμοποιήστε γενόσημες μάρκες, προληπτική φροντίδα, συγκρίνετε φαρμακεία",
+                    _ => "   💡 Συμβουλή: Παρακολουθήστε έξοδα, ορίστε προϋπολογισμό, βρείτε εναλλακτικές"
+                };
+            }
+            else
+            {
+                return category.ToLower() switch
+                {
+                    var c when c.Contains("food") || c.Contains("groceries") => 
+                        "   💡 Tip: Meal plan, buy in bulk, use loyalty cards",
+                    var c when c.Contains("dining") || c.Contains("restaurant") => 
+                        "   💡 Tip: Cook at home 2-3 more times/week, pack lunch",
+                    var c when c.Contains("transport") || c.Contains("travel") => 
+                        "   💡 Tip: Carpool, use public transport, combine trips",
+                    var c when c.Contains("entertainment") || c.Contains("fun") => 
+                        "   💡 Tip: Find free activities, use streaming services wisely",
+                    var c when c.Contains("shopping") || c.Contains("clothes") => 
+                        "   💡 Tip: Wait 24hrs before buying, shop sales, buy secondhand",
+                    var c when c.Contains("bills") || c.Contains("utilities") => 
+                        "   💡 Tip: Review subscriptions, negotiate rates, save energy",
+                    var c when c.Contains("health") => 
+                        "   💡 Tip: Use generic brands, preventive care, compare pharmacies",
+                    _ => "   💡 Tip: Track expenses, set a budget, find alternatives"
+                };
+            }
         }
 
         /// <summary>
         /// Compare current month with last month
         /// </summary>
-        private async Task<ChatbotResponse> CompareMonthsAsync(string userId)
+        private async Task<ChatbotResponse> CompareMonthsAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var thisMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -1293,28 +1808,41 @@ namespace YouAndMeExpensesAPI.Services
                 ? (diff / lastMonth.TotalExpenses) * 100 
                 : 0;
 
-            var message = diff > 0
-                ? $"You're spending {percentChange:F1}% more this month (${diff:N2} increase). Last month: ${lastMonth.TotalExpenses:N2}, This month: ${thisMonth.TotalExpenses:N2}"
-                : $"Great job! You're spending {Math.Abs(percentChange):F1}% less this month (${Math.Abs(diff):N2} saved). Last month: ${lastMonth.TotalExpenses:N2}, This month: ${thisMonth.TotalExpenses:N2}";
+            var message = language == "el"
+                ? (diff > 0
+                    ? $"Ξοδεύετε {percentChange:F1}% περισσότερο αυτόν τον μήνα (${diff:N2} αύξηση). Προηγούμενος μήνας: ${lastMonth.TotalExpenses:N2}, Αυτός ο μήνας: ${thisMonth.TotalExpenses:N2}"
+                    : $"Καλή δουλειά! Ξοδεύετε {Math.Abs(percentChange):F1}% λιγότερο αυτόν τον μήνα (${Math.Abs(diff):N2} αποταμιεύτηκαν). Προηγούμενος μήνας: ${lastMonth.TotalExpenses:N2}, Αυτός ο μήνας: ${thisMonth.TotalExpenses:N2}")
+                : (diff > 0
+                    ? $"You're spending {percentChange:F1}% more this month (${diff:N2} increase). Last month: ${lastMonth.TotalExpenses:N2}, This month: ${thisMonth.TotalExpenses:N2}"
+                    : $"Great job! You're spending {Math.Abs(percentChange):F1}% less this month (${Math.Abs(diff):N2} saved). Last month: ${lastMonth.TotalExpenses:N2}, This month: ${thisMonth.TotalExpenses:N2}");
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε τάσεις δαπανών",
+                    "Τι άλλαξε περισσότερο;",
+                    "Πώς μπορώ να αποταμιεύσω χρήματα;"
+                }
+                : new List<string>
+                {
+                    "Show spending trends",
+                    "What changed the most?",
+                    "How can I save money?"
+                };
 
             return new ChatbotResponse
             {
                 Message = message,
                 Type = diff > 0 ? "warning" : "insight",
                 Data = new { thisMonth = thisMonth.TotalExpenses, lastMonth = lastMonth.TotalExpenses, diff, percentChange },
-                QuickActions = new List<string>
-                {
-                    "Show spending trends",
-                    "What changed the most?",
-                    "How can I save money?"
-                }
+                QuickActions = quickActions
             };
         }
 
         /// <summary>
         /// Get top expenses with detailed analysis
         /// </summary>
-        private async Task<ChatbotResponse> GetTopExpensesAsync(string userId)
+        private async Task<ChatbotResponse> GetTopExpensesAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var start = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -1328,16 +1856,29 @@ namespace YouAndMeExpensesAPI.Services
 
             if (!transactions.Any())
             {
-                return new ChatbotResponse
-                {
-                    Message = "You don't have any expenses recorded this month yet. Start tracking to see insights! 📊",
-                    Type = "text",
-                    QuickActions = new List<string>
+                var noExpensesMessage = language == "el"
+                    ? "Δεν έχετε καταγράψει κανένα έξοδο αυτόν τον μήνα ακόμα. Ξεκινήστε την καταγραφή για να δείτε αναλύσεις! 📊"
+                    : "You don't have any expenses recorded this month yet. Start tracking to see insights! 📊";
+                
+                var noExpensesQuickActions = language == "el"
+                    ? new List<string>
+                    {
+                        "Πώς να προσθέσω ένα έξοδο;",
+                        "Δείξε έξοδα προηγούμενου μήνα",
+                        "Ποιο είναι το υπόλοιπό μου;"
+                    }
+                    : new List<string>
                     {
                         "How to add an expense?",
                         "Show last month expenses",
                         "What's my balance?"
-                    },
+                    };
+
+                return new ChatbotResponse
+                {
+                    Message = noExpensesMessage,
+                    Type = "text",
+                    QuickActions = noExpensesQuickActions,
                     ActionLink = "/expenses"
                 };
             }
@@ -1348,45 +1889,97 @@ namespace YouAndMeExpensesAPI.Services
                 .SumAsync(t => t.Amount);
 
             var insights = new List<string>();
-            insights.Add("💸 **Your Biggest Expenses This Month**\n");
-
+            
+            // Calculate values that are used regardless of language
             var topFiveTotal = transactions.Take(5).Sum(t => t.Amount);
             var topFivePercent = totalMonthExpenses > 0 ? (topFiveTotal / totalMonthExpenses) * 100 : 0;
-
-            insights.Add($"Top 5 expenses represent **${topFiveTotal:N2}** ({topFivePercent:F0}% of total spending)\n");
-
-            for (int i = 0; i < Math.Min(5, transactions.Count); i++)
-            {
-                var t = transactions[i];
-                var emoji = GetCategoryEmoji(t.Category);
-                var percent = totalMonthExpenses > 0 ? (t.Amount / totalMonthExpenses) * 100 : 0;
-                
-                insights.Add($"{i + 1}. {emoji} **${t.Amount:N2}** - {t.Description ?? t.Category}");
-                insights.Add($"   {t.Date:MMM dd} • {t.Category} • {percent:F1}% of monthly spending");
-                
-                if (!string.IsNullOrEmpty(t.PaidBy))
-                {
-                    insights.Add($"   Paid by: {t.PaidBy}");
-                }
-                insights.Add("");
-            }
-
-            // Analysis
-            insights.Add("📊 **Quick Analysis:**");
             var largestExpense = transactions.First();
             var avgTopFive = topFiveTotal / Math.Min(5, transactions.Count);
             
-            insights.Add($"• Largest single expense: ${largestExpense.Amount:N2}");
-            insights.Add($"• Average of top 5: ${avgTopFive:N2}");
-            
-            if (topFivePercent > 60)
+            if (language == "el")
             {
-                insights.Add($"\n⚠️ Your top 5 expenses make up {topFivePercent:F0}% of spending. These are your key areas to focus on!");
+                insights.Add("💸 **Τα Μεγαλύτερα Έξοδά σας Αυτόν τον Μήνα**\n");
+                insights.Add($"Τα κορυφαία 5 έξοδα αντιπροσωπεύουν **${topFiveTotal:N2}** ({topFivePercent:F0}% των συνολικών δαπανών)\n");
+
+                for (int i = 0; i < Math.Min(5, transactions.Count); i++)
+                {
+                    var t = transactions[i];
+                    var emoji = GetCategoryEmoji(t.Category);
+                    var percent = totalMonthExpenses > 0 ? (t.Amount / totalMonthExpenses) * 100 : 0;
+                    
+                    insights.Add($"{i + 1}. {emoji} **${t.Amount:N2}** - {t.Description ?? t.Category}");
+                    insights.Add($"   {t.Date:MMM dd} • {t.Category} • {percent:F1}% των μηνιαίων δαπανών");
+                    
+                    if (!string.IsNullOrEmpty(t.PaidBy))
+                    {
+                        insights.Add($"   Πληρώθηκε από: {t.PaidBy}");
+                    }
+                    insights.Add("");
+                }
+
+                // Analysis (Greek)
+                insights.Add("📊 **Γρήγορη Ανάλυση:**");
+                insights.Add($"• Μεγαλύτερο μεμονωμένο έξοδο: ${largestExpense.Amount:N2}");
+                insights.Add($"• Μέσος όρος των κορυφαίων 5: ${avgTopFive:N2}");
+                
+                if (topFivePercent > 60)
+                {
+                    insights.Add($"\n⚠️ Τα κορυφαία 5 έξοδά σας αποτελούν {topFivePercent:F0}% των δαπανών. Αυτές είναι οι βασικές περιοχές στις οποίες πρέπει να εστιάσετε!");
+                }
+                else if (topFivePercent > 40)
+                {
+                    insights.Add($"\n📊 Τα κορυφαία 5 έξοδά σας είναι σημαντικά. Εξετάστε αν ευθυγραμμίζονται με τις προτεραιότητές σας.");
+                }
             }
-            else if (topFivePercent > 40)
+            else
             {
-                insights.Add($"\n📊 Your top 5 expenses are significant. Review if they align with your priorities.");
+                insights.Add("💸 **Your Biggest Expenses This Month**\n");
+                insights.Add($"Top 5 expenses represent **${topFiveTotal:N2}** ({topFivePercent:F0}% of total spending)\n");
+
+                for (int i = 0; i < Math.Min(5, transactions.Count); i++)
+                {
+                    var t = transactions[i];
+                    var emoji = GetCategoryEmoji(t.Category);
+                    var percent = totalMonthExpenses > 0 ? (t.Amount / totalMonthExpenses) * 100 : 0;
+                    
+                    insights.Add($"{i + 1}. {emoji} **${t.Amount:N2}** - {t.Description ?? t.Category}");
+                    insights.Add($"   {t.Date:MMM dd} • {t.Category} • {percent:F1}% of monthly spending");
+                    
+                    if (!string.IsNullOrEmpty(t.PaidBy))
+                    {
+                        insights.Add($"   Paid by: {t.PaidBy}");
+                    }
+                    insights.Add("");
+                }
+
+                // Analysis
+                insights.Add("📊 **Quick Analysis:**");
+                insights.Add($"• Largest single expense: ${largestExpense.Amount:N2}");
+                insights.Add($"• Average of top 5: ${avgTopFive:N2}");
+                
+                if (topFivePercent > 60)
+                {
+                    insights.Add($"\n⚠️ Your top 5 expenses make up {topFivePercent:F0}% of spending. These are your key areas to focus on!");
+                }
+                else if (topFivePercent > 40)
+                {
+                    insights.Add($"\n📊 Your top 5 expenses are significant. Review if they align with your priorities.");
+                }
             }
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε έξοδα ανά κατηγορία",
+                    "Πώς μπορώ να μειώσω τα έξοδα;",
+                    "Ορισμός ορίων προϋπολογισμού"
+                }
+                : new List<string>
+                {
+                    "Show spending by category",
+                    "How can I reduce expenses?",
+                    "Set budget limits"
+                };
 
             return new ChatbotResponse
             {
@@ -1400,12 +1993,7 @@ namespace YouAndMeExpensesAPI.Services
                     totalMonthExpenses,
                     avgTopFive
                 },
-                QuickActions = new List<string>
-                {
-                    "Show spending by category",
-                    "How can I reduce expenses?",
-                    "Set budget limits"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/expenses"
             };
         }
@@ -1413,7 +2001,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get loan status
         /// </summary>
-        private async Task<ChatbotResponse> GetLoanStatusAsync(string userId)
+        private async Task<ChatbotResponse> GetLoanStatusAsync(string userId, string language = "en")
         {
             var loans = await _dbContext.Loans
                 .Where(l => l.UserId == userId)
@@ -1424,19 +2012,33 @@ namespace YouAndMeExpensesAPI.Services
 
             if (!activeLoans.Any())
             {
-                return new ChatbotResponse
-                {
-                    Message = "You have no active loans. Great job staying debt-free! 🎉",
-                    Type = "insight",
-                    QuickActions = new List<string>
+                var noLoansMessage = language == "el"
+                    ? "Δεν έχετε ενεργά δάνεια. Καλή δουλειά που παραμένετε χρέος-ελεύθεροι! 🎉"
+                    : "You have no active loans. Great job staying debt-free! 🎉";
+                
+                var noLoansQuickActions = language == "el"
+                    ? new List<string>
+                    {
+                        "Προβολή ιστορικού δανείων",
+                        "Προσθήκη νέου δανείου"
+                    }
+                    : new List<string>
                     {
                         "View loan history",
                         "Add a new loan"
-                    }
+                    };
+
+                return new ChatbotResponse
+                {
+                    Message = noLoansMessage,
+                    Type = "insight",
+                    QuickActions = noLoansQuickActions
                 };
             }
 
-            var message = $"You have {activeLoans.Count} active loan(s) with a total of ${totalOwed:N2} remaining.";
+            var message = language == "el"
+                ? $"Έχετε {activeLoans.Count} ενεργό(ά) δάνειο(α) με συνολικό ποσό ${totalOwed:N2} που απομένει."
+                : $"You have {activeLoans.Count} active loan(s) with a total of ${totalOwed:N2} remaining.";
             
             var nextPayment = activeLoans
                 .Where(l => l.NextPaymentDate.HasValue)
@@ -1445,20 +2047,36 @@ namespace YouAndMeExpensesAPI.Services
 
             if (nextPayment != null)
             {
-                message += $"\n\nNext payment: ${nextPayment.InstallmentAmount ?? nextPayment.RemainingAmount:N2} due on {nextPayment.NextPaymentDate:MMM dd, yyyy}";
+                if (language == "el")
+                {
+                    message += $"\n\nΕπόμενη πληρωμή: ${nextPayment.InstallmentAmount ?? nextPayment.RemainingAmount:N2} οφείλεται στις {nextPayment.NextPaymentDate:MMM dd, yyyy}";
+                }
+                else
+                {
+                    message += $"\n\nNext payment: ${nextPayment.InstallmentAmount ?? nextPayment.RemainingAmount:N2} due on {nextPayment.NextPaymentDate:MMM dd, yyyy}";
+                }
             }
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε πρόγραμμα πληρωμών",
+                    "Καταγραφή πληρωμής",
+                    "Προβολή λεπτομερειών δανείου"
+                }
+                : new List<string>
+                {
+                    "Show payment schedule",
+                    "Record a payment",
+                    "View loan details"
+                };
 
             return new ChatbotResponse
             {
                 Message = message,
                 Type = "text",
                 Data = new { activeCount = activeLoans.Count, totalOwed, nextPayment },
-                QuickActions = new List<string>
-                {
-                    "Show payment schedule",
-                    "Record a payment",
-                    "View loan details"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/loans"
             };
         }
@@ -1466,8 +2084,88 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Get comprehensive help response with all capabilities
         /// </summary>
-        private ChatbotResponse GetHelpResponse()
+        private ChatbotResponse GetHelpResponse(string language = "en")
         {
+            if (language == "el")
+            {
+                return new ChatbotResponse
+                {
+                    Message = @"Γεια σας! 👋 Είμαι ο AI οικονομικός σας βοηθός. Μπορώ να σας βοηθήσω να κατανοήσετε και να βελτιστοποιήσετε τις οικονομίες σας!
+
+💰 **Έξοδα & Έσοδα**
+• ""Πόσο ξόδεψα αυτόν τον μήνα;""
+• ""Τι ξόδεψα για τρόφιμα;""
+• ""Δείξε μου τα κύρια έξοδά μου""
+• ""Ποιο είναι το τρέχον υπόλοιπό μου;""
+• ""Ποιος είναι ο ημερήσιος μέσος όρος των δαπανών μου;""
+
+📊 **Αναλύσεις & Στατιστικά**
+• ""Δώσε μου ανάλυση των δαπανών""
+• ""Πρόβλεψη των δαπανών μου για αυτόν τον μήνα""
+• ""Σύγκρινε με τον προηγούμενο μήνα""
+• ""Δείξε μου τάσεις δαπανών""
+• ""Ποιες είναι οι κύριες κατηγορίες μου;""
+
+🎯 **Προϋπολογισμοί & Στόχοι**
+• ""Είμαι εντός προϋπολογισμού;""
+• ""Ποια είναι η κατάσταση του προϋπολογισμού μου;""
+• ""Πώς είναι οι στόχοι αποταμίευσης μου;""
+• ""Δείξε μου την πρόοδο των στόχων""
+
+💑 **Σύγκριση Συνεργατών**
+• ""Ποιος ξόδεψε περισσότερο αυτόν τον μήνα;""
+• ""Σύγκρινε τις δαπάνες των συνεργατών""
+• ""Δείξε κοινά έξοδα""
+
+💳 **Δάνεια & Χρέη**
+• ""Ποια είναι η κατάσταση των δανείων μου;""
+• ""Πότε είναι η επόμενη πληρωμή μου;""
+• ""Σύνοψη συνολικών δανείων""
+
+💡 **Συμβουλές Αποταμίευσης**
+• ""Πώς μπορώ να αποταμιεύσω χρήματα;""
+• ""Δώσε μου συμβουλές αποταμίευσης""
+• ""Πώς να μειώσω τις δαπάνες;""
+
+🚀 **ΙΣΧΥΡΑ ΣΕΝΑΡΙΑ ΤΙ-ΑΝ:**
+
+💰 **Σενάρια Δανείων:**
+• ""Αν πληρώσω $100 περισσότερο στο δάνειό μου, πότε θα ξεπληρωθεί;""
+• ""Πώς μπορώ να ξεπληρώσω το δάνειό μου γρηγορότερα;""
+• ""Πότε θα είμαι χρέος-ελεύθερος;""
+• ""Δείξε σενάρια ξεπληρωμής δανείου""
+
+📉 **Μείωση Δαπανών:**
+• ""Τι θα γίνει αν μειώσω τις δαπάνες μου κατά 20%;""
+• ""Τι θα γίνει αν κόψω τα έξοδα φαγητού;""
+• ""Προσομοίωση μείωσης τροφίμων κατά $100""
+• ""Βελτιστοποίηση των δαπανών ψυχαγωγίας""
+
+🎯 **Δόμηση Πλούτου:**
+• ""Δείξε μου τα οικονομικά μου ορόσημα""
+• ""Πότε θα φτάσω $10,000 σε αποταμιεύσεις;""
+• ""Πρόβλεψη πλούτου σε 10 χρόνια""
+• ""Δείξε μου την προβολή πλούτου""
+
+💪 **Βελτιστοποίηση Κατηγοριών:**
+• ""Πώς μπορώ να βελτιστοποιήσω τα τρόφιμά μου;""
+• ""Μείωση των εξόδων εστιατορίου""
+• ""Χαμηλότερα έξοδα μεταφορικών""
+
+Χρησιμοποιώ φυσική γλώσσα και προηγμένους υπολογισμούς για να σας βοηθήσω να πάρετε έξυπνες οικονομικές αποφάσεις! 🤖✨
+
+**Ο Πλήρης Οικονομικός σας Ειδικός:** Από τις καθημερινές δαπάνες έως τη μακροπρόθεσμη δόμηση πλούτου!",
+                    Type = "text",
+                    QuickActions = new List<string>
+                    {
+                        "Βαθμολογία οικονομικής υγείας",
+                        "Ανάλυση συνδρομών",
+                        "Συμβουλές φορολογικού σχεδιασμού",
+                        "Βασικά επενδυτικά"
+                    }
+                };
+            }
+
             return new ChatbotResponse
             {
                 Message = @"Hi! 👋 I'm your AI financial assistant. I can help you understand and optimize your finances!
@@ -1592,70 +2290,134 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Get intelligent unknown response with context-aware suggestions
         /// </summary>
-        private ChatbotResponse GetUnknownResponse(string? query = null, List<ChatMessage>? history = null)
+        private ChatbotResponse GetUnknownResponse(string? query = null, List<ChatMessage>? history = null, string language = "en")
         {
-            var suggestions = new List<string>
-            {
-                "How much did I spend this month?",
-                "What's my current balance?",
-                "Give me spending insights"
-            };
+            var suggestions = language == "el"
+                ? new List<string>
+                {
+                    "Πόσο ξόδεψα αυτόν τον μήνα;",
+                    "Ποιο είναι το τρέχον υπόλοιπό μου;",
+                    "Δώσε μου ανάλυση των δαπανών"
+                }
+                : new List<string>
+                {
+                    "How much did I spend this month?",
+                    "What's my current balance?",
+                    "Give me spending insights"
+                };
 
             // If we have a query, try to provide more relevant suggestions
             if (!string.IsNullOrWhiteSpace(query))
             {
                 var queryLower = query.ToLowerInvariant();
                 
-                // Detect potential intent keywords and suggest relevant questions
-                if (Regex.IsMatch(queryLower, @"\b(spend|spent|expense|cost|money)\b"))
+                if (language == "el")
                 {
-                    suggestions = new List<string>
+                    // Greek keyword detection
+                    if (Regex.IsMatch(queryLower, @"\b(ξόδεψα|έξοδα|κόστος|χρήματα|δαπάνες)\b"))
                     {
-                        "How much did I spend this month?",
-                        "What are my top expenses?",
-                        "Show me spending by category",
-                        "Compare with last month"
-                    };
+                        suggestions = new List<string>
+                        {
+                            "Πόσο ξόδεψα αυτόν τον μήνα;",
+                            "Ποια είναι τα κύρια έξοδά μου;",
+                            "Δείξε μου έξοδα ανά κατηγορία",
+                            "Σύγκρινε με τον προηγούμενο μήνα"
+                        };
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(υπόλοιπο|αποταμίευση|αποταμιεύω|αριστερά|υπόλοιπα)\b"))
+                    {
+                        suggestions = new List<string>
+                        {
+                            "Ποιο είναι το τρέχον υπόλοιπό μου;",
+                            "Πόσο έχω αποταμιεύσει;",
+                            "Δείξε τους στόχους αποταμίευσης μου",
+                            "Ποια είναι η καθαρή αξία μου;"
+                        };
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(δάνειο|χρέος|οφείλω|πληρωμή)\b"))
+                    {
+                        suggestions = new List<string>
+                        {
+                            "Ποια είναι η κατάσταση των δανείων μου;",
+                            "Πότε είναι η επόμενη πληρωμή μου;",
+                            "Πότε θα είμαι χρέος-ελεύθερος;",
+                            "Δείξε σενάρια ξεπληρωμής δανείου"
+                        };
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(προϋπολογισμός|όριο|πάνω|εντός)\b"))
+                    {
+                        suggestions = new List<string>
+                        {
+                            "Είμαι εντός προϋπολογισμού;",
+                            "Ποια είναι η κατάσταση του προϋπολογισμού μου;",
+                            "Δείξε προϋπολογισμό ανά κατηγορία",
+                            "Πώς μπορώ να βελτιστοποιήσω τον προϋπολογισμό μου;"
+                        };
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(έσοδα|κερδίζω|μισθός|αμοιβή)\b"))
+                    {
+                        suggestions = new List<string>
+                        {
+                            "Ποια είναι τα συνολικά έσοδά μου;",
+                            "Δείξε πηγές εσόδων",
+                            "Σύγκρινε έσοδα έναντι εξόδων",
+                            "Ποιος είναι ο ρυθμός αποταμίευσης μου;"
+                        };
+                    }
                 }
-                else if (Regex.IsMatch(queryLower, @"\b(balance|saving|save|left|remaining)\b"))
+                else
                 {
-                    suggestions = new List<string>
+                    // English keyword detection
+                    if (Regex.IsMatch(queryLower, @"\b(spend|spent|expense|cost|money)\b"))
                     {
-                        "What's my current balance?",
-                        "How much have I saved?",
-                        "Show my savings goals",
-                        "What's my net worth?"
-                    };
-                }
-                else if (Regex.IsMatch(queryLower, @"\b(loan|debt|owe|payment)\b"))
-                {
-                    suggestions = new List<string>
+                        suggestions = new List<string>
+                        {
+                            "How much did I spend this month?",
+                            "What are my top expenses?",
+                            "Show me spending by category",
+                            "Compare with last month"
+                        };
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(balance|saving|save|left|remaining)\b"))
                     {
-                        "What's my loan status?",
-                        "When is my next payment?",
-                        "When will I be debt-free?",
-                        "Show loan payoff scenarios"
-                    };
-                }
-                else if (Regex.IsMatch(queryLower, @"\b(budget|limit|over|within)\b"))
-                {
-                    suggestions = new List<string>
+                        suggestions = new List<string>
+                        {
+                            "What's my current balance?",
+                            "How much have I saved?",
+                            "Show my savings goals",
+                            "What's my net worth?"
+                        };
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(loan|debt|owe|payment)\b"))
                     {
-                        "Am I within budget?",
-                        "What's my budget status?",
-                        "Show budget by category",
-                        "How can I optimize my budget?"
-                    };
-                }
-                else if (Regex.IsMatch(queryLower, @"\b(income|earn|salary|wage)\b"))
-                {
-                    suggestions = new List<string>
+                        suggestions = new List<string>
+                        {
+                            "What's my loan status?",
+                            "When is my next payment?",
+                            "When will I be debt-free?",
+                            "Show loan payoff scenarios"
+                        };
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(budget|limit|over|within)\b"))
                     {
-                        "What's my total income?",
-                        "Show income sources",
-                        "Compare income vs expenses",
-                        "What's my savings rate?"
-                    };
+                        suggestions = new List<string>
+                        {
+                            "Am I within budget?",
+                            "What's my budget status?",
+                            "Show budget by category",
+                            "How can I optimize my budget?"
+                        };
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(income|earn|salary|wage)\b"))
+                    {
+                        suggestions = new List<string>
+                        {
+                            "What's my total income?",
+                            "Show income sources",
+                            "Compare income vs expenses",
+                            "What's my savings rate?"
+                        };
+                    }
                 }
 
                 // Use conversation history for better context
@@ -1664,22 +2426,42 @@ I use natural language and advanced calculations to help you make smart financia
                     var lastBotMessage = history.LastOrDefault(m => m.Role == "bot");
                     if (lastBotMessage != null)
                     {
-                        // If last response was about spending, suggest related questions
-                        if (lastBotMessage.Message.Contains("spent", StringComparison.OrdinalIgnoreCase))
+                        if (language == "el")
                         {
-                            suggestions.Insert(0, "Show me spending by category");
-                            suggestions.Insert(1, "What are my top expenses?");
+                            if (lastBotMessage.Message.Contains("ξόδεψα", StringComparison.OrdinalIgnoreCase) || 
+                                lastBotMessage.Message.Contains("έξοδα", StringComparison.OrdinalIgnoreCase))
+                            {
+                                suggestions.Insert(0, "Δείξε μου έξοδα ανά κατηγορία");
+                                suggestions.Insert(1, "Ποια είναι τα κύρια έξοδά μου;");
+                            }
+                        }
+                        else
+                        {
+                            if (lastBotMessage.Message.Contains("spent", StringComparison.OrdinalIgnoreCase))
+                            {
+                                suggestions.Insert(0, "Show me spending by category");
+                                suggestions.Insert(1, "What are my top expenses?");
+                            }
                         }
                     }
                 }
             }
 
-            var message = "I'm not sure I understand that question. 🤔\n\n";
-            message += "Here are some things I can help you with:\n";
+            var message = language == "el"
+                ? "Δεν είμαι σίγουρος ότι καταλαβαίνω αυτή την ερώτηση. 🤔\n\n"
+                : "I'm not sure I understand that question. 🤔\n\n";
+            
+            message += language == "el"
+                ? "Ακολουθούν μερικά πράγματα με τα οποία μπορώ να σας βοηθήσω:\n"
+                : "Here are some things I can help you with:\n";
+            
             message += $"• {suggestions[0]}\n";
             message += $"• {suggestions[1]}\n";
             message += $"• {suggestions[2]}\n\n";
-            message += "Or type **'help'** to see all my capabilities!";
+            
+            message += language == "el"
+                ? "Ή πληκτρολογήστε **'βοήθεια'** για να δείτε όλες τις δυνατότητές μου!"
+                : "Or type **'help'** to see all my capabilities!";
 
             return new ChatbotResponse
             {
@@ -1696,7 +2478,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Calculate loan payoff scenarios with extra payments
         /// </summary>
-        private async Task<ChatbotResponse> GetLoanPayoffScenarioAsync(string userId, string query)
+        private async Task<ChatbotResponse> GetLoanPayoffScenarioAsync(string userId, string query, string language = "en")
         {
             var loans = await _dbContext.Loans
                 .Where(l => l.UserId == userId && !l.IsSettled)
@@ -1866,7 +2648,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Calculate when user will be debt-free
         /// </summary>
-        private async Task<ChatbotResponse> GetDebtFreeTimelineAsync(string userId)
+        private async Task<ChatbotResponse> GetDebtFreeTimelineAsync(string userId, string language = "en")
         {
             var loans = await _dbContext.Loans
                 .Where(l => l.UserId == userId && !l.IsSettled)
@@ -1875,32 +2657,51 @@ I use natural language and advanced calculations to help you make smart financia
 
             if (!loans.Any())
             {
-                return new ChatbotResponse
-                {
-                    Message = "🎉 **You're already debt-free!** Congratulations!\n\nThis is a major financial milestone. Now you can focus on building wealth and achieving your financial goals! 💰\n\nConsider:\n• Building an emergency fund\n• Investing for the future\n• Setting ambitious savings goals",
-                    Type = "insight",
-                    QuickActions = new List<string>
+                var debtFreeMessage = language == "el"
+                    ? "🎉 **Είστε ήδη χρέος-ελεύθεροι!** Συγχαρητήρια!\n\nΑυτό είναι ένα σημαντικό οικονομικό ορόσημο. Τώρα μπορείτε να εστιάσετε στη δόμηση πλούτου και στην επίτευξη των οικονομικών σας στόχων! 💰\n\nΣκεφτείτε:\n• Δόμηση ταμείου έκτακτης ανάγκης\n• Επενδύσεις για το μέλλον\n• Ορισμός φιλόδοξων στόχων αποταμίευσης"
+                    : "🎉 **You're already debt-free!** Congratulations!\n\nThis is a major financial milestone. Now you can focus on building wealth and achieving your financial goals! 💰\n\nConsider:\n• Building an emergency fund\n• Investing for the future\n• Setting ambitious savings goals";
+                
+                var debtFreeQuickActions = language == "el"
+                    ? new List<string>
+                    {
+                        "Τι θα γίνει αν αποταμιεύσω περισσότερο;",
+                        "Δείξε προβολή πλούτου",
+                        "Δημιουργία στόχου αποταμίευσης"
+                    }
+                    : new List<string>
                     {
                         "What if I save more?",
                         "Show wealth projection",
                         "Create a savings goal"
-                    }
+                    };
+
+                return new ChatbotResponse
+                {
+                    Message = debtFreeMessage,
+                    Type = "insight",
+                    QuickActions = debtFreeQuickActions
                 };
             }
 
             var insights = new List<string>();
-            insights.Add("🎯 **Path to Debt Freedom**\n");
-
             var totalDebt = loans.Sum(l => l.RemainingAmount);
             var totalMonthlyPayment = loans.Sum(l => l.InstallmentAmount ?? 0);
-
-            insights.Add($"**Current Debt:** ${totalDebt:N2}");
-            insights.Add($"**Total Monthly Payments:** ${totalMonthlyPayment:N2}\n");
-
-            // Calculate debt-free timeline using debt avalanche method
             var sortedLoans = loans.OrderByDescending(l => l.InterestRate ?? 0).ToList();
-            
-            insights.Add("📅 **Debt Payoff Timeline (Avalanche Method):**\n");
+
+            if (language == "el")
+            {
+                insights.Add("🎯 **Διαδρομή προς την Ελευθερία από Χρέη**\n");
+                insights.Add($"**Τρέχον Χρέος:** ${totalDebt:N2}");
+                insights.Add($"**Συνολικές Μηνιαίες Πληρωμές:** ${totalMonthlyPayment:N2}\n");
+                insights.Add("📅 **Χρονοδιάγραμμα Ξεπληρωμής (Μέθοδος Χιονοστιβάδας):**\n");
+            }
+            else
+            {
+                insights.Add("🎯 **Path to Debt Freedom**\n");
+                insights.Add($"**Current Debt:** ${totalDebt:N2}");
+                insights.Add($"**Total Monthly Payments:** ${totalMonthlyPayment:N2}\n");
+                insights.Add("📅 **Debt Payoff Timeline (Avalanche Method):**\n");
+            }
 
             var currentMonth = 0;
             var totalInterestPaid = 0m;
@@ -1913,11 +2714,22 @@ I use natural language and advanced calculations to help you make smart financia
 
                 var payoffDate = DateTime.UtcNow.AddMonths(currentMonth + payoff.months);
                 
-                insights.Add($"📍 **{loan.Description ?? "Loan"}**");
-                insights.Add($"   Amount: ${loan.RemainingAmount:N2}");
-                insights.Add($"   Rate: {loan.InterestRate ?? 0:F2}%");
-                insights.Add($"   Payoff: {payoffDate:MMMM yyyy} ({payoff.months} months)");
-                insights.Add($"   Interest: ${payoff.totalInterest:N2}\n");
+                if (language == "el")
+                {
+                    insights.Add($"📍 **{loan.Description ?? "Δάνειο"}**");
+                    insights.Add($"   Ποσό: ${loan.RemainingAmount:N2}");
+                    insights.Add($"   Επιτόκιο: {loan.InterestRate ?? 0:F2}%");
+                    insights.Add($"   Ξεπληρωμή: {payoffDate:MMMM yyyy} ({payoff.months} μήνες)");
+                    insights.Add($"   Τόκοι: ${payoff.totalInterest:N2}\n");
+                }
+                else
+                {
+                    insights.Add($"📍 **{loan.Description ?? "Loan"}**");
+                    insights.Add($"   Amount: ${loan.RemainingAmount:N2}");
+                    insights.Add($"   Rate: {loan.InterestRate ?? 0:F2}%");
+                    insights.Add($"   Payoff: {payoffDate:MMMM yyyy} ({payoff.months} months)");
+                    insights.Add($"   Interest: ${payoff.totalInterest:N2}\n");
+                }
 
                 currentMonth += payoff.months;
                 totalInterestPaid += payoff.totalInterest;
@@ -1925,12 +2737,20 @@ I use natural language and advanced calculations to help you make smart financia
 
             var debtFreeDate = DateTime.UtcNow.AddMonths(currentMonth);
             
-            insights.Add($"🎉 **Debt-Free Date:** {debtFreeDate:MMMM dd, yyyy}");
-            insights.Add($"   That's **{currentMonth / 12} years {currentMonth % 12} months** from now!");
-            insights.Add($"   Total interest: ${totalInterestPaid:N2}\n");
-
-            // Accelerated scenarios
-            insights.Add("🚀 **Accelerate Your Timeline:**\n");
+            if (language == "el")
+            {
+                insights.Add($"🎉 **Ημερομηνία Ελευθερίας από Χρέη:** {debtFreeDate:MMMM dd, yyyy}");
+                insights.Add($"   Αυτό είναι **{currentMonth / 12} χρόνια {currentMonth % 12} μήνες** από τώρα!");
+                insights.Add($"   Συνολικοί τόκοι: ${totalInterestPaid:N2}\n");
+                insights.Add("🚀 **Επιτάχυνε το Χρονοδιάγραμμά σου:**\n");
+            }
+            else
+            {
+                insights.Add($"🎉 **Debt-Free Date:** {debtFreeDate:MMMM dd, yyyy}");
+                insights.Add($"   That's **{currentMonth / 12} years {currentMonth % 12} months** from now!");
+                insights.Add($"   Total interest: ${totalInterestPaid:N2}\n");
+                insights.Add("🚀 **Accelerate Your Timeline:**\n");
+            }
 
             var extraPayments = new[] { 50m, 100m, 200m, 500m };
             foreach (var extra in extraPayments)
@@ -1951,16 +2771,50 @@ I use natural language and advanced calculations to help you make smart financia
                 var interestSaved = totalInterestPaid - acceleratedInterest;
                 var newDebtFreeDate = DateTime.UtcNow.AddMonths(acceleratedMonths);
 
-                insights.Add($"💰 Extra **${extra}/month**: Debt-free by **{newDebtFreeDate:MMM yyyy}**");
-                insights.Add($"   ⏱️ Save {timeSaved} months • 💵 Save ${interestSaved:N2} interest\n");
+                if (language == "el")
+                {
+                    insights.Add($"💰 Επιπλέον **${extra}/μήνα**: Χρέος-ελεύθερος μέχρι **{newDebtFreeDate:MMM yyyy}**");
+                    insights.Add($"   ⏱️ Εξοικονόμηση {timeSaved} μηνών • 💵 Εξοικονόμηση ${interestSaved:N2} τόκων\n");
+                }
+                else
+                {
+                    insights.Add($"💰 Extra **${extra}/month**: Debt-free by **{newDebtFreeDate:MMM yyyy}**");
+                    insights.Add($"   ⏱️ Save {timeSaved} months • 💵 Save ${interestSaved:N2} interest\n");
+                }
             }
 
-            insights.Add("💡 **Smart Debt Strategies:**");
-            insights.Add("✓ Focus on highest interest rate loans first (Avalanche)");
-            insights.Add("✓ Make bi-weekly payments instead of monthly");
-            insights.Add("✓ Apply windfalls (bonuses, tax refunds) to debt");
-            insights.Add("✓ Round up payments to nearest $100");
-            insights.Add("✓ Avoid taking on new debt");
+            if (language == "el")
+            {
+                insights.Add("💡 **Έξυπνες Στρατηγικές Χρέους:**");
+                insights.Add("✓ Εστίαση πρώτα στα δάνεια με το υψηλότερο επιτόκιο (Χιονοστιβάδα)");
+                insights.Add("✓ Κάντε πληρωμές δύο φορές την εβδομάδα αντί για μηνιαία");
+                insights.Add("✓ Εφαρμόστε απροσδόκητα κέρδη (μπόνους, επιστροφές φόρων) στο χρέος");
+                insights.Add("✓ Στρογγυλοποίηση πληρωμών στο πλησιέστερο $100");
+                insights.Add("✓ Αποφύγετε τη λήψη νέων χρεών");
+            }
+            else
+            {
+                insights.Add("💡 **Smart Debt Strategies:**");
+                insights.Add("✓ Focus on highest interest rate loans first (Avalanche)");
+                insights.Add("✓ Make bi-weekly payments instead of monthly");
+                insights.Add("✓ Apply windfalls (bonuses, tax refunds) to debt");
+                insights.Add("✓ Round up payments to nearest $100");
+                insights.Add("✓ Avoid taking on new debt");
+            }
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε σενάρια δανείων",
+                    "Τι θα γίνει αν πληρώσω επιπλέον;",
+                    "Πώς μπορώ να αποταμιεύσω χρήματα;"
+                }
+                : new List<string>
+                {
+                    "Show loan scenarios",
+                    "What if I pay extra?",
+                    "How can I save money?"
+                };
 
             return new ChatbotResponse
             {
@@ -1974,12 +2828,7 @@ I use natural language and advanced calculations to help you make smart financia
                     totalInterestPaid,
                     loans = sortedLoans
                 },
-                QuickActions = new List<string>
-                {
-                    "Show loan scenarios",
-                    "What if I pay extra?",
-                    "How can I save money?"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/loans"
             };
         }
@@ -1987,7 +2836,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// What-if scenario for reducing spending
         /// </summary>
-        private async Task<ChatbotResponse> GetWhatIfReduceSpendingAsync(string userId, string query)
+        private async Task<ChatbotResponse> GetWhatIfReduceSpendingAsync(string userId, string query, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -2113,7 +2962,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Category optimization scenarios
         /// </summary>
-        private async Task<ChatbotResponse> GetCategoryOptimizationAsync(string userId, string query)
+        private async Task<ChatbotResponse> GetCategoryOptimizationAsync(string userId, string query, string language = "en")
         {
             var category = ExtractCategory(query);
             var now = DateTime.UtcNow;
@@ -2279,7 +3128,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Calculate financial milestones and timelines
         /// </summary>
-        private async Task<ChatbotResponse> GetFinancialMilestonesAsync(string userId)
+        private async Task<ChatbotResponse> GetFinancialMilestonesAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -2416,7 +3265,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Project long-term wealth accumulation
         /// </summary>
-        private async Task<ChatbotResponse> GetWealthProjectionAsync(string userId)
+        private async Task<ChatbotResponse> GetWealthProjectionAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -2587,7 +3436,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Tax planning and optimization tips based on spending patterns
         /// </summary>
-        private async Task<ChatbotResponse> GetTaxPlanningTipsAsync(string userId)
+        private async Task<ChatbotResponse> GetTaxPlanningTipsAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var yearStart = new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -2704,7 +3553,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Calculate comprehensive financial health score
         /// </summary>
-        private async Task<ChatbotResponse> GetFinancialHealthScoreAsync(string userId)
+        private async Task<ChatbotResponse> GetFinancialHealthScoreAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -2855,7 +3704,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Analyze subscriptions and recurring expenses
         /// </summary>
-        private async Task<ChatbotResponse> GetSubscriptionAnalysisAsync(string userId)
+        private async Task<ChatbotResponse> GetSubscriptionAnalysisAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var threeMonthsAgo = now.AddMonths(-3);
@@ -3000,7 +3849,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Bill negotiation strategies
         /// </summary>
-        private ChatbotResponse GetBillNegotiationTipsAsync()
+        private ChatbotResponse GetBillNegotiationTipsAsync(string language = "en")
         {
             var insights = new List<string>();
             insights.Add("💬 **Bill Negotiation Strategies**\n");
@@ -3598,21 +4447,36 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Extract time period from query with enhanced pattern matching
         /// </summary>
-        private string ExtractTimePeriod(string query)
+        private string ExtractTimePeriod(string query, string language = "en")
         {
             // Check for specific dates first
             var datePattern = @"(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})";
             if (Regex.IsMatch(query, datePattern)) return "specific_date";
 
-            // Relative time periods with better matching
-            if (Regex.IsMatch(query, @"\b(today|now|current)\b", RegexOptions.IgnoreCase)) return "today";
-            if (Regex.IsMatch(query, @"\b(yesterday|last day)\b", RegexOptions.IgnoreCase)) return "yesterday";
-            if (Regex.IsMatch(query, @"\b(this week|current week|week|7 days|past week)\b", RegexOptions.IgnoreCase)) return "this week";
-            if (Regex.IsMatch(query, @"\b(last week|previous week)\b", RegexOptions.IgnoreCase)) return "last week";
-            if (Regex.IsMatch(query, @"\b(this month|current month|month|30 days|past month)\b", RegexOptions.IgnoreCase)) return "this month";
-            if (Regex.IsMatch(query, @"\b(last month|previous month)\b", RegexOptions.IgnoreCase)) return "last month";
-            if (Regex.IsMatch(query, @"\b(this year|current year|year|365 days|past year)\b", RegexOptions.IgnoreCase)) return "this year";
-            if (Regex.IsMatch(query, @"\b(last year|previous year)\b", RegexOptions.IgnoreCase)) return "last year";
+            if (language == "el")
+            {
+                // Greek time periods
+                if (Regex.IsMatch(query, @"\b(σήμερα|τώρα|τρέχον)\b", RegexOptions.IgnoreCase)) return "today";
+                if (Regex.IsMatch(query, @"\b(χθες|προχθές)\b", RegexOptions.IgnoreCase)) return "yesterday";
+                if (Regex.IsMatch(query, @"\b(αυτή.*εβδομάδα|τρέχουσα.*εβδομάδα|εβδομάδα|7.*ημέρες|τελευταία.*εβδομάδα)\b", RegexOptions.IgnoreCase)) return "this week";
+                if (Regex.IsMatch(query, @"\b(προηγούμενη.*εβδομάδα|πέρυσι.*εβδομάδα)\b", RegexOptions.IgnoreCase)) return "last week";
+                if (Regex.IsMatch(query, @"\b(αυτό.*μήνα|τρέχον.*μήνα|μήνας|30.*ημέρες|τελευταίο.*μήνα)\b", RegexOptions.IgnoreCase)) return "this month";
+                if (Regex.IsMatch(query, @"\b(προηγούμενος.*μήνας|πέρυσι.*μήνα)\b", RegexOptions.IgnoreCase)) return "last month";
+                if (Regex.IsMatch(query, @"\b(αυτό.*έτος|τρέχον.*έτος|έτος|365.*ημέρες|τελευταίο.*έτος)\b", RegexOptions.IgnoreCase)) return "this year";
+                if (Regex.IsMatch(query, @"\b(προηγούμενο.*έτος|πέρυσι.*έτος)\b", RegexOptions.IgnoreCase)) return "last year";
+            }
+            else
+            {
+                // English time periods with better matching
+                if (Regex.IsMatch(query, @"\b(today|now|current)\b", RegexOptions.IgnoreCase)) return "today";
+                if (Regex.IsMatch(query, @"\b(yesterday|last day)\b", RegexOptions.IgnoreCase)) return "yesterday";
+                if (Regex.IsMatch(query, @"\b(this week|current week|week|7 days|past week)\b", RegexOptions.IgnoreCase)) return "this week";
+                if (Regex.IsMatch(query, @"\b(last week|previous week)\b", RegexOptions.IgnoreCase)) return "last week";
+                if (Regex.IsMatch(query, @"\b(this month|current month|month|30 days|past month)\b", RegexOptions.IgnoreCase)) return "this month";
+                if (Regex.IsMatch(query, @"\b(last month|previous month)\b", RegexOptions.IgnoreCase)) return "last month";
+                if (Regex.IsMatch(query, @"\b(this year|current year|year|365 days|past year)\b", RegexOptions.IgnoreCase)) return "this year";
+                if (Regex.IsMatch(query, @"\b(last year|previous year)\b", RegexOptions.IgnoreCase)) return "last year";
+            }
             if (Regex.IsMatch(query, @"\b(\d+)\s*(days?|weeks?|months?|years?)\s*(ago|back)\b", RegexOptions.IgnoreCase)) 
             {
                 var match = Regex.Match(query, @"(\d+)\s*(days?|weeks?|months?|years?)", RegexOptions.IgnoreCase);
@@ -3781,34 +4645,37 @@ I use natural language and advanced calculations to help you make smart financia
         // PLACEHOLDER METHODS (delegate to other methods)
         // ============================================
 
-        private async Task<ChatbotResponse> GetMonthlySpendingAsync(string userId) => 
-            await GetTotalSpendingAsync(userId, "this month");
+        private async Task<ChatbotResponse> GetMonthlySpendingAsync(string userId, string language = "en") => 
+            await GetTotalSpendingAsync(userId, language == "el" ? "αυτόν τον μήνα" : "this month", language);
         
-        private async Task<ChatbotResponse> GetDailyAverageAsync(string userId)
+        private async Task<ChatbotResponse> GetDailyAverageAsync(string userId, string language = "en")
         {
             var analytics = await _analyticsService.GetDashboardAnalyticsAsync(userId);
             var avgDaily = DateTime.UtcNow.Day > 0 ? analytics.CurrentMonthExpenses / DateTime.UtcNow.Day : 0;
+            var message = language == "el"
+                ? $"Ο μέσος ημερήσιος όρος των δαπανών σας αυτόν τον μήνα είναι ${avgDaily:N2}"
+                : $"Your average daily spending this month is ${avgDaily:N2}";
             return new ChatbotResponse
             {
-                Message = $"Your average daily spending this month is ${avgDaily:N2}",
+                Message = message,
                 Type = "text",
                 Data = new { averageDaily = avgDaily, totalExpenses = analytics.CurrentMonthExpenses, daysElapsed = DateTime.UtcNow.Day }
             };
         }
         
-        private async Task<ChatbotResponse> GetTotalIncomeAsync(string userId) => 
-            await GetCurrentBalanceAsync(userId);
+        private async Task<ChatbotResponse> GetTotalIncomeAsync(string userId, string language = "en") => 
+            await GetCurrentBalanceAsync(userId, language);
         
-        private async Task<ChatbotResponse> GetIncomeSourcesAsync(string userId) => 
-            await GetCurrentBalanceAsync(userId);
+        private async Task<ChatbotResponse> GetIncomeSourcesAsync(string userId, string language = "en") => 
+            await GetCurrentBalanceAsync(userId, language);
         
-        private async Task<ChatbotResponse> GetSavingsAsync(string userId) => 
-            await GetCurrentBalanceAsync(userId);
+        private async Task<ChatbotResponse> GetSavingsAsync(string userId, string language = "en") => 
+            await GetCurrentBalanceAsync(userId, language);
         
         /// <summary>
         /// Compare spending between partners with fair analysis
         /// </summary>
-        private async Task<ChatbotResponse> ComparePartnersAsync(string userId)
+        private async Task<ChatbotResponse> ComparePartnersAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -3821,16 +4688,29 @@ I use natural language and advanced calculations to help you make smart financia
 
             if (!transactions.Any())
             {
-                return new ChatbotResponse
-                {
-                    Message = "I couldn't find any expenses with partner information. Make sure to set the 'Paid By' field when recording expenses to track partner spending! 💑",
-                    Type = "text",
-                    QuickActions = new List<string>
+                var noPartnerMessage = language == "el"
+                    ? "Δεν βρήκα κανένα έξοδο με πληροφορίες συνεργάτη. Βεβαιωθείτε ότι ορίζετε το πεδίο 'Πληρώθηκε από' κατά την καταγραφή εξόδων για να παρακολουθείτε τις δαπάνες του συνεργάτη! 💑"
+                    : "I couldn't find any expenses with partner information. Make sure to set the 'Paid By' field when recording expenses to track partner spending! 💑";
+                
+                var noPartnerQuickActions = language == "el"
+                    ? new List<string>
+                    {
+                        "Δείξε τα έξοδά μου",
+                        "Πώς να παρακολουθήσω κοινά έξοδα;",
+                        "Ποια είναι η συνολική δαπάνη μου;"
+                    }
+                    : new List<string>
                     {
                         "Show my expenses",
                         "How to track shared expenses?",
                         "What's my total spending?"
-                    },
+                    };
+
+                return new ChatbotResponse
+                {
+                    Message = noPartnerMessage,
+                    Type = "text",
+                    QuickActions = noPartnerQuickActions,
                     ActionLink = "/expenses"
                 };
             }
@@ -3854,72 +4734,150 @@ I use natural language and advanced calculations to help you make smart financia
                 .ToList();
 
             var insights = new List<string>();
-            insights.Add("💑 **Partner Spending Comparison**\n");
-
             var totalSpending = partnerGroups.Sum(p => p.TotalSpent);
             
-            insights.Add($"**Total Household Spending:** ${totalSpending:N2}\n");
-
-            foreach (var partner in partnerGroups)
+            if (language == "el")
             {
-                var percentage = totalSpending > 0 ? (partner.TotalSpent / totalSpending) * 100 : 0;
-                
-                insights.Add($"👤 **{partner.Partner}**");
-                insights.Add($"   Total: ${partner.TotalSpent:N2} ({percentage:F1}%)");
-                insights.Add($"   Transactions: {partner.TransactionCount}");
-                insights.Add($"   Average: ${partner.AvgPerTransaction:N2} per transaction");
+                insights.Add("💑 **Σύγκριση Δαπανών Συνεργατών**\n");
+                insights.Add($"**Συνολικές Οικογενειακές Δαπάνες:** ${totalSpending:N2}\n");
 
-                if (partner.Categories.Any())
-                {
-                    insights.Add($"   Top Categories:");
-                    foreach (var cat in partner.Categories)
-                    {
-                        var catEmoji = GetCategoryEmoji(cat.Category);
-                        insights.Add($"     {catEmoji} {cat.Category}: ${cat.Amount:N2}");
-                    }
-                }
-                insights.Add(""); // Empty line
-            }
-
-            // Fair analysis
-            insights.Add("📊 **Analysis:**");
-            
-            if (partnerGroups.Count >= 2)
-            {
-                var difference = partnerGroups[0].TotalSpent - partnerGroups[1].TotalSpent;
-                var percentDiff = partnerGroups[1].TotalSpent > 0 
-                    ? (difference / partnerGroups[1].TotalSpent) * 100 
-                    : 0;
-
-                if (Math.Abs(percentDiff) < 10)
-                {
-                    insights.Add("✅ Spending is fairly balanced between partners!");
-                }
-                else
-                {
-                    insights.Add($"📊 {partnerGroups[0].Partner} spent ${difference:N2} more ({Math.Abs(percentDiff):F1}% difference)");
-                }
-
-                // Calculate suggested split
-                var idealSplit = totalSpending / 2;
-                insights.Add($"\n💰 **50/50 Split Reference:**");
-                insights.Add($"   Each should spend: ${idealSplit:N2}");
-                
                 foreach (var partner in partnerGroups)
                 {
-                    var splitDiff = partner.TotalSpent - idealSplit;
-                    if (splitDiff > 0)
+                    var percentage = totalSpending > 0 ? (partner.TotalSpent / totalSpending) * 100 : 0;
+                    
+                    insights.Add($"👤 **{partner.Partner}**");
+                    insights.Add($"   Σύνολο: ${partner.TotalSpent:N2} ({percentage:F1}%)");
+                    insights.Add($"   Συναλλαγές: {partner.TransactionCount}");
+                    insights.Add($"   Μέσος όρος: ${partner.AvgPerTransaction:N2} ανά συναλλαγή");
+
+                    if (partner.Categories.Any())
                     {
-                        insights.Add($"   {partner.Partner}: ${splitDiff:N2} over even split");
+                        insights.Add($"   Κύριες Κατηγορίες:");
+                        foreach (var cat in partner.Categories)
+                        {
+                            var catEmoji = GetCategoryEmoji(cat.Category);
+                            insights.Add($"     {catEmoji} {cat.Category}: ${cat.Amount:N2}");
+                        }
+                    }
+                    insights.Add("");
+                }
+
+                insights.Add("📊 **Ανάλυση:**");
+                
+                if (partnerGroups.Count >= 2)
+                {
+                    var difference = partnerGroups[0].TotalSpent - partnerGroups[1].TotalSpent;
+                    var percentDiff = partnerGroups[1].TotalSpent > 0 
+                        ? (difference / partnerGroups[1].TotalSpent) * 100 
+                        : 0;
+
+                    if (Math.Abs(percentDiff) < 10)
+                    {
+                        insights.Add("✅ Οι δαπάνες είναι αρκετά ισορροπημένες μεταξύ των συνεργατών!");
                     }
                     else
                     {
-                        insights.Add($"   {partner.Partner}: ${Math.Abs(splitDiff):N2} under even split");
+                        insights.Add($"📊 Ο/Η {partnerGroups[0].Partner} ξόδεψε ${difference:N2} περισσότερο ({Math.Abs(percentDiff):F1}% διαφορά)");
+                    }
+
+                    var idealSplit = totalSpending / 2;
+                    insights.Add($"\n💰 **Αναφορά Διαίρεσης 50/50:**");
+                    insights.Add($"   Κάθε ένας/μία θα έπρεπε να ξοδέψει: ${idealSplit:N2}");
+                    
+                    foreach (var partner in partnerGroups)
+                    {
+                        var splitDiff = partner.TotalSpent - idealSplit;
+                        if (splitDiff > 0)
+                        {
+                            insights.Add($"   {partner.Partner}: ${splitDiff:N2} πάνω από την ίση διαίρεση");
+                        }
+                        else
+                        {
+                            insights.Add($"   {partner.Partner}: ${Math.Abs(splitDiff):N2} κάτω από την ίση διαίρεση");
+                        }
                     }
                 }
+
+                insights.Add($"\n💡 Θυμηθείτε: Το δίκαιο δεν σημαίνει πάντα ίσο. Σκεφτείτε τους λόγους εσόδων και τις ατομικές ανάγκες!");
+            }
+            else
+            {
+                insights.Add("💑 **Partner Spending Comparison**\n");
+                insights.Add($"**Total Household Spending:** ${totalSpending:N2}\n");
+
+                foreach (var partner in partnerGroups)
+                {
+                    var percentage = totalSpending > 0 ? (partner.TotalSpent / totalSpending) * 100 : 0;
+                    
+                    insights.Add($"👤 **{partner.Partner}**");
+                    insights.Add($"   Total: ${partner.TotalSpent:N2} ({percentage:F1}%)");
+                    insights.Add($"   Transactions: {partner.TransactionCount}");
+                    insights.Add($"   Average: ${partner.AvgPerTransaction:N2} per transaction");
+
+                    if (partner.Categories.Any())
+                    {
+                        insights.Add($"   Top Categories:");
+                        foreach (var cat in partner.Categories)
+                        {
+                            var catEmoji = GetCategoryEmoji(cat.Category);
+                            insights.Add($"     {catEmoji} {cat.Category}: ${cat.Amount:N2}");
+                        }
+                    }
+                    insights.Add("");
+                }
+
+                insights.Add("📊 **Analysis:**");
+                
+                if (partnerGroups.Count >= 2)
+                {
+                    var difference = partnerGroups[0].TotalSpent - partnerGroups[1].TotalSpent;
+                    var percentDiff = partnerGroups[1].TotalSpent > 0 
+                        ? (difference / partnerGroups[1].TotalSpent) * 100 
+                        : 0;
+
+                    if (Math.Abs(percentDiff) < 10)
+                    {
+                        insights.Add("✅ Spending is fairly balanced between partners!");
+                    }
+                    else
+                    {
+                        insights.Add($"📊 {partnerGroups[0].Partner} spent ${difference:N2} more ({Math.Abs(percentDiff):F1}% difference)");
+                    }
+
+                    var idealSplit = totalSpending / 2;
+                    insights.Add($"\n💰 **50/50 Split Reference:**");
+                    insights.Add($"   Each should spend: ${idealSplit:N2}");
+                    
+                    foreach (var partner in partnerGroups)
+                    {
+                        var splitDiff = partner.TotalSpent - idealSplit;
+                        if (splitDiff > 0)
+                        {
+                            insights.Add($"   {partner.Partner}: ${splitDiff:N2} over even split");
+                        }
+                        else
+                        {
+                            insights.Add($"   {partner.Partner}: ${Math.Abs(splitDiff):N2} under even split");
+                        }
+                    }
+                }
+
+                insights.Add($"\n💡 Remember: Fair doesn't always mean equal. Consider income ratios and individual needs!");
             }
 
-            insights.Add($"\n💡 Remember: Fair doesn't always mean equal. Consider income ratios and individual needs!");
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε κοινά έξοδα",
+                    "Ποια είναι τα κύρια έξοδά μας;",
+                    "Ρύθμιση προϋπολογισμού μαζί"
+                }
+                : new List<string>
+                {
+                    "Show shared expenses",
+                    "What are our top expenses?",
+                    "Set up budget together"
+                };
 
             return new ChatbotResponse
             {
@@ -3931,26 +4889,21 @@ I use natural language and advanced calculations to help you make smart financia
                     totalSpending,
                     splitEvenly = totalSpending / Math.Max(partnerGroups.Count, 1)
                 },
-                QuickActions = new List<string>
-                {
-                    "Show shared expenses",
-                    "What are our top expenses?",
-                    "Set up budget together"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/expenses"
             };
         }
         
-        private async Task<ChatbotResponse> GetTotalLoansAsync(string userId) => 
-            await GetLoanStatusAsync(userId);
+        private async Task<ChatbotResponse> GetTotalLoansAsync(string userId, string language = "en") => 
+            await GetLoanStatusAsync(userId, language);
         
-        private async Task<ChatbotResponse> GetNextPaymentAsync(string userId) => 
-            await GetLoanStatusAsync(userId);
+        private async Task<ChatbotResponse> GetNextPaymentAsync(string userId, string language = "en") => 
+            await GetLoanStatusAsync(userId, language);
         
         /// <summary>
         /// Get budget status with detailed analysis
         /// </summary>
-        private async Task<ChatbotResponse> GetBudgetStatusAsync(string userId)
+        private async Task<ChatbotResponse> GetBudgetStatusAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -3962,16 +4915,29 @@ I use natural language and advanced calculations to help you make smart financia
 
             if (!budgets.Any())
             {
-                return new ChatbotResponse
-                {
-                    Message = "You haven't set up any budgets yet. Would you like to create one? Setting budgets helps you stay on track with your financial goals! 🎯",
-                    Type = "suggestion",
-                    QuickActions = new List<string>
+                var noBudgetMessage = language == "el"
+                    ? "Δεν έχετε ορίσει κανέναν προϋπολογισμό ακόμα. Θα θέλατε να δημιουργήσετε έναν; Ο ορισμός προϋπολογισμών σας βοηθά να παραμείνετε εντός στόχου με τους οικονομικούς σας στόχους! 🎯"
+                    : "You haven't set up any budgets yet. Would you like to create one? Setting budgets helps you stay on track with your financial goals! 🎯";
+                
+                var noBudgetQuickActions = language == "el"
+                    ? new List<string>
+                    {
+                        "Πώς να δημιουργήσω προϋπολογισμό;",
+                        "Δείξε τις δαπάνες μου ανά κατηγορία",
+                        "Δώσε μου ανάλυση δαπανών"
+                    }
+                    : new List<string>
                     {
                         "How to create a budget?",
                         "Show my spending by category",
                         "Give me spending insights"
-                    },
+                    };
+
+                return new ChatbotResponse
+                {
+                    Message = noBudgetMessage,
+                    Type = "suggestion",
+                    QuickActions = noBudgetQuickActions,
                     ActionLink = "/budgets"
                 };
             }
@@ -3983,68 +4949,137 @@ I use natural language and advanced calculations to help you make smart financia
                 .ToListAsync();
 
             var insights = new List<string>();
-            insights.Add("💰 **Budget Status Report**\n");
-
             var totalBudget = budgets.Sum(b => b.Amount);
             var totalSpent = budgets.Sum(b => b.SpentAmount);
             var totalRemaining = totalBudget - totalSpent;
             var overallProgress = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-
-            insights.Add($"**Overall Progress:** {overallProgress:F1}%");
-            insights.Add($"• Total Budget: ${totalBudget:N2}");
-            insights.Add($"• Total Spent: ${totalSpent:N2}");
-            insights.Add($"• Remaining: ${totalRemaining:N2}\n");
-
             var overBudgetCount = 0;
             var atRiskCount = 0;
 
-            insights.Add("**Category Breakdown:**");
-            foreach (var budget in budgets.OrderByDescending(b => (b.SpentAmount / b.Amount) * 100))
+            if (language == "el")
             {
-                var progress = budget.Amount > 0 ? (budget.SpentAmount / budget.Amount) * 100 : 0;
-                var remaining = budget.Amount - budget.SpentAmount;
-                var emoji = GetBudgetStatusEmoji(progress);
+                insights.Add("💰 **Αναφορά Κατάστασης Προϋπολογισμού**\n");
+                insights.Add($"**Συνολική Πρόοδος:** {overallProgress:F1}%");
+                insights.Add($"• Συνολικός Προϋπολογισμός: ${totalBudget:N2}");
+                insights.Add($"• Συνολικά Ξοδεύτηκαν: ${totalSpent:N2}");
+                insights.Add($"• Υπόλοιπο: ${totalRemaining:N2}\n");
 
-                insights.Add($"\n{emoji} **{budget.Category}**");
-                insights.Add($"   ${budget.SpentAmount:N2} / ${budget.Amount:N2} ({progress:F0}%)");
-
-                if (progress > 100)
+                insights.Add("**Ανάλυση Κατηγοριών:**");
+                foreach (var budget in budgets.OrderByDescending(b => (b.SpentAmount / b.Amount) * 100))
                 {
-                    overBudgetCount++;
-                    insights.Add($"   ⚠️ Over budget by ${Math.Abs(remaining):N2}!");
+                    var progress = budget.Amount > 0 ? (budget.SpentAmount / budget.Amount) * 100 : 0;
+                    var remaining = budget.Amount - budget.SpentAmount;
+                    var emoji = GetBudgetStatusEmoji(progress);
+
+                    insights.Add($"\n{emoji} **{budget.Category}**");
+                    insights.Add($"   ${budget.SpentAmount:N2} / ${budget.Amount:N2} ({progress:F0}%)");
+
+                    if (progress > 100)
+                    {
+                        overBudgetCount++;
+                        insights.Add($"   ⚠️ Πάνω από τον προϋπολογισμό κατά ${Math.Abs(remaining):N2}!");
+                    }
+                    else if (progress > 80)
+                    {
+                        atRiskCount++;
+                        insights.Add($"   ⚡ Πλησιάζει! ${remaining:N2} απομένουν");
+                    }
+                    else
+                    {
+                        insights.Add($"   ✅ ${remaining:N2} απομένουν");
+                    }
                 }
-                else if (progress > 80)
+
+                insights.Add($"\n📊 **Σύνοψη:**");
+                if (overBudgetCount > 0)
                 {
-                    atRiskCount++;
-                    insights.Add($"   ⚡ Getting close! ${remaining:N2} remaining");
+                    insights.Add($"⚠️ {overBudgetCount} κατηγορία/κατηγορίες πάνω από τον προϋπολογισμό. Ώρα να εξετάσετε τις δαπάνες σας!");
+                }
+                else if (atRiskCount > 0)
+                {
+                    insights.Add($"⚡ {atRiskCount} κατηγορία/κατηγορίες πλησιάζουν τα όρια. Προσέξτε τις δαπάνες σας!");
                 }
                 else
                 {
-                    insights.Add($"   ✅ ${remaining:N2} left");
+                    insights.Add($"✅ Όλοι οι προϋπολογισμοί είναι υγιείς! Καλή δουλειά στη διαχείριση των οικονομικών σας! 🎉");
                 }
-            }
 
-            // Summary recommendation
-            insights.Add($"\n📊 **Summary:**");
-            if (overBudgetCount > 0)
-            {
-                insights.Add($"⚠️ {overBudgetCount} category/categories over budget. Time to review your spending!");
-            }
-            else if (atRiskCount > 0)
-            {
-                insights.Add($"⚡ {atRiskCount} category/categories nearing limits. Watch your spending!");
+                var daysLeft = DateTime.DaysInMonth(now.Year, now.Month) - now.Day;
+                if (totalRemaining > 0 && daysLeft > 0)
+                {
+                    var dailyAllowance = totalRemaining / daysLeft;
+                    insights.Add($"💡 Ημερήσια δαπάνη για το υπόλοιπο του μήνα: ${dailyAllowance:N2}");
+                }
             }
             else
             {
-                insights.Add($"✅ All budgets are healthy! Great job managing your finances! 🎉");
+                insights.Add("💰 **Budget Status Report**\n");
+                insights.Add($"**Overall Progress:** {overallProgress:F1}%");
+                insights.Add($"• Total Budget: ${totalBudget:N2}");
+                insights.Add($"• Total Spent: ${totalSpent:N2}");
+                insights.Add($"• Remaining: ${totalRemaining:N2}\n");
+
+                insights.Add("**Category Breakdown:**");
+                foreach (var budget in budgets.OrderByDescending(b => (b.SpentAmount / b.Amount) * 100))
+                {
+                    var progress = budget.Amount > 0 ? (budget.SpentAmount / budget.Amount) * 100 : 0;
+                    var remaining = budget.Amount - budget.SpentAmount;
+                    var emoji = GetBudgetStatusEmoji(progress);
+
+                    insights.Add($"\n{emoji} **{budget.Category}**");
+                    insights.Add($"   ${budget.SpentAmount:N2} / ${budget.Amount:N2} ({progress:F0}%)");
+
+                    if (progress > 100)
+                    {
+                        overBudgetCount++;
+                        insights.Add($"   ⚠️ Over budget by ${Math.Abs(remaining):N2}!");
+                    }
+                    else if (progress > 80)
+                    {
+                        atRiskCount++;
+                        insights.Add($"   ⚡ Getting close! ${remaining:N2} remaining");
+                    }
+                    else
+                    {
+                        insights.Add($"   ✅ ${remaining:N2} left");
+                    }
+                }
+
+                insights.Add($"\n📊 **Summary:**");
+                if (overBudgetCount > 0)
+                {
+                    insights.Add($"⚠️ {overBudgetCount} category/categories over budget. Time to review your spending!");
+                }
+                else if (atRiskCount > 0)
+                {
+                    insights.Add($"⚡ {atRiskCount} category/categories nearing limits. Watch your spending!");
+                }
+                else
+                {
+                    insights.Add($"✅ All budgets are healthy! Great job managing your finances! 🎉");
+                }
+
+                var daysLeft = DateTime.DaysInMonth(now.Year, now.Month) - now.Day;
+                if (totalRemaining > 0 && daysLeft > 0)
+                {
+                    var dailyAllowance = totalRemaining / daysLeft;
+                    insights.Add($"💡 Daily allowance for the rest of the month: ${dailyAllowance:N2}");
+                }
             }
 
-            var daysLeft = DateTime.DaysInMonth(now.Year, now.Month) - now.Day;
-            if (totalRemaining > 0 && daysLeft > 0)
-            {
-                var dailyAllowance = totalRemaining / daysLeft;
-                insights.Add($"💡 Daily allowance for the rest of the month: ${dailyAllowance:N2}");
-            }
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Πώς μπορώ να μειώσω τις δαπάνες;",
+                    "Δείξε κύρια έξοδα",
+                    "Προσαρμογή προϋπολογισμών μου"
+                }
+                : new List<string>
+                {
+                    "How can I reduce spending?",
+                    "Show top expenses",
+                    "Adjust my budgets"
+                };
 
             return new ChatbotResponse
             {
@@ -4059,14 +5094,9 @@ I use natural language and advanced calculations to help you make smart financia
                     overallProgress,
                     overBudgetCount,
                     atRiskCount,
-                    daysLeft
+                    daysLeft = DateTime.DaysInMonth(now.Year, now.Month) - now.Day
                 },
-                QuickActions = new List<string>
-                {
-                    "How can I reduce spending?",
-                    "Show top expenses",
-                    "Adjust my budgets"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/budgets"
             };
         }
@@ -4085,19 +5115,19 @@ I use natural language and advanced calculations to help you make smart financia
             };
         }
         
-        private Task<ChatbotResponse> GetBudgetCategoryAsync(string userId, string query) => 
-            Task.FromResult(GetUnknownResponse());
+        private Task<ChatbotResponse> GetBudgetCategoryAsync(string userId, string query, string language = "en") => 
+            Task.FromResult(GetUnknownResponse(null, null, language));
         
-        private async Task<ChatbotResponse> GetSpendingTrendsAsync(string userId) => 
-            await GetSpendingInsightsAsync(userId);
+        private async Task<ChatbotResponse> GetSpendingTrendsAsync(string userId, string language = "en") => 
+            await GetSpendingInsightsAsync(userId, language);
         
-        private async Task<ChatbotResponse> GetTopCategoriesAsync(string userId) => 
-            await GetSpendingInsightsAsync(userId);
+        private async Task<ChatbotResponse> GetTopCategoriesAsync(string userId, string language = "en") => 
+            await GetSpendingInsightsAsync(userId, language);
         
         /// <summary>
         /// Get savings goals progress with motivational insights
         /// </summary>
-        private async Task<ChatbotResponse> GetSavingsGoalsAsync(string userId)
+        private async Task<ChatbotResponse> GetSavingsGoalsAsync(string userId, string language = "en")
         {
             var goals = await _dbContext.SavingsGoals
                 .Where(g => g.UserId == userId && !g.IsAchieved)
@@ -4106,32 +5136,55 @@ I use natural language and advanced calculations to help you make smart financia
 
             if (!goals.Any())
             {
-                return new ChatbotResponse
-                {
-                    Message = "You don't have any active savings goals. Setting goals helps you stay motivated and reach your financial dreams! 🎯\n\nWould you like to create a savings goal?",
-                    Type = "suggestion",
-                    QuickActions = new List<string>
+                var noGoalsMessage = language == "el"
+                    ? "Δεν έχετε κανέναν ενεργό στόχο αποταμίευσης. Ο ορισμός στόχων σας βοηθά να παραμείνετε παρακινημένοι και να φτάσετε τα οικονομικά σας όνειρα! 🎯\n\nΘα θέλατε να δημιουργήσετε έναν στόχο αποταμίευσης;"
+                    : "You don't have any active savings goals. Setting goals helps you stay motivated and reach your financial dreams! 🎯\n\nWould you like to create a savings goal?";
+                
+                var noGoalsQuickActions = language == "el"
+                    ? new List<string>
+                    {
+                        "Πώς να ορίσω στόχο αποταμίευσης;",
+                        "Ποιο είναι το τρέχον υπόλοιπό μου;",
+                        "Δώσε μου συμβουλές αποταμίευσης"
+                    }
+                    : new List<string>
                     {
                         "How to set a savings goal?",
                         "What's my current balance?",
                         "Give me savings tips"
-                    },
+                    };
+
+                return new ChatbotResponse
+                {
+                    Message = noGoalsMessage,
+                    Type = "suggestion",
+                    QuickActions = noGoalsQuickActions,
                     ActionLink = "/savings-goals"
                 };
             }
 
             var insights = new List<string>();
-            insights.Add("🎯 **Savings Goals Progress**\n");
-
             var totalTarget = goals.Sum(g => g.TargetAmount);
             var totalCurrent = goals.Sum(g => g.CurrentAmount);
             var totalRemaining = totalTarget - totalCurrent;
             var overallProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
 
-            insights.Add($"**Overall Progress:** {overallProgress:F1}%");
-            insights.Add($"• Target: ${totalTarget:N2}");
-            insights.Add($"• Saved: ${totalCurrent:N2}");
-            insights.Add($"• Remaining: ${totalRemaining:N2}\n");
+            if (language == "el")
+            {
+                insights.Add("🎯 **Πρόοδος Στόχων Αποταμίευσης**\n");
+                insights.Add($"**Συνολική Πρόοδος:** {overallProgress:F1}%");
+                insights.Add($"• Στόχος: ${totalTarget:N2}");
+                insights.Add($"• Αποταμιεύτηκαν: ${totalCurrent:N2}");
+                insights.Add($"• Απομένουν: ${totalRemaining:N2}\n");
+            }
+            else
+            {
+                insights.Add("🎯 **Savings Goals Progress**\n");
+                insights.Add($"**Overall Progress:** {overallProgress:F1}%");
+                insights.Add($"• Target: ${totalTarget:N2}");
+                insights.Add($"• Saved: ${totalCurrent:N2}");
+                insights.Add($"• Remaining: ${totalRemaining:N2}\n");
+            }
 
             foreach (var goal in goals)
             {
@@ -4152,30 +5205,63 @@ I use natural language and advanced calculations to help you make smart financia
                         var dailySavingsNeeded = remaining / daysLeft;
                         var monthlySavingsNeeded = dailySavingsNeeded * 30;
                         
-                        insights.Add($"   📅 {daysLeft} days until {goal.TargetDate.Value:MMM dd, yyyy}");
-                        insights.Add($"   💰 Save ${dailySavingsNeeded:N2}/day or ${monthlySavingsNeeded:N2}/month to reach goal");
+                        if (language == "el")
+                        {
+                            insights.Add($"   📅 {daysLeft} ημέρες μέχρι {goal.TargetDate.Value:MMM dd, yyyy}");
+                            insights.Add($"   💰 Αποταμιεύστε ${dailySavingsNeeded:N2}/ημέρα ή ${monthlySavingsNeeded:N2}/μήνα για να φτάσετε τον στόχο");
 
-                        // Motivational messages
-                        if (progress >= 75)
-                        {
-                            insights.Add($"   🌟 Almost there! Just ${remaining:N2} to go!");
+                            // Motivational messages (Greek)
+                            if (progress >= 75)
+                            {
+                                insights.Add($"   🌟 Σχεδόν εκεί! Απομένουν μόνο ${remaining:N2}!");
+                            }
+                            else if (progress >= 50)
+                            {
+                                insights.Add($"   👍 Στη μέση! Συνεχίστε έτσι!");
+                            }
+                            else if (progress >= 25)
+                            {
+                                insights.Add($"   💪 Καλή αρχή! Μείνετε συνεπείς!");
+                            }
+                            else if (daysLeft < 30 && progress < 50)
+                            {
+                                insights.Add($"   ⚡ Ο χρόνος τελειώνει. Σκεφτείτε να αυξήσετε τον ρυθμό αποταμίευσης!");
+                            }
                         }
-                        else if (progress >= 50)
+                        else
                         {
-                            insights.Add($"   👍 Halfway there! Keep it up!");
-                        }
-                        else if (progress >= 25)
-                        {
-                            insights.Add($"   💪 Good start! Stay consistent!");
-                        }
-                        else if (daysLeft < 30 && progress < 50)
-                        {
-                            insights.Add($"   ⚡ Time is running short. Consider increasing your savings rate!");
+                            insights.Add($"   📅 {daysLeft} days until {goal.TargetDate.Value:MMM dd, yyyy}");
+                            insights.Add($"   💰 Save ${dailySavingsNeeded:N2}/day or ${monthlySavingsNeeded:N2}/month to reach goal");
+
+                            // Motivational messages
+                            if (progress >= 75)
+                            {
+                                insights.Add($"   🌟 Almost there! Just ${remaining:N2} to go!");
+                            }
+                            else if (progress >= 50)
+                            {
+                                insights.Add($"   👍 Halfway there! Keep it up!");
+                            }
+                            else if (progress >= 25)
+                            {
+                                insights.Add($"   💪 Good start! Stay consistent!");
+                            }
+                            else if (daysLeft < 30 && progress < 50)
+                            {
+                                insights.Add($"   ⚡ Time is running short. Consider increasing your savings rate!");
+                            }
                         }
                     }
                     else if (daysLeft <= 0)
                     {
-                        insights.Add($"   ⏰ Target date passed. Consider adjusting your goal!");
+                        if (language == "el")
+                        {
+                            insights.Add($"   ⏰ Η ημερομηνία στόχου πέρασε. Σκεφτείτε να προσαρμόσετε τον στόχο σας!");
+                        }
+                        else
+                        {
+                            insights.Add($"   ⏰ Target date passed. Consider adjusting your goal!");
+                        }
                     }
                 }
 
@@ -4183,26 +5269,65 @@ I use natural language and advanced calculations to help you make smart financia
             }
 
             // Recommendations
-            insights.Add("💡 **Tips to Reach Your Goals:**");
-            
-            if (overallProgress < 25)
+            if (language == "el")
             {
-                insights.Add("• Set up automatic transfers to your savings");
-                insights.Add("• Review and reduce unnecessary expenses");
-                insights.Add("• Consider a side income opportunity");
-            }
-            else if (overallProgress < 75)
-            {
-                insights.Add("• You're making great progress! Stay consistent");
-                insights.Add("• Look for extra savings in your budget");
-                insights.Add("• Celebrate small milestones to stay motivated");
+                insights.Add("💡 **Συμβουλές για να Φτάσετε τους Στόχους σας:**");
+                
+                if (overallProgress < 25)
+                {
+                    insights.Add("• Ρύθμιση αυτόματων μεταφορών στις αποταμιεύσεις σας");
+                    insights.Add("• Εξέταση και μείωση περιττών εξόδων");
+                    insights.Add("• Σκεφτείτε μια ευκαιρία επιπλέον εισοδήματος");
+                }
+                else if (overallProgress < 75)
+                {
+                    insights.Add("• Συνεχίστε την καλή δουλειά!");
+                    insights.Add("• Αυξήστε ελαφρώς τις μηνιαίες αποταμιεύσεις");
+                    insights.Add("• Παρακολουθήστε την πρόοδό σας");
+                }
+                else
+                {
+                    insights.Add("• Σχεδόν εκεί! Συνεχίστε την προσπάθεια!");
+                    insights.Add("• Σκεφτείτε να ορίσετε νέους στόχους");
+                }
             }
             else
             {
-                insights.Add("• You're so close! Keep pushing!");
-                insights.Add("• Consider preparing for your next goal");
-                insights.Add("• You're crushing it! 🎉");
+                insights.Add("💡 **Tips to Reach Your Goals:**");
+                
+                if (overallProgress < 25)
+                {
+                    insights.Add("• Set up automatic transfers to your savings");
+                    insights.Add("• Review and reduce unnecessary expenses");
+                    insights.Add("• Consider a side income opportunity");
+                }
+                else if (overallProgress < 75)
+                {
+                    insights.Add("• You're making great progress! Stay consistent");
+                    insights.Add("• Look for extra savings in your budget");
+                    insights.Add("• Celebrate small milestones to stay motivated");
+                }
+                else
+                {
+                    insights.Add("• You're so close! Keep pushing!");
+                    insights.Add("• Consider preparing for your next goal");
+                    insights.Add("• You're crushing it! 🎉");
+                }
             }
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Πώς μπορώ να αποταμιεύσω περισσότερο;",
+                    "Δείξε τις δαπάνες μου",
+                    "Ενημέρωση πρόοδου στόχου"
+                }
+                : new List<string>
+                {
+                    "How can I save more?",
+                    "Show my spending",
+                    "Update goal progress"
+                };
 
             return new ChatbotResponse
             {
@@ -4216,12 +5341,7 @@ I use natural language and advanced calculations to help you make smart financia
                     totalRemaining,
                     overallProgress
                 },
-                QuickActions = new List<string>
-                {
-                    "How can I save more?",
-                    "Show my spending",
-                    "Update goal progress"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/savings-goals"
             };
         }
@@ -4244,7 +5364,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Predict spending for the rest of the month based on historical patterns
         /// </summary>
-        private async Task<ChatbotResponse> PredictSpendingAsync(string userId)
+        private async Task<ChatbotResponse> PredictSpendingAsync(string userId, string language = "en")
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -4296,54 +5416,104 @@ I use natural language and advanced calculations to help you make smart financia
                 .ToList();
 
             var insights = new List<string>();
-            insights.Add("🔮 **Spending Forecast**\n");
-
-            insights.Add($"**Current Status (Day {daysElapsed}/{daysInMonth}):**");
-            insights.Add($"• Spent so far: ${currentSpending:N2}");
-            insights.Add($"• Daily average: ${currentDailyAverage:N2}\n");
-
-            insights.Add($"**Month-End Projections:**");
-            insights.Add($"📊 Linear Projection: **${linearProjection:N2}**");
-            insights.Add($"   (Based on current daily rate)");
-            insights.Add($"📈 Historical Adjusted: **${historicalBased:N2}**");
-            insights.Add($"   (Weighted with past 3 months)");
-            insights.Add($"🎯 Conservative Estimate: **${conservativeEstimate:N2}**\n");
+            
+            if (language == "el")
+            {
+                insights.Add("🔮 **Πρόβλεψη Δαπανών**\n");
+                insights.Add($"**Τρέχουσα Κατάσταση (Ημέρα {daysElapsed}/{daysInMonth}):**");
+                insights.Add($"• Ξοδεύτηκαν μέχρι στιγμής: ${currentSpending:N2}");
+                insights.Add($"• Ημερήσιος μέσος όρος: ${currentDailyAverage:N2}\n");
+                insights.Add($"**Προβλέψεις Τέλους Μήνα:**");
+                insights.Add($"📊 Γραμμική Πρόβλεψη: **${linearProjection:N2}**");
+                insights.Add($"   (Βασισμένη στον τρέχοντα ημερήσιο ρυθμό)");
+                insights.Add($"📈 Ιστορικά Προσαρμοσμένη: **${historicalBased:N2}**");
+                insights.Add($"   (Σταθμισμένη με τους τελευταίους 3 μήνες)");
+                insights.Add($"🎯 Συντηρητική Εκτίμηση: **${conservativeEstimate:N2}**\n");
+            }
+            else
+            {
+                insights.Add("🔮 **Spending Forecast**\n");
+                insights.Add($"**Current Status (Day {daysElapsed}/{daysInMonth}):**");
+                insights.Add($"• Spent so far: ${currentSpending:N2}");
+                insights.Add($"• Daily average: ${currentDailyAverage:N2}\n");
+                insights.Add($"**Month-End Projections:**");
+                insights.Add($"📊 Linear Projection: **${linearProjection:N2}**");
+                insights.Add($"   (Based on current daily rate)");
+                insights.Add($"📈 Historical Adjusted: **${historicalBased:N2}**");
+                insights.Add($"   (Weighted with past 3 months)");
+                insights.Add($"🎯 Conservative Estimate: **${conservativeEstimate:N2}**\n");
+            }
 
             // Comparison with historical
             var difference = conservativeEstimate - historicalMonthlyAvg;
             var percentDiff = historicalMonthlyAvg > 0 ? (difference / historicalMonthlyAvg) * 100 : 0;
 
-            if (Math.Abs(percentDiff) > 10)
+            if (language == "el")
             {
-                if (difference > 0)
+                if (Math.Abs(percentDiff) > 10)
                 {
-                    insights.Add($"⚠️ Projected to spend **{Math.Abs(percentDiff):F1}%** more than your 3-month average (${Math.Abs(difference):N2})");
-                    insights.Add($"💡 Consider reviewing your expenses to stay on track!");
+                    if (difference > 0)
+                    {
+                        insights.Add($"⚠️ Προβλέπεται να ξοδέψετε **{Math.Abs(percentDiff):F1}%** περισσότερο από τον μέσο όρο 3 μηνών (${Math.Abs(difference):N2})");
+                        insights.Add($"💡 Σκεφτείτε να εξετάσετε τα έξοδά σας για να παραμείνετε εντός στόχου!");
+                    }
+                    else
+                    {
+                        insights.Add($"✅ Προβλέπεται να ξοδέψετε **{Math.Abs(percentDiff):F1}%** λιγότερο από τον μέσο όρο 3 μηνών (${Math.Abs(difference):N2} αποταμιεύτηκαν!)");
+                        insights.Add($"🎉 Καλή δουλειά στη διαχείριση των δαπανών σας!");
+                    }
                 }
                 else
                 {
-                    insights.Add($"✅ Projected to spend **{Math.Abs(percentDiff):F1}%** less than your 3-month average (${Math.Abs(difference):N2} saved!)");
-                    insights.Add($"🎉 Great job managing your spending!");
+                    insights.Add($"📊 Οι δαπάνες σας είναι συνεπείς με τον ιστορικό μέσο όρο.");
                 }
+
+                // Category predictions (Greek)
+                if (categoryPredictions.Any())
+                {
+                    insights.Add($"\n**Κύριες Προβλεπόμενες Κατηγορίες:**");
+                    foreach (var cat in categoryPredictions.Take(3))
+                    {
+                        var emoji = GetCategoryEmoji(cat.Category);
+                        insights.Add($"{emoji} {cat.Category}: ${cat.ProjectedSpend:N2} ({cat.Trend:F0}% του συνόλου)");
+                    }
+                }
+
+                insights.Add($"\n💡 **Συμβουλές:**");
             }
             else
             {
-                insights.Add($"📊 Your spending is consistent with your historical average.");
-            }
-
-            // Category predictions
-            if (categoryPredictions.Any())
-            {
-                insights.Add($"\n**Top Projected Categories:**");
-                foreach (var cat in categoryPredictions.Take(3))
+                if (Math.Abs(percentDiff) > 10)
                 {
-                    var emoji = GetCategoryEmoji(cat.Category);
-                    insights.Add($"{emoji} {cat.Category}: ${cat.ProjectedSpend:N2} ({cat.Trend:F0}% of total)");
+                    if (difference > 0)
+                    {
+                        insights.Add($"⚠️ Projected to spend **{Math.Abs(percentDiff):F1}%** more than your 3-month average (${Math.Abs(difference):N2})");
+                        insights.Add($"💡 Consider reviewing your expenses to stay on track!");
+                    }
+                    else
+                    {
+                        insights.Add($"✅ Projected to spend **{Math.Abs(percentDiff):F1}%** less than your 3-month average (${Math.Abs(difference):N2} saved!)");
+                        insights.Add($"🎉 Great job managing your spending!");
+                    }
                 }
-            }
+                else
+                {
+                    insights.Add($"📊 Your spending is consistent with your historical average.");
+                }
 
-            // Recommendations
-            insights.Add($"\n💡 **Recommendations:**");
+                // Category predictions
+                if (categoryPredictions.Any())
+                {
+                    insights.Add($"\n**Top Projected Categories:**");
+                    foreach (var cat in categoryPredictions.Take(3))
+                    {
+                        var emoji = GetCategoryEmoji(cat.Category);
+                        insights.Add($"{emoji} {cat.Category}: ${cat.ProjectedSpend:N2} ({cat.Trend:F0}% of total)");
+                    }
+                }
+
+                insights.Add($"\n💡 **Recommendations:**");
+            }
             if (daysRemaining > 0)
             {
                 var suggestedDailyLimit = (historicalMonthlyAvg - currentSpending) / daysRemaining;
@@ -4357,6 +5527,20 @@ I use natural language and advanced calculations to help you make smart financia
                     insights.Add($"• Focus on essential expenses only for the rest of the month");
                 }
             }
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε τους προϋπολογισμούς μου",
+                    "Πώς μπορώ να αποταμιεύσω χρήματα;",
+                    "Ποια είναι τα κύρια έξοδά μου;"
+                }
+                : new List<string>
+                {
+                    "Show me my budgets",
+                    "How can I save money?",
+                    "What are my top expenses?"
+                };
 
             return new ChatbotResponse
             {
@@ -4373,12 +5557,7 @@ I use natural language and advanced calculations to help you make smart financia
                     daysRemaining,
                     categoryPredictions
                 },
-                QuickActions = new List<string>
-                {
-                    "Show me my budgets",
-                    "How can I save money?",
-                    "What are my top expenses?"
-                },
+                QuickActions = quickActions,
                 ActionLink = "/analytics"
             };
         }

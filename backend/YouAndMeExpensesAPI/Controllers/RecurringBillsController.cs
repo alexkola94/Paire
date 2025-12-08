@@ -358,6 +358,17 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 // Calculate next due date based on frequency
                 bill.NextDueDate = CalculateNextDueDate(bill.Frequency, bill.DueDay, bill.NextDueDate);
+                
+                // Ensure NextDueDate is UTC for PostgreSQL compatibility
+                if (bill.NextDueDate.Kind == DateTimeKind.Unspecified)
+                {
+                    bill.NextDueDate = DateTime.SpecifyKind(bill.NextDueDate, DateTimeKind.Utc);
+                }
+                else if (bill.NextDueDate.Kind == DateTimeKind.Local)
+                {
+                    bill.NextDueDate = bill.NextDueDate.ToUniversalTime();
+                }
+                
                 bill.UpdatedAt = DateTime.UtcNow;
 
                 await _dbContext.SaveChangesAsync();
@@ -457,66 +468,87 @@ namespace YouAndMeExpensesAPI.Controllers
 
         /// <summary>
         /// Calculate next due date based on frequency and due day
+        /// Always returns UTC DateTime for PostgreSQL compatibility
         /// </summary>
         private DateTime CalculateNextDueDate(string frequency, int dueDay, DateTime? currentDueDate = null)
         {
+            // Ensure baseDate is UTC
             var baseDate = currentDueDate ?? DateTime.UtcNow.Date;
+            if (baseDate.Kind != DateTimeKind.Utc)
+            {
+                baseDate = baseDate.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(baseDate, DateTimeKind.Utc)
+                    : baseDate.ToUniversalTime();
+            }
+
+            DateTime result;
 
             switch (frequency.ToLower())
             {
                 case "weekly":
                     // DueDay represents day of week (1=Monday, 7=Sunday)
                     var daysUntilDue = ((dueDay - (int)baseDate.DayOfWeek + 7) % 7);
-                    return baseDate.AddDays(daysUntilDue == 0 ? 7 : daysUntilDue);
+                    result = baseDate.AddDays(daysUntilDue == 0 ? 7 : daysUntilDue);
+                    break;
 
                 case "monthly":
                     // DueDay represents day of month
                     var nextMonth = baseDate.AddMonths(currentDueDate.HasValue ? 1 : 0);
                     var daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
                     var actualDay = Math.Min(dueDay, daysInMonth);
-                    var nextDueDate = new DateTime(nextMonth.Year, nextMonth.Month, actualDay);
+                    result = new DateTime(nextMonth.Year, nextMonth.Month, actualDay, 0, 0, 0, DateTimeKind.Utc);
                     
                     // If the calculated date is in the past, move to next month
-                    if (nextDueDate <= baseDate && !currentDueDate.HasValue)
+                    if (result <= baseDate && !currentDueDate.HasValue)
                     {
                         nextMonth = nextMonth.AddMonths(1);
                         daysInMonth = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
                         actualDay = Math.Min(dueDay, daysInMonth);
-                        nextDueDate = new DateTime(nextMonth.Year, nextMonth.Month, actualDay);
+                        result = new DateTime(nextMonth.Year, nextMonth.Month, actualDay, 0, 0, 0, DateTimeKind.Utc);
                     }
-                    return nextDueDate;
+                    break;
 
                 case "quarterly":
                     // Every 3 months
                     var nextQuarter = baseDate.AddMonths(currentDueDate.HasValue ? 3 : 0);
                     var daysInQuarterMonth = DateTime.DaysInMonth(nextQuarter.Year, nextQuarter.Month);
                     var quarterDay = Math.Min(dueDay, daysInQuarterMonth);
-                    var quarterDate = new DateTime(nextQuarter.Year, nextQuarter.Month, quarterDay);
+                    result = new DateTime(nextQuarter.Year, nextQuarter.Month, quarterDay, 0, 0, 0, DateTimeKind.Utc);
                     
-                    if (quarterDate <= baseDate && !currentDueDate.HasValue)
+                    if (result <= baseDate && !currentDueDate.HasValue)
                     {
                         nextQuarter = nextQuarter.AddMonths(3);
                         daysInQuarterMonth = DateTime.DaysInMonth(nextQuarter.Year, nextQuarter.Month);
                         quarterDay = Math.Min(dueDay, daysInQuarterMonth);
-                        quarterDate = new DateTime(nextQuarter.Year, nextQuarter.Month, quarterDay);
+                        result = new DateTime(nextQuarter.Year, nextQuarter.Month, quarterDay, 0, 0, 0, DateTimeKind.Utc);
                     }
-                    return quarterDate;
+                    break;
 
                 case "yearly":
                     // DueDay represents day of year (1-365)
                     var nextYear = baseDate.AddYears(currentDueDate.HasValue ? 1 : 0);
-                    var yearDate = new DateTime(nextYear.Year, 1, 1).AddDays(dueDay - 1);
+                    result = new DateTime(nextYear.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(dueDay - 1);
                     
-                    if (yearDate <= baseDate && !currentDueDate.HasValue)
+                    if (result <= baseDate && !currentDueDate.HasValue)
                     {
-                        yearDate = yearDate.AddYears(1);
+                        result = result.AddYears(1);
                     }
-                    return yearDate;
+                    break;
 
                 default:
                     // Default to monthly if frequency is unknown
                     return CalculateNextDueDate("monthly", dueDay, currentDueDate);
             }
+
+            // Ensure result is UTC (defensive check)
+            if (result.Kind != DateTimeKind.Utc)
+            {
+                result = result.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(result, DateTimeKind.Utc)
+                    : result.ToUniversalTime();
+            }
+
+            return result;
         }
 
         /// <summary>

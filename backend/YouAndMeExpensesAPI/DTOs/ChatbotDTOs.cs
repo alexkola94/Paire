@@ -19,6 +19,7 @@ namespace YouAndMeExpensesAPI.DTOs
     {
         public string Query { get; set; } = string.Empty;
         public List<ChatMessage>? History { get; set; } // Conversation history for context
+        public string? Language { get; set; } = "en"; // Language code (en, el, es, fr)
     }
 
     /// <summary>

@@ -29,6 +29,10 @@
   z-index: 1000;
   padding: var(--spacing-md);
   animation: fadeIn 0.3s ease-out;
+  transition: var(--transition);
+  /* Ensure modal is always on top and not clipped */
+  overflow: visible;
+  pointer-events: auto;
 }
 
 .form-card {
@@ -38,6 +42,7 @@
   overflow-y: auto;
   animation: slideUp 0.3s ease-out;
   position: relative;
+  transition: var(--transition);
 }
 
 @keyframes slideUp {
@@ -205,6 +210,56 @@
 @media (min-width: 1024px) {
   .income-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Desktop: Position form modal on the right side - no overlay since list is visible */
+  .form-modal {
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0;
+    background: transparent;
+  }
+
+  .form-card {
+    max-width: 500px;
+    width: 500px;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Ensure form header doesn't shrink */
+  .form-card .form-header,
+  .form-card .card-header.form-header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* Ensure form content is scrollable - target TransactionForm */
+  .form-card .transaction-form {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-xl);
+    min-height: 0; /* Important for flex children to allow scrolling */
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 }
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import OtpInput from 'react-otp-input';
 import { useTranslation } from 'react-i18next';
 import { getBackendUrl } from '../utils/getBackendUrl';
+import { sessionManager } from '../services/sessionManager';
 import './TwoFactorVerification.css';
 
 /**
@@ -26,6 +27,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
   const hasAutoVerified = useRef(false);
   const isVerifyingRef = useRef(false);
   const hasCalledOnSuccess = useRef(false); // Prevent multiple success calls
+  const hasErrorOccurred = useRef(false); // Track if an error occurred to prevent auto-verify loop
+  const lastFailedCode = useRef(''); // Track the last failed code to prevent re-verifying it
 
   /**
    * Verify 2FA code
@@ -105,18 +108,25 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
           error: data.error || data.message,
           codeSent: normalizedCode
         });
+        // Mark that an error occurred and store the failed code
+        hasErrorOccurred.current = true;
+        lastFailedCode.current = normalizedCode;
         throw new Error(data.error || data.message || t('twoFactor.verificationError'));
       }
 
       // Verify we have the required data
       if (!data.token) {
+        hasErrorOccurred.current = true;
+        lastFailedCode.current = normalizedCode;
         throw new Error(t('twoFactor.verificationError') || 'Invalid response: missing token');
       }
 
-      // Store token and user data (use same keys as auth service)
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('refresh_token', data.refreshToken || '');
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Success! Clear error tracking
+      hasErrorOccurred.current = false;
+      lastFailedCode.current = '';
+
+      // Store token and user data using sessionManager (per-tab session)
+      sessionManager.storeSession(data.token, data.refreshToken || '', data.user);
 
       // Show success animation before navigating
       setIsSuccess(true);
@@ -144,6 +154,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       
       setError(errorMessage);
       hasAutoVerified.current = false; // Reset on error so user can try again
+      hasErrorOccurred.current = true; // Mark that an error occurred
+      lastFailedCode.current = normalizedCode; // Store the failed code
       // Don't clear the code - let user edit it
     } finally {
       clearTimeout(timeoutId); // Always clear timeout
@@ -183,10 +195,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
         throw new Error(data.error || t('twoFactor.verificationError'));
       }
 
-      // Store token and user data (use same keys as auth service)
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('refresh_token', data.refreshToken || '');
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Store token and user data using sessionManager (per-tab session)
+      sessionManager.storeSession(data.token, data.refreshToken || '', data.user);
 
       // Show success animation before navigating
       setIsSuccess(true);
@@ -219,6 +229,9 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       if (useBackupCode) {
         handleVerifyBackupCode();
       } else if (verificationCode.length === 6) {
+        // Reset error state for manual verification via Enter key
+        hasErrorOccurred.current = false;
+        lastFailedCode.current = '';
         handleVerifyCode();
       }
     }
@@ -226,11 +239,20 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
 
   // Auto-verify when 6-digit code is complete
   useEffect(() => {
-    // Reset auto-verify flag when code length decreases (user deleted characters)
+    // Reset auto-verify flag and error state when code length decreases (user deleted characters)
     if (verificationCode.length < 6) {
       hasAutoVerified.current = false;
+      hasErrorOccurred.current = false; // Reset error flag when user edits
+      lastFailedCode.current = ''; // Clear failed code tracking
       return;
     }
+
+    // Prevent auto-verification if:
+    // 1. There was an error and the code hasn't changed (same failed code)
+    // 2. The code matches the last failed code (prevent infinite loop)
+    const isSameFailedCode = hasErrorOccurred.current && 
+                             lastFailedCode.current === verificationCode &&
+                             verificationCode.length === 6;
 
     // Only auto-verify if all conditions are met (for manual typing)
     if (
@@ -239,6 +261,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       !useBackupCode && 
       !hasAutoVerified.current &&
       !isVerifyingRef.current &&
+      !isSameFailedCode && // Prevent re-verifying the same failed code
+      !hasErrorOccurred.current && // Don't auto-verify if there was an error
       verificationCode.match(/^\d{6}$/) // Ensure it's exactly 6 digits
     ) {
       hasAutoVerified.current = true;
@@ -250,7 +274,9 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
           verificationCode.length === 6 && 
           !loading && 
           !isVerifyingRef.current &&
-          !hasCalledOnSuccess.current // Don't verify if already succeeded
+          !hasCalledOnSuccess.current && // Don't verify if already succeeded
+          !hasErrorOccurred.current && // Don't verify if there was an error
+          lastFailedCode.current !== verificationCode // Don't verify the same failed code
         ) {
           handleVerifyCode(verificationCode);
         } else {
@@ -316,14 +342,23 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                 // Always allow changes - don't block user input
                 setVerificationCode(normalizedCode);
                 
-                // Clear error when user edits the code
+                // Clear error and reset error flags when user edits the code
                 if (error) {
                   setError('');
+                }
+                
+                // Reset error tracking when user changes the code
+                // This allows auto-verification to work again with a new code
+                if (normalizedCode !== lastFailedCode.current) {
+                  hasErrorOccurred.current = false;
+                  lastFailedCode.current = '';
                 }
                 
                 // Reset auto-verify flag when user edits
                 if (normalizedCode.length < 6) {
                   hasAutoVerified.current = false;
+                  hasErrorOccurred.current = false;
+                  lastFailedCode.current = '';
                 }
               }}
               numInputs={6}
@@ -345,6 +380,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                       setVerificationCode(digits);
                       setError('');
                       hasAutoVerified.current = false; // Reset to allow auto-verify
+                      hasErrorOccurred.current = false; // Reset error state for new code
+                      lastFailedCode.current = ''; // Clear failed code tracking
                       
                       console.log('✅ [2FA] Code pasted, will verify in 600ms');
                       
@@ -354,10 +391,11 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                           codeLength: digits.length,
                           loading,
                           isVerifying: isVerifyingRef.current,
-                          hasSucceeded: hasCalledOnSuccess.current
+                          hasSucceeded: hasCalledOnSuccess.current,
+                          hasError: hasErrorOccurred.current
                         });
                         
-                        if (digits.length === 6 && !loading && !isVerifyingRef.current && !hasCalledOnSuccess.current) {
+                        if (digits.length === 6 && !loading && !isVerifyingRef.current && !hasCalledOnSuccess.current && !hasErrorOccurred.current) {
                           console.log('🚀 [2FA] Triggering verification from paste handler');
                           handleVerifyCode(digits);
                         } else {
@@ -365,7 +403,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                             codeLength: digits.length,
                             loading,
                             isVerifying: isVerifyingRef.current,
-                            hasSucceeded: hasCalledOnSuccess.current
+                            hasSucceeded: hasCalledOnSuccess.current,
+                            hasError: hasErrorOccurred.current
                           });
                         }
                       }, 600);
@@ -414,6 +453,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
               <button
                 onClick={() => {
                   hasAutoVerified.current = false;
+                  hasErrorOccurred.current = false; // Reset error state for manual verification
+                  lastFailedCode.current = ''; // Clear failed code tracking
                   handleVerifyCode(verificationCode);
                 }}
                 className="verify-btn"
@@ -460,6 +501,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
               hasAutoVerified.current = false;
               isVerifyingRef.current = false;
               hasCalledOnSuccess.current = false;
+              hasErrorOccurred.current = false; // Reset error state
+              lastFailedCode.current = ''; // Clear failed code tracking
             }}
             className="link-btn"
             disabled={loading}

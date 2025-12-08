@@ -1,53 +1,59 @@
 /**
  * Authentication Service
  * Handles all authentication operations using our custom backend API
+ * Uses sessionManager for per-tab session management
  */
 
 import { getBackendUrl } from '../utils/getBackendUrl';
-
-// Token storage keys
-const TOKEN_KEY = 'auth_token'
-const REFRESH_TOKEN_KEY = 'refresh_token'
-const USER_KEY = 'user'
+import { sessionManager } from './sessionManager';
+import { isTokenExpired } from '../utils/tokenUtils';
 
 /**
- * Get stored auth token
+ * Get stored auth token (from sessionStorage)
  */
 export const getToken = () => {
-  return localStorage.getItem(TOKEN_KEY)
+  return sessionManager.getToken()
 }
 
 /**
- * Get stored refresh token
+ * Get stored refresh token (from sessionStorage)
  */
 export const getRefreshToken = () => {
-  return localStorage.getItem(REFRESH_TOKEN_KEY)
+  return sessionManager.getRefreshToken()
 }
 
 /**
- * Get stored user data
+ * Get stored user data (from sessionStorage)
  */
 export const getStoredUser = () => {
-  const userJson = localStorage.getItem(USER_KEY)
-  return userJson ? JSON.parse(userJson) : null
+  return sessionManager.getCurrentUser()
 }
 
 /**
- * Store authentication data
+ * Store authentication data (per-tab session)
+ * The storeSession method automatically broadcasts SESSION_CREATED
+ * which will invalidate other tabs with the same user
  */
 const storeAuthData = (token, refreshToken, user) => {
-  localStorage.setItem(TOKEN_KEY, token)
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
-  localStorage.setItem(USER_KEY, JSON.stringify(user))
+  sessionManager.storeSession(token, refreshToken, user)
 }
 
 /**
- * Clear authentication data
+ * Clear authentication data (per-tab)
  */
 const clearAuthData = () => {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(REFRESH_TOKEN_KEY)
-  localStorage.removeItem(USER_KEY)
+  sessionManager.clearSession()
+}
+
+/**
+ * Handle session expiration - clear session and notify app
+ */
+const handleSessionExpiration = () => {
+  clearAuthData()
+  // Dispatch event to notify App.jsx
+  window.dispatchEvent(new CustomEvent('session-invalidated', {
+    detail: { reason: 'Session expired' }
+  }))
 }
 
 /**
@@ -55,6 +61,13 @@ const clearAuthData = () => {
  */
 const apiRequest = async (url, options = {}) => {
   const token = getToken()
+  
+  // Check if token is expired before making request
+  if (token && isTokenExpired(token)) {
+    console.warn('Token expired, clearing session')
+    handleSessionExpiration()
+    throw new Error('Session expired. Please log in again.')
+  }
   
   let backendUrl = getBackendUrl()
   
@@ -89,6 +102,15 @@ const apiRequest = async (url, options = {}) => {
       ...options,
       headers
     })
+
+    // Handle 401 Unauthorized - session expired or invalid
+    if (response.status === 401) {
+      console.warn('Received 401 Unauthorized, clearing session')
+      handleSessionExpiration()
+      const errorData = await response.json().catch(() => ({}))
+      const errorMessage = errorData.error || 'Session expired. Please log in again.'
+      throw new Error(errorMessage)
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -128,7 +150,7 @@ export const authService = {
         return data
       }
 
-      // Store authentication data (no 2FA required)
+      // Store authentication data (no 2FA required) - per-tab session
       storeAuthData(data.token, data.refreshToken, data.user)
 
       return data
@@ -162,21 +184,52 @@ export const authService = {
 
   /**
    * Sign out the current user
+   * Revokes the session on the backend and clears local session
    */
   async signOut() {
-    // For JWT tokens, logout is purely client-side
-    // Just clear the tokens from localStorage
-    clearAuthData()
+    try {
+      // Call backend logout endpoint to revoke session
+      const token = getToken()
+      if (token) {
+        try {
+          await apiRequest('/api/auth/logout', {
+            method: 'POST'
+          })
+        } catch (error) {
+          // Continue with client-side logout even if backend call fails
+          console.warn('Backend logout failed, continuing with client-side logout:', error)
+        }
+      }
+    } catch (error) {
+      // Continue with client-side logout even if there's an error
+      console.warn('Error during logout:', error)
+    } finally {
+      // Always clear local session data
+      clearAuthData()
+    }
     
     // Note: Navigation is handled by the calling component (Layout.jsx)
   },
 
   /**
-   * Get the current session
+   * Get the current session (from sessionStorage - per-tab)
+   * Returns null if no session exists or token is expired (new tabs require login)
    */
   async getSession() {
+    // Check if session exists in this tab
+    if (!sessionManager.hasSession()) {
+      return null
+    }
+
     const token = getToken()
     const user = getStoredUser()
+    
+    // Check if token is expired
+    if (token && isTokenExpired(token)) {
+      console.warn('Token expired in getSession, clearing session')
+      handleSessionExpiration()
+      return null
+    }
     
     if (token && user) {
       return { token, user }
@@ -202,8 +255,12 @@ export const authService = {
       // Fetch from API
       const data = await apiRequest('/api/auth/me')
       
-      // Update stored user
-      localStorage.setItem(USER_KEY, JSON.stringify(data))
+      // Update stored user in session
+      const token = getToken()
+      const refreshToken = getRefreshToken()
+      if (token && refreshToken) {
+        storeAuthData(token, refreshToken, data)
+      }
       
       return data
     } catch (error) {

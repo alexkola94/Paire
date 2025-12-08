@@ -485,6 +485,10 @@
   z-index: 1000;
   padding: 0;
   animation: fadeIn 0.3s ease-out;
+  transition: var(--transition);
+  /* Ensure modal is always on top and not clipped */
+  overflow: visible;
+  pointer-events: auto;
 }
 
 .modal-content {
@@ -497,6 +501,7 @@
   overflow-y: auto;
   animation: slideUp 0.3s ease-out;
   margin: var(--spacing-md);
+  transition: var(--transition);
 }
 
 @keyframes slideUp {
@@ -570,6 +575,21 @@
 
 .form-group {
   margin-bottom: var(--spacing-lg);
+}
+
+/* Desktop: Better spacing */
+@media (min-width: 1024px) {
+  .form-group {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .form-row {
+    gap: var(--spacing-xl);
+  }
+
+  .modal-content form {
+    padding: var(--spacing-xl);
+  }
 }
 
 .form-group label {
@@ -734,6 +754,61 @@
 
   .goals-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Desktop: Position modal on the right side - no overlay since list is visible */
+  .modal-overlay {
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0;
+    background: transparent;
+  }
+
+  .modal-content {
+    max-width: 500px;
+    width: 500px;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Ensure modal header doesn't shrink */
+  .modal-content .modal-header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* Ensure form content is scrollable */
+  .modal-content > form {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-xl);
+    min-height: 0; /* Important for flex children to allow scrolling */
+  }
+
+  .modal-content .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 }
 
