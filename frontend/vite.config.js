@@ -15,27 +15,10 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    // Optimize for production with better code splitting
+    // Disable manual chunking to avoid circular dependency issues
+    // Let Vite handle automatic code splitting
     rollupOptions: {
       output: {
-        // Simplified chunking strategy to avoid circular dependency issues
-        manualChunks: (id) => {
-          // Only split out very large libraries to avoid initialization issues
-          if (id.includes('node_modules')) {
-            // React and React DOM together (they depend on each other)
-            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-              return 'react-vendor'
-            }
-            // Chart libraries (heavy, load separately)
-            if (id.includes('node_modules/chart.js') || 
-                id.includes('node_modules/react-chartjs-2') || 
-                id.includes('node_modules/recharts')) {
-              return 'charts'
-            }
-            // Everything else in one vendor chunk to avoid circular deps
-            return 'vendor'
-          }
-        },
         // Optimize chunk file names for better caching
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
@@ -45,7 +28,7 @@ export default defineConfig(({ mode }) => ({
     // Enable minification (using esbuild - faster and built into Vite)
     minify: 'esbuild',
     // esbuild is built into Vite, no additional dependencies needed
-    // Increase chunk size warning limit (for better splitting)
+    // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000
   },
   test: {
