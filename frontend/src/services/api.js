@@ -73,7 +73,10 @@ const apiRequest = async (url, options = {}) => {
     }
   }
   
-  // Ensure URL doesn't have double slashes
+  // Normalize backend URL (remove trailing slash)
+  backendApiUrl = backendApiUrl.replace(/\/+$/, '');
+  
+  // Ensure URL path starts with / and doesn't create double slashes
   const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
   const fullUrl = `${backendApiUrl}${normalizedUrl}`
   
