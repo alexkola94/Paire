@@ -133,8 +133,21 @@ function Login() {
           // Trigger event to notify App.jsx that session has changed
           window.dispatchEvent(new CustomEvent('auth-storage-change'))
           
-          // Delay to let App.jsx process the event
-          await new Promise(resolve => setTimeout(resolve, 150))
+          // Wait for App.jsx to update session state before navigating
+          // Poll sessionStorage to ensure it's actually stored
+          let attempts = 0
+          const maxAttempts = 10
+          while (attempts < maxAttempts) {
+            const token = sessionManager.getToken()
+            const user = sessionManager.getCurrentUser()
+            if (token && user) {
+              // Session is stored, wait a bit more for App.jsx to update state
+              await new Promise(resolve => setTimeout(resolve, 100))
+              break
+            }
+            await new Promise(resolve => setTimeout(resolve, 50))
+            attempts++
+          }
           
           // Check if there's a redirect URL
           const targetPath = redirectUrl || '/dashboard'

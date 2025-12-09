@@ -129,6 +129,8 @@ function App() {
     // Listen for session changes in the same tab
     const handleSessionChange = async () => {
       try {
+        // Small delay to ensure sessionStorage is written
+        await new Promise(resolve => setTimeout(resolve, 50))
         const session = await authService.getSession()
         setSession(session)
         sessionRef.current = session
@@ -195,9 +197,27 @@ function App() {
           />
 
           {/* Protected routes - Require authentication */}
+          {/* Check both session state and sessionStorage to avoid race conditions after login */}
           <Route
             path="/"
-            element={session ? <Layout /> : <Navigate to="/login" />}
+            element={
+              (() => {
+                // Check session state first
+                if (session) return <Layout />
+                // Fallback: check sessionStorage directly (for race condition after login)
+                const token = sessionManager.getToken()
+                const user = sessionManager.getCurrentUser()
+                if (token && user) {
+                  // Session exists in storage but state hasn't updated yet
+                  // Trigger state update and allow access
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('auth-storage-change'))
+                  }, 0)
+                  return <Layout />
+                }
+                return <Navigate to="/login" />
+              })()
+            }
           >
             <Route index element={<Navigate to="/dashboard" />} />
             <Route path="dashboard" element={<Dashboard />} />
