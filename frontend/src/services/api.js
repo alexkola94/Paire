@@ -677,3 +677,57 @@ export const reminderService = {
     })
   }
 }
+
+// ========================================
+// Achievements Service
+// ========================================
+
+export const achievementService = {
+  /**
+   * Get all achievements with progress for the current user
+   */
+  async getAll() {
+    getCurrentUser() // Ensure user is authenticated
+    return await apiRequest('/api/achievements')
+  },
+
+  /**
+   * Get unlocked achievements for the current user
+   */
+  async getUnlocked() {
+    return await apiRequest('/api/achievements/unlocked')
+  },
+
+  /**
+   * Get newly unlocked achievements that haven't been notified yet
+   */
+  async getUnnotified() {
+    return await apiRequest('/api/achievements/unnotified')
+  },
+
+  /**
+   * Mark achievements as notified (user has seen them)
+   */
+  async markAsNotified(userAchievementIds) {
+    return await apiRequest('/api/achievements/mark-notified', {
+      method: 'POST',
+      body: JSON.stringify(userAchievementIds)
+    })
+  },
+
+  /**
+   * Check and award new achievements for the current user
+   */
+  async check() {
+    return await apiRequest('/api/achievements/check', {
+      method: 'POST'
+    })
+  },
+
+  /**
+   * Get achievement statistics for the current user
+   */
+  async getStats() {
+    return await apiRequest('/api/achievements/stats')
+  }
+}

@@ -41,7 +41,11 @@ namespace YouAndMeExpensesAPI.Services
                 _logger.LogInformation($"Using ClientId: '{_settings?.ClientId}'"); // Log ClientId to verify
                 
                 var pemContent = LoadPrivateKeyPem();
-                _logger.LogInformation($"PEM Content Loaded. Length: {pemContent?.Length ?? 0}");
+                if (string.IsNullOrWhiteSpace(pemContent))
+                {
+                    throw new Exception("Private key PEM content is null or empty");
+                }
+                _logger.LogInformation($"PEM Content Loaded. Length: {pemContent.Length}");
 
                 var privateKey = LoadPrivateKeyFromPem(pemContent);
                 _logger.LogInformation("Private Key parsed successfully.");
@@ -65,7 +69,7 @@ namespace YouAndMeExpensesAPI.Services
                 // We use ClientId setting for this application ID.
                 var header = new JwtHeader(new SigningCredentials(privateKey, SecurityAlgorithms.RsaSha256));
                 header["typ"] = "JWT";
-                if (!string.IsNullOrEmpty(_settings.ClientId))
+                if (!string.IsNullOrEmpty(_settings?.ClientId))
                 {
                     header["kid"] = _settings.ClientId;
                 }
@@ -191,22 +195,24 @@ namespace YouAndMeExpensesAPI.Services
                 // We return dynamic because the session object contains 'accounts' which we want, and 'uid' (session id)
                 var sessionData = JsonConvert.DeserializeObject<dynamic>(content);
                 
-                // Log the structure to help debug
-                if (sessionData != null)
+                if (sessionData == null)
                 {
-                    try
+                    throw new Exception("Failed to deserialize session data from Enable Banking");
+                }
+                
+                // Log the structure to help debug
+                try
+                {
+                    var jObject = sessionData as Newtonsoft.Json.Linq.JObject;
+                    if (jObject != null)
                     {
-                        var jObject = sessionData as Newtonsoft.Json.Linq.JObject;
-                        if (jObject != null)
-                        {
-                            _logger.LogInformation("Session data properties: {Properties}", 
-                                string.Join(", ", jObject.Properties().Select(p => $"{p.Name}: {p.Value?.Type}")));
-                        }
+                        _logger.LogInformation("Session data properties: {Properties}", 
+                            string.Join(", ", jObject.Properties().Select(p => $"{p.Name}: {p.Value?.Type}")));
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Could not log session data structure");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not log session data structure");
                 }
                 
                 return sessionData;
@@ -270,18 +276,35 @@ namespace YouAndMeExpensesAPI.Services
                 var content = await response.Content.ReadAsStringAsync();
                 var json = JsonConvert.DeserializeObject<dynamic>(content);
                 
+                if (json == null)
+                {
+                    throw new Exception("Failed to deserialize balance response");
+                }
+                
                 // Parse the first balance found
                 var balances = json.balances;
-                if (balances != null && balances.Count > 0)
+                // Use null-forgiving operator for dynamic type after null check
+#pragma warning disable CS8602 // Dereference of a possibly null reference - balances is checked for null above
+                if (balances != null && (balances.Count ?? 0) > 0)
                 {
                     var first = balances[0];
-                    return new BankBalance
+#pragma warning restore CS8602
+                    if (first != null)
                     {
-                        AccountId = accountUid,
-                        Balance = (decimal)first.amount.amount,
-                        Currency = (string)first.amount.currency,
-                        LastUpdated = DateTime.UtcNow
-                    };
+                        var amountObj = first.amount;
+                        if (amountObj != null)
+                        {
+                            var amountValue = amountObj.amount;
+                            var currencyValue = amountObj.currency;
+                            return new BankBalance
+                            {
+                                AccountId = accountUid,
+                                Balance = amountValue != null ? (decimal)amountValue : 0,
+                                Currency = currencyValue != null ? (string)currencyValue : "EUR",
+                                LastUpdated = DateTime.UtcNow
+                            };
+                        }
+                    }
                 }
                 
                 return new BankBalance();
@@ -307,19 +330,31 @@ namespace YouAndMeExpensesAPI.Services
                  var content = await response.Content.ReadAsStringAsync();
                  var json = JsonConvert.DeserializeObject<dynamic>(content);
                  
+                 if (json == null)
+                 {
+                     return new List<BankTransaction>();
+                 }
+                 
                  var transactions = new List<BankTransaction>();
                  if (json.transactions != null)
                  {
                      foreach (var t in json.transactions)
                      {
-                         transactions.Add(new BankTransaction
+                         if (t?.transaction_amount != null)
                          {
-                             TransactionId = t.transaction_id,
-                             AmountData = new TransactionAmount { Amount = t.transaction_amount.amount, Currency = t.transaction_amount.currency },
-                             Description = t.remittance_information_unstructured,
-                             TransactionDate = t.booking_date,
-                             ValueDate = t.value_date
-                         });
+                             transactions.Add(new BankTransaction
+                             {
+                                 TransactionId = t.transaction_id,
+                                 AmountData = new TransactionAmount 
+                                 { 
+                                     Amount = t.transaction_amount.amount ?? 0, 
+                                     Currency = t.transaction_amount.currency ?? "EUR" 
+                                 },
+                                 Description = t.remittance_information_unstructured,
+                                 TransactionDate = t.booking_date,
+                                 ValueDate = t.value_date
+                             });
+                         }
                      }
                  }
                  return transactions;

@@ -31,6 +31,8 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<BankConnection> BankConnections { get; set; }
         public DbSet<StoredBankAccount> BankAccounts { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
+        public DbSet<Achievement> Achievements { get; set; }
+        public DbSet<UserAchievement> UserAchievements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -457,6 +459,60 @@ namespace YouAndMeExpensesAPI.Data
                 entity.HasIndex(e => e.TokenId).IsUnique();
                 entity.HasIndex(e => e.IsActive);
                 entity.HasIndex(e => e.ExpiresAt);
+            });
+
+            // ============================================
+            // ACHIEVEMENTS TABLE
+            // ============================================
+            modelBuilder.Entity<Achievement>(entity =>
+            {
+                entity.ToTable("achievements");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Code).HasColumnName("code").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description");
+                entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(50);
+                entity.Property(e => e.Icon).HasColumnName("icon").HasMaxLength(100);
+                entity.Property(e => e.Color).HasColumnName("color").HasMaxLength(50);
+                entity.Property(e => e.Points).HasColumnName("points").HasDefaultValue(0);
+                entity.Property(e => e.Rarity).HasColumnName("rarity").HasMaxLength(50).HasDefaultValue("common");
+                entity.Property(e => e.CriteriaType).HasColumnName("criteria_type").HasMaxLength(50).IsRequired();
+                entity.Property(e => e.CriteriaValue).HasColumnName("criteria_value");
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                entity.Property(e => e.SortOrder).HasColumnName("sort_order").HasDefaultValue(0);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.Code).IsUnique();
+                entity.HasIndex(e => e.Category);
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            // ============================================
+            // USER ACHIEVEMENTS TABLE
+            // ============================================
+            modelBuilder.Entity<UserAchievement>(entity =>
+            {
+                entity.ToTable("user_achievements");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.AchievementId).HasColumnName("achievement_id").IsRequired();
+                entity.Property(e => e.UnlockedAt).HasColumnName("unlocked_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.Progress).HasColumnName("progress").HasColumnType("decimal(5,2)").HasDefaultValue(0);
+                entity.Property(e => e.IsNotified).HasColumnName("is_notified").HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.AchievementId);
+                entity.HasIndex(e => new { e.UserId, e.AchievementId }).IsUnique(); // One achievement per user
+
+                // Foreign key relationship
+                entity.HasOne<Achievement>()
+                    .WithMany()
+                    .HasForeignKey(e => e.AchievementId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

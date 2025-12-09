@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -14,11 +15,16 @@ namespace YouAndMeExpensesAPI.Controllers
     public class LoanPaymentsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
+        private readonly IAchievementService _achievementService;
         private readonly ILogger<LoanPaymentsController> _logger;
 
-        public LoanPaymentsController(AppDbContext dbContext, ILogger<LoanPaymentsController> logger)
+        public LoanPaymentsController(
+            AppDbContext dbContext,
+            IAchievementService achievementService,
+            ILogger<LoanPaymentsController> logger)
         {
             _dbContext = dbContext;
+            _achievementService = achievementService;
             _logger = logger;
         }
 
@@ -176,6 +182,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 loan.RemainingAmount = loan.Amount - loan.TotalPaid;
 
                 // If remaining amount is zero or negative, mark as settled
+                var wasSettled = loan.IsSettled;
                 if (loan.RemainingAmount <= 0)
                 {
                     loan.IsSettled = true;
@@ -187,6 +194,20 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 _dbContext.LoanPayments.Add(payment);
                 await _dbContext.SaveChangesAsync();
+
+                // Check for new achievements if loan was just settled
+                if (!wasSettled && loan.IsSettled)
+                {
+                    try
+                    {
+                        await _achievementService.CheckLoanAchievementsAsync(userId.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but don't fail the payment if achievement check fails
+                        _logger.LogWarning(ex, "Error checking achievements after loan payment that settled loan");
+                    }
+                }
 
                 return CreatedAtAction(
                     nameof(GetLoanPayment),

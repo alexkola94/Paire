@@ -126,78 +126,201 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         /// <summary>
-        /// HTML template for test emails
+        /// HTML template for test emails with modern design
         /// </summary>
         private string GetTestEmailTemplate()
         {
-            return @"
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-        .button { background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 20px; color: #999; font-size: 12px; }
-    </style>
-</head>
-<body>
-    <div class='container'>
-        <div class='header'>
-            <h1>✅ Email Configuration Successful!</h1>
-        </div>
-        <div class='content'>
-            <p>Hi there!</p>
-            <p>This is a test email to confirm that your <strong>You & Me Expenses</strong> email reminder system is working correctly.</p>
-            <p>You will now receive:</p>
-            <ul>
-                <li>📅 Bill payment reminders</li>
-                <li>💰 Loan payment notifications</li>
-                <li>📊 Budget alerts</li>
-                <li>🎯 Savings goal updates</li>
-            </ul>
-            <p>Stay on top of your finances effortlessly!</p>
-        </div>
-        <div class='footer'>
-            <p>You & Me Expenses - Your Personal Finance Manager</p>
-        </div>
-    </div>
-</body>
-</html>";
+            var frontendUrl = "http://localhost:3000"; // Default for test emails
+            var message = @"
+                <p>Hi there!</p>
+                <p>This is a test email to confirm that your <strong>You & Me Expenses</strong> email reminder system is working correctly.</p>
+                <p>You will now receive:</p>
+                <ul style='margin: 15px 0; padding-left: 25px;'>
+                    <li style='margin: 8px 0;'>📅 Bill payment reminders</li>
+                    <li style='margin: 8px 0;'>💰 Loan payment notifications</li>
+                    <li style='margin: 8px 0;'>📊 Budget alerts</li>
+                    <li style='margin: 8px 0;'>🎯 Savings goal updates</li>
+                </ul>
+                <p>Stay on top of your finances effortlessly!</p>";
+            
+            return EmailService.CreateReminderEmailTemplate(
+                "✅ Email Configuration Successful!",
+                message,
+                frontendUrl
+            );
         }
 
         /// <summary>
-        /// Creates a beautiful HTML email template for reminders
+        /// Creates a beautiful HTML email template for reminders with modern, clean design
         /// </summary>
-        public static string CreateReminderEmailTemplate(string title, string message, string actionUrl = "")
+        public static string CreateReminderEmailTemplate(string title, string message, string frontendUrl = "", string actionUrl = "")
         {
+            // Default frontend URL if not provided
+            if (string.IsNullOrEmpty(frontendUrl))
+            {
+                frontendUrl = "http://localhost:3000";
+            }
+            
+            // Extract first URL if multiple are provided (comma-separated)
+            if (frontendUrl.Contains(';'))
+            {
+                frontendUrl = frontendUrl.Split(';')[0].Trim();
+            }
+            
+            var loginUrl = $"{frontendUrl}/login";
+            
             return $@"
 <!DOCTYPE html>
-<html>
+<html lang=""en"">
 <head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .content {{ background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; }}
-        .alert-box {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }}
-        .button {{ background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }}
-        .footer {{ text-align: center; margin-top: 20px; color: #999; font-size: 12px; padding: 20px; background: #f9f9f9; border-radius: 0 0 10px 10px; }}
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6; 
+            color: #2d3748; 
+            background-color: #f7fafc;
+            margin: 0; 
+            padding: 20px;
+        }}
+        .email-wrapper {{
+            max-width: 600px; 
+            margin: 0 auto; 
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }}
+        .header {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 40px 30px; 
+            text-align: center;
+        }}
+        .header h1 {{
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }}
+        .content {{ 
+            background: #ffffff; 
+            padding: 40px 30px;
+        }}
+        .alert-box {{ 
+            background: linear-gradient(135deg, #fff5e6 0%, #ffeaa7 100%);
+            border-left: 4px solid #fdcb6e;
+            padding: 20px; 
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }}
+        .alert-box h3 {{
+            color: #d63031;
+            font-size: 18px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }}
+        .alert-box p {{
+            margin: 8px 0;
+            color: #2d3748;
+        }}
+        .alert-box strong {{
+            color: #1a202c;
+            font-weight: 600;
+        }}
+        .button-container {{
+            text-align: center;
+            margin: 30px 0;
+        }}
+        .button {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            padding: 14px 32px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            display: inline-block;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+        }}
+        .button:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }}
+        .button-secondary {{
+            background: #e2e8f0;
+            color: #2d3748;
+            margin-left: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }}
+        .button-secondary:hover {{
+            background: #cbd5e0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }}
+        .message-content {{
+            color: #4a5568;
+            font-size: 15px;
+            line-height: 1.7;
+        }}
+        .message-content p {{
+            margin: 12px 0;
+        }}
+        .footer {{ 
+            text-align: center; 
+            color: #718096; 
+            font-size: 13px; 
+            padding: 30px;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+        }}
+        .footer p {{
+            margin: 6px 0;
+        }}
+        .footer small {{
+            color: #a0aec0;
+            font-size: 12px;
+        }}
+        @media only screen and (max-width: 600px) {{
+            body {{ padding: 10px; }}
+            .content {{ padding: 30px 20px; }}
+            .header {{ padding: 30px 20px; }}
+            .header h1 {{ font-size: 20px; }}
+            .button-container {{
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }}
+            .button {{
+                width: 100%;
+                margin: 0;
+            }}
+            .button-secondary {{
+                margin-left: 0;
+            }}
+        }}
     </style>
 </head>
 <body>
-    <div class='container'>
-        <div class='header'>
+    <div class=""email-wrapper"">
+        <div class=""header"">
             <h1>{title}</h1>
         </div>
-        <div class='content'>
-            {message}
-            {(string.IsNullOrEmpty(actionUrl) ? "" : $"<a href='{actionUrl}' class='button'>View Details</a>")}
+        <div class=""content"">
+            <div class=""message-content"">
+                {message}
+            </div>
+            <div class=""button-container"">
+                {(string.IsNullOrEmpty(actionUrl) ? "" : $"<a href='{actionUrl}' class='button'>View Details</a>")}
+                <a href='{loginUrl}' class='button button-secondary'>Login to App</a>
+            </div>
         </div>
-        <div class='footer'>
-            <p>You & Me Expenses - Your Personal Finance Manager</p>
+        <div class=""footer"">
+            <p><strong>You & Me Expenses</strong></p>
+            <p>Your Personal Finance Manager</p>
             <p><small>You're receiving this because you have email reminders enabled.</small></p>
         </div>
     </div>

@@ -251,5 +251,39 @@
       "loading": "Échec du chargement des données économiques. Veuillez réessayer plus tard.",
       "retry": "Réessayer"
     }
+  },
+  "achievements": {
+    "title": "Succès",
+    "subtitle": "Suivez vos jalons financiers et débloquez des récompenses",
+    "loading": "Chargement des succès...",
+    "noAchievements": "Aucun succès trouvé",
+    "points": "points",
+    "unlockedOn": "Débloqué le",
+    "stats": {
+      "unlocked": "Débloqués",
+      "total": "Total",
+      "points": "Points",
+      "completion": "Terminé"
+    },
+    "filters": {
+      "category": "Catégorie",
+      "unlockedOnly": "Afficher uniquement les débloqués"
+    },
+    "categories": {
+      "all": "Toutes les Catégories",
+      "transactions": "Transactions",
+      "budgets": "Budgets",
+      "savings": "Épargnes",
+      "loans": "Prêts",
+      "partnership": "Partenariat",
+      "consistency": "Cohérence",
+      "milestone": "Jalons"
+    },
+    "rarity": {
+      "common": "Commun",
+      "rare": "Rare",
+      "epic": "Épique",
+      "legendary": "Légendaire"
+    }
   }
 }

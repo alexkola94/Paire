@@ -274,6 +274,9 @@ builder.Services.AddScoped<IChatbotService, ChatbotService>();
 // Register Two-Factor Authentication Service
 builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 
+// Register Achievement Service
+builder.Services.AddScoped<IAchievementService, AchievementService>();
+
 // =====================================================
 // Configure Enable Banking Open Banking Service
 // =====================================================
@@ -305,8 +308,8 @@ builder.Services.AddHttpClient<IGreeceEconomicDataService, GreeceEconomicDataSer
 // Configure Background Services (Optional - Uncomment to enable)
 // =====================================================
 
-// Uncomment the line below to enable daily reminder checks at 9 AM
-// builder.Services.AddHostedService<ReminderBackgroundService>();
+// Enable daily reminder checks at 9 AM
+builder.Services.AddHostedService<ReminderBackgroundService>();
 
 // Uncomment the line below to enable automatic bank transaction sync every 6 hours
 // builder.Services.AddHostedService<BankTransactionSyncBackgroundService>();
@@ -369,6 +372,26 @@ app.MapGet("/health", () => Results.Ok(new
 }))
 .WithName("HealthCheck")
 .WithOpenApi();
+
+// =====================================================
+// Initialize Application Data
+// =====================================================
+
+// Initialize default achievements on startup
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var achievementService = scope.ServiceProvider.GetRequiredService<IAchievementService>();
+        await achievementService.InitializeDefaultAchievementsAsync();
+        app.Logger.LogInformation("Default achievements initialized successfully");
+    }
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Error initializing default achievements");
+    // Don't fail startup if achievements initialization fails
+}
 
 // =====================================================
 // Run the Application

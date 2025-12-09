@@ -47,6 +47,7 @@
     "partnership": "Partnership",
     "reminders": "Reminders",
     "profile": "Profile",
+    "achievements": "Achievements",
     "more": "More",
     "account": "Account"
   },
@@ -486,7 +487,19 @@
     "settingsSaved": "Reminder settings saved successfully!",
     "errorSaving": "Failed to save reminder settings",
     "errorLoading": "Failed to load reminder settings",
-    "enterTestEmail": "Enter your email address to receive a test email:"
+    "enterTestEmail": "Enter your email address to receive a test email:",
+    "testReminders": "Test Reminders",
+    "testingReminders": "Testing reminders...",
+    "remindersTested": "Reminder test completed! Check your email inbox.",
+    "remindersTestedCount": "Reminder test completed! {{count}} reminder(s) sent. Check your email inbox.",
+    "errorTestingReminders": "Failed to test reminders",
+    "testRemindersDescription": "Click below to manually trigger all enabled reminders and verify they're working correctly.",
+    "createTestData": "Create Test Data & Send Reminders",
+    "creatingTestData": "Creating test data...",
+    "testDataCreated": "Test data created successfully!",
+    "items": "items",
+    "remindersSent": "Reminders sent",
+    "errorCreatingTestData": "Failed to create test data"
   },
   "recurringBills": {
     "title": "Recurring Bills",
@@ -851,6 +864,40 @@
       "title": "Under Construction",
       "message": "We're currently working on integrating real-time economic data from data.gov.gr. This feature will be available soon with up-to-date information about CPI, food prices, and economic indicators for Greece.",
       "info": "The backend API is ready and waiting for the data.gov.gr API to be fully configured. Once the dataset IDs are discovered and the API key is set up, this page will display live economic data."
+    }
+  },
+  "achievements": {
+    "title": "Achievements",
+    "subtitle": "Track your financial milestones and unlock rewards",
+    "loading": "Loading achievements...",
+    "noAchievements": "No achievements found",
+    "points": "points",
+    "unlockedOn": "Unlocked on",
+    "stats": {
+      "unlocked": "Unlocked",
+      "total": "Total",
+      "points": "Points",
+      "completion": "Complete"
+    },
+    "filters": {
+      "category": "Category",
+      "unlockedOnly": "Show unlocked only"
+    },
+    "categories": {
+      "all": "All Categories",
+      "transactions": "Transactions",
+      "budgets": "Budgets",
+      "savings": "Savings",
+      "loans": "Loans",
+      "partnership": "Partnership",
+      "consistency": "Consistency",
+      "milestone": "Milestones"
+    },
+    "rarity": {
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
     }
   }
 }

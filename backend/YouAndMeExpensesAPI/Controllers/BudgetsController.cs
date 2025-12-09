@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -13,11 +14,16 @@ namespace YouAndMeExpensesAPI.Controllers
     public class BudgetsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
+        private readonly IAchievementService _achievementService;
         private readonly ILogger<BudgetsController> _logger;
 
-        public BudgetsController(AppDbContext dbContext, ILogger<BudgetsController> logger)
+        public BudgetsController(
+            AppDbContext dbContext,
+            IAchievementService achievementService,
+            ILogger<BudgetsController> logger)
         {
             _dbContext = dbContext;
+            _achievementService = achievementService;
             _logger = logger;
         }
 
@@ -207,6 +213,17 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 _dbContext.Budgets.Add(budget);
                 await _dbContext.SaveChangesAsync();
+
+                // Check for new achievements after creating budget
+                try
+                {
+                    await _achievementService.CheckBudgetAchievementsAsync(userId.ToString());
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the budget creation if achievement check fails
+                    _logger.LogWarning(ex, "Error checking achievements after budget creation");
+                }
 
                 return CreatedAtAction(
                     nameof(GetBudget),

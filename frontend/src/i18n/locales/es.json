@@ -251,5 +251,39 @@
       "loading": "Error al cargar los datos económicos. Por favor intente de nuevo más tarde.",
       "retry": "Reintentar"
     }
+  },
+  "achievements": {
+    "title": "Logros",
+    "subtitle": "Rastrea tus hitos financieros y desbloquea recompensas",
+    "loading": "Cargando logros...",
+    "noAchievements": "No se encontraron logros",
+    "points": "puntos",
+    "unlockedOn": "Desbloqueado el",
+    "stats": {
+      "unlocked": "Desbloqueados",
+      "total": "Total",
+      "points": "Puntos",
+      "completion": "Completado"
+    },
+    "filters": {
+      "category": "Categoría",
+      "unlockedOnly": "Mostrar solo desbloqueados"
+    },
+    "categories": {
+      "all": "Todas las Categorías",
+      "transactions": "Transacciones",
+      "budgets": "Presupuestos",
+      "savings": "Ahorros",
+      "loans": "Préstamos",
+      "partnership": "Asociación",
+      "consistency": "Consistencia",
+      "milestone": "Hitos"
+    },
+    "rarity": {
+      "common": "Común",
+      "rare": "Raro",
+      "epic": "Épico",
+      "legendary": "Legendario"
+    }
   }
 }

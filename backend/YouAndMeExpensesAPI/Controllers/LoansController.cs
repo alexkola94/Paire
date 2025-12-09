@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -14,13 +15,16 @@ namespace YouAndMeExpensesAPI.Controllers
     public class LoansController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
+        private readonly IAchievementService _achievementService;
         private readonly ILogger<LoansController> _logger;
 
         public LoansController(
             AppDbContext dbContext,
+            IAchievementService achievementService,
             ILogger<LoansController> logger)
         {
             _dbContext = dbContext;
+            _achievementService = achievementService;
             _logger = logger;
         }
 
@@ -380,6 +384,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 existingLoan.RemainingAmount = existingLoan.Amount - existingLoan.TotalPaid;
                 
                 // Update settled status based on remaining amount (override if needed)
+                var wasSettled = existingLoan.IsSettled;
                 if (existingLoan.RemainingAmount <= 0)
                 {
                     existingLoan.IsSettled = true;
@@ -390,6 +395,20 @@ namespace YouAndMeExpensesAPI.Controllers
                 existingLoan.UpdatedAt = DateTime.UtcNow;
 
                 await _dbContext.SaveChangesAsync();
+
+                // Check for new achievements if loan was just settled
+                if (!wasSettled && existingLoan.IsSettled)
+                {
+                    try
+                    {
+                        await _achievementService.CheckLoanAchievementsAsync(userId.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but don't fail the update if achievement check fails
+                        _logger.LogWarning(ex, "Error checking achievements after loan settlement");
+                    }
+                }
                 
                 return Ok(existingLoan);
             }
@@ -511,6 +530,17 @@ namespace YouAndMeExpensesAPI.Controllers
                 loan.UpdatedAt = DateTime.UtcNow;
 
                 await _dbContext.SaveChangesAsync();
+
+                // Check for new achievements after settling loan
+                try
+                {
+                    await _achievementService.CheckLoanAchievementsAsync(userId.ToString());
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the settlement if achievement check fails
+                    _logger.LogWarning(ex, "Error checking achievements after loan settlement");
+                }
                 
                 return Ok(loan);
             }

@@ -18,19 +18,22 @@ namespace YouAndMeExpensesAPI.Controllers
     public class PartnershipController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
+        private readonly IAchievementService _achievementService;
         private readonly ILogger<PartnershipController> _logger;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
 
         public PartnershipController(
-            AppDbContext dbContext, 
+            AppDbContext dbContext,
+            IAchievementService achievementService,
             ILogger<PartnershipController> logger,
             IEmailService emailService,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager)
         {
             _dbContext = dbContext;
+            _achievementService = achievementService;
             _logger = logger;
             _emailService = emailService;
             _configuration = configuration;
@@ -145,6 +148,18 @@ namespace YouAndMeExpensesAPI.Controllers
                 await _dbContext.SaveChangesAsync();
 
                 _logger.LogInformation("Partnership created between {User1} and {User2}", userId, request.PartnerId);
+
+                // Check for new achievements for both users after creating partnership
+                try
+                {
+                    await _achievementService.CheckPartnershipAchievementsAsync(userId.ToString());
+                    await _achievementService.CheckPartnershipAchievementsAsync(request.PartnerId.ToString());
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the partnership creation if achievement check fails
+                    _logger.LogWarning(ex, "Error checking achievements after partnership creation");
+                }
 
                 return Ok(partnership);
             }
@@ -443,6 +458,18 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 _logger.LogInformation("Partnership created via invitation between {User1} and {User2}", 
                     invitation.InviterId, userId);
+
+                // Check for new achievements for both users after accepting partnership
+                try
+                {
+                    await _achievementService.CheckPartnershipAchievementsAsync(invitation.InviterId.ToString());
+                    await _achievementService.CheckPartnershipAchievementsAsync(userId.ToString());
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the partnership creation if achievement check fails
+                    _logger.LogWarning(ex, "Error checking achievements after partnership acceptance");
+                }
 
                 return Ok(new { 
                     message = "Partnership created successfully", 

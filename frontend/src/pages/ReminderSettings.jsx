@@ -11,6 +11,7 @@ function ReminderSettings() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testingReminders, setTestingReminders] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   
   const [settings, setSettings] = useState({
@@ -62,6 +63,30 @@ function ReminderSettings() {
   const handleChange = (field, value) => {
     setSettings(prev => ({ ...prev, [field]: value }));
   };
+
+  const handleTestReminders = async () => {
+    try {
+      setTestingReminders(true);
+      const result = await reminderService.checkReminders();
+      
+      if (result.success) {
+        const count = result.remindersSent || 0;
+        if (count > 0) {
+          showMessage('success', t('reminders.remindersTestedCount', { count }));
+        } else {
+          showMessage('success', t('reminders.remindersTested'));
+        }
+      } else {
+        showMessage('error', result.message || t('reminders.errorTestingReminders'));
+      }
+    } catch (error) {
+      console.error('Error testing reminders:', error);
+      showMessage('error', t('reminders.errorTestingReminders'));
+    } finally {
+      setTestingReminders(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -227,6 +252,24 @@ function ReminderSettings() {
               <span className="toggle-text">{t('reminders.enableSavingsNotifications')}</span>
             </label>
             <p className="setting-description">{t('reminders.savingsDescription')}</p>
+          </div>
+        </div>
+
+        {/* Test Reminders Section */}
+        <div className="settings-section">
+          <div className="section-header">
+            <h2>🧪 {t('reminders.testReminders')}</h2>
+          </div>
+          <div className="setting-item">
+            <p className="setting-description">{t('reminders.testRemindersDescription')}</p>
+            <button
+              onClick={handleTestReminders}
+              disabled={testingReminders || !settings.emailEnabled}
+              className="btn btn-secondary"
+              style={{ marginTop: '10px' }}
+            >
+              {testingReminders ? t('reminders.testingReminders') : t('reminders.testReminders')}
+            </button>
           </div>
         </div>
 

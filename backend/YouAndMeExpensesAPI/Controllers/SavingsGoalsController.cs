@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -14,11 +15,16 @@ namespace YouAndMeExpensesAPI.Controllers
     public class SavingsGoalsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
+        private readonly IAchievementService _achievementService;
         private readonly ILogger<SavingsGoalsController> _logger;
 
-        public SavingsGoalsController(AppDbContext dbContext, ILogger<SavingsGoalsController> logger)
+        public SavingsGoalsController(
+            AppDbContext dbContext,
+            IAchievementService achievementService,
+            ILogger<SavingsGoalsController> logger)
         {
             _dbContext = dbContext;
+            _achievementService = achievementService;
             _logger = logger;
         }
 
@@ -217,6 +223,17 @@ namespace YouAndMeExpensesAPI.Controllers
                 _dbContext.SavingsGoals.Add(goal);
                 await _dbContext.SaveChangesAsync();
 
+                // Check for new achievements after creating savings goal
+                try
+                {
+                    await _achievementService.CheckSavingsAchievementsAsync(userId.ToString());
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the goal creation if achievement check fails
+                    _logger.LogWarning(ex, "Error checking achievements after savings goal creation");
+                }
+
                 return CreatedAtAction(
                     nameof(GetSavingsGoal),
                     new { id = goal.Id },
@@ -382,12 +399,25 @@ namespace YouAndMeExpensesAPI.Controllers
                 goal.UpdatedAt = DateTime.UtcNow;
 
                 // Check if goal is now achieved
+                var wasAchieved = goal.IsAchieved;
                 if (goal.CurrentAmount >= goal.TargetAmount)
                 {
                     goal.IsAchieved = true;
                 }
 
                 await _dbContext.SaveChangesAsync();
+
+                // Check for new achievements after deposit (especially if goal was just achieved)
+                try
+                {
+                    await _achievementService.CheckSavingsAchievementsAsync(userId.ToString());
+                    await _achievementService.CheckMilestoneAchievementsAsync(userId.ToString());
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the deposit if achievement check fails
+                    _logger.LogWarning(ex, "Error checking achievements after savings deposit");
+                }
 
                 return Ok(goal);
             }
@@ -441,6 +471,18 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
 
                 await _dbContext.SaveChangesAsync();
+
+                // Check for new achievements after withdrawal (savings amount milestones)
+                try
+                {
+                    await _achievementService.CheckSavingsAchievementsAsync(userId.ToString());
+                    await _achievementService.CheckMilestoneAchievementsAsync(userId.ToString());
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the withdrawal if achievement check fails
+                    _logger.LogWarning(ex, "Error checking achievements after savings withdrawal");
+                }
 
                 return Ok(goal);
             }

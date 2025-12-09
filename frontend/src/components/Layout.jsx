@@ -18,7 +18,8 @@ import {
   FiPieChart,
   FiMoreHorizontal,
   FiChevronDown,
-  FiActivity
+  FiActivity,
+  FiAward
 } from 'react-icons/fi'
 
 // Euro icon component to replace dollar sign - memoized to prevent re-renders
@@ -79,6 +80,7 @@ function Layout() {
     { path: '/analytics', icon: FiBarChart2, label: t('navigation.analytics') },
     { path: '/partnership', icon: FiUsers, label: t('navigation.partnership') },
     { path: '/savings-goals', icon: FiPieChart, label: t('navigation.savingsGoals') },
+    { path: '/achievements', icon: FiAward, label: t('navigation.achievements') },
   ], [t, i18n.language])
 
   // All navigation items (for mobile menu) - memoized

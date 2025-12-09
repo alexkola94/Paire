@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
@@ -152,17 +153,43 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
                 else
                 {
-                    // Create new
-                    preferences.Id = Guid.NewGuid();
-                    preferences.UserId = userId;
-                    preferences.CreatedAt = DateTime.UtcNow;
-                    preferences.UpdatedAt = DateTime.UtcNow;
+                    // Try to create new preferences
+                    try
+                    {
+                        preferences.Id = Guid.NewGuid();
+                        preferences.UserId = userId;
+                        preferences.CreatedAt = DateTime.UtcNow;
+                        preferences.UpdatedAt = DateTime.UtcNow;
 
-                    _dbContext.ReminderPreferences.Add(preferences);
-                    await _dbContext.SaveChangesAsync();
+                        _dbContext.ReminderPreferences.Add(preferences);
+                        await _dbContext.SaveChangesAsync();
 
-                    _logger.LogInformation($"Reminder settings created for user {userId}");
-                    return Ok(preferences);
+                        _logger.LogInformation($"Reminder settings created for user {userId}");
+                        return Ok(preferences);
+                    }
+                    catch (DbUpdateException dbEx) when (dbEx.InnerException is PostgresException pgEx && pgEx.SqlState == "23503")
+                    {
+                        // Foreign key constraint violation (23503) - This should no longer occur after migration
+                        // but kept as a safety measure for any other foreign key issues
+                        // The foreign key constraint to auth.users(id) has been removed via migration
+                        
+                        // Detach the entity to prevent it from being tracked
+                        try
+                        {
+                            var entry = _dbContext.Entry(preferences);
+                            if (entry != null && entry.State != EntityState.Detached)
+                            {
+                                entry.State = EntityState.Detached;
+                            }
+                        }
+                        catch
+                        {
+                            // Entry might not exist, ignore
+                        }
+                        
+                        _logger.LogError(dbEx, $"Database constraint violation when saving reminder preferences for user {userId}");
+                        return StatusCode(500, new { message = "Failed to save reminder settings due to database constraint" });
+                    }
                 }
             }
             catch (Exception ex)

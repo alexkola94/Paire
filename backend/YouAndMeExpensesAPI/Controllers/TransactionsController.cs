@@ -16,15 +16,18 @@ namespace YouAndMeExpensesAPI.Controllers
     {
         private readonly AppDbContext _dbContext;
         private readonly ISupabaseService _supabaseService; // For storage only
+        private readonly IAchievementService _achievementService;
         private readonly ILogger<TransactionsController> _logger;
 
         public TransactionsController(
             AppDbContext dbContext,
             ISupabaseService supabaseService,
+            IAchievementService achievementService,
             ILogger<TransactionsController> logger)
         {
             _dbContext = dbContext;
             _supabaseService = supabaseService;
+            _achievementService = achievementService;
             _logger = logger;
         }
 
@@ -262,6 +265,18 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 _dbContext.Transactions.Add(transaction);
                 await _dbContext.SaveChangesAsync();
+                
+                // Check for new achievements after creating transaction
+                try
+                {
+                    await _achievementService.CheckTransactionAchievementsAsync(userId.ToString());
+                    await _achievementService.CheckMilestoneAchievementsAsync(userId.ToString());
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the transaction creation if achievement check fails
+                    _logger.LogWarning(ex, "Error checking achievements after transaction creation");
+                }
                 
                 return CreatedAtAction(
                     nameof(GetTransaction),

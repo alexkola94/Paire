@@ -37,8 +37,9 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
+                var emailLower = email.ToLower();
                 var user = await _dbContext.UserProfiles
-                    .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+                    .FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == emailLower);
 
                 if (user == null)
                 {

@@ -27,6 +27,7 @@ const RecurringBills = lazy(() => import('./pages/RecurringBills'))
 const ShoppingLists = lazy(() => import('./pages/ShoppingLists'))
 const EconomicNews = lazy(() => import('./pages/EconomicNews'))
 const BankCallback = lazy(() => import('./pages/BankCallback'))
+const Achievements = lazy(() => import('./pages/Achievements'))
 
 // Layout - Keep synchronous as it's always needed
 import Layout from './components/Layout'
@@ -210,6 +211,7 @@ function App() {
             <Route path="recurring-bills" element={<RecurringBills />} />
             <Route path="shopping-lists" element={<ShoppingLists />} />
             <Route path="economic-news" element={<EconomicNews />} />
+            <Route path="achievements" element={<Achievements />} />
             <Route path="partnership" element={<Partnership />} />
             <Route path="reminders" element={<ReminderSettings />} />
             <Route path="profile" element={<Profile />} />

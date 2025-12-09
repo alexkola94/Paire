@@ -841,20 +841,34 @@ namespace YouAndMeExpensesAPI.Services
 
                 // NewsAPI free tier: country=gr (Greece), category=business
                 // Note: Free tier requires API key and has rate limits
+                // NewsAPI requires User-Agent header to identify the application
                 var url = $"https://newsapi.org/v2/top-headlines?country=gr&category=business&pageSize=8&apiKey={apiKey}";
 
                 _logger.LogInformation("Fetching economic news from NewsAPI");
                 
                 // Use shorter timeout for NewsAPI (10 seconds)
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                var response = await _httpClient.GetAsync(url, cts.Token);
+                
+                // Create request with User-Agent header (required by NewsAPI)
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("User-Agent", "YouAndMeExpenses/1.0 (Economic News Service)");
+                
+                var response = await _httpClient.SendAsync(request, cts.Token);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
                     {
-                        _logger.LogWarning("NewsAPI returned BadRequest (400). This usually means invalid API key or rate limit exceeded. Error: {Error}", errorContent);
+                        // Check if it's a User-Agent error (shouldn't happen now, but log appropriately)
+                        if (errorContent.Contains("userAgentMissing", StringComparison.OrdinalIgnoreCase))
+                        {
+                            _logger.LogWarning("NewsAPI requires User-Agent header. Error: {Error}", errorContent);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("NewsAPI returned BadRequest (400). This usually means invalid API key or rate limit exceeded. Error: {Error}", errorContent);
+                        }
                     }
                     else
                     {
@@ -934,17 +948,17 @@ namespace YouAndMeExpensesAPI.Services
 
                 _logger.LogInformation("Fetching economic news from Currents API");
                 
-                // Use shorter timeout for Currents API (10 seconds instead of 30)
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                // Use shorter timeout for Currents API (8 seconds to fail faster)
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
                 var response = await _httpClient.GetAsync(url, cts.Token);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("Currents API returned status {StatusCode}", response.StatusCode);
+                    _logger.LogDebug("Currents API returned status {StatusCode}", response.StatusCode);
                     return new List<NewsArticleDTO>();
                 }
 
-                var jsonResponse = await response.Content.ReadAsStringAsync();
+                var jsonResponse = await response.Content.ReadAsStringAsync(cts.Token);
                 var data = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
                 var articles = new List<NewsArticleDTO>();
 
@@ -962,15 +976,28 @@ namespace YouAndMeExpensesAPI.Services
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning(ex, "Error parsing Currents API article");
+                            _logger.LogDebug(ex, "Error parsing Currents API article");
                         }
                     }
                 }
 
                 return articles;
             }
+            catch (TaskCanceledException)
+            {
+                // Timeout or cancellation - log at debug level to reduce noise
+                _logger.LogDebug("Currents API request timed out or was cancelled");
+                return new List<NewsArticleDTO>();
+            }
+            catch (OperationCanceledException)
+            {
+                // Operation cancelled - log at debug level
+                _logger.LogDebug("Currents API request was cancelled");
+                return new List<NewsArticleDTO>();
+            }
             catch (Exception ex)
             {
+                // Other errors - log at warning level
                 _logger.LogWarning(ex, "Error fetching from Currents API");
                 return new List<NewsArticleDTO>();
             }
