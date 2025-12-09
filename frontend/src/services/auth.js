@@ -103,10 +103,14 @@ const apiRequest = async (url, options = {}) => {
   }
 
   try {
+    console.log('Making API request:', { method: options.method || 'GET', url: fullUrl });
+    
     const response = await fetch(fullUrl, {
       ...options,
       headers
     })
+
+    console.log('API response:', { status: response.status, statusText: response.statusText, url: fullUrl });
 
     // Handle 401 Unauthorized - session expired or invalid
     if (response.status === 401) {
@@ -120,6 +124,7 @@ const apiRequest = async (url, options = {}) => {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       const errorMessage = errorData.error || `HTTP error! status: ${response.status}`
+      console.error('API error response:', { status: response.status, error: errorData });
       throw new Error(errorMessage)
     }
 
@@ -128,8 +133,11 @@ const apiRequest = async (url, options = {}) => {
   } catch (error) {
     // Network errors (CORS, connection refused, etc.)
     if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
-      throw new Error(`Cannot connect to API at ${fullUrl}. Please check if the server is running and CORS is configured correctly.`)
+      const detailedError = `Cannot connect to API at ${fullUrl}. Please check if the server is running and CORS is configured correctly.`;
+      console.error('Network error:', { error, url: fullUrl, message: detailedError });
+      throw new Error(detailedError)
     }
+    console.error('API request error:', { error, url: fullUrl });
     throw error
   }
 }
@@ -170,6 +178,11 @@ export const authService = {
    */
   async signUp(email, password, displayName = '') {
     try {
+      const backendUrl = getBackendUrl().replace(/\/+$/, '');
+      const fullUrl = `${backendUrl}/api/auth/register`;
+      
+      console.log('Registration request:', { email, url: fullUrl });
+      
       const data = await apiRequest('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ 
@@ -180,9 +193,15 @@ export const authService = {
         })
       })
 
+      console.log('Registration successful:', data);
       return data
     } catch (error) {
-      console.error('Sign up error:', error)
+      console.error('Sign up error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       throw error
     }
   },

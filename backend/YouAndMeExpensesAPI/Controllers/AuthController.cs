@@ -54,8 +54,16 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
+            _logger.LogInformation("Registration attempt for email: {Email}", request?.Email ?? "null");
+            
             try
             {
+                if (request == null)
+                {
+                    _logger.LogWarning("Register request body is null");
+                    return BadRequest(new { error = "Request body is required" });
+                }
+
                 // Check if user already exists in Identity tables
                 var existingUser = await _userManager.FindByEmailAsync(request.Email);
                 if (existingUser != null)
