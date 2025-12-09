@@ -18,36 +18,21 @@ export default defineConfig(({ mode }) => ({
     // Optimize for production with better code splitting
     rollupOptions: {
       output: {
-        // Manual chunks for better caching and parallel loading
+        // Simplified chunking strategy to avoid circular dependency issues
         manualChunks: (id) => {
-          // React core libraries
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'react-core'
-          }
-          // Router
-          if (id.includes('node_modules/react-router')) {
-            return 'router'
-          }
-          // Chart libraries (heavy, load separately)
-          if (id.includes('node_modules/chart.js') || 
-              id.includes('node_modules/react-chartjs-2') || 
-              id.includes('node_modules/recharts')) {
-            return 'charts'
-          }
-          // i18n libraries
-          if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
-            return 'i18n'
-          }
-          // Date utilities
-          if (id.includes('node_modules/date-fns')) {
-            return 'date-utils'
-          }
-          // Icons (can be large)
-          if (id.includes('node_modules/react-icons')) {
-            return 'icons'
-          }
-          // Other vendor libraries
+          // Only split out very large libraries to avoid initialization issues
           if (id.includes('node_modules')) {
+            // React and React DOM together (they depend on each other)
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+              return 'react-vendor'
+            }
+            // Chart libraries (heavy, load separately)
+            if (id.includes('node_modules/chart.js') || 
+                id.includes('node_modules/react-chartjs-2') || 
+                id.includes('node_modules/recharts')) {
+              return 'charts'
+            }
+            // Everything else in one vendor chunk to avoid circular deps
             return 'vendor'
           }
         },
