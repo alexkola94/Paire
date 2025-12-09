@@ -57,14 +57,9 @@ export default defineConfig(({ mode }) => ({
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
     },
-    // Enable minification
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.log in production
-        drop_debugger: true
-      }
-    },
+    // Enable minification (using esbuild - faster and built into Vite)
+    minify: 'esbuild',
+    // esbuild automatically removes console.log in production builds
     // Increase chunk size warning limit (for better splitting)
     chunkSizeWarningLimit: 1000
   },
