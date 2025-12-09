@@ -23,7 +23,7 @@ function AcceptInvitation() {
       loadInvitation()
     } else {
       // No token - redirect to login
-      const basename = import.meta.env.MODE === 'production' ? '/You-me-Expenses' : ''
+      const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
       const partnershipPath = '/partnership'
       const loginPath = `/login?redirect=${encodeURIComponent(partnershipPath)}`
       window.location.href = `${basename}${loginPath}`
@@ -59,21 +59,21 @@ function AcceptInvitation() {
         }
         
         // Redirect to partnership page where user can see pending invitations
-        const basename = import.meta.env.MODE === 'production' ? '/You-me-Expenses' : ''
+        const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
         window.location.href = `${basename}/partnership`
         return
       }
       
       // User not logged in - redirect to login page
       // After login, they can go to Partnership page to accept
-      const basename = import.meta.env.MODE === 'production' ? '/You-me-Expenses' : ''
+      const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
       const partnershipPath = '/partnership'
       const loginPath = `/login?redirect=${encodeURIComponent(partnershipPath)}`
       window.location.href = `${basename}${loginPath}`
     } catch (error) {
       console.error('Error loading invitation:', error)
       // On any error, just redirect to login
-      const basename = import.meta.env.MODE === 'production' ? '/You-me-Expenses' : ''
+      const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
       const partnershipPath = '/partnership'
       const loginPath = `/login?redirect=${encodeURIComponent(partnershipPath)}`
       window.location.href = `${basename}${loginPath}`
@@ -95,13 +95,13 @@ function AcceptInvitation() {
       
       // Redirect to partnership page after 2 seconds
       setTimeout(() => {
-        const basename = import.meta.env.MODE === 'production' ? '/You-me-Expenses' : ''
+        const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
         window.location.href = `${basename}/partnership`
       }, 2000)
     } catch (error) {
       console.error('Error accepting invitation:', error)
       // On error, redirect to partnership page where user can see pending invitations
-      const basename = import.meta.env.MODE === 'production' ? '/You-me-Expenses' : ''
+      const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
       window.location.href = `${basename}/partnership`
     } finally {
       setProcessing(false)
