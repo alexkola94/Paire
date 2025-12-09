@@ -5,7 +5,7 @@
 ![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-Private-red.svg)
 ![React](https://img.shields.io/badge/React-18.2-61dafb.svg)
-![.NET](https://img.shields.io/badge/.NET-7.0-512bd4.svg)
+![.NET](https://img.shields.io/badge/.NET-8.0-512bd4.svg)
 
 **Finances, aligned.**
 
@@ -145,7 +145,7 @@ npm run dev
 - **CSS3** - Custom responsive styling
 
 ### **Backend**
-- **.NET 7.0** - High-performance API
+- **.NET 8.0** - High-performance API
 - **Entity Framework Core** - ORM for database
 - **Supabase .NET SDK** - Database integration
 - **ASP.NET Core** - Web framework
@@ -335,7 +335,7 @@ You-me-Expenses/
 
 ### **Prerequisites:**
 - Node.js 18+ (for frontend)
-- .NET 7.0 SDK (for backend)
+- .NET 8.0 SDK (for backend)
 - Supabase account (free tier available)
 - Gmail account (for email notifications - optional)
 - OpenAI API key (for chatbot - optional)
