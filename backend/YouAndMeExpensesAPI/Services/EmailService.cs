@@ -59,20 +59,26 @@ namespace YouAndMeExpensesAPI.Services
 
                 message.Body = bodyBuilder.ToMessageBody();
 
-                // Send email via SMTP
+                // Send email via SMTP with timeout
                 using (var client = new SmtpClient())
                 {
-                    // Connect to Gmail SMTP server
-                    await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
+                    // Set timeout to prevent hanging (30 seconds)
+                    client.Timeout = 30000;
+                    
+                    // Connect to Gmail SMTP server with timeout
+                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+                    {
+                        await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, SecureSocketOptions.StartTls, cts.Token);
 
-                    // Authenticate
-                    await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password);
+                        // Authenticate
+                        await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password, cts.Token);
 
-                    // Send email
-                    await client.SendAsync(message);
+                        // Send email
+                        await client.SendAsync(message, cts.Token);
 
-                    // Disconnect
-                    await client.DisconnectAsync(true);
+                        // Disconnect
+                        await client.DisconnectAsync(true, cts.Token);
+                    }
 
                     _logger.LogInformation($"Email sent successfully to {emailMessage.ToEmail}");
                     return true;

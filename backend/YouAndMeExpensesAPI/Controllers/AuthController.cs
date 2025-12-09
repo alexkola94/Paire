@@ -104,8 +104,21 @@ namespace YouAndMeExpensesAPI.Controllers
                 // Generate email confirmation token
                 var emailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-                // Send confirmation email
-                await SendConfirmationEmail(user, emailToken);
+                // Send confirmation email (fire-and-forget to avoid blocking registration)
+                // If email fails, user can still request a new confirmation email
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        _logger.LogInformation("Attempting to send confirmation email to {Email}", user.Email);
+                        await SendConfirmationEmail(user, emailToken);
+                        _logger.LogInformation("Confirmation email sent successfully to {Email}", user.Email);
+                    }
+                    catch (Exception emailEx)
+                    {
+                        _logger.LogError(emailEx, "Failed to send confirmation email to {Email}. User can request a new one.", user.Email);
+                    }
+                });
 
                 // Create user profile (only if it doesn't exist)
                 var userProfile = await _context.UserProfiles
