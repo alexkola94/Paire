@@ -73,7 +73,9 @@ const apiRequest = async (url, options = {}) => {
     }
   }
   
-  const fullUrl = `${backendApiUrl}${url}`
+  // Ensure URL doesn't have double slashes
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${backendApiUrl}${normalizedUrl}`
   
   const headers = {
     ...options.headers

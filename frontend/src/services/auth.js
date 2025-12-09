@@ -86,7 +86,9 @@ const apiRequest = async (url, options = {}) => {
     }
   }
   
-  const fullUrl = `${backendUrl}${url}`
+  // Ensure URL doesn't have double slashes
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${backendUrl}${normalizedUrl}`
   
   const headers = {
     'Content-Type': 'application/json',
