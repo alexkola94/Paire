@@ -43,6 +43,16 @@ This document outlines the steps and checks needed to prepare the Paire applicat
 - [ ] **Action Required:** Test email sending in production
 - [ ] **Action Required:** Verify email templates work correctly
 
+### 📊 Economic News Feature
+- [x] Eurostat API integration (free, no authentication required)
+- [ ] **Optional:** Configure news API keys for enhanced content:
+  - `GNews__ApiKey` - Get free key from https://gnews.io/ (100 requests/day free)
+  - `NewsAPI__ApiKey` - Get free key from https://newsapi.org/ (100 requests/day free)
+  - `CurrentsAPI__ApiKey` - Get free key from https://currentsapi.services/ (200 requests/day free)
+- [x] Response caching configured (5-minute cache for external APIs)
+- [ ] **Action Required:** Test economic data endpoints in production
+- [ ] **Action Required:** Verify API rate limits are respected
+
 ### 🔑 JWT Configuration
 - [ ] **Action Required:** Generate new secure JWT secret (64+ characters)
 - [ ] **Action Required:** Set `JwtSettings__Secret` in production
@@ -123,6 +133,11 @@ EmailSettings__EnableSsl=true
 # CORS & Frontend
 CORS_ORIGINS=https://your-username.github.io
 AppSettings__FrontendUrl=https://your-username.github.io/Paire
+
+# Economic News APIs (Optional - for enhanced news content)
+GNews__ApiKey=your_gnews_api_key_optional
+NewsAPI__ApiKey=your_newsapi_key_optional
+CurrentsAPI__ApiKey=your_currentsapi_key_optional
 ```
 
 ### Frontend (`.env.production`)
@@ -173,6 +188,13 @@ After deployment, verify:
 - Verify Gmail app password is correct
 - Check 2FA is enabled on Gmail account
 - Review SMTP settings match Gmail requirements
+
+**"Economic data not loading"**
+- Eurostat API is free and requires no authentication - should work automatically
+- Check network connectivity to Eurostat API
+- Verify news API keys are valid (if configured)
+- Check API rate limits haven't been exceeded
+- Review backend logs for specific API errors
 
 ---
 

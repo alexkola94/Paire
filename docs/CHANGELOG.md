@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Recurring Bills** - Manage subscriptions and recurring payments with automatic reminders
 - **Loan Payment Tracking** - Track individual loan payments with principal/interest breakdown
 - **Shopping Lists** - Organize shopping with cost estimation and item management
+- **Economic News** - Real-time Greece economic data from Eurostat API (CPI, food prices, GDP, unemployment, inflation)
+- **Economic Indicators** - Track key economic metrics with visual charts and trends
+- **News Aggregation** - Latest economic news from multiple sources (GNews, NewsAPI, CurrentsAPI)
 - **AI Chatbot** - Financial assistant powered by OpenAI for natural language queries
 - **Email Reminders** - Automated email notifications for bills, loans, and budget alerts
 - **Partnership Sharing** - Enhanced partner connection and data sharing features
@@ -61,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized component rendering
 - Improved bundle size
 - Better lazy loading for routes
+- Progressive data loading for economic news sections
+- Response caching for external API calls (5-minute cache)
 
 #### 🐛 Fixed
 - Fixed dashboard date filtering issues

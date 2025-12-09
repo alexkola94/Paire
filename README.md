@@ -51,6 +51,13 @@ A comprehensive expense tracking and financial management platform for couples.
 - ✅ **Smart Insights** - Get AI-powered financial advice
 - ✅ **Query History** - Review past conversations
 
+### 📊 **Economic Data & News**
+- ✅ **Economic News** - Real-time Greece economic data from Eurostat API
+- ✅ **CPI Tracking** - Consumer Price Index trends and rates
+- ✅ **Food Price Monitoring** - Track food price changes over time
+- ✅ **Economic Indicators** - GDP, unemployment, inflation, and household income data
+- ✅ **News Aggregation** - Latest economic news from multiple sources
+
 ### 🌍 **User Experience**
 - ✅ **Multi-language Support** - English, Greek, Spanish, French
 - ✅ **Mobile-First Design** - Optimized for phones, tablets, and desktops
@@ -118,9 +125,10 @@ npm run dev
 7. **Savings Goals** (`/savings-goals`) - 🆕 Track savings progress
 8. **Recurring Bills** (`/recurring-bills`) - 🆕 Manage subscriptions
 9. **Shopping Lists** (`/shopping-lists`) - 🆕 Organize shopping
-10. **Partnership** (`/partnership`) - Connect with your partner
-11. **Reminders** (`/reminders`) - Configure notifications
-12. **Profile** (`/profile`) - Manage your account
+10. **Economic News** (`/economic-news`) - 🆕 Greece economic data & indicators
+11. **Partnership** (`/partnership`) - Connect with your partner
+12. **Reminders** (`/reminders`) - Configure notifications
+13. **Profile** (`/profile`) - Manage your account
 
 ---
 
@@ -163,7 +171,7 @@ npm run dev
 You-me-Expenses/
 ├── 📁 backend/
 │   └── YouAndMeExpensesAPI/
-│       ├── Controllers/         # 11 API controllers
+│       ├── Controllers/         # 12 API controllers
 │       │   ├── AnalyticsController.cs
 │       │   ├── BudgetsController.cs
 │       │   ├── ChatbotController.cs
@@ -173,6 +181,7 @@ You-me-Expenses/
 │       │   ├── RemindersController.cs
 │       │   ├── SavingsGoalsController.cs      # 🆕 NEW!
 │       │   ├── ShoppingListsController.cs     # 🆕 NEW!
+│       │   ├── EconomicDataController.cs       # 🆕 NEW!
 │       │   ├── SystemController.cs
 │       │   └── TransactionsController.cs
 │       ├── Data/                # Entity Framework DbContext
@@ -203,10 +212,12 @@ You-me-Expenses/
 │   │   │   ├── RecurringBills.jsx       # 🆕 NEW!
 │   │   │   ├── ReminderSettings.jsx
 │   │   │   ├── SavingsGoals.jsx         # 🆕 NEW!
-│   │   │   └── ShoppingLists.jsx        # 🆕 NEW!
+│   │   │   ├── ShoppingLists.jsx        # 🆕 NEW!
+│   │   │   └── EconomicNews.jsx         # 🆕 NEW!
 │   │   ├── services/            # API & Supabase
 │   │   │   ├── api.js (enhanced)
-│   │   │   └── supabase.js
+│   │   │   ├── supabase.js
+│   │   │   └── greeceEconomicData.js  # 🆕 NEW!
 │   │   ├── i18n/                # Translations (4 languages)
 │   │   │   └── locales/
 │   │   │       ├── en.json
@@ -298,7 +309,7 @@ You-me-Expenses/
 
 ## 🎯 **API Endpoints Overview**
 
-### **35+ RESTful Endpoints:**
+### **40+ RESTful Endpoints:**
 
 | Feature | Endpoints | Status |
 |---------|-----------|--------|
@@ -310,10 +321,11 @@ You-me-Expenses/
 | Recurring Bills | 8 endpoints | 🆕 NEW! |
 | Loan Payments | 7 endpoints | 🆕 NEW! |
 | Shopping Lists | 12 endpoints | 🆕 NEW! |
+| Economic Data | 5 endpoints | 🆕 NEW! |
 | Reminders | 7 endpoints | ✅ Active |
 | Chatbot | 2 endpoints | ✅ Active |
 
-**Total: 70+ API endpoints!**
+**Total: 75+ API endpoints!**
 
 ---
 
@@ -643,12 +655,12 @@ If you find this helpful, please give it a star ⭐
 
 ## 📈 **Stats**
 
-- **Lines of Code:** 15,000+
-- **API Endpoints:** 70+
-- **Pages:** 13
+- **Lines of Code:** 16,000+
+- **API Endpoints:** 75+
+- **Pages:** 14
 - **Languages:** 4
 - **Database Tables:** 12
-- **Features:** 20+
+- **Features:** 25+
 - **Tests:** 10+
 - **Documentation Files:** 40+
 
