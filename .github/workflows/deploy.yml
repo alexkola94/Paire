@@ -1,15 +1,9 @@
-# GitHub Actions Workflow for Automated Deployment
-# Automatically deploys frontend to GitHub Pages when you push to main
-
-name: Deploy Frontend to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'frontend/**'
-  workflow_dispatch: # Allows manual trigger
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,43 +11,49 @@ permissions:
   id-token: write
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    
     steps:
-      # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Setup Node.js
+     
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-
-      # Install dependencies
+     
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
-
-      # Build the frontend
+     
+      - name: Create .env.production
+        working-directory: ./frontend
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env.production
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env.production
+          echo "VITE_BACKEND_API_URL=${{ secrets.VITE_BACKEND_API_URL }}" >> .env.production
+     
       - name: Build
         working-directory: ./frontend
         run: npm run build
-        env:
-          VITE_BACKEND_API_URL: ${{ secrets.VITE_BACKEND_API_URL }}
-
-      # Deploy to GitHub Pages
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+     
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+     
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/dist
-          cname: # Add custom domain here if you have one
+          path: './frontend/dist'
 
-# Note: You need to add VITE_BACKEND_API_URL to your GitHub repository secrets:
-# Settings → Secrets and variables → Actions → New repository secret
-# Name: VITE_BACKEND_API_URL
-# Value: https://paire-api.onrender.com
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
