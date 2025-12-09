@@ -291,7 +291,9 @@ You-me-Expenses/
 - 🗺️ [FEATURE_ROADMAP.md](./docs/FEATURE_ROADMAP.md) - Future plans
 
 ### **Deployment:**
-- 🚀 [RENDER_GITHUB_PAGES_DEPLOYMENT.md](./docs/RENDER_GITHUB_PAGES_DEPLOYMENT.md) - **Step-by-step: Render.com + GitHub Pages**
+- 🚀 [PRODUCTION_DEPLOYMENT_PLAN.md](./docs/PRODUCTION_DEPLOYMENT_PLAN.md) - **📋 Complete Production Deployment Plan (Render.com + GitHub Pages)**
+- ⚡ [PRODUCTION_QUICK_START.md](./docs/PRODUCTION_QUICK_START.md) - Quick reference guide
+- 🚀 [RENDER_GITHUB_PAGES_DEPLOYMENT.md](./docs/RENDER_GITHUB_PAGES_DEPLOYMENT.md) - Detailed step-by-step guide
 - 🌐 [DEPLOYMENT.md](./docs/DEPLOYMENT.md) - General deployment guide
 - ✅ [PRODUCTION_READINESS.md](./docs/PRODUCTION_READINESS.md) - Production checklist
 - 🔧 [SETUP_ENTITY_FRAMEWORK.md](./docs/SETUP_ENTITY_FRAMEWORK.md) - EF Core setup
