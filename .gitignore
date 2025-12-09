@@ -283,5 +283,6 @@ storybook-static/
 # ================================
 # Documentation
 # ================================
-docs/
+# Note: docs/ directory is tracked for deployment guides and troubleshooting
+# Only ignore specific doc files if needed (e.g., generated docs)
 
