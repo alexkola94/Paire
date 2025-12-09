@@ -291,6 +291,17 @@ builder.Services.AddScoped<IEnableBankingService, EnableBankingService>();
 builder.Services.AddScoped<IBankTransactionImportService, BankTransactionImportService>();
 
 // =====================================================
+// Register Greece Economic Data Service
+// =====================================================
+
+// Register HTTP client for Greece Economic Data API calls
+builder.Services.AddHttpClient<IGreeceEconomicDataService, GreeceEconomicDataService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+// =====================================================
 // Configure Background Services (Optional - Uncomment to enable)
 // =====================================================
 

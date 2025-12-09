@@ -145,7 +145,7 @@ function Dashboard() {
       <div className="card recent-transactions">
         <div className="card-header flex-between">
           <h2>{t('dashboard.recentTransactions')}</h2>
-          <Link to="/expenses" className="view-all-link">
+          <Link to="/transactions" className="view-all-link">
             {t('common.viewAll')}
             <FiArrowRight size={18} />
           </Link>

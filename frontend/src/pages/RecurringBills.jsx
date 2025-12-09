@@ -440,14 +440,17 @@ function RecurringBills() {
                 required
               />
 
-              <CategorySelector
-                value={formData.category}
-                onChange={handleChange}
-                name="category"
-                categories={categories.map(c => c.value)}
-                type="expense"
-                label={t('recurringBills.category')}
-              />
+              {/* Category - Full width for better visibility */}
+              <div className="form-layout-item-full">
+                <CategorySelector
+                  value={formData.category}
+                  onChange={handleChange}
+                  name="category"
+                  categories={categories.map(c => c.value)}
+                  type="expense"
+                  label={t('recurringBills.category')}
+                />
+              </div>
             </FormSection>
 
             <div className="form-row">

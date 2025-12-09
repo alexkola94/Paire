@@ -311,15 +311,17 @@
 /* Item Card */
 .item-card {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-md);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
   background: var(--bg-primary);
   border-radius: var(--radius-md);
   border-left: 3px solid var(--primary);
   transition: var(--transition);
   position: relative;
-  /* Allow vertical scrolling, enable horizontal swipe detection on mobile */
+  /* Better vertical alignment for all items */
+  min-height: 60px;
+  /* Consistent minimum height */
   touch-action: pan-y;
   overflow: hidden; /* Hide overflow by default */
 }
@@ -386,10 +388,11 @@
   color: var(--text-light);
 }
 
-/* Smooth animation for checked state */
+/* Smooth transition for checked state and other interactions */
 .item-card {
   transition: all 0.2s ease-in-out;
 }
+
 
 .item-card.checked .item-content {
   transition: opacity 0.2s ease-in-out;
@@ -402,13 +405,15 @@
   border: none;
   cursor: pointer;
   color: var(--text-secondary);
-  padding: 0;
+  padding: 8px;
   transition: var(--transition);
-  margin-top: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
+  width: 40px;
+  height: 40px;
+  /* Consistent size for better alignment */
 }
 
 .item-checkbox:hover {
@@ -425,13 +430,19 @@
 .item-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  /* Better spacing between elements */
 }
 
 .item-main {
   display: flex;
-  align-items: baseline;
-  gap: var(--spacing-sm);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
   margin-bottom: var(--spacing-xs);
+  width: 100%;
 }
 
 .item-main h4 {
@@ -442,6 +453,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  /* Allow text to truncate properly */
 }
 
 .item-quantity {
@@ -449,13 +462,20 @@
   color: var(--text-secondary);
   font-weight: 600;
   white-space: nowrap;
+  flex-shrink: 0;
+  /* Prevent quantity from shrinking */
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  /* Add background for better visibility */
 }
 
 .item-price {
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--primary);
-  margin-bottom: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  /* Better spacing */
 }
 
 .item-notes {
@@ -1247,7 +1267,10 @@
   }
 
   .item-main {
-    flex-direction: column;
+    flex-direction: row;
+    /* Keep horizontal layout for better space usage on mobile */
+    align-items: center;
+    justify-content: space-between;
     align-items: flex-start;
     gap: var(--spacing-xs);
     margin-bottom: var(--spacing-xs);

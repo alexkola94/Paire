@@ -43,6 +43,7 @@
     "savingsGoals": "Savings Goals",
     "recurringBills": "Bills",
     "shoppingLists": "Shopping",
+    "economicNews": "Economic News",
     "partnership": "Partnership",
     "reminders": "Reminders",
     "profile": "Profile",
@@ -58,6 +59,12 @@
     "monthlyOverview": "Monthly Overview",
     "noTransactions": "No transactions yet",
     "addedBy": "Added by"
+  },
+  "allTransactions": {
+    "title": "All Transactions",
+    "totalCount": "Total: {{count}} transaction",
+    "totalCount_plural": "Total: {{count}} transactions",
+    "noTransactions": "No transactions recorded"
   },
   "expenses": {
     "createdSuccess": "Expense created successfully",
@@ -225,7 +232,14 @@
     "freelance": "Freelance",
     "investment": "Investment",
     "gift": "Gift",
-    "other": "Other"
+    "other": "Other",
+    "subscription": "Subscription",
+    "insurance": "Insurance",
+    "rent": "Rent/Mortgage",
+    "loan": "Loan Payment",
+    "internet": "Internet",
+    "phone": "Phone",
+    "gym": "Gym/Fitness"
   },
   "profile": {
     "title": "Profile",
@@ -796,6 +810,48 @@
     "expiredLink": "Email confirmation failed. The link may have expired. Please request a new confirmation email.",
     "resendConfirmation": "Resend Confirmation Email",
     "backToLogin": "Back to Login"
+  },
+  "economicNews": {
+    "title": "Economic News",
+    "subtitle": "Greece Economic Data & Indicators",
+    "loading": "Loading economic data...",
+    "refresh": "Refresh",
+    "lastUpdated": "Last updated",
+    "unknown": "Unknown",
+    "source": "Source",
+    "cpi": {
+      "title": "Consumer Price Index (CPI)",
+      "previous": "Previous",
+      "source": "Source"
+    },
+    "foodPrices": {
+      "title": "Food Prices",
+      "average": "Average"
+    },
+    "indicators": {
+      "title": "Economic Indicators",
+      "gdp": "GDP",
+      "unemployment": "Unemployment Rate",
+      "inflation": "Inflation Rate",
+      "householdIncome": "Household Income"
+    },
+    "news": {
+      "title": "Latest Economic News",
+      "readMore": "Read More"
+    },
+    "links": {
+      "title": "Data Sources"
+    },
+    "error": {
+      "title": "Error Loading Data",
+      "loading": "Failed to load economic data. Please try again later.",
+      "retry": "Retry"
+    },
+    "underConstruction": {
+      "title": "Under Construction",
+      "message": "We're currently working on integrating real-time economic data from data.gov.gr. This feature will be available soon with up-to-date information about CPI, food prices, and economic indicators for Greece.",
+      "info": "The backend API is ready and waiting for the data.gov.gr API to be fully configured. Once the dataset IDs are discovered and the API key is set up, this page will display live economic data."
+    }
   }
 }
 

@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-12-04
+
+### 🎉 Major Feature Release
+
+#### ✨ Added
+- **Savings Goals** - Set and track multiple savings goals with visual progress indicators
+- **Recurring Bills** - Manage subscriptions and recurring payments with automatic reminders
+- **Loan Payment Tracking** - Track individual loan payments with principal/interest breakdown
+- **Shopping Lists** - Organize shopping with cost estimation and item management
+- **AI Chatbot** - Financial assistant powered by OpenAI for natural language queries
+- **Email Reminders** - Automated email notifications for bills, loans, and budget alerts
+- **Partnership Sharing** - Enhanced partner connection and data sharing features
+- **Greek Language Support** - Added Greek (el) to multi-language support (now 4 languages)
+- **Enhanced Analytics** - Improved financial insights and trend analysis
+- **Loan Analytics** - Comprehensive loan tracking and payment analytics
+- **Household Analytics** - Partner comparison and household financial overview
+
+#### 🔄 Changed
+- Updated to React 18.2 with improved performance
+- Enhanced form components with better validation
+- Improved responsive design for tablet and mobile views
+- Better error handling and user feedback
+- Optimized API calls and caching strategies
+- Enhanced accessibility features (screen reader support, focus traps, swipe gestures)
+
+#### 🎨 Design
+- Improved form layouts with better spacing
+- Enhanced modal and toast notifications
+- Better loading states and skeleton loaders
+- Smooth transitions across all interactions
+- Improved color consistency with theme support
+- Better mobile navigation and gestures
+
+#### 🔐 Security
+- Enhanced authentication flow
+- Improved session management
+- Better data validation on both frontend and backend
+- Enhanced Row Level Security policies
+
+#### 📚 Documentation
+- Added comprehensive feature documentation
+- Updated setup guides with latest information
+- Added deployment guides for Render.com and GitHub Pages
+- Created implementation reports and status documents
+- Added translation guides and audit reports
+
+#### 🌍 Internationalization
+- Added Greek (el) translations
+- Updated all translation files with new feature keys
+- Improved translation coverage across all pages
+
+#### ⚡ Performance
+- Implemented API caching strategies
+- Optimized component rendering
+- Improved bundle size
+- Better lazy loading for routes
+
+#### 🐛 Fixed
+- Fixed dashboard date filtering issues
+- Resolved loan analytics calculation errors
+- Fixed partnership sharing RLS policies
+- Corrected zero counter display issues
+- Fixed CORS configuration
+- Resolved form validation edge cases
+
+---
+
 ## [1.0.0] - 2024-12-03
 
 ### 🎉 Initial Release
@@ -56,19 +123,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## Future Releases
-
-See [GitHub Issues](https://github.com/YOUR_USERNAME/you-me-expenses/issues) for planned features and improvements.
+## [Unreleased]
 
 ### 🔮 Planned Features
-- Budget planning and alerts
-- Recurring transactions
-- Advanced financial reports
-- Export to CSV/PDF
-- Split expenses between partners
-- Custom categories
-- Dark mode theme
-- Mobile native apps
+- Budget templates and presets
+- Savings goal milestones and celebrations
+- Bill payment integration
+- Shopping list sharing between partners
+- Export to PDF/Excel functionality
+- Mobile app (React Native)
+- Recurring transaction auto-creation
+- Bank integration (Open Banking/Plaid)
+- Investment tracking
+- Tax preparation reports
+- Financial advisor AI enhancements
+- Goal recommendations based on spending patterns
+- Spending insights and recommendations
+- Bill negotiation tips
 
 ---
 

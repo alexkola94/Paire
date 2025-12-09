@@ -1,0 +1,805 @@
+/* ================================
+   Economic News Page Styles
+   Mobile-First Responsive Design
+   ================================ */
+
+.economic-news-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-md);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   Header Section
+   ================================ */
+
+.economic-news-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 2px solid var(--bg-tertiary);
+}
+
+/* Scope header styles to only affect Economic News page header, not Layout header */
+.economic-news-header .header-content h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.economic-news-header .header-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: var(--spacing-xs) 0 0 0;
+  transition: color 0.3s ease;
+}
+
+.refresh-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 10px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: var(--primary-dark, #5a4fd4);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-button svg.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ================================
+   Last Updated Info
+   ================================ */
+
+.last-updated-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  transition: all 0.3s ease;
+}
+
+.last-updated-info svg {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+/* ================================
+   Loading & Error States
+   ================================ */
+
+.economic-news-loading,
+.economic-news-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: var(--spacing-lg);
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.economic-news-loading p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.economic-news-error .error-icon {
+  color: var(--error);
+  opacity: 0.8;
+}
+
+.economic-news-error h2 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.economic-news-error p {
+  color: var(--text-secondary);
+  margin: var(--spacing-sm) 0;
+}
+
+.retry-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 12px 24px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: var(--spacing-md);
+}
+
+.retry-button:hover {
+  background: var(--primary-dark, #5a4fd4);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ================================
+   Economic Sections
+   ================================ */
+
+.economic-section {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.economic-section:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.section-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+/* ================================
+   CPI Section
+   ================================ */
+
+.cpi-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.cpi-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.cpi-value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.cpi-value .value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.cpi-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-item .label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.detail-item .value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ================================
+   Change Indicators
+   ================================ */
+
+.change-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.3s ease;
+}
+
+.change-indicator.positive {
+  color: var(--success, #10b981);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.change-indicator.negative {
+  color: var(--error, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ================================
+   Food Prices Section
+   ================================ */
+
+.food-prices-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.price-category-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--bg-tertiary);
+  transition: all 0.3s ease;
+}
+
+.price-category-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.category-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.category-header h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.category-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.average-price {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.category-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.price-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  font-size: 0.9rem;
+}
+
+.item-name {
+  color: var(--text-primary);
+}
+
+.item-price {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ================================
+   Economic Indicators Section
+   ================================ */
+
+.indicators-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.indicator-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--bg-tertiary);
+  display: flex;
+  gap: var(--spacing-md);
+  transition: all 0.3s ease;
+}
+
+.indicator-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.indicator-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: white;
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+}
+
+.indicator-card:hover .indicator-icon {
+  background: var(--primary-dark, #5a4fd4);
+  transform: scale(1.1);
+}
+
+.indicator-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.indicator-content h3 {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.indicator-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.indicator-period {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: var(--spacing-xs);
+}
+
+/* ================================
+   News Section
+   ================================ */
+
+.news-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.news-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--bg-tertiary);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.news-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.news-image {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+  position: relative;
+}
+
+.news-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.news-card:hover .news-image img {
+  transform: scale(1.05);
+}
+
+.news-card-content {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.news-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.news-source {
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+}
+
+.news-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+}
+
+.news-date svg {
+  flex-shrink: 0;
+}
+
+.news-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.4;
+  transition: color 0.3s ease;
+}
+
+.news-card:hover .news-title {
+  color: var(--primary);
+}
+
+.news-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.news-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: auto;
+  padding-top: var(--spacing-sm);
+  transition: all 0.3s ease;
+}
+
+.news-link:hover {
+  color: var(--primary-dark, #5a4fd4);
+  gap: var(--spacing-sm);
+}
+
+.news-link svg {
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.news-link:hover svg {
+  transform: translateX(2px);
+}
+
+/* ================================
+   Data Source
+   ================================ */
+
+.data-source {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--bg-tertiary);
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.data-source svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+/* ================================
+   Links Section
+   ================================ */
+
+.links-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.external-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--bg-tertiary);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.external-link:hover {
+  border-color: var(--primary);
+  background: var(--bg-secondary);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+
+.external-link svg {
+  flex-shrink: 0;
+  color: var(--primary);
+  transition: transform 0.3s ease;
+}
+
+.external-link:hover svg {
+  transform: translateX(2px);
+}
+
+/* ================================
+   Section Errors
+   ================================ */
+
+.section-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid var(--error);
+  border-radius: var(--radius-sm);
+  color: var(--error);
+  font-size: 0.9rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.section-error svg {
+  flex-shrink: 0;
+}
+
+/* ================================
+   Responsive Design - Tablet
+   ================================ */
+
+@media (min-width: 768px) {
+  .economic-news-page {
+    padding: var(--spacing-lg);
+  }
+
+  .economic-news-header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .header-content h1 {
+    font-size: 2rem;
+  }
+
+  .cpi-main {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .cpi-details {
+    flex: 1;
+  }
+
+  .indicators-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .category-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .news-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .news-image {
+    height: 180px;
+  }
+}
+
+/* ================================
+   Responsive Design - Desktop
+   ================================ */
+
+@media (min-width: 1024px) {
+  .economic-news-page {
+    padding: var(--spacing-xl);
+  }
+
+  .header-content h1 {
+    font-size: 2.25rem;
+  }
+
+  .indicators-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .food-prices-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+  }
+
+  .news-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .news-image {
+    height: 200px;
+  }
+
+  .links-content {
+    flex-direction: row;
+  }
+}
+
+/* ================================
+   Responsive Design - Large Desktop
+   ================================ */
+
+@media (min-width: 1200px) {
+  .indicators-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ================================
+   Loading Skeletons
+   ================================ */
+
+.loading-skeleton {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.skeleton-content {
+  padding: var(--spacing-md);
+}
+
+.skeleton-line {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-tertiary) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-md);
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  margin-bottom: var(--spacing-sm);
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-content .indicators-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.skeleton-content .news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-md);
+}
+

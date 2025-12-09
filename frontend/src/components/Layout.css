@@ -78,7 +78,7 @@
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0;
-  color: white;
+  color: white !important; /* Ensure header brand stays white */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -88,7 +88,7 @@
   font-size: 0.75rem;
   margin: 4px 0 0 0;
   opacity: 0.9;
-  color: white;
+  color: white !important; /* Ensure header tagline stays white */
   display: none; /* Hidden on mobile */
 }
 
@@ -114,6 +114,34 @@
 }
 
 .header-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Economic News Button - Pulsing Animation */
+.news-button {
+  position: relative;
+  animation: pulse 3.5s ease-in-out infinite;
+}
+
+/* Pulsing animation for live indicator effect - heartbeat style */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
+  }
+}
+
+/* Ensure smooth transitions */
+.news-button {
+  transition: all 0.3s ease;
+}
+
+/* Maintain hover effect while pulsing - slightly faster pulse on hover */
+.news-button:hover {
+  animation: pulse 2.5s ease-in-out infinite;
   background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
 }
@@ -159,11 +187,11 @@
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateX(-50%) translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
   }
 }
 
@@ -244,10 +272,68 @@
   transition: transform 0.3s ease;
   z-index: 200;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .layout-nav.mobile-open {
   transform: translateX(0);
+}
+
+/* Mobile navigation header with close button */
+.mobile-nav-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--bg-tertiary);
+  background-color: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mobile-nav-close-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 12px 16px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.mobile-nav-close-btn:hover {
+  background-color: var(--primary-dark, #5a4fd4);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.mobile-nav-close-btn:active {
+  transform: translateY(0);
+}
+
+.mobile-nav-close-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  background-color: var(--primary-dark, #5a4fd4);
+}
+
+.mobile-nav-close-btn svg {
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.mobile-nav-close-btn:hover svg {
+  transform: rotate(90deg);
+}
+
+.mobile-nav-close-text {
+  transition: opacity 0.3s ease;
 }
 
 .nav-list {
@@ -257,6 +343,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  flex: 1;
+  overflow-y: auto;
+  /* Allow dropdown to escape overflow on desktop/tablet */
+  overflow-x: visible;
 }
 
 /* Navigation Links - Mobile First */
@@ -338,6 +428,10 @@
 
 .more-menu-container {
   position: relative;
+  overflow: visible; /* Allow dropdown to escape container */
+  /* Ensure container has stable dimensions for dropdown positioning */
+  display: flex;
+  align-items: center;
 }
 
 .more-btn {
@@ -360,14 +454,22 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%);
+  /* Transform is handled in animation to prevent initial misalignment */
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   min-width: 220px;
+  width: max-content; /* Ensure width is calculated before transform */
   overflow: hidden;
-  z-index: 1000;
+  z-index: 1001; /* Higher z-index to ensure it's above navigation */
   animation: slideDown 0.2s ease;
+  /* Ensure dropdown is not clipped by parent overflow */
+  white-space: nowrap;
+  /* Optimize positioning to prevent layout shift */
+  transform-origin: top center;
+  /* Prevent initial positioning flash */
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 .more-dropdown-item {
@@ -496,7 +598,7 @@
     border-bottom: 2px solid var(--bg-tertiary);
     box-shadow: var(--shadow-sm);
     z-index: 99;
-    overflow: visible;
+    overflow: visible; /* Allow dropdown to be visible */
   }
 
   .nav-list {
@@ -507,6 +609,12 @@
     gap: var(--spacing-xs);
     justify-content: center;
     overflow-x: visible;
+    overflow-y: visible; /* Allow dropdown to be visible on tablet/desktop */
+  }
+
+  /* Ensure more menu container allows dropdown to escape */
+  .nav-list .more-menu-container {
+    overflow: visible;
   }
 
   /* Icon-only nav links with tooltips */
@@ -568,6 +676,19 @@
     left: auto;
     right: 0;
     transform: none;
+    /* Use different animation for tablet (right-aligned) */
+    animation: slideDownRight 0.2s ease;
+  }
+
+  @keyframes slideDownRight {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* Main content */
@@ -629,6 +750,11 @@
     left: 50%;
     right: auto;
     transform: translateX(-50%);
+  }
+
+  /* Ensure more menu container allows dropdown to escape on desktop */
+  .nav-list .more-menu-container {
+    overflow: visible;
   }
 
   /* Main content */

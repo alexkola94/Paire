@@ -17,7 +17,8 @@ import {
   FiShoppingCart,
   FiPieChart,
   FiMoreHorizontal,
-  FiChevronDown
+  FiChevronDown,
+  FiActivity
 } from 'react-icons/fi'
 
 // Euro icon component to replace dollar sign - memoized to prevent re-renders
@@ -157,6 +158,18 @@ function Layout() {
 
           {/* Header actions - right side */}
           <div className="header-actions">
+            {/* Economic News - desktop only */}
+            <span
+              className="header-icon-btn news-button desktop-only"
+              onClick={() => handleNavigation('/economic-news')}
+              aria-label={t('navigation.economicNews')}
+              title={t('navigation.economicNews')}
+              role="button"
+              tabIndex={0}
+            >
+              <FiActivity size={22} />
+            </span>
+
             {/* Notifications bell - desktop only */}
             <span
               className="header-icon-btn desktop-only"
@@ -209,6 +222,18 @@ function Layout() {
 
       {/* Navigation */}
       <nav className={`layout-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+        {/* Mobile close button */}
+        <div className="mobile-nav-header mobile-only">
+          <button
+            className="mobile-nav-close-btn"
+            onClick={closeMobileMenu}
+            aria-label={t('common.close')}
+            title={t('common.close')}
+          >
+            <FiX size={24} />
+            <span className="mobile-nav-close-text">{t('common.close')}</span>
+          </button>
+        </div>
         <ul className="nav-list">
           {/* Primary navigation items */}
           {mainNavItems.map((item) => (

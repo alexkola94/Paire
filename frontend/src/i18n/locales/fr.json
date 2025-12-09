@@ -165,7 +165,17 @@
     "export": "Exporter",
     "import": "Importer",
     "select": "Sélectionner...",
-    "viewAll": "Voir Tout"
+    "viewAll": "Voir Tout",
+    "close": "Fermer",
+    "processing": "Traitement...",
+    "optional": "Optionnel",
+    "undo": "Annuler"
+  },
+  "allTransactions": {
+    "title": "Toutes les Transactions",
+    "totalCount": "Total: {{count}} transaction",
+    "totalCount_plural": "Total: {{count}} transactions",
+    "noTransactions": "Aucune transaction enregistrée"
   },
   "profile": {
     "openBanking": {
@@ -203,6 +213,43 @@
         "connectionFailed": "Échec de la connexion bancaire. Veuillez réessayer.",
         "closing": "Cette fenêtre se fermera automatiquement..."
       }
+    }
+  },
+  "economicNews": {
+    "title": "Actualités Économiques",
+    "subtitle": "Données et Indicateurs Économiques de la Grèce",
+    "loading": "Chargement des données économiques...",
+    "refresh": "Actualiser",
+    "lastUpdated": "Dernière mise à jour",
+    "unknown": "Inconnu",
+    "source": "Source",
+    "cpi": {
+      "title": "Indice des Prix à la Consommation (IPC)",
+      "previous": "Précédent",
+      "source": "Source"
+    },
+    "foodPrices": {
+      "title": "Prix des Aliments",
+      "average": "Moyenne"
+    },
+    "indicators": {
+      "title": "Indicateurs Économiques",
+      "gdp": "PIB",
+      "unemployment": "Taux de Chômage",
+      "inflation": "Taux d'Inflation",
+      "householdIncome": "Revenu des Ménages"
+    },
+    "news": {
+      "title": "Dernières Actualités Économiques",
+      "readMore": "Lire Plus"
+    },
+    "links": {
+      "title": "Sources de Données"
+    },
+    "error": {
+      "title": "Erreur de Chargement des Données",
+      "loading": "Échec du chargement des données économiques. Veuillez réessayer plus tard.",
+      "retry": "Réessayer"
     }
   }
 }

@@ -15,6 +15,7 @@ const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Expenses = lazy(() => import('./pages/Expenses'))
 const Income = lazy(() => import('./pages/Income'))
+const AllTransactions = lazy(() => import('./pages/AllTransactions'))
 const Loans = lazy(() => import('./pages/Loans'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Analytics = lazy(() => import('./pages/Analytics'))
@@ -24,6 +25,7 @@ const ReminderSettings = lazy(() => import('./pages/ReminderSettings'))
 const SavingsGoals = lazy(() => import('./pages/SavingsGoals'))
 const RecurringBills = lazy(() => import('./pages/RecurringBills'))
 const ShoppingLists = lazy(() => import('./pages/ShoppingLists'))
+const EconomicNews = lazy(() => import('./pages/EconomicNews'))
 const BankCallback = lazy(() => import('./pages/BankCallback'))
 
 // Layout - Keep synchronous as it's always needed
@@ -200,12 +202,14 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="expenses" element={<Expenses />} />
             <Route path="income" element={<Income />} />
+            <Route path="transactions" element={<AllTransactions />} />
             <Route path="loans" element={<Loans />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="budgets" element={<Budgets />} />
             <Route path="savings-goals" element={<SavingsGoals />} />
             <Route path="recurring-bills" element={<RecurringBills />} />
             <Route path="shopping-lists" element={<ShoppingLists />} />
+            <Route path="economic-news" element={<EconomicNews />} />
             <Route path="partnership" element={<Partnership />} />
             <Route path="reminders" element={<ReminderSettings />} />
             <Route path="profile" element={<Profile />} />

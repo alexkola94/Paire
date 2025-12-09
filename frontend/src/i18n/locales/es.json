@@ -165,7 +165,17 @@
     "export": "Exportar",
     "import": "Importar",
     "select": "Seleccionar...",
-    "viewAll": "Ver Todo"
+    "viewAll": "Ver Todo",
+    "close": "Cerrar",
+    "processing": "Procesando...",
+    "optional": "Opcional",
+    "undo": "Deshacer"
+  },
+  "allTransactions": {
+    "title": "Todas las Transacciones",
+    "totalCount": "Total: {{count}} transacción",
+    "totalCount_plural": "Total: {{count}} transacciones",
+    "noTransactions": "No hay transacciones registradas"
   },
   "profile": {
     "openBanking": {
@@ -203,6 +213,43 @@
         "connectionFailed": "Error al completar la conexión bancaria. Por favor intenta de nuevo.",
         "closing": "Esta ventana se cerrará automáticamente..."
       }
+    }
+  },
+  "economicNews": {
+    "title": "Noticias Económicas",
+    "subtitle": "Datos e Indicadores Económicos de Grecia",
+    "loading": "Cargando datos económicos...",
+    "refresh": "Actualizar",
+    "lastUpdated": "Última actualización",
+    "unknown": "Desconocido",
+    "source": "Fuente",
+    "cpi": {
+      "title": "Índice de Precios al Consumidor (IPC)",
+      "previous": "Anterior",
+      "source": "Fuente"
+    },
+    "foodPrices": {
+      "title": "Precios de Alimentos",
+      "average": "Promedio"
+    },
+    "indicators": {
+      "title": "Indicadores Económicos",
+      "gdp": "PIB",
+      "unemployment": "Tasa de Desempleo",
+      "inflation": "Tasa de Inflación",
+      "householdIncome": "Ingreso Familiar"
+    },
+    "news": {
+      "title": "Últimas Noticias Económicas",
+      "readMore": "Leer Más"
+    },
+    "links": {
+      "title": "Fuentes de Datos"
+    },
+    "error": {
+      "title": "Error al Cargar Datos",
+      "loading": "Error al cargar los datos económicos. Por favor intente de nuevo más tarde.",
+      "retry": "Reintentar"
     }
   }
 }

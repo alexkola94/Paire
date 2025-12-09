@@ -731,7 +731,12 @@ function ShoppingLists() {
                     key={list.id}
                     className={`list-card ${selectedList?.list.id === list.id ? 'selected' : ''}`}
                     onClick={() => {
-                      loadListDetails(list.id)
+                      // Toggle: if already selected, deselect it; otherwise, select it
+                      if (selectedList?.list.id === list.id) {
+                        setSelectedList(null)
+                      } else {
+                        loadListDetails(list.id)
+                      }
                       setShowSidebar(false)
                     }}
                   >
@@ -785,7 +790,14 @@ function ShoppingLists() {
                   <div
                     key={list.id}
                     className="list-card completed"
-                    onClick={() => loadListDetails(list.id)}
+                    onClick={() => {
+                      // Toggle: if already selected, deselect it; otherwise, select it
+                      if (selectedList?.list.id === list.id) {
+                        setSelectedList(null)
+                      } else {
+                        loadListDetails(list.id)
+                      }
+                    }}
                   >
                     <div className="list-card-header">
                       <h4>{list.name}</h4>
@@ -850,7 +862,7 @@ function ShoppingLists() {
                 )}
               </div>
 
-              <div className="items-list">
+              <div className="items-list" key={`list-${selectedList.list.id}`}>
                 {selectedList.items.length === 0 ? (
                   <div className="empty-items">
                     <FiPackage size={48} />
@@ -861,7 +873,7 @@ function ShoppingLists() {
                     </button>
                   </div>
                 ) : (
-                  selectedList.items.map(item => {
+                  selectedList.items.map((item, index) => {
                     const swipe = swipeState[item.id] || {}
                     const swipeOffset = swipe.isSwiping ? (swipe.currentX - swipe.startX) : 0
                     // Determine swipe direction for styling
@@ -997,7 +1009,15 @@ function ShoppingLists() {
                         <div
                           key={list.id}
                           className="mobile-list-card"
-                          onClick={() => loadListDetails(list.id)}
+                          onClick={() => {
+                            // Toggle: if already selected, deselect it; otherwise, select it
+                            if (selectedList?.list.id === list.id) {
+                              setSelectedList(null)
+                            } else {
+                              loadListDetails(list.id)
+                            }
+                            setShowSidebar(false)
+                          }}
                         >
                           <h5>{list.name}</h5>
                           {list.estimatedTotal && (
@@ -1042,14 +1062,17 @@ function ShoppingLists() {
               />
             </div>
 
-            <CategorySelector
-              value={listFormData.category}
-              onChange={handleListChange}
-              name="category"
-              categories={categories.map(c => c.value)}
-              type="expense"
-              label={t('shoppingLists.category')}
-            />
+            {/* Category - Full width for better visibility */}
+            <div className="form-layout-item-full">
+              <CategorySelector
+                value={listFormData.category}
+                onChange={handleListChange}
+                name="category"
+                categories={categories.map(c => c.value)}
+                type="expense"
+                label={t('shoppingLists.category')}
+              />
+            </div>
           </FormSection>
 
           <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!listFormData.notes}>
@@ -1134,14 +1157,17 @@ function ShoppingLists() {
             />
             <small>{t('shoppingLists.priceHint')}</small>
 
-            <CategorySelector
-              value={itemFormData.category}
-              onChange={handleItemChange}
-              name="category"
-              categories={categories.map(c => c.value)}
-              type="expense"
-              label={t('shoppingLists.category')}
-            />
+            {/* Category - Full width for better visibility */}
+            <div className="form-layout-item-full">
+              <CategorySelector
+                value={itemFormData.category}
+                onChange={handleItemChange}
+                name="category"
+                categories={categories.map(c => c.value)}
+                type="expense"
+                label={t('shoppingLists.category')}
+              />
+            </div>
           </FormSection>
 
           {/* Additional Details Section */}

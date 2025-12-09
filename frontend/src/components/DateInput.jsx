@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiCalendar } from 'react-icons/fi'
 import { format, isToday, isYesterday, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns'
@@ -24,6 +24,7 @@ function DateInput({
 }) {
   const { t } = useTranslation()
   const [isFocused, setIsFocused] = useState(false)
+  const dateInputRef = useRef(null)
 
   /**
    * Get today's date in YYYY-MM-DD format
@@ -67,6 +68,38 @@ function DateInput({
         }
       })
     }
+  }
+
+  /**
+   * Handle "This Week" button click
+   * Sets the date to today (to show current week) and opens the calendar
+   */
+  const handleThisWeek = () => {
+    const today = getToday()
+    
+    // Set the date to today so calendar opens showing current week
+    handleQuickDate(today)
+    
+    // Open the calendar picker
+    // Use setTimeout to ensure the date is set first
+    setTimeout(() => {
+      if (dateInputRef.current) {
+        // Try modern showPicker() API first (supported in Chrome, Edge, Safari 16+)
+        if (typeof dateInputRef.current.showPicker === 'function') {
+          try {
+            dateInputRef.current.showPicker()
+          } catch (error) {
+            // Fallback if showPicker fails
+            dateInputRef.current.focus()
+            dateInputRef.current.click()
+          }
+        } else {
+          // Fallback for browsers without showPicker support
+          dateInputRef.current.focus()
+          dateInputRef.current.click()
+        }
+      }
+    }, 50)
   }
 
   /**
@@ -122,6 +155,7 @@ function DateInput({
           <FiCalendar size={20} />
         </div>
         <input
+          ref={dateInputRef}
           type="date"
           id={id}
           name={name}
@@ -158,7 +192,7 @@ function DateInput({
           </button>
           <button
             type="button"
-            onClick={() => handleQuickDate(getThisWeekStart())}
+            onClick={handleThisWeek}
             className={`quick-date-btn ${isDateThisWeek(value) ? 'active' : ''}`}
             aria-label={t('transaction.quickDate.thisWeek')}
           >

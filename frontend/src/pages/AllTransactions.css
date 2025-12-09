@@ -1,0 +1,367 @@
+/* ================================
+   All Transactions Page Styles
+   ================================ */
+
+.all-transactions-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ================================
+   Breadcrumbs
+   ================================ */
+
+.breadcrumbs {
+  margin-bottom: var(--spacing-md);
+}
+
+.breadcrumb-list {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: var(--transition);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+}
+
+.breadcrumb-link:hover {
+  color: var(--primary);
+  background: var(--secondary);
+}
+
+.breadcrumb-separator {
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  margin: 0 var(--spacing-xs);
+}
+
+.breadcrumb-current {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* ================================
+   Page Header
+   ================================ */
+
+.all-transactions-page .page-header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.page-header-top {
+  margin-bottom: var(--spacing-md);
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.back-button:hover {
+  background: var(--secondary);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateX(-2px);
+}
+
+.back-button:active {
+  transform: translateX(0);
+}
+
+.back-button svg {
+  transition: var(--transition);
+}
+
+.back-button:hover svg {
+  transform: translateX(-2px);
+}
+
+.page-header-content {
+  margin-top: var(--spacing-sm);
+}
+
+.all-transactions-page .page-header h1 {
+  margin-bottom: var(--spacing-sm);
+}
+
+.all-transactions-page .page-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.0625rem;
+}
+
+/* ================================
+   Transactions Container
+   ================================ */
+
+.transactions-container {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* ================================
+   Transactions List
+   ================================ */
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  border-left: 3px solid transparent;
+}
+
+.transaction-item:hover {
+  background: var(--secondary);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+
+.transaction-item.income {
+  border-left-color: var(--success-dark);
+}
+
+.transaction-item.expense {
+  border-left-color: var(--error-dark);
+}
+
+.transaction-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.transaction-item.income .transaction-icon {
+  background: var(--success);
+  color: var(--success-dark);
+}
+
+.transaction-item.expense .transaction-icon {
+  background: var(--error);
+  color: var(--error-dark);
+}
+
+.transaction-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.transaction-details h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transaction-date {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin: 0;
+}
+
+/* Name tag showing who added the transaction */
+.added-by {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-left: var(--spacing-sm);
+  padding: 2px 8px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.added-by:hover {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.transaction-amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.transaction-amount.income {
+  color: var(--success-dark);
+}
+
+.transaction-amount.expense {
+  color: var(--error-dark);
+}
+
+/* ================================
+   Empty State
+   ================================ */
+
+.all-transactions-page .empty-state {
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.all-transactions-page .empty-state p {
+  color: var(--text-light);
+  font-size: 1.0625rem;
+  margin: 0;
+}
+
+/* ================================
+   Loading State
+   ================================ */
+
+.page-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: var(--spacing-md);
+  background-color: var(--bg-primary);
+  transition: background-color 0.2s ease;
+  width: 100%;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .breadcrumbs {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .breadcrumb-list {
+    gap: var(--spacing-xs);
+  }
+
+  .breadcrumb-link,
+  .breadcrumb-current {
+    font-size: 0.8125rem;
+    padding: 4px var(--spacing-xs);
+  }
+
+  .breadcrumb-separator {
+    margin: 0 2px;
+  }
+
+  .breadcrumb-separator svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .back-button {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.875rem;
+  }
+
+  .back-button span {
+    display: none; /* Hide text on mobile, show only icon */
+  }
+
+  .back-button {
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  .page-header-top {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .transaction-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+
+  .transaction-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .transaction-details h4 {
+    font-size: 0.9375rem;
+  }
+
+  .transaction-date {
+    font-size: 0.8125rem;
+  }
+
+  .transaction-amount {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .all-transactions-page .page-header {
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .transactions-list {
+    gap: var(--spacing-lg);
+  }
+
+  .transaction-item {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .transaction-item {
+    padding: var(--spacing-lg) var(--spacing-xl);
+  }
+}
+

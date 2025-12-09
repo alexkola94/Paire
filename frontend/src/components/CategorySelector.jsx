@@ -2,7 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { 
   FiShoppingBag, FiTruck, FiHome, FiZap, 
   FiFilm, FiHeart, FiBook, FiDollarSign,
-  FiBriefcase, FiTrendingUp, FiGift, FiMoreHorizontal
+  FiBriefcase, FiTrendingUp, FiGift, FiMoreHorizontal,
+  FiCreditCard, FiShield, FiWifi, FiPhone, FiActivity,
+  FiPackage, FiUser, FiSmartphone, FiAlertCircle, FiMapPin, FiNavigation
 } from 'react-icons/fi'
 import './CategorySelector.css'
 
@@ -40,7 +42,30 @@ function CategorySelector({
     freelance: FiBriefcase,
     investment: FiTrendingUp,
     gift: FiGift,
-    other: FiMoreHorizontal
+    other: FiMoreHorizontal,
+    // Bill-specific categories
+    housing: FiHome,
+    subscription: FiFilm, // TV/Streaming icon
+    insurance: FiShield,
+    rent: FiHome,
+    loan: FiCreditCard,
+    internet: FiWifi,
+    phone: FiPhone,
+    gym: FiActivity,
+    // Shopping list categories
+    groceries: FiShoppingBag,
+    household: FiHome,
+    personal: FiUser,
+    electronics: FiSmartphone,
+    clothing: FiPackage,
+    // Savings goals categories
+    emergency: FiAlertCircle,
+    vacation: FiMapPin,
+    house: FiHome,
+    car: FiNavigation, // Using navigation icon for car/vehicle
+    wedding: FiHeart,
+    retirement: FiTrendingUp
+    // education and investment already exist above
   }
 
   // Category colors mapping
@@ -65,7 +90,21 @@ function CategorySelector({
     loan: '#E67E22',
     internet: '#1ABC9C',
     phone: '#16A085',
-    gym: '#F39C12'
+    gym: '#F39C12',
+    // Shopping list categories
+    groceries: '#FF6B6B',
+    household: '#95A5A6',
+    personal: '#DDA0DD',
+    electronics: '#3498DB',
+    clothing: '#E74C3C',
+    // Savings goals categories
+    emergency: '#EF4444',
+    vacation: '#3B82F6',
+    house: '#8B5CF6',
+    car: '#F59E0B',
+    wedding: '#EC4899',
+    retirement: '#10B981'
+    // education and investment already exist above
   }
 
   /**
@@ -134,6 +173,38 @@ function CategorySelector({
           const isSelected = value === category
           const categoryColor = getColor(category)
           
+          // Helper function to get category translation
+          const getCategoryTranslation = (cat) => {
+            const mainCategoryKey = `categories.${cat}`
+            const billCategoryKey = `recurringBills.categories.${cat}`
+            const shoppingListCategoryKey = `shoppingLists.categories.${cat}`
+            const savingsGoalCategoryKey = `savingsGoals.categories.${cat}`
+            
+            const mainTranslation = t(mainCategoryKey, null)
+            const billTranslation = t(billCategoryKey, null)
+            const shoppingListTranslation = t(shoppingListCategoryKey, null)
+            const savingsGoalTranslation = t(savingsGoalCategoryKey, null)
+            
+            // If translation key exists (not the same as the key), use it
+            // Check in order: main categories, recurringBills, shoppingLists, savingsGoals
+            if (mainTranslation !== mainCategoryKey) {
+              return mainTranslation
+            }
+            if (billTranslation !== billCategoryKey) {
+              return billTranslation
+            }
+            if (shoppingListTranslation !== shoppingListCategoryKey) {
+              return shoppingListTranslation
+            }
+            if (savingsGoalTranslation !== savingsGoalCategoryKey) {
+              return savingsGoalTranslation
+            }
+            // Fallback to category name with first letter capitalized
+            return cat.charAt(0).toUpperCase() + cat.slice(1)
+          }
+          
+          const categoryLabel = getCategoryTranslation(category)
+          
           return (
             <button
               key={category}
@@ -142,7 +213,7 @@ function CategorySelector({
               className={`category-card ${isSelected ? 'selected' : ''}`}
               disabled={disabled}
               aria-pressed={isSelected}
-              aria-label={t(`categories.${category}`)}
+              aria-label={categoryLabel}
               style={{
                 '--category-color': categoryColor,
                 '--category-color-selected-bg': hexToRgba(categoryColor, 0.1),
@@ -155,7 +226,7 @@ function CategorySelector({
                 {getIcon(category)}
               </div>
               <span className="category-name">
-                {t(`categories.${category}`)}
+                {categoryLabel}
               </span>
               {isSelected && (
                 <div className="category-check">

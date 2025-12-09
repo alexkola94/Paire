@@ -235,20 +235,19 @@ function TransactionForm({
           </div>
         )}
 
-        {/* Two-column layout for Amount and Category on desktop */}
-        <FormLayout columns={2} gap="lg">
-          {/* Amount */}
-          <CurrencyInput
-            value={formData.amount}
-            onChange={handleChange}
-            name="amount"
-            id="amount"
-            label={`${t('transaction.amount')} *`}
-            required
-            disabled={loading || uploadProgress}
-          />
+        {/* Amount - Single column for better spacing */}
+        <CurrencyInput
+          value={formData.amount}
+          onChange={handleChange}
+          name="amount"
+          id="amount"
+          label={`${t('transaction.amount')} *`}
+          required
+          disabled={loading || uploadProgress}
+        />
 
-          {/* Category */}
+        {/* Category - Full width for better visibility */}
+        <div className="form-layout-item-full">
           <CategorySelector
             value={formData.category}
             onChange={handleChange}
@@ -259,7 +258,7 @@ function TransactionForm({
             required
             disabled={loading || uploadProgress}
           />
-        </FormLayout>
+        </div>
 
         {/* Date - Full width */}
         <DateInput

@@ -30,6 +30,8 @@
     flex-direction: column;
     animation: modalSlideUp 0.3s ease-out;
     position: relative;
+    transition: max-width var(--transition);
+    /* Smooth transition when modal width changes */
 }
 
 .portal-modal-header {
@@ -139,11 +141,18 @@
 /* Large Desktop */
 @media (min-width: 1024px) {
     .portal-modal-content {
-        max-width: 600px;
-        /* Standard width for desktop modal */
+        max-width: 750px;
+        /* Increased width for better category selector visibility */
     }
 
     .portal-modal-header h2 {
         font-size: 1.5rem;
+    }
+}
+
+/* Extra Large Desktop - Even more space for forms with category selectors */
+@media (min-width: 1280px) {
+    .portal-modal-content {
+        max-width: 800px;
     }
 }

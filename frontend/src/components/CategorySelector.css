@@ -6,8 +6,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  overflow: hidden;
+  overflow: visible;
+  /* Changed from hidden to visible to prevent cutting off */
   max-width: 100%;
+  width: 100%;
+  /* Ensure full width usage */
 }
 
 .category-selector-label {
@@ -21,8 +24,13 @@
 .category-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  /* Increased min to 100px to accommodate longer category names */
   gap: var(--spacing-sm);
   margin-top: var(--spacing-xs);
+  width: 100%;
+  /* Ensure grid uses full available width */
+  overflow: visible;
+  /* Prevent cutting off */
 }
 
 .category-card {
@@ -41,6 +49,9 @@
   min-height: 100px;
   text-align: center;
   font-family: inherit;
+  /* Ensure card can accommodate wrapped text */
+  min-width: 0;
+  /* Allow flex items to shrink below their minimum content size */
 }
 
 .category-card:hover:not(:disabled) {
@@ -86,8 +97,18 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.3;
   transition: var(--transition);
+  text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  /* Allow text to wrap to multiple lines without truncation */
+  width: 100%;
+  padding: 0 var(--spacing-xs);
+  /* Ensure text fits within card and wraps naturally */
+  display: block;
+  /* Allow natural text wrapping */
 }
 
 .category-card.selected .category-name {
@@ -164,6 +185,10 @@
 
   .category-name {
     font-size: 0.75rem;
+    line-height: 1.2;
+    /* Allow text wrapping on mobile too */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 
@@ -174,9 +199,30 @@
   }
 }
 
-/* Desktop optimization */
+/* Desktop optimization - Better use of wider modal */
 @media (min-width: 1024px) {
   .category-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    /* Increased min to 120px to better accommodate longer category names */
+    gap: var(--spacing-md);
+    /* Slightly larger gap for better spacing */
+  }
+  
+  .category-card {
+    min-height: 110px;
+    /* Slightly taller to accommodate wrapped text */
+  }
+}
+
+/* Extra Large Desktop - Even more columns when space allows */
+@media (min-width: 1280px) {
+  .category-grid {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    /* Auto-fit with slightly larger min for extra large screens */
+    gap: var(--spacing-md);
+  }
+  
+  .category-card {
+    padding: var(--spacing-md) var(--spacing-lg);
   }
 }

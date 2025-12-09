@@ -5,7 +5,7 @@
 ![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-Private-red.svg)
 ![React](https://img.shields.io/badge/React-18.2-61dafb.svg)
-![.NET](https://img.shields.io/badge/.NET-9.0-512bd4.svg)
+![.NET](https://img.shields.io/badge/.NET-7.0-512bd4.svg)
 
 **Finances, aligned.**
 
@@ -137,7 +137,7 @@ npm run dev
 - **CSS3** - Custom responsive styling
 
 ### **Backend**
-- **.NET 9.0** - High-performance API
+- **.NET 7.0** - High-performance API
 - **Entity Framework Core** - ORM for database
 - **Supabase .NET SDK** - Database integration
 - **ASP.NET Core** - Web framework
@@ -321,7 +321,7 @@ You-me-Expenses/
 
 ### **Prerequisites:**
 - Node.js 18+ (for frontend)
-- .NET 9.0 SDK (for backend)
+- .NET 7.0 SDK (for backend)
 - Supabase account (free tier available)
 - Gmail account (for email notifications - optional)
 - OpenAI API key (for chatbot - optional)
@@ -606,7 +606,7 @@ Need help?
 
 ## 📄 **License**
 
-Private - For personal use
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
@@ -655,5 +655,15 @@ If you find this helpful, please give it a star ⭐
 ---
 
 **Version 2.0.0** - Major Update with 4 New Features!  
-**Last Updated:** December 4, 2025
+**Last Updated:** December 2025
+
+---
+
+<div align="center">
+
+**Made with ❤️ for couples managing finances together**
+
+[Report Bug](https://github.com/alexkola94/Expenses-APP/issues) · [Request Feature](https://github.com/alexkola94/Expenses-APP/issues) · [Documentation](./docs/HOW_TO_RUN.md)
+
+</div>
 
