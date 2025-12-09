@@ -112,7 +112,7 @@ function App() {
       
       // Redirect to login if not already there
       const currentPath = window.location.pathname
-      const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
+      const basename = import.meta.env.MODE === 'production' ? '/You-me-Expenses' : ''
       const loginPath = `${basename}/login`
       
       if (currentPath !== loginPath && !currentPath.endsWith('/login')) {

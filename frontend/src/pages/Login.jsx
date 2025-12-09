@@ -193,7 +193,7 @@ function Login() {
       if (isMobile) {
         // For mobile browsers, use window.location for more reliable navigation
         // This ensures a full page reload which properly initializes App.jsx
-        const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
+        const basename = import.meta.env.MODE === 'production' ? '/You-me-Expenses' : ''
         const targetPath = redirectUrl || '/dashboard'
         const fullPath = `${basename}${targetPath}`
         
