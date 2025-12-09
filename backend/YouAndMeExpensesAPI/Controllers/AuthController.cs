@@ -142,8 +142,15 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
+            _logger.LogInformation($"Login attempt for email: {request?.Email ?? "null"}");
             try
             {
+                if (request == null || string.IsNullOrEmpty(request.Email))
+                {
+                    _logger.LogWarning("Login request is null or email is empty");
+                    return BadRequest(new { error = "Email and password are required" });
+                }
+
                 var user = await _userManager.FindByEmailAsync(request.Email);
                 if (user == null)
                 {

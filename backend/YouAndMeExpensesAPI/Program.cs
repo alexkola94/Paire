@@ -134,7 +134,15 @@ builder.Services.AddCors(options =>
         else
         {
             // In production, only allow configured origins
-            policy.WithOrigins(corsOrigins);
+            if (corsOrigins.Length > 0)
+            {
+                policy.WithOrigins(corsOrigins);
+            }
+            else
+            {
+                // If no origins configured, allow all (not recommended for production, but better than blocking everything)
+                policy.AllowAnyOrigin();
+            }
         }
 
         policy.AllowAnyMethod()
@@ -335,8 +343,19 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Enable CORS
+// Enable CORS (with logging in development)
 app.UseCors("AllowFrontend");
+
+// Log CORS issues in development
+if (app.Environment.IsDevelopment())
+{
+    app.Use(async (context, next) =>
+    {
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation($"Request: {context.Request.Method} {context.Request.Path} from Origin: {context.Request.Headers["Origin"]}");
+        await next();
+    });
+}
 
 // Secure headers middleware (add security headers to all responses)
 app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SecureHeadersMiddleware>();
