@@ -95,22 +95,58 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 if (!result.Succeeded)
                 {
+                    _logger.LogWarning("Failed to create user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
                     return BadRequest(new { 
                         error = "Failed to create user", 
                         details = result.Errors.Select(e => e.Description).ToList() 
                     });
                 }
 
-                // Generate email confirmation token
-                var emailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                _logger.LogInformation("User created successfully: {Email}, ID: {UserId}", user.Email, user.Id);
 
-                // Send confirmation email (fire-and-forget to avoid blocking registration)
-                // If email fails, user can still request a new confirmation email
+                // Create user profile first (before email operations)
+                try
+                {
+                    var userProfile = await _context.UserProfiles
+                        .FirstOrDefaultAsync(p => p.Id == Guid.Parse(user.Id));
+                    
+                    if (userProfile == null)
+                    {
+                        _logger.LogInformation("Creating user profile for {Email}", user.Email);
+                        userProfile = new UserProfile
+                        {
+                            Id = Guid.Parse(user.Id),
+                            DisplayName = user.DisplayName,
+                            Email = user.Email,
+                            AvatarUrl = user.AvatarUrl,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+
+                        _context.UserProfiles.Add(userProfile);
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation("User profile created successfully for {Email}", user.Email);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("User profile already exists for {Email}", user.Email);
+                    }
+                }
+                catch (Exception profileEx)
+                {
+                    _logger.LogError(profileEx, "Error creating user profile for {Email}, but continuing with registration", user.Email);
+                    // Continue even if profile creation fails - user can still log in
+                }
+
+                // Generate email confirmation token and send email in background
+                // Do this after profile creation so registration response is not delayed
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        _logger.LogInformation("Attempting to send confirmation email to {Email}", user.Email);
+                        _logger.LogInformation("Generating email confirmation token for {Email}", user.Email);
+                        var emailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                        _logger.LogInformation("Email token generated, attempting to send confirmation email to {Email}", user.Email);
                         await SendConfirmationEmail(user, emailToken);
                         _logger.LogInformation("Confirmation email sent successfully to {Email}", user.Email);
                     }
@@ -120,27 +156,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     }
                 });
 
-                // Create user profile (only if it doesn't exist)
-                var userProfile = await _context.UserProfiles
-                    .FirstOrDefaultAsync(p => p.Id == Guid.Parse(user.Id));
-                
-                if (userProfile == null)
-                {
-                    userProfile = new UserProfile
-                    {
-                        Id = Guid.Parse(user.Id),
-                        DisplayName = user.DisplayName,
-                        Email = user.Email,
-                        AvatarUrl = user.AvatarUrl,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-
-                    _context.UserProfiles.Add(userProfile);
-                    await _context.SaveChangesAsync();
-                }
-
-                _logger.LogInformation($"New user registered: {user.Email}");
+                _logger.LogInformation("New user registered successfully: {Email}", user.Email);
 
                 return Ok(new 
                 { 
