@@ -19,6 +19,46 @@ namespace YouAndMeExpensesAPI.Services
         {
             _emailSettings = emailSettings.Value;
             _logger = logger;
+            
+            // Validate email settings on startup
+            ValidateEmailSettings();
+        }
+
+        /// <summary>
+        /// Validates that email settings are properly configured
+        /// </summary>
+        private void ValidateEmailSettings()
+        {
+            var missingSettings = new List<string>();
+            
+            if (string.IsNullOrWhiteSpace(_emailSettings.SmtpServer))
+                missingSettings.Add("SmtpServer");
+            
+            if (_emailSettings.SmtpPort <= 0)
+                missingSettings.Add("SmtpPort");
+            
+            if (string.IsNullOrWhiteSpace(_emailSettings.SenderEmail))
+                missingSettings.Add("SenderEmail");
+            
+            if (string.IsNullOrWhiteSpace(_emailSettings.Username))
+                missingSettings.Add("Username");
+            
+            if (string.IsNullOrWhiteSpace(_emailSettings.Password))
+                missingSettings.Add("Password");
+            
+            if (missingSettings.Any())
+            {
+                _logger.LogWarning("⚠️ Email settings are incomplete. Missing: {MissingSettings}. " +
+                    "Emails will not be sent. Configure these in Render.com environment variables: " +
+                    "EmailSettings__SmtpServer, EmailSettings__SmtpPort, EmailSettings__SenderEmail, " +
+                    "EmailSettings__Username, EmailSettings__Password",
+                    string.Join(", ", missingSettings));
+            }
+            else
+            {
+                _logger.LogInformation("✅ Email settings configured: Server={SmtpServer}, Port={SmtpPort}, From={SenderEmail}",
+                    _emailSettings.SmtpServer, _emailSettings.SmtpPort, _emailSettings.SenderEmail);
+            }
         }
 
         /// <summary>
@@ -84,9 +124,31 @@ namespace YouAndMeExpensesAPI.Services
                     return true;
                 }
             }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, "❌ SMTP connection timeout when sending email to {ToEmail}. " +
+                    "Check: 1) SMTP server is correct (smtp.gmail.com), 2) Port is correct (587), " +
+                    "3) Firewall allows outbound connections, 4) Gmail App Password is correct",
+                    emailMessage.ToEmail);
+                return false;
+            }
+            catch (System.Net.Sockets.SocketException ex)
+            {
+                _logger.LogError(ex, "❌ SMTP connection failed to {SmtpServer}:{SmtpPort}. " +
+                    "Check: 1) Server address is correct, 2) Port is correct, 3) Network connectivity",
+                    _emailSettings.SmtpServer, _emailSettings.SmtpPort);
+                return false;
+            }
+            catch (MailKit.Security.AuthenticationException ex)
+            {
+                _logger.LogError(ex, "❌ SMTP authentication failed. Check: 1) Username is correct, " +
+                    "2) Password is a Gmail App Password (not regular password), 3) 2FA is enabled on Gmail account");
+                return false;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to send email to {emailMessage.ToEmail}");
+                _logger.LogError(ex, "❌ Failed to send email to {ToEmail}. Error: {ErrorType} - {ErrorMessage}",
+                    emailMessage.ToEmail, ex.GetType().Name, ex.Message);
                 return false;
             }
         }
