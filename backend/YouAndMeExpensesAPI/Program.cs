@@ -146,8 +146,13 @@ builder.Services.AddCors(options =>
         }
 
         policy.AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+            .AllowAnyHeader();
+        
+        // Only allow credentials if we're using specific origins (not AllowAnyOrigin)
+        if (corsOrigins.Length > 0 || builder.Environment.IsDevelopment())
+        {
+            policy.AllowCredentials();
+        }
     });
 });
 
@@ -343,19 +348,29 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Enable CORS (with logging in development)
+// Enable CORS
 app.UseCors("AllowFrontend");
 
-// Log CORS issues in development
-if (app.Environment.IsDevelopment())
+// Log all requests (including production) to debug issues
+app.Use(async (context, next) =>
 {
-    app.Use(async (context, next) =>
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    var origin = context.Request.Headers["Origin"].ToString();
+    var method = context.Request.Method;
+    var path = context.Request.Path;
+    
+    logger.LogInformation($"[{method}] {path} | Origin: {origin} | User-Agent: {context.Request.Headers["User-Agent"]}");
+    
+    try
     {
-        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation($"Request: {context.Request.Method} {context.Request.Path} from Origin: {context.Request.Headers["Origin"]}");
         await next();
-    });
-}
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, $"Error processing request: {method} {path}");
+        throw;
+    }
+});
 
 // Secure headers middleware (add security headers to all responses)
 app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SecureHeadersMiddleware>();
