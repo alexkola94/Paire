@@ -164,7 +164,7 @@ namespace YouAndMeExpensesAPI.Controllers
                             _logger.LogInformation("Attempt {Attempt}/{MaxRetries}: Sending confirmation email to {Email}", 
                                 attempt, maxRetries, userEmail);
                             
-                            var emailSent = await SendConfirmationEmailWithRetry(userEmail, userDisplayName, emailToken, attempt, maxRetries);
+                            var emailSent = await SendConfirmationEmailWithRetry(userEmail, userDisplayName, userId, emailToken, attempt, maxRetries);
                             
                             if (emailSent)
                             {
@@ -1040,11 +1040,11 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <summary>
         /// Send email confirmation email with retry logic (for background tasks)
         /// </summary>
-        private async Task<bool> SendConfirmationEmailWithRetry(string userEmail, string? userDisplayName, string token, int attempt, int maxRetries)
+        private async Task<bool> SendConfirmationEmailWithRetry(string userEmail, string? userDisplayName, string userId, string token, int attempt, int maxRetries)
         {
             try
             {
-                await SendConfirmationEmail(userEmail, userDisplayName, token);
+                await SendConfirmationEmail(userEmail, userDisplayName, userId, token);
                 return true;
             }
             catch (Exception ex)
@@ -1060,26 +1060,19 @@ namespace YouAndMeExpensesAPI.Controllers
         /// </summary>
         private async Task SendConfirmationEmail(ApplicationUser user, string token)
         {
-            await SendConfirmationEmail(user.Email!, user.DisplayName, token);
+            await SendConfirmationEmail(user.Email!, user.DisplayName, user.Id, token);
         }
 
         /// <summary>
         /// Send email confirmation email
         /// </summary>
-        private async Task SendConfirmationEmail(string userEmail, string? userDisplayName, string token)
+        private async Task SendConfirmationEmail(string userEmail, string? userDisplayName, string userId, string token)
         {
             // Get frontend URL from configuration
             var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
             
-            // Get user ID from database (since we don't have user object in background task)
-            var user = await _userManager.FindByEmailAsync(userEmail);
-            if (user == null)
-            {
-                throw new InvalidOperationException($"User with email {userEmail} not found");
-            }
-            
             // Generate frontend confirmation URL (frontend will handle the UI and call the backend API)
-            var confirmUrl = $"{frontendUrl}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+            var confirmUrl = $"{frontendUrl}/confirm-email?userId={userId}&token={Uri.EscapeDataString(token)}";
 
             var emailBody = $@"
 <html>
