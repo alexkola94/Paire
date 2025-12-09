@@ -41,7 +41,7 @@ const LogoLoader = ({
         {/* Logo with smooth animations */}
         <div className="logo-loader__wrapper">
           <img 
-            src="/paire-logo.svg" 
+            src={`${import.meta.env.BASE_URL}paire-logo.svg`}
             alt="Paire Logo" 
             className="logo-loader__image"
             width="80"

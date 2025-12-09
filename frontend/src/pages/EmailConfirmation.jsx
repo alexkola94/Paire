@@ -73,7 +73,7 @@ function EmailConfirmation() {
           {/* Logo */}
           <div className="confirmation-logo">
             <img 
-              src="/paire-logo.svg" 
+              src={`${import.meta.env.BASE_URL}paire-logo.svg`} 
               alt={t('app.title')} 
               width="80"
               height="80"

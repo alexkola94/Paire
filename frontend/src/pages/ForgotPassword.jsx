@@ -58,12 +58,12 @@ function ForgotPassword() {
           <div className="forgot-password-card">
             {/* Mobile Logo */}
             <div className="forgot-password-logo-mobile">
-              <img src="/paire-logo.svg" alt={t('app.title')} width="60" height="60" />
+              <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="60" height="60" />
             </div>
 
             {/* Desktop Logo */}
             <div className="forgot-password-logo">
-              <img src="/paire-logo.svg" alt={t('app.title')} width="80" height="80" />
+              <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="80" height="80" />
             </div>
 
             <div className="forgot-password-content success">

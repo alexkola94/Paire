@@ -145,7 +145,7 @@ function Layout() {
           <div className="header-left">
             <div className="header-brand">
               <img
-                src="/paire-logo.svg"
+                src={`${import.meta.env.BASE_URL}paire-logo.svg`}
                 alt="Paire"
                 className="header-logo"
                 width="36"

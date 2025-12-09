@@ -81,7 +81,7 @@ function ResetPassword() {
         <div className="reset-container">
           <div className="reset-card">
             <div className="reset-logo">
-              <img src="/paire-logo.svg" alt={t('app.title')} width="80" height="80" />
+              <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="80" height="80" />
             </div>
 
             <div className="reset-content error">
@@ -109,7 +109,7 @@ function ResetPassword() {
         <div className="reset-container">
           <div className="reset-card">
             <div className="reset-logo">
-              <img src="/paire-logo.svg" alt={t('app.title')} width="80" height="80" />
+              <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="80" height="80" />
             </div>
 
             <div className="reset-content success">

@@ -259,7 +259,7 @@ function Login() {
         {/* Mobile Branding - shown on mobile only */}
         <div className="login-branding-mobile">
           <img 
-            src="/paire-logo.svg" 
+            src={`${import.meta.env.BASE_URL}paire-logo.svg`} 
             alt="Paire Logo" 
             className="brand-logo"
             width="60"
@@ -273,7 +273,7 @@ function Login() {
         <div className="login-branding">
           <div className="branding-content">
             <img 
-              src="/paire-logo.svg" 
+              src={`${import.meta.env.BASE_URL}paire-logo.svg`} 
               alt="Paire Logo" 
               className="brand-logo"
               width="80"
