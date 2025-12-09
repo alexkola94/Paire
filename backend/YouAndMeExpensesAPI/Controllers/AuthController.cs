@@ -138,21 +138,60 @@ namespace YouAndMeExpensesAPI.Controllers
                     // Continue even if profile creation fails - user can still log in
                 }
 
-                // Generate email confirmation token and send email in background
+                // Generate email confirmation token and send email in background with retry
                 // Do this after profile creation so registration response is not delayed
+                // Email confirmation is CRITICAL - user cannot login without it
                 _ = Task.Run(async () =>
                 {
-                    try
+                    const int maxRetries = 3;
+                    const int retryDelayMs = 2000; // 2 seconds between retries
+                    
+                    for (int attempt = 1; attempt <= maxRetries; attempt++)
                     {
-                        _logger.LogInformation("Generating email confirmation token for {Email}", user.Email);
-                        var emailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                        _logger.LogInformation("Email token generated, attempting to send confirmation email to {Email}", user.Email);
-                        await SendConfirmationEmail(user, emailToken);
-                        _logger.LogInformation("Confirmation email sent successfully to {Email}", user.Email);
-                    }
-                    catch (Exception emailEx)
-                    {
-                        _logger.LogError(emailEx, "Failed to send confirmation email to {Email}. User can request a new one.", user.Email);
+                        try
+                        {
+                            _logger.LogInformation("Attempt {Attempt}/{MaxRetries}: Generating email confirmation token for {Email}", 
+                                attempt, maxRetries, user.Email);
+                            
+                            var emailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                            _logger.LogInformation("Email token generated, attempting to send confirmation email to {Email} (attempt {Attempt})", 
+                                user.Email, attempt);
+                            
+                            var emailSent = await SendConfirmationEmailWithRetry(user, emailToken, attempt, maxRetries);
+                            
+                            if (emailSent)
+                            {
+                                _logger.LogInformation("✅ Confirmation email sent successfully to {Email} on attempt {Attempt}", 
+                                    user.Email, attempt);
+                                return; // Success - exit retry loop
+                            }
+                            
+                            // If email sending failed and we have more retries, wait before retrying
+                            if (attempt < maxRetries)
+                            {
+                                _logger.LogWarning("Email sending failed for {Email} on attempt {Attempt}, retrying in {Delay}ms...", 
+                                    user.Email, attempt, retryDelayMs);
+                                await Task.Delay(retryDelayMs * attempt); // Exponential backoff
+                            }
+                        }
+                        catch (Exception emailEx)
+                        {
+                            _logger.LogError(emailEx, "Error sending confirmation email to {Email} on attempt {Attempt}/{MaxRetries}", 
+                                user.Email, attempt, maxRetries);
+                            
+                            // If this was the last attempt, log critical error
+                            if (attempt == maxRetries)
+                            {
+                                _logger.LogCritical("❌ CRITICAL: Failed to send confirmation email to {Email} after {MaxRetries} attempts. " +
+                                    "User {UserId} cannot login until email is confirmed. User should use /api/auth/resend-confirmation endpoint.", 
+                                    user.Email, maxRetries, user.Id);
+                            }
+                            else
+                            {
+                                // Wait before retrying
+                                await Task.Delay(retryDelayMs * attempt);
+                            }
+                        }
                     }
                 });
 
@@ -990,6 +1029,24 @@ namespace YouAndMeExpensesAPI.Controllers
         // =====================================================
 
         /// <summary>
+        /// Send email confirmation email with retry logic
+        /// </summary>
+        private async Task<bool> SendConfirmationEmailWithRetry(ApplicationUser user, string token, int attempt, int maxRetries)
+        {
+            try
+            {
+                await SendConfirmationEmail(user, token);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send confirmation email to {Email} on attempt {Attempt}/{MaxRetries}", 
+                    user.Email, attempt, maxRetries);
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Send email confirmation email
         /// </summary>
         private async Task SendConfirmationEmail(ApplicationUser user, string token)
@@ -1039,7 +1096,11 @@ namespace YouAndMeExpensesAPI.Controllers
                 IsHtml = true
             };
 
-            await _emailService.SendEmailAsync(emailMessage);
+            var emailSent = await _emailService.SendEmailAsync(emailMessage);
+            if (!emailSent)
+            {
+                throw new InvalidOperationException($"Failed to send confirmation email to {user.Email}. Email service returned false.");
+            }
         }
 
         /// <summary>
