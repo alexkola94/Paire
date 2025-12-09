@@ -59,7 +59,7 @@ export default defineConfig(({ mode }) => ({
     },
     // Enable minification (using esbuild - faster and built into Vite)
     minify: 'esbuild',
-    // esbuild automatically removes console.log in production builds
+    // esbuild is built into Vite, no additional dependencies needed
     // Increase chunk size warning limit (for better splitting)
     chunkSizeWarningLimit: 1000
   },
