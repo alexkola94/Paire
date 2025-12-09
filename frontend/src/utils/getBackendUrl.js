@@ -5,12 +5,19 @@
  * 
  * @returns {string} The backend API URL
  */
+/**
+ * Normalize URL by removing trailing slashes
+ */
+const normalizeUrl = (url) => {
+  if (!url) return url;
+  return url.toString().trim().replace(/\/+$/, '');
+};
+
 export const getBackendUrl = () => {
   // Use environment variable if set
   if (import.meta.env.VITE_BACKEND_API_URL) {
     // Remove trailing slash to avoid double slashes when concatenating URLs
-    const url = import.meta.env.VITE_BACKEND_API_URL;
-    return url.endsWith('/') ? url.slice(0, -1) : url;
+    return normalizeUrl(import.meta.env.VITE_BACKEND_API_URL);
   }
   
   // CRITICAL: Force check window.location at call time, not module load time
