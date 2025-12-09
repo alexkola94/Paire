@@ -5,6 +5,7 @@ import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Modal from '../components/Modal'
 import LogoLoader from '../components/LogoLoader'
 import './Income.css'
 
@@ -105,7 +106,7 @@ function Income() {
       if (income.attachment_path) {
         await storageService.deleteFile(income.attachment_path)
       }
-      
+
       await transactionService.delete(income.id)
       await loadIncomes()
       closeDeleteModal()
@@ -171,35 +172,20 @@ function Income() {
         )}
       </div>
 
-      {/* Form Modal */}
-      {showForm && (
-        <div className="form-modal" onClick={(e) => e.target === e.currentTarget && closeForm()}>
-          <div className="card form-card">
-            <div className="card-header form-header">
-              <h2>
-                {editingIncome 
-                  ? t('income.editIncome')
-                  : t('income.addIncome')
-                }
-              </h2>
-              <button
-                className="form-close-btn"
-                onClick={closeForm}
-                aria-label={t('common.close')}
-              >
-                <FiX size={24} />
-              </button>
-            </div>
-            <TransactionForm
-              transaction={editingIncome}
-              type="income"
-              onSubmit={editingIncome ? handleUpdate : handleCreate}
-              onCancel={closeForm}
-              loading={formLoading}
-            />
-          </div>
-        </div>
-      )}
+      {/* Income Form Modal (Portal) */}
+      <Modal
+        isOpen={showForm}
+        onClose={closeForm}
+        title={editingIncome ? t('income.editIncome') : t('income.addIncome')}
+      >
+        <TransactionForm
+          transaction={editingIncome}
+          type="income"
+          onSubmit={editingIncome ? handleUpdate : handleCreate}
+          onCancel={closeForm}
+          loading={formLoading}
+        />
+      </Modal>
 
       {/* Income List */}
       {incomes.length === 0 ? (

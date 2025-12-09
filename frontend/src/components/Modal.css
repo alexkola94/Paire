@@ -1,0 +1,149 @@
+/* ================================
+   Portal Modal Styles
+   ================================ */
+
+.portal-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    /* Ensure it is above EVERYTHING */
+    padding: var(--spacing-md);
+    animation: modalFadeIn 0.3s ease-out;
+    backdrop-filter: blur(2px);
+}
+
+.portal-modal-content {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideUp 0.3s ease-out;
+    position: relative;
+}
+
+.portal-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--bg-tertiary);
+    background: var(--bg-secondary);
+    flex-shrink: 0;
+}
+
+.portal-modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.portal-modal-close-btn {
+    background: var(--bg-tertiary);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-secondary);
+    padding: 0;
+}
+
+.portal-modal-close-btn:hover {
+    background: var(--error);
+    color: white;
+    transform: scale(1.1);
+}
+
+.portal-modal-body {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Animations */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive: Mobile */
+@media (max-width: 767px) {
+    .portal-modal-overlay {
+        padding: 0;
+        align-items: flex-end;
+        /* Bottom sheet behavior on mobile */
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .portal-modal-content {
+        max-width: 100%;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        max-height: 95vh;
+        animation: modalSlideUpMobile 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUpMobile {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .portal-modal-header {
+        padding: var(--spacing-md);
+    }
+
+    .portal-modal-body {
+        padding: var(--spacing-md);
+    }
+}
+
+/* Large Desktop */
+@media (min-width: 1024px) {
+    .portal-modal-content {
+        max-width: 600px;
+        /* Standard width for desktop modal */
+    }
+
+    .portal-modal-header h2 {
+        font-size: 1.5rem;
+    }
+}

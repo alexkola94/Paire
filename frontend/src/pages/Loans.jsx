@@ -4,6 +4,7 @@ import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDow
 import { loanService, loanPaymentService } from '../services/api'
 import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Modal from '../components/Modal'
 import LogoLoader from '../components/LogoLoader'
 import CurrencyInput from '../components/CurrencyInput'
 import DateInput from '../components/DateInput'
@@ -73,12 +74,12 @@ function Loans() {
     const { name, value } = e.target
     setFormData(prev => {
       const updated = { ...prev, [name]: value }
-      
+
       // Auto-update remainingAmount when amount changes for new loans
       if (name === 'amount' && !editingLoan && value) {
         updated.remainingAmount = value
       }
-      
+
       return updated
     })
   }
@@ -88,18 +89,18 @@ function Loans() {
    */
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     try {
       setFormLoading(true)
-      
+
       // Prepare loan data based on type
       // For new loans, remainingAmount should equal amount (no payments yet)
       // For editing, use the form value
       const loanAmount = parseFloat(formData.amount)
-      const remainingAmount = editingLoan 
+      const remainingAmount = editingLoan
         ? parseFloat(formData.remainingAmount || formData.amount)
         : loanAmount // For new loans, remaining = amount
-      
+
       const loanData = {
         amount: loanAmount,
         remainingAmount: remainingAmount,
@@ -175,7 +176,7 @@ function Loans() {
       description: loan.description || '',
       isSettled: loan.isSettled ?? loan.is_settled ?? false
     }
-    
+
     setFormData({
       type: isGiven ? 'given' : 'received',
       ...loanData
@@ -227,7 +228,7 @@ function Loans() {
    */
   const handleAddPayment = async (e) => {
     e.preventDefault()
-    
+
     try {
       const paymentData = {
         loanId: viewingPayments,
@@ -303,13 +304,13 @@ function Loans() {
     if (amount == null || isNaN(amount) || amount === 'NaN') {
       return '€0.00'
     }
-    
+
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
-    
+
     if (isNaN(numAmount)) {
       return '€0.00'
     }
-    
+
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'EUR'
@@ -345,169 +346,153 @@ function Loans() {
         )}
       </div>
 
-      {/* Form Modal */}
-      {showForm && (
-        <div className="form-modal" onClick={(e) => e.target === e.currentTarget && closeForm()}>
-          <div className="card form-card">
-            <div className="card-header form-header">
-              <h2>
-                {editingLoan 
-                  ? t('loans.editLoan')
-                  : t('loans.addLoan')
-                }
-              </h2>
-              <button
-                className="form-close-btn"
-                onClick={closeForm}
-                aria-label={t('common.close')}
-              >
-                <FiX size={24} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="loan-form">
-              {/* Basic Information Section */}
-              <FormSection title={t('transaction.formSections.basicInfo')}>
-                {/* Loan Type */}
-                <div className="form-group">
-                  <label>{t('loans.type')}</label>
-                  <div className="radio-group">
-                    <label className="radio-label">
-                      <input
-                        type="radio"
-                        name="type"
-                        value="given"
-                        checked={formData.type === 'given'}
-                        onChange={handleChange}
-                      />
-                      <span>{t('loans.moneyLent')}</span>
-                    </label>
-                    <label className="radio-label">
-                      <input
-                        type="radio"
-                        name="type"
-                        value="received"
-                        checked={formData.type === 'received'}
-                        onChange={handleChange}
-                      />
-                      <span>{t('loans.moneyBorrowed')}</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Party Name */}
-                <div className="form-group">
-                  <label htmlFor={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}>
-                    {formData.type === 'given' ? t('loans.borrower') : t('loans.lender')} *
-                  </label>
+      {/* Form Modal (Portal) */}
+      <Modal
+        isOpen={showForm}
+        onClose={closeForm}
+        title={editingLoan ? t('loans.editLoan') : t('loans.addLoan')}
+      >
+        <form onSubmit={handleSubmit} className="loan-form">
+          {/* Basic Information Section */}
+          <FormSection title={t('transaction.formSections.basicInfo')}>
+            {/* Loan Type */}
+            <div className="form-group">
+              <label>{t('loans.type')}</label>
+              <div className="radio-group">
+                <label className="radio-label">
                   <input
-                    type="text"
-                    id={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
-                    name={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
-                    value={formData.type === 'given' ? formData.borrowedBy : formData.lentBy}
+                    type="radio"
+                    name="type"
+                    value="given"
+                    checked={formData.type === 'given'}
                     onChange={handleChange}
-                    placeholder={t('loans.enterName')}
-                    required
                   />
-                </div>
-
-                {/* Total Amount */}
-                <CurrencyInput
-                  value={formData.amount}
-                  onChange={handleChange}
-                  name="amount"
-                  id="amount"
-                  label={`${t('loans.totalAmount')} *`}
-                  required
-                  disabled={formLoading}
-                />
-
-                {/* Remaining Amount */}
-                <div className="form-group">
-                  <CurrencyInput
-                    value={formData.remainingAmount}
+                  <span>{t('loans.moneyLent')}</span>
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="received"
+                    checked={formData.type === 'received'}
                     onChange={handleChange}
-                    name="remainingAmount"
-                    id="remainingAmount"
-                    label={`${t('loans.remainingAmount')} *`}
-                    required
-                    disabled={formLoading || !editingLoan}
-                    quickAmounts={[]}
                   />
-                  {!editingLoan && (
-                    <small className="form-hint">
-                      For new loans, remaining amount equals total amount
-                    </small>
-                  )}
-                </div>
-
-                {/* Due Date */}
-                <DateInput
-                  value={formData.dueDate}
-                  onChange={handleChange}
-                  name="dueDate"
-                  id="dueDate"
-                  label={t('loans.dueDate')}
-                  required={false}
-                  disabled={formLoading}
-                  showQuickButtons={true}
-                />
-              </FormSection>
-
-              {/* Additional Details Section */}
-              <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.description || formData.isSettled}>
-                {/* Status */}
-                <div className="form-group">
-                  <label htmlFor="isSettled">{t('loans.status')}</label>
-                  <select
-                    id="isSettled"
-                    name="isSettled"
-                    value={formData.isSettled}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isSettled: e.target.value === 'true' }))}
-                    disabled={formLoading}
-                  >
-                    <option value="false">Active</option>
-                    <option value="true">Settled</option>
-                  </select>
-                </div>
-
-                {/* Description */}
-                <div className="form-group">
-                  <label htmlFor="description">{t('transaction.description')}</label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder={t('loans.additionalNotes')}
-                    rows="3"
-                    disabled={formLoading}
-                  />
-                </div>
-              </FormSection>
-
-              {/* Form Actions */}
-              <div className="form-actions">
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="btn btn-secondary"
-                  disabled={formLoading}
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={formLoading}
-                >
-                  {formLoading ? t('common.loading') : t('common.save')}
-                </button>
+                  <span>{t('loans.moneyBorrowed')}</span>
+                </label>
               </div>
-            </form>
+            </div>
+
+            {/* Party Name */}
+            <div className="form-group">
+              <label htmlFor={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}>
+                {formData.type === 'given' ? t('loans.borrower') : t('loans.lender')} *
+              </label>
+              <input
+                type="text"
+                id={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
+                name={formData.type === 'given' ? 'borrowedBy' : 'lentBy'}
+                value={formData.type === 'given' ? formData.borrowedBy : formData.lentBy}
+                onChange={handleChange}
+                placeholder={t('loans.enterName')}
+                required
+              />
+            </div>
+
+            {/* Total Amount */}
+            <CurrencyInput
+              value={formData.amount}
+              onChange={handleChange}
+              name="amount"
+              id="amount"
+              label={`${t('loans.totalAmount')} *`}
+              required
+              disabled={formLoading}
+            />
+
+            {/* Remaining Amount */}
+            <div className="form-group">
+              <CurrencyInput
+                value={formData.remainingAmount}
+                onChange={handleChange}
+                name="remainingAmount"
+                id="remainingAmount"
+                label={`${t('loans.remainingAmount')} *`}
+                required
+                disabled={formLoading || !editingLoan}
+                quickAmounts={[]}
+              />
+              {!editingLoan && (
+                <small className="form-hint">
+                  For new loans, remaining amount equals total amount
+                </small>
+              )}
+            </div>
+
+            {/* Due Date */}
+            <DateInput
+              value={formData.dueDate}
+              onChange={handleChange}
+              name="dueDate"
+              id="dueDate"
+              label={t('loans.dueDate')}
+              required={false}
+              disabled={formLoading}
+              showQuickButtons={true}
+            />
+          </FormSection>
+
+          {/* Additional Details Section */}
+          <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.description || formData.isSettled}>
+            {/* Status */}
+            <div className="form-group">
+              <label htmlFor="isSettled">{t('loans.status')}</label>
+              <select
+                id="isSettled"
+                name="isSettled"
+                value={formData.isSettled}
+                onChange={(e) => setFormData(prev => ({ ...prev, isSettled: e.target.value === 'true' }))}
+                disabled={formLoading}
+              >
+                <option value="false">Active</option>
+                <option value="true">Settled</option>
+              </select>
+            </div>
+
+            {/* Description */}
+            <div className="form-group">
+              <label htmlFor="description">{t('transaction.description')}</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder={t('loans.additionalNotes')}
+                rows="3"
+                disabled={formLoading}
+              />
+            </div>
+          </FormSection>
+
+          {/* Form Actions */}
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={closeForm}
+              className="btn btn-secondary"
+              disabled={formLoading}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={formLoading}
+            >
+              {formLoading ? t('common.loading') : t('common.save')}
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* Loans List */}
       {loans.length === 0 ? (
@@ -527,7 +512,7 @@ function Loans() {
             // Handle both camelCase and snake_case property names
             const isGiven = (loan.lentBy || loan.lent_by) === 'Me'
             const partyName = isGiven ? (loan.borrowedBy || loan.borrowed_by) : (loan.lentBy || loan.lent_by)
-            
+
             return (
               <div key={loan.id} className={`loan-card card ${isGiven ? 'given' : 'received'}`}>
                 <div className="loan-header">
@@ -607,200 +592,192 @@ function Loans() {
         </div>
       )}
 
-      {/* Payment History Modal */}
-      {viewingPayments && (
-        <div className="modal-overlay" onClick={closePaymentHistory}>
-          <div className="modal-content payment-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>
-                <span style={{ fontSize: '20px', fontWeight: 'bold', marginRight: '8px' }}>€</span> Payment History
-              </h2>
-              <button className="close-btn" onClick={closePaymentHistory}>&times;</button>
+      {/* Payment History Modal (Portal) */}
+      <Modal
+        isOpen={!!viewingPayments}
+        onClose={closePaymentHistory}
+        title="Payment History"
+      >
+
+        {/* Loan Summary */}
+        {loans.find(l => l.id === viewingPayments) && (
+          <div className="payment-summary">
+            <div className="summary-item">
+              <span className="label">Total Loan:</span>
+              <span className="value">{formatCurrency(loans.find(l => l.id === viewingPayments).amount)}</span>
             </div>
-
-            <div className="modal-body">
-              {/* Loan Summary */}
-              {loans.find(l => l.id === viewingPayments) && (
-                <div className="payment-summary">
-                  <div className="summary-item">
-                    <span className="label">Total Loan:</span>
-                    <span className="value">{formatCurrency(loans.find(l => l.id === viewingPayments).amount)}</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="label">Total Paid:</span>
-                    <span className="value paid">{formatCurrency(loans.find(l => l.id === viewingPayments).totalPaid || 0)}</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="label">Remaining:</span>
-                    <span className="value remaining">{formatCurrency(loans.find(l => l.id === viewingPayments)?.remainingAmount ?? loans.find(l => l.id === viewingPayments)?.remaining_amount ?? 0)}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Add Payment Button - Only show for non-settled loans */}
-              {!showPaymentForm && !(loans.find(l => l.id === viewingPayments)?.isSettled ?? loans.find(l => l.id === viewingPayments)?.is_settled) && (
-                <button 
-                  className="btn btn-primary btn-block"
-                  onClick={() => setShowPaymentForm(true)}
-                >
-                  <FiPlus /> Add Payment
-                </button>
-              )}
-
-              {/* Payment Form */}
-              {showPaymentForm && (
-                <div className="payment-form-card">
-                  <h3>Add New Payment</h3>
-                  <form onSubmit={handleAddPayment}>
-                    <div className="form-group">
-                      <label>Payment Amount *</label>
-                      <input
-                        type="number"
-                        name="amount"
-                        value={paymentFormData.amount}
-                        onChange={handlePaymentChange}
-                        required
-                        step="0.01"
-                        min="0"
-                        max="1000000"
-                        placeholder="0.00"
-                      />
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Principal Amount</label>
-                        <input
-                          type="number"
-                          name="principalAmount"
-                          value={paymentFormData.principalAmount}
-                          onChange={handlePaymentChange}
-                          step="0.01"
-                          min="0"
-                          max="1000000"
-                          placeholder={t('common.optional')}
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Interest Amount</label>
-                        <input
-                          type="number"
-                          name="interestAmount"
-                          value={paymentFormData.interestAmount}
-                          onChange={handlePaymentChange}
-                          step="0.01"
-                          min="0"
-                          max="1000000"
-                          placeholder={t('common.optional')}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Payment Date *</label>
-                      <input
-                        type="date"
-                        name="paymentDate"
-                        value={paymentFormData.paymentDate}
-                        onChange={handlePaymentChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Notes</label>
-                      <textarea
-                        name="notes"
-                        value={paymentFormData.notes}
-                        onChange={handlePaymentChange}
-                        rows="2"
-                        placeholder={t('loans.paymentNotesPlaceholder')}
-                      />
-                    </div>
-
-                    <div className="form-actions">
-                      <button 
-                        type="button" 
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setShowPaymentForm(false)
-                          setPaymentFormData({
-                            amount: '',
-                            principalAmount: '',
-                            interestAmount: '',
-                            paymentDate: new Date().toISOString().split('T')[0],
-                            notes: ''
-                          })
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button type="submit" className="btn btn-success">
-                        <FiPlus /> Add Payment
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* Payment History List */}
-              <div className="payment-history">
-                <h3>
-                  <FiList /> Payment History ({paymentHistory.length})
-                </h3>
-                
-                {paymentHistory.length === 0 ? (
-                  <div className="empty-payments">
-                    <FiTrendingDown size={48} />
-                    <p>No payments recorded yet</p>
-                    <p className="hint">Add your first payment to track progress</p>
-                  </div>
-                ) : (
-                  <div className="payments-list">
-                    {paymentHistory.map(payment => (
-                      <div key={payment.id} className="payment-item">
-                        <div className="payment-date">
-                          {format(new Date(payment.paymentDate), 'MMM dd, yyyy')}
-                        </div>
-                        <div className="payment-details">
-                          <div className="payment-amount">
-                            {formatCurrency(payment.amount)}
-                          </div>
-                          {(payment.principalAmount > 0 || payment.interestAmount > 0) && (
-                            <div className="payment-breakdown">
-                              {payment.principalAmount > 0 && (
-                                <span className="principal">
-                                  Principal: {formatCurrency(payment.principalAmount)}
-                                </span>
-                              )}
-                              {payment.interestAmount > 0 && (
-                                <span className="interest">
-                                  Interest: {formatCurrency(payment.interestAmount)}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          {payment.notes && (
-                            <div className="payment-notes">{payment.notes}</div>
-                          )}
-                        </div>
-                        <button
-                          className="btn-icon delete"
-                          onClick={() => openDeletePaymentModal(payment.id)}
-                          aria-label="Delete Payment"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="summary-item">
+              <span className="label">Total Paid:</span>
+              <span className="value paid">{formatCurrency(loans.find(l => l.id === viewingPayments).totalPaid || 0)}</span>
+            </div>
+            <div className="summary-item">
+              <span className="label">Remaining:</span>
+              <span className="value remaining">{formatCurrency(loans.find(l => l.id === viewingPayments)?.remainingAmount ?? loans.find(l => l.id === viewingPayments)?.remaining_amount ?? 0)}</span>
             </div>
           </div>
+        )}
+
+        {/* Add Payment Button - Only show for non-settled loans */}
+        {!showPaymentForm && !(loans.find(l => l.id === viewingPayments)?.isSettled ?? loans.find(l => l.id === viewingPayments)?.is_settled) && (
+          <button
+            className="btn btn-primary btn-block"
+            onClick={() => setShowPaymentForm(true)}
+          >
+            <FiPlus /> Add Payment
+          </button>
+        )}
+
+        {/* Payment Form */}
+        {showPaymentForm && (
+          <div className="payment-form-card">
+            <h3>Add New Payment</h3>
+            <form onSubmit={handleAddPayment}>
+              <div className="form-group">
+                <label>Payment Amount *</label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={paymentFormData.amount}
+                  onChange={handlePaymentChange}
+                  required
+                  step="0.01"
+                  min="0"
+                  max="1000000"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Principal Amount</label>
+                  <input
+                    type="number"
+                    name="principalAmount"
+                    value={paymentFormData.principalAmount}
+                    onChange={handlePaymentChange}
+                    step="0.01"
+                    min="0"
+                    max="1000000"
+                    placeholder={t('common.optional')}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Interest Amount</label>
+                  <input
+                    type="number"
+                    name="interestAmount"
+                    value={paymentFormData.interestAmount}
+                    onChange={handlePaymentChange}
+                    step="0.01"
+                    min="0"
+                    max="1000000"
+                    placeholder={t('common.optional')}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Payment Date *</label>
+                <input
+                  type="date"
+                  name="paymentDate"
+                  value={paymentFormData.paymentDate}
+                  onChange={handlePaymentChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Notes</label>
+                <textarea
+                  name="notes"
+                  value={paymentFormData.notes}
+                  onChange={handlePaymentChange}
+                  rows="2"
+                  placeholder={t('loans.paymentNotesPlaceholder')}
+                />
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowPaymentForm(false)
+                    setPaymentFormData({
+                      amount: '',
+                      principalAmount: '',
+                      interestAmount: '',
+                      paymentDate: new Date().toISOString().split('T')[0],
+                      notes: ''
+                    })
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-success">
+                  <FiPlus /> Add Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Payment History List */}
+        <div className="payment-history">
+          <h3>
+            <FiList /> Payment History ({paymentHistory.length})
+          </h3>
+
+          {paymentHistory.length === 0 ? (
+            <div className="empty-payments">
+              <FiTrendingDown size={48} />
+              <p>No payments recorded yet</p>
+              <p className="hint">Add your first payment to track progress</p>
+            </div>
+          ) : (
+            <div className="payments-list">
+              {paymentHistory.map(payment => (
+                <div key={payment.id} className="payment-item">
+                  <div className="payment-date">
+                    {format(new Date(payment.paymentDate), 'MMM dd, yyyy')}
+                  </div>
+                  <div className="payment-details">
+                    <div className="payment-amount">
+                      {formatCurrency(payment.amount)}
+                    </div>
+                    {(payment.principalAmount > 0 || payment.interestAmount > 0) && (
+                      <div className="payment-breakdown">
+                        {payment.principalAmount > 0 && (
+                          <span className="principal">
+                            Principal: {formatCurrency(payment.principalAmount)}
+                          </span>
+                        )}
+                        {payment.interestAmount > 0 && (
+                          <span className="interest">
+                            Interest: {formatCurrency(payment.interestAmount)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {payment.notes && (
+                      <div className="payment-notes">{payment.notes}</div>
+                    )}
+                  </div>
+                  <button
+                    className="btn-icon delete"
+                    onClick={() => openDeletePaymentModal(payment.id)}
+                    aria-label="Delete Payment"
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </Modal>
 
       {/* Delete Loan Confirmation Modal */}
       <ConfirmationModal
@@ -823,7 +800,7 @@ function Loans() {
         confirmText={t('common.delete')}
         variant="danger"
       />
-    </div>
+    </div >
   )
 }
 

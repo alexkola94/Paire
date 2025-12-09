@@ -10,9 +10,9 @@ import './CurrencyInput.css'
  * - Large, prominent display
  * - Auto-format on blur
  */
-function CurrencyInput({ 
-  value = '', 
-  onChange, 
+function CurrencyInput({
+  value = '',
+  onChange,
   name = 'amount',
   id = 'amount',
   placeholder = '0.00',
@@ -32,7 +32,7 @@ function CurrencyInput({
     if (!num && num !== 0) return ''
     const numValue = typeof num === 'string' ? parseFloat(num.replace(/[^\d.-]/g, '')) : num
     if (isNaN(numValue)) return ''
-    
+
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -72,7 +72,7 @@ function CurrencyInput({
     const inputValue = e.target.value
     const parsed = parseCurrency(inputValue)
     setDisplayValue(inputValue)
-    
+
     // Update parent with numeric value
     if (onChange) {
       const numericValue = parsed ? parseFloat(parsed) : ''
@@ -112,6 +112,10 @@ function CurrencyInput({
    * Handle quick amount button click
    */
   const handleQuickAmount = (amount) => {
+    // First update display immediately for responsive UX
+    setDisplayValue(formatCurrency(amount))
+
+    // Then notify parent
     if (onChange) {
       onChange({
         target: {
@@ -120,7 +124,6 @@ function CurrencyInput({
         }
       })
     }
-    setDisplayValue(formatCurrency(amount))
   }
 
   return (
@@ -130,7 +133,7 @@ function CurrencyInput({
           {label}
         </label>
       )}
-      
+
       <div className="currency-input-container">
         <div className="currency-symbol">€</div>
         <input

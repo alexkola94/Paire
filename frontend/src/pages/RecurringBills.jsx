@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { 
-  FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck, 
+import {
+  FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiClock, FiAlertCircle, FiRepeat, FiX
 } from 'react-icons/fi'
 import { recurringBillService } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Modal from '../components/Modal'
+import DateInput from '../components/DateInput'
 import CurrencyInput from '../components/CurrencyInput'
 import CategorySelector from '../components/CategorySelector'
 import FormSection from '../components/FormSection'
@@ -132,7 +134,7 @@ function RecurringBills() {
    */
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     try {
       const billData = {
         ...formData,
@@ -242,8 +244,8 @@ function RecurringBills() {
    * Format due date display
    */
   const formatDueDate = (date) => {
-    return new Date(date).toLocaleDateString(undefined, { 
-      month: 'short', 
+    return new Date(date).toLocaleDateString(undefined, {
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     })
@@ -327,7 +329,7 @@ function RecurringBills() {
             </h2>
             <div className="bills-grid">
               {overdueBills.map(bill => (
-                <BillCard 
+                <BillCard
                   key={bill.id}
                   bill={bill}
                   onEdit={handleEdit}
@@ -352,7 +354,7 @@ function RecurringBills() {
             </h2>
             <div className="bills-grid">
               {upcomingBills.map(bill => (
-                <BillCard 
+                <BillCard
                   key={bill.id}
                   bill={bill}
                   onEdit={handleEdit}
@@ -377,7 +379,7 @@ function RecurringBills() {
             </h2>
             <div className="bills-grid">
               {laterBills.map(bill => (
-                <BillCard 
+                <BillCard
                   key={bill.id}
                   bill={bill}
                   onEdit={handleEdit}
@@ -409,147 +411,136 @@ function RecurringBills() {
 
       {/* Bill Form Modal */}
       {showForm && (
-        <div className="modal-overlay" onClick={resetForm}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header form-header">
-              <h2>
-                {editingBill ? t('recurringBills.editBill') : t('recurringBills.addBill')}
-              </h2>
-              <button 
-                className="form-close-btn" 
-                onClick={resetForm}
-                aria-label={t('common.close')}
-              >
-                <FiX size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              {/* Basic Information Section */}
-              <FormSection title={t('transaction.formSections.basicInfo')}>
-                <div className="form-group">
-                  <label>{t('recurringBills.billName')} *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    placeholder={t('recurringBills.billNamePlaceholder')}
-                  />
-                </div>
-
-                <CurrencyInput
-                  value={formData.amount}
+        <Modal
+          isOpen={showForm}
+          onClose={resetForm}
+          title={editingBill ? t('recurringBills.editBill') : t('recurringBills.addBill')}
+        >
+          <form onSubmit={handleSubmit}>
+            {/* Basic Information Section */}
+            <FormSection title={t('transaction.formSections.basicInfo')}>
+              <div className="form-group">
+                <label>{t('recurringBills.billName')} *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
-                  name="amount"
-                  id="amount"
-                  label={`${t('recurringBills.amount')} *`}
                   required
+                  placeholder={t('recurringBills.billNamePlaceholder')}
                 />
+              </div>
 
-                <CategorySelector
-                  value={formData.category}
+              <CurrencyInput
+                value={formData.amount}
+                onChange={handleChange}
+                name="amount"
+                id="amount"
+                label={`${t('recurringBills.amount')} *`}
+                required
+              />
+
+              <CategorySelector
+                value={formData.category}
+                onChange={handleChange}
+                name="category"
+                categories={categories.map(c => c.value)}
+                type="expense"
+                label={t('recurringBills.category')}
+              />
+            </FormSection>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('recurringBills.frequency')} *</label>
+                <select
+                  name="frequency"
+                  value={formData.frequency}
                   onChange={handleChange}
-                  name="category"
-                  categories={categories.map(c => c.value)}
-                  type="expense"
-                  label={t('recurringBills.category')}
-                />
-              </FormSection>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('recurringBills.frequency')} *</label>
-                  <select
-                    name="frequency"
-                    value={formData.frequency}
-                    onChange={handleChange}
-                    required
-                  >
-                    {frequencies.map(freq => (
-                      <option key={freq.value} value={freq.value}>
-                        {freq.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>{t('recurringBills.dueDay')} *</label>
-                  <input
-                    type="number"
-                    name="dueDay"
-                    value={formData.dueDay}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    max="31"
-                    placeholder="1-31"
-                  />
-                </div>
+                  required
+                >
+                  {frequencies.map(freq => (
+                    <option key={freq.value} value={freq.value}>
+                      {freq.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
-                <label>{t('recurringBills.reminderDays')}</label>
+                <label>{t('recurringBills.dueDay')} *</label>
                 <input
                   type="number"
-                  name="reminderDays"
-                  value={formData.reminderDays}
+                  name="dueDay"
+                  value={formData.dueDay}
                   onChange={handleChange}
-                  min="0"
-                  max="30"
-                  placeholder="3"
-                />
-                <small>{t('recurringBills.reminderDaysHint')}</small>
-              </div>
-
-              <div className="form-group checkbox-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="autoPay"
-                    checked={formData.autoPay}
-                    onChange={handleChange}
-                  />
-                  <span>{t('recurringBills.autoPay')}</span>
-                </label>
-              </div>
-
-              <div className="form-group checkbox-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="isActive"
-                    checked={formData.isActive}
-                    onChange={handleChange}
-                  />
-                  <span>{t('recurringBills.isActive')}</span>
-                </label>
-              </div>
-
-              <div className="form-group">
-                <label>{t('recurringBills.notes')}</label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  rows="3"
-                  placeholder={t('recurringBills.notesPlaceholder')}
+                  required
+                  min="1"
+                  max="31"
+                  placeholder="1-31"
                 />
               </div>
+            </div>
 
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={resetForm}>
-                  {t('common.cancel')}
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingBill ? t('common.update') : t('common.create')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="form-group">
+              <label>{t('recurringBills.reminderDays')}</label>
+              <input
+                type="number"
+                name="reminderDays"
+                value={formData.reminderDays}
+                onChange={handleChange}
+                min="0"
+                max="30"
+                placeholder="3"
+              />
+              <small>{t('recurringBills.reminderDaysHint')}</small>
+            </div>
+
+            <div className="form-group checkbox-group">
+              <label>
+                <input
+                  type="checkbox"
+                  name="autoPay"
+                  checked={formData.autoPay}
+                  onChange={handleChange}
+                />
+                <span>{t('recurringBills.autoPay')}</span>
+              </label>
+            </div>
+
+            <div className="form-group checkbox-group">
+              <label>
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleChange}
+                />
+                <span>{t('recurringBills.isActive')}</span>
+              </label>
+            </div>
+
+            <div className="form-group">
+              <label>{t('recurringBills.notes')}</label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows="3"
+                placeholder={t('recurringBills.notesPlaceholder')}
+              />
+            </div>
+
+            <div className="form-actions">
+              <button type="button" className="btn btn-secondary" onClick={resetForm}>
+                {t('common.cancel')}
+              </button>
+              <button type="submit" className="btn btn-primary">
+                {editingBill ? t('common.update') : t('common.create')}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Delete Confirmation Modal */}
@@ -582,15 +573,15 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatD
           <span className="bill-frequency">{t(`recurringBills.frequencies.${bill.frequency}`)}</span>
         </div>
         <div className="bill-actions">
-          <button 
-            className="icon-btn" 
+          <button
+            className="icon-btn"
             onClick={() => onEdit(bill)}
             title={t('common.edit')}
           >
             <FiEdit />
           </button>
-          <button 
-            className="icon-btn danger" 
+          <button
+            className="icon-btn danger"
             onClick={() => onDelete(bill.id)}
             title={t('common.delete')}
           >
@@ -609,9 +600,9 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatD
         <span>{t('recurringBills.dueOn')} {formatDueDate(bill.nextDueDate || bill.next_due_date)}</span>
         {daysUntil >= 0 ? (
           <span className="days-until">
-            {daysUntil === 0 ? t('recurringBills.today') : 
-             daysUntil === 1 ? t('recurringBills.tomorrow') :
-             `${daysUntil} ${t('recurringBills.daysLeft')}`}
+            {daysUntil === 0 ? t('recurringBills.today') :
+              daysUntil === 1 ? t('recurringBills.tomorrow') :
+                `${daysUntil} ${t('recurringBills.daysLeft')}`}
           </span>
         ) : (
           <span className="days-overdue">
@@ -627,8 +618,8 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatD
       )}
 
       <div className="bill-footer">
-        <button 
-          className="btn btn-sm btn-success" 
+        <button
+          className="btn btn-sm btn-success"
           onClick={() => onMarkPaid(bill.id)}
         >
           <FiCheck /> {t('recurringBills.markPaid')}

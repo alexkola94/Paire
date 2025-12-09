@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { 
-  FiTarget, FiPlus, FiEdit, FiTrash2, FiTrendingUp, 
-  FiCalendar, FiCheckCircle, FiArrowUp, FiArrowDown 
+import {
+  FiTarget, FiPlus, FiEdit, FiTrash2, FiTrendingUp,
+  FiCalendar, FiCheckCircle, FiArrowUp, FiArrowDown
 } from 'react-icons/fi'
 import { savingsGoalService } from '../services/api'
 import { formatCurrency } from '../utils/formatCurrency'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Modal from '../components/Modal'
 import CurrencyInput from '../components/CurrencyInput'
 import DateInput from '../components/DateInput'
 import CategorySelector from '../components/CategorySelector'
@@ -133,7 +134,7 @@ function SavingsGoals() {
    */
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     try {
       const goalData = {
         ...formData,
@@ -342,8 +343,8 @@ function SavingsGoals() {
             const icon = goal.icon || getCategoryIcon(goal.category)
 
             return (
-              <div 
-                key={goal.id} 
+              <div
+                key={goal.id}
                 className={`goal-card ${goal.isAchieved ? 'achieved' : ''}`}
                 style={{ borderLeftColor: goal.color || priorityColor }}
               >
@@ -358,15 +359,15 @@ function SavingsGoals() {
                     </span>
                   </div>
                   <div className="goal-actions">
-                    <button 
-                      className="icon-btn" 
+                    <button
+                      className="icon-btn"
                       onClick={() => handleEdit(goal)}
                       title={t('common.edit')}
                     >
                       <FiEdit />
                     </button>
-                    <button 
-                      className="icon-btn danger" 
+                    <button
+                      className="icon-btn danger"
                       onClick={() => openDeleteModal(goal.id)}
                       title={t('common.delete')}
                     >
@@ -388,9 +389,9 @@ function SavingsGoals() {
 
                 <div className="progress-container">
                   <div className="progress-bar">
-                    <div 
-                      className="progress-fill" 
-                      style={{ 
+                    <div
+                      className="progress-fill"
+                      style={{
                         width: `${progress}%`,
                         backgroundColor: goal.color || priorityColor
                       }}
@@ -404,7 +405,7 @@ function SavingsGoals() {
                     <div className="meta-item">
                       <FiCalendar />
                       <span>
-                        {daysRemaining !== null && daysRemaining >= 0 
+                        {daysRemaining !== null && daysRemaining >= 0
                           ? `${daysRemaining} ${t('savingsGoals.daysLeft')}`
                           : t('savingsGoals.overdue')
                         }
@@ -412,8 +413,8 @@ function SavingsGoals() {
                     </div>
                   )}
                   <div className="meta-item">
-                    <span 
-                      className="priority-badge" 
+                    <span
+                      className="priority-badge"
                       style={{ backgroundColor: priorityColor }}
                     >
                       {priorities.find(p => p.value === goal.priority)?.label}
@@ -440,14 +441,14 @@ function SavingsGoals() {
                           min="0"
                           max="1000000"
                         />
-                        <button 
-                          className="btn btn-sm btn-success" 
+                        <button
+                          className="btn btn-sm btn-success"
                           onClick={() => handleDeposit(goal.id)}
                         >
                           {t('common.confirm')}
                         </button>
-                        <button 
-                          className="btn btn-sm btn-secondary" 
+                        <button
+                          className="btn btn-sm btn-secondary"
                           onClick={() => {
                             setShowDepositForm(null)
                             setDepositAmount('')
@@ -458,14 +459,14 @@ function SavingsGoals() {
                       </div>
                     ) : (
                       <>
-                        <button 
-                          className="btn btn-sm btn-success" 
+                        <button
+                          className="btn btn-sm btn-success"
                           onClick={() => setShowDepositForm(goal.id)}
                         >
                           <FiArrowUp /> {t('savingsGoals.addMoney')}
                         </button>
-                        <button 
-                          className="btn btn-sm btn-outline" 
+                        <button
+                          className="btn btn-sm btn-outline"
                           onClick={() => handleWithdraw(goal.id)}
                         >
                           <FiArrowDown /> {t('savingsGoals.withdraw')}
@@ -486,139 +487,132 @@ function SavingsGoals() {
         )}
       </div>
 
-      {/* Goal Form Modal */}
-      {showForm && (
-        <div className="modal-overlay" onClick={resetForm}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>
-                {editingGoal ? t('savingsGoals.editGoal') : t('savingsGoals.addGoal')}
-              </h2>
-              <button className="close-btn" onClick={resetForm}>&times;</button>
+      {/* Goal Form Modal (Portal) */}
+      <Modal
+        isOpen={showForm}
+        onClose={resetForm}
+        title={editingGoal ? t('savingsGoals.editGoal') : t('savingsGoals.addGoal')}
+      >
+        <form onSubmit={handleSubmit}>
+          {/* Basic Information Section */}
+          <FormSection title={t('transaction.formSections.basicInfo')}>
+            <div className="form-group">
+              <label>{t('savingsGoals.goalName')} *</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder={t('savingsGoals.goalNamePlaceholder')}
+              />
             </div>
 
-            <form onSubmit={handleSubmit}>
-              {/* Basic Information Section */}
-              <FormSection title={t('transaction.formSections.basicInfo')}>
-                <div className="form-group">
-                  <label>{t('savingsGoals.goalName')} *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    placeholder={t('savingsGoals.goalNamePlaceholder')}
-                  />
-                </div>
+            <div className="form-row">
+              <CurrencyInput
+                value={formData.targetAmount}
+                onChange={handleChange}
+                name="targetAmount"
+                id="targetAmount"
+                label={`${t('savingsGoals.targetAmount')} *`}
+                required
+                quickAmounts={[1000, 5000, 10000, 50000]}
+              />
 
-                <div className="form-row">
-                  <CurrencyInput
-                    value={formData.targetAmount}
-                    onChange={handleChange}
-                    name="targetAmount"
-                    id="targetAmount"
-                    label={`${t('savingsGoals.targetAmount')} *`}
-                    required
-                    quickAmounts={[1000, 5000, 10000, 50000]}
-                  />
+              <CurrencyInput
+                value={formData.currentAmount}
+                onChange={handleChange}
+                name="currentAmount"
+                id="currentAmount"
+                label={t('savingsGoals.currentAmount')}
+                quickAmounts={[]}
+              />
+            </div>
 
-                  <CurrencyInput
-                    value={formData.currentAmount}
-                    onChange={handleChange}
-                    name="currentAmount"
-                    id="currentAmount"
-                    label={t('savingsGoals.currentAmount')}
-                    quickAmounts={[]}
-                  />
-                </div>
+            <CategorySelector
+              value={formData.category}
+              onChange={handleChange}
+              name="category"
+              categories={categories.map(c => c.value)}
+              type="expense"
+              label={t('savingsGoals.category')}
+            />
 
-                <CategorySelector
-                  value={formData.category}
+            <div className="form-group">
+              <label>{t('savingsGoals.priority')}</label>
+              <select
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+              >
+                {priorities.map(pri => (
+                  <option key={pri.value} value={pri.value}>
+                    {pri.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <DateInput
+              value={formData.targetDate}
+              onChange={handleChange}
+              name="targetDate"
+              id="targetDate"
+              label={t('savingsGoals.targetDate')}
+              required={false}
+              showQuickButtons={true}
+            />
+          </FormSection>
+
+          {/* Customization Section */}
+          <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.icon || !!formData.notes}>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('savingsGoals.icon')}</label>
+                <input
+                  type="text"
+                  name="icon"
+                  value={formData.icon}
                   onChange={handleChange}
-                  name="category"
-                  categories={categories.map(c => c.value)}
-                  type="expense"
-                  label={t('savingsGoals.category')}
+                  placeholder="🎯"
+                  maxLength="2"
                 />
-
-                <div className="form-group">
-                  <label>{t('savingsGoals.priority')}</label>
-                  <select
-                    name="priority"
-                    value={formData.priority}
-                    onChange={handleChange}
-                  >
-                    {priorities.map(pri => (
-                      <option key={pri.value} value={pri.value}>
-                        {pri.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <DateInput
-                  value={formData.targetDate}
-                  onChange={handleChange}
-                  name="targetDate"
-                  id="targetDate"
-                  label={t('savingsGoals.targetDate')}
-                  required={false}
-                  showQuickButtons={true}
-                />
-              </FormSection>
-
-              {/* Customization Section */}
-              <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.icon || !!formData.notes}>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('savingsGoals.icon')}</label>
-                  <input
-                    type="text"
-                    name="icon"
-                    value={formData.icon}
-                    onChange={handleChange}
-                    placeholder="🎯"
-                    maxLength="2"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>{t('savingsGoals.color')}</label>
-                  <input
-                    type="color"
-                    name="color"
-                    value={formData.color}
-                    onChange={handleChange}
-                  />
-                </div>
               </div>
 
               <div className="form-group">
-                <label>{t('savingsGoals.notes')}</label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
+                <label>{t('savingsGoals.color')}</label>
+                <input
+                  type="color"
+                  name="color"
+                  value={formData.color}
                   onChange={handleChange}
-                  rows="3"
-                  placeholder={t('savingsGoals.notesPlaceholder')}
                 />
               </div>
-              </FormSection>
+            </div>
 
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={resetForm}>
-                  {t('common.cancel')}
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingGoal ? t('common.update') : t('common.create')}
-                </button>
-              </div>
-            </form>
+            <div className="form-group">
+              <label>{t('savingsGoals.notes')}</label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                placeholder={t('savingsGoals.notesPlaceholder')}
+                rows={3}
+              />
+            </div>
+          </FormSection>
+
+          <div className="form-actions">
+            <button type="button" className="btn btn-secondary" onClick={resetForm}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary">
+              {editingGoal ? t('common.update') : t('common.create')}
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FiTarget, FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiAlertCircle, FiCheckCircle } from 'react-icons/fi'
 import { budgetService, transactionService } from '../services/api'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Modal from '../components/Modal'
 import LogoLoader from '../components/LogoLoader'
 import './Budgets.css'
 
@@ -42,7 +43,7 @@ function Budgets() {
   const loadData = async () => {
     try {
       setLoading(true)
-      
+
       // Get current month date range
       const now = new Date()
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
@@ -218,84 +219,81 @@ function Budgets() {
         )}
       </div>
 
-      {/* Budget Form */}
-      {showForm && (
-        <div className="card budget-form-card">
-          <div className="card-header">
-            <h2>{editingBudget ? t('budgets.editBudget') : t('budgets.addBudget')}</h2>
+      {/* Budget Form Modal (Portal) */}
+      <Modal
+        isOpen={showForm}
+        onClose={handleCancel}
+        title={editingBudget ? t('budgets.editBudget') : t('budgets.addBudget')}
+      >
+        <form onSubmit={handleSubmit} className="budget-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="category">{t('budgets.category')}</label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+              >
+                <option value="">{t('budgets.selectCategory')}</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {t(`categories.${cat}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="amount">{t('budgets.amount')}</label>
+              <input
+                type="number"
+                id="amount"
+                name="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                max="1000000"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="period">{t('budgets.period')}</label>
+              <select
+                id="period"
+                name="period"
+                value={formData.period}
+                onChange={handleChange}
+              >
+                <option value="monthly">{t('budgets.monthly')}</option>
+                <option value="yearly">{t('budgets.yearly')}</option>
+              </select>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="budget-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="category">{t('budgets.category')}</label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">{t('budgets.selectCategory')}</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>
-                      {t(`categories.${cat}`)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="amount">{t('budgets.amount')}</label>
-                <input
-                  type="number"
-                  id="amount"
-                  name="amount"
-                  value={formData.amount}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  max="1000000"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="period">{t('budgets.period')}</label>
-                <select
-                  id="period"
-                  name="period"
-                  value={formData.period}
-                  onChange={handleChange}
-                >
-                  <option value="monthly">{t('budgets.monthly')}</option>
-                  <option value="yearly">{t('budgets.yearly')}</option>
-                </select>
-              </div>
-            </div>
-
-
-            <div className="form-actions">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="btn btn-secondary"
-              >
-                <FiX size={18} />
-                {t('common.cancel')}
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
-                <FiSave size={18} />
-                {t('common.save')}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="btn btn-secondary"
+            >
+              <FiX size={18} />
+              {t('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+            >
+              <FiSave size={18} />
+              {t('common.save')}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Budgets List */}
       {budgets.length === 0 ? (

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { 
-  FiShoppingCart, FiPlus, FiEdit, FiTrash2, FiCheck, 
+import {
+  FiShoppingCart, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiSquare, FiCheckSquare, FiPackage, FiList, FiUpload, FiX
 } from 'react-icons/fi'
 import { formatCurrency } from '../utils/formatCurrency'
 import { shoppingListService } from '../services/api'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Modal from '../components/Modal'
 import CurrencyInput from '../components/CurrencyInput'
 import CategorySelector from '../components/CategorySelector'
 import FormSection from '../components/FormSection'
@@ -31,7 +32,7 @@ function ShoppingLists() {
   const [showSidebar, setShowSidebar] = useState(false)
   const [togglingItems, setTogglingItems] = useState(new Set()) // Track items being toggled to prevent double-tap
   const [swipeState, setSwipeState] = useState({}) // Track swipe gestures per item
-  
+
   const [listFormData, setListFormData] = useState({
     name: '',
     category: '',
@@ -194,7 +195,7 @@ function ShoppingLists() {
   const handleItemSubmit = async (e) => {
     e.preventDefault()
     if (!selectedList) return
-    
+
     try {
       const itemData = {
         name: itemFormData.name,
@@ -225,14 +226,14 @@ function ShoppingLists() {
   const handleSwipeStart = (itemId, e) => {
     // Only handle swipe on mobile devices (touch events)
     if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return
-    
+
     // Don't start swipe if clicking on interactive elements
     if (e.target.closest('button') || e.target.closest('.icon-btn')) return
-    
+
     // Get current item state
     const item = selectedList?.items.find(i => i.id === itemId)
     if (!item) return
-    
+
     const touch = e.touches[0]
     setSwipeState(prev => ({
       ...prev,
@@ -249,7 +250,7 @@ function ShoppingLists() {
   const handleSwipeMove = (itemId, e) => {
     // Only handle swipe on mobile devices
     if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return
-    
+
     const touch = e.touches[0]
     const swipe = swipeState[itemId]
     if (!swipe) return
@@ -307,7 +308,7 @@ function ShoppingLists() {
   const handleSwipeEnd = (itemId, e) => {
     // Only handle swipe on mobile devices
     if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return
-    
+
     const swipe = swipeState[itemId]
     if (!swipe) {
       return
@@ -339,7 +340,7 @@ function ShoppingLists() {
 
   const handleToggleItem = async (itemId, event) => {
     if (!selectedList) return
-    
+
     // Prevent double-tap/double-click
     if (togglingItems.has(itemId)) {
       if (event) {
@@ -348,7 +349,7 @@ function ShoppingLists() {
       }
       return
     }
-    
+
     // Stop propagation to prevent event bubbling, but don't always prevent default
     // (preventDefault on touch can interfere with scrolling)
     if (event) {
@@ -358,20 +359,20 @@ function ShoppingLists() {
         event.preventDefault()
       }
     }
-    
+
     // Mark item as being toggled
     setTogglingItems(prev => new Set(prev).add(itemId))
-    
+
     try {
       // Optimistic update - update UI immediately for instant feedback
-      const updatedItems = selectedList.items.map(item => 
-        item.id === itemId 
+      const updatedItems = selectedList.items.map(item =>
+        item.id === itemId
           ? { ...item, isChecked: !item.isChecked }
           : item
       )
-      
+
       const checkedCount = updatedItems.filter(item => item.isChecked).length
-      
+
       // Update state immediately with new checked count
       setSelectedList(prev => ({
         ...prev,
@@ -379,10 +380,10 @@ function ShoppingLists() {
         checkedCount: checkedCount,
         itemCount: prev.itemCount || prev.items.length
       }))
-      
+
       // Then update on server
       await shoppingListService.toggleItem(selectedList.list.id, itemId)
-      
+
       // Reload to ensure sync with server (but don't wait for it to update UI)
       loadListDetails(selectedList.list.id).catch(err => {
         console.error('Error reloading list details:', err)
@@ -525,7 +526,7 @@ function ShoppingLists() {
   const parseFileContent = async (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
-      
+
       reader.onload = (e) => {
         try {
           const content = e.target.result
@@ -559,15 +560,15 @@ function ShoppingLists() {
             // Parse CSV format
             const lines = content.split('\n').filter(line => line.trim())
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
-            
+
             for (let i = 1; i < lines.length; i++) {
               const values = lines[i].split(',').map(v => v.trim())
               const item = {}
-              
+
               headers.forEach((header, index) => {
                 item[header] = values[index] || ''
               })
-              
+
               items.push({
                 name: item.name || item.item || item.text || values[0] || '',
                 quantity: parseInt(item.quantity || item.qty || values[1] || '1') || 1,
@@ -582,11 +583,11 @@ function ShoppingLists() {
             const lines = content.split('\n')
               .map(line => line.trim())
               .filter(line => line.length > 0)
-            
+
             items = lines.map((line, index) => {
               // Try to parse: "Item Name, Quantity, Unit, Price"
               const parts = line.split(',').map(p => p.trim())
-              
+
               return {
                 name: parts[0] || line,
                 quantity: parseInt(parts[1]) || 1,
@@ -600,7 +601,7 @@ function ShoppingLists() {
 
           // Filter out items with empty names
           items = items.filter(item => item.name && item.name.length > 0)
-          
+
           if (items.length === 0) {
             reject(new Error('No valid items found in file'))
             return
@@ -630,13 +631,13 @@ function ShoppingLists() {
 
     try {
       setUploading(true)
-      
+
       // Parse file content
       const items = await parseFileContent(file)
-      
+
       // Create list name from file name (remove extension)
       const listName = file.name.replace(/\.[^/.]+$/, '') || 'Imported List'
-      
+
       // Create the shopping list
       const newList = await shoppingListService.create({
         name: listName,
@@ -664,7 +665,7 @@ function ShoppingLists() {
       // Reload lists and select the new list
       await loadLists()
       await loadListDetails(newList.id)
-      
+
       alert(t('shoppingLists.uploadSuccess', { count: items.length, fileName: file.name }))
     } catch (error) {
       console.error('Error uploading file:', error)
@@ -821,7 +822,7 @@ function ShoppingLists() {
                   </div>
                 </div>
                 <div className="header-actions">
-                  <button 
+                  <button
                     className="mobile-close-btn"
                     onClick={() => {
                       setSelectedList(null)
@@ -834,7 +835,7 @@ function ShoppingLists() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="items-actions-bar">
                 <button className="btn btn-sm btn-primary" onClick={() => setShowItemForm(true)}>
                   <FiPlus /> {t('shoppingLists.addItem')}
@@ -867,15 +868,15 @@ function ShoppingLists() {
                     const isSwipeRight = swipeOffset > 0 && !swipe.isChecked
                     const isSwipeLeft = swipeOffset < 0 && swipe.isChecked
                     // Calculate swipe progress for animation (0-100%)
-                    const swipeProgress = isSwipeRight 
-                      ? Math.min(100, (swipeOffset / 80) * 100) 
-                      : isSwipeLeft 
-                      ? Math.min(100, (Math.abs(swipeOffset) / 80) * 100) 
-                      : 0
-                    
+                    const swipeProgress = isSwipeRight
+                      ? Math.min(100, (swipeOffset / 80) * 100)
+                      : isSwipeLeft
+                        ? Math.min(100, (Math.abs(swipeOffset) / 80) * 100)
+                        : 0
+
                     return (
-                      <div 
-                        key={item.id} 
+                      <div
+                        key={item.id}
                         className={`item-card ${item.isChecked ? 'checked' : ''} ${swipe.isSwiping ? 'swiping' : ''} ${isSwipeRight ? 'swipe-right' : ''} ${isSwipeLeft ? 'swipe-left' : ''}`}
                         onTouchStart={(e) => {
                           // Don't interfere with checkbox touch events
@@ -900,7 +901,7 @@ function ShoppingLists() {
                       >
                         {/* Swipe action indicator - appears on the left when swiping right to check */}
                         {isSwipeRight && (
-                          <div 
+                          <div
                             className="swipe-indicator swipe-check-indicator"
                             style={{
                               opacity: Math.min(1, swipeProgress / 50), // Show earlier
@@ -911,10 +912,10 @@ function ShoppingLists() {
                             <FiCheck size={24} />
                           </div>
                         )}
-                        
+
                         {/* Swipe action indicator - appears on the right when swiping left to uncheck */}
                         {isSwipeLeft && (
-                          <div 
+                          <div
                             className="swipe-indicator swipe-uncheck-indicator"
                             style={{
                               opacity: Math.min(1, swipeProgress / 50), // Show earlier
@@ -942,42 +943,42 @@ function ShoppingLists() {
                         >
                           {item.isChecked ? <FiCheckSquare size={28} /> : <FiSquare size={28} />}
                         </div>
-                      
-                      <div className="item-content">
-                        <div className="item-main">
-                          <h4>{item.name}</h4>
-                          <span className="item-quantity">
-                            {item.quantity} {item.unit}
-                          </span>
-                        </div>
-                        {item.estimatedPrice && (
-                          <div className="item-price">
-                            {formatCurrency(item.estimatedPrice * item.quantity)}
-                          </div>
-                        )}
-                        {item.notes && (
-                          <div className="item-notes">{item.notes}</div>
-                        )}
-                      </div>
 
-                      <div className="item-actions" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          className="icon-btn"
-                          onClick={() => handleEditItem(item)}
-                          aria-label={t('common.edit')}
-                        >
-                          <FiEdit />
-                        </button>
-                        <button
-                          className="icon-btn danger"
-                          onClick={() => openDeleteItemModal(item.id)}
-                          aria-label={t('common.delete')}
-                        >
-                          <FiTrash2 />
-                        </button>
+                        <div className="item-content">
+                          <div className="item-main">
+                            <h4>{item.name}</h4>
+                            <span className="item-quantity">
+                              {item.quantity} {item.unit}
+                            </span>
+                          </div>
+                          {item.estimatedPrice && (
+                            <div className="item-price">
+                              {formatCurrency(item.estimatedPrice * item.quantity)}
+                            </div>
+                          )}
+                          {item.notes && (
+                            <div className="item-notes">{item.notes}</div>
+                          )}
+                        </div>
+
+                        <div className="item-actions" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className="icon-btn"
+                            onClick={() => handleEditItem(item)}
+                            aria-label={t('common.edit')}
+                          >
+                            <FiEdit />
+                          </button>
+                          <button
+                            className="icon-btn danger"
+                            onClick={() => openDeleteItemModal(item.id)}
+                            aria-label={t('common.delete')}
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )
+                    )
                   })
                 )}
               </div>
@@ -1021,162 +1022,152 @@ function ShoppingLists() {
         </div>
       </div>
 
-      {/* List Form Modal */}
-      {showListForm && (
-        <div className="modal-overlay" onClick={resetListForm}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingList ? t('shoppingLists.editList') : t('shoppingLists.newList')}</h2>
-              <button className="close-btn" onClick={resetListForm}>&times;</button>
+      {/* List Form Modal (Portal) */}
+      <Modal
+        isOpen={showListForm}
+        onClose={resetListForm}
+        title={editingList ? t('shoppingLists.editList') : t('shoppingLists.newList')}
+      >
+        <form onSubmit={handleListSubmit}>
+          <FormSection title={t('transaction.formSections.basicInfo')}>
+            <div className="form-group">
+              <label>{t('shoppingLists.listName')} *</label>
+              <input
+                type="text"
+                name="name"
+                value={listFormData.name}
+                onChange={handleListChange}
+                required
+                placeholder={t('shoppingLists.listNamePlaceholder')}
+              />
             </div>
 
-            <form onSubmit={handleListSubmit}>
-              <FormSection title={t('transaction.formSections.basicInfo')}>
-                <div className="form-group">
-                  <label>{t('shoppingLists.listName')} *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={listFormData.name}
-                    onChange={handleListChange}
-                    required
-                    placeholder={t('shoppingLists.listNamePlaceholder')}
-                  />
-                </div>
+            <CategorySelector
+              value={listFormData.category}
+              onChange={handleListChange}
+              name="category"
+              categories={categories.map(c => c.value)}
+              type="expense"
+              label={t('shoppingLists.category')}
+            />
+          </FormSection>
 
-                <CategorySelector
-                  value={listFormData.category}
-                  onChange={handleListChange}
-                  name="category"
-                  categories={categories.map(c => c.value)}
-                  type="expense"
-                  label={t('shoppingLists.category')}
-                />
-              </FormSection>
+          <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!listFormData.notes}>
+            <div className="form-group">
+              <label>{t('shoppingLists.notes')}</label>
+              <textarea
+                name="notes"
+                value={listFormData.notes}
+                onChange={handleListChange}
+                rows="3"
+                placeholder={t('shoppingLists.notesPlaceholder')}
+              />
+            </div>
+          </FormSection>
 
-              <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!listFormData.notes}>
-                <div className="form-group">
-                  <label>{t('shoppingLists.notes')}</label>
-                  <textarea
-                    name="notes"
-                    value={listFormData.notes}
-                    onChange={handleListChange}
-                    rows="3"
-                    placeholder={t('shoppingLists.notesPlaceholder')}
-                  />
-                </div>
-              </FormSection>
-
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={resetListForm}>
-                  {t('common.cancel')}
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingList ? t('common.update') : t('common.create')}
-                </button>
-              </div>
-            </form>
+          <div className="form-actions">
+            <button type="button" className="btn btn-secondary" onClick={resetListForm}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary">
+              {editingList ? t('common.update') : t('common.create')}
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
-      {/* Item Form Modal */}
-      {showItemForm && (
-        <div className="modal-overlay" onClick={resetItemForm}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingItem ? t('shoppingLists.editItem') : t('shoppingLists.addItem')}</h2>
-              <button className="close-btn" onClick={resetItemForm}>&times;</button>
+      {/* Item Form Modal (Portal) */}
+      <Modal
+        isOpen={showItemForm}
+        onClose={resetItemForm}
+        title={editingItem ? t('shoppingLists.editItem') : t('shoppingLists.addItem')}
+      >
+        <form onSubmit={handleItemSubmit}>
+          {/* Basic Information Section */}
+          <FormSection title={t('transaction.formSections.basicInfo')}>
+            <div className="form-group">
+              <label>{t('shoppingLists.itemName')} *</label>
+              <input
+                type="text"
+                name="name"
+                value={itemFormData.name}
+                onChange={handleItemChange}
+                required
+                placeholder={t('shoppingLists.itemNamePlaceholder')}
+              />
             </div>
 
-            <form onSubmit={handleItemSubmit}>
-              {/* Basic Information Section */}
-              <FormSection title={t('transaction.formSections.basicInfo')}>
-                <div className="form-group">
-                  <label>{t('shoppingLists.itemName')} *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={itemFormData.name}
-                    onChange={handleItemChange}
-                    required
-                    placeholder={t('shoppingLists.itemNamePlaceholder')}
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{t('shoppingLists.quantity')} *</label>
-                    <input
-                      type="number"
-                      name="quantity"
-                      value={itemFormData.quantity}
-                      onChange={handleItemChange}
-                      required
-                      min="1"
-                      step="1"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>{t('shoppingLists.unit')}</label>
-                    <select name="unit" value={itemFormData.unit} onChange={handleItemChange}>
-                      <option value="">{t('shoppingLists.selectUnit')}</option>
-                      {units.map(unit => (
-                        <option key={unit.value} value={unit.value}>
-                          {unit.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <CurrencyInput
-                  value={itemFormData.estimatedPrice}
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('shoppingLists.quantity')} *</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={itemFormData.quantity}
                   onChange={handleItemChange}
-                  name="estimatedPrice"
-                  id="estimatedPrice"
-                  label={t('shoppingLists.estimatedPrice')}
-                  quickAmounts={[]}
+                  required
+                  min="1"
+                  step="1"
                 />
-                <small>{t('shoppingLists.priceHint')}</small>
-
-                <CategorySelector
-                  value={itemFormData.category}
-                  onChange={handleItemChange}
-                  name="category"
-                  categories={categories.map(c => c.value)}
-                  type="expense"
-                  label={t('shoppingLists.category')}
-                />
-              </FormSection>
-
-              {/* Additional Details Section */}
-              <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!itemFormData.notes}>
-                <div className="form-group">
-                  <label>{t('shoppingLists.notes')}</label>
-                  <textarea
-                    name="notes"
-                    value={itemFormData.notes}
-                    onChange={handleItemChange}
-                    rows="2"
-                    placeholder={t('shoppingLists.itemNotesPlaceholder')}
-                  />
-                </div>
-              </FormSection>
-
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={resetItemForm}>
-                  {t('common.cancel')}
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingItem ? t('common.update') : t('common.add')}
-                </button>
               </div>
-            </form>
+
+              <div className="form-group">
+                <label>{t('shoppingLists.unit')}</label>
+                <select name="unit" value={itemFormData.unit} onChange={handleItemChange}>
+                  <option value="">{t('shoppingLists.selectUnit')}</option>
+                  {units.map(unit => (
+                    <option key={unit.value} value={unit.value}>
+                      {unit.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <CurrencyInput
+              value={itemFormData.estimatedPrice}
+              onChange={handleItemChange}
+              name="estimatedPrice"
+              id="estimatedPrice"
+              label={t('shoppingLists.estimatedPrice')}
+              quickAmounts={[]}
+            />
+            <small>{t('shoppingLists.priceHint')}</small>
+
+            <CategorySelector
+              value={itemFormData.category}
+              onChange={handleItemChange}
+              name="category"
+              categories={categories.map(c => c.value)}
+              type="expense"
+              label={t('shoppingLists.category')}
+            />
+          </FormSection>
+
+          {/* Additional Details Section */}
+          <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!itemFormData.notes}>
+            <div className="form-group">
+              <label>{t('shoppingLists.notes')}</label>
+              <textarea
+                name="notes"
+                value={itemFormData.notes}
+                onChange={handleItemChange}
+                rows="2"
+                placeholder={t('shoppingLists.itemNotesPlaceholder')}
+              />
+            </div>
+          </FormSection>
+
+          <div className="form-actions">
+            <button type="button" className="btn btn-secondary" onClick={resetItemForm}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary">
+              {editingItem ? t('common.update') : t('common.add')}
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* Delete List Confirmation Modal */}
       <ConfirmationModal

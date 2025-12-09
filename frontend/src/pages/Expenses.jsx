@@ -5,9 +5,10 @@ import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Modal from '../components/Modal'
 import LogoLoader from '../components/LogoLoader'
-import useSwipeGesture from '../hooks/useSwipeGesture'
-import useFocusTrap from '../hooks/useFocusTrap'
+// import useSwipeGesture from '../hooks/useSwipeGesture'
+// import useFocusTrap from '../hooks/useFocusTrap'
 import useScreenReader from '../hooks/useScreenReader'
 import useToast from '../hooks/useToast'
 import useUndo from '../hooks/useUndo'
@@ -28,11 +29,11 @@ function Expenses() {
   const [editingExpense, setEditingExpense] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, expense: null })
-  
+
   // Phase 4: Mobile & Accessibility hooks
   const { announce } = useScreenReader()
   const { toasts, showSuccess, showError, removeToast } = useToast()
-  
+
   // Phase 5: Polish & Advanced UX
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
@@ -67,17 +68,17 @@ function Expenses() {
     try {
       setFormLoading(true)
       setShowLoadingProgress(true)
-      
+
       const createdExpense = await transactionService.create(expenseData)
-      
+
       // Phase 5: Success animation
       setShowLoadingProgress(false)
       setShowForm(false)
       setShowSuccessAnimation(true)
-      
+
       showSuccess(t('expenses.createdSuccess'))
       announce(t('expenses.createdSuccess'))
-      
+
       // Phase 5: Undo functionality
       performUndoableAction(
         async () => {
@@ -115,21 +116,21 @@ function Expenses() {
     try {
       setFormLoading(true)
       setShowLoadingProgress(true)
-      
+
       // Save old data for undo
       const oldExpenseData = { ...editingExpense }
-      
+
       await transactionService.update(editingExpense.id, expenseData)
-      
+
       // Phase 5: Success animation
       setShowLoadingProgress(false)
       setEditingExpense(null)
       setShowForm(false)
       setShowSuccessAnimation(true)
-      
+
       showSuccess(t('expenses.updatedSuccess'))
       announce(t('expenses.updatedSuccess'))
-      
+
       // Phase 5: Undo functionality
       performUndoableAction(
         async () => {
@@ -184,24 +185,24 @@ function Expenses() {
     try {
       setFormLoading(true)
       setShowLoadingProgress(true)
-      
+
       // Save expense data for undo
       const expenseToDelete = { ...expense }
-      
+
       // Delete attachment if exists
       if (expense.attachment_path) {
         await storageService.deleteFile(expense.attachment_path)
       }
-      
+
       await transactionService.delete(expense.id)
-      
+
       setShowLoadingProgress(false)
       await loadExpenses()
       closeDeleteModal()
-      
+
       // Phase 5: Undo functionality
       performUndoableAction(
-        () => {},
+        () => { },
         async () => {
           // Undo: restore deleted expense
           try {
@@ -241,19 +242,6 @@ function Expenses() {
     setEditingExpense(null)
     announce(t('expenses.formClosed'))
   }
-
-  // Focus trap for accessibility
-  const focusTrapRef = useFocusTrap(showForm)
-  
-  // Swipe gesture for mobile (swipe down to close)
-  const { elementRef: swipeRef, style: swipeStyle } = useSwipeGesture(
-    () => {
-      if (showForm) {
-        closeForm()
-      }
-    },
-    100
-  )
 
   /**
    * Handle keyboard shortcuts
@@ -311,49 +299,20 @@ function Expenses() {
         )}
       </div>
 
-      {/* Form Modal */}
-      {showForm && (
-        <div 
-          className="form-modal" 
-          onClick={(e) => e.target === e.currentTarget && closeForm()}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="form-title"
-        >
-          <div 
-            className="card form-card"
-            ref={(node) => {
-              focusTrapRef.current = node
-              swipeRef.current = node
-            }}
-            style={swipeStyle}
-          >
-            <div className="card-header form-header">
-              <h2 id="form-title">
-                {editingExpense 
-                  ? t('expenses.editExpense')
-                  : t('expenses.addExpense')
-                }
-              </h2>
-              <button
-                className="form-close-btn"
-                onClick={closeForm}
-                aria-label={t('common.close')}
-                type="button"
-              >
-                <FiX size={24} />
-              </button>
-            </div>
-            <TransactionForm
-              transaction={editingExpense}
-              type="expense"
-              onSubmit={editingExpense ? handleUpdate : handleCreate}
-              onCancel={closeForm}
-              loading={formLoading}
-            />
-          </div>
-        </div>
-      )}
+      {/* Expense Form Modal (Portal) */}
+      <Modal
+        isOpen={showForm}
+        onClose={closeForm}
+        title={editingExpense ? t('expenses.editExpense') : t('expenses.addExpense')}
+      >
+        <TransactionForm
+          transaction={editingExpense}
+          type="expense"
+          onSubmit={editingExpense ? handleUpdate : handleCreate}
+          onCancel={closeForm}
+          loading={formLoading}
+        />
+      </Modal>
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />

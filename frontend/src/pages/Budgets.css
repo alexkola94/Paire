@@ -22,19 +22,28 @@
 }
 
 /* ================================
-   Budget Form
+   Form Modal (Desktop/Tablet)
    ================================ */
 
-.budget-form-card {
-  margin-bottom: var(--spacing-xl);
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
-  border: 2px solid var(--primary);
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
+
+
 
 .budget-form {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
 }
 
 .form-row {
@@ -192,7 +201,7 @@
   margin-bottom: var(--spacing-sm);
 }
 
-.progress-header > span:first-child {
+.progress-header>span:first-child {
   font-weight: 700;
   color: var(--text-primary);
   font-size: 1.0625rem;
@@ -220,9 +229,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -247,23 +259,7 @@
 }
 
 .progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  content: none;
 }
 
 .progress-fill.over {
@@ -371,5 +367,6 @@
   .form-actions .btn {
     width: 100%;
   }
-}
 
+
+}
