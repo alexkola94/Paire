@@ -104,11 +104,8 @@ namespace YouAndMeExpensesAPI.Services
                 // Send email via SMTP with timeout
                 using (var client = new SmtpClient())
                 {
-                    // FORCE IPv4: Bind to a local IPv4 address.
-                    // This is critical for Docker/Render environments where IPv6 routing often fails/timeouts against Google.
-                    client.LocalEndPoint = new IPEndPoint(IPAddress.Any, 0);
-
                     // Disable certificate revocation check to prevent hangs in restricted environments
+                    // This is the most common cause of timeouts in containers
                     client.CheckCertificateRevocation = false;
 
                     // Set timeout to prevent hanging (60 seconds)
@@ -118,7 +115,7 @@ namespace YouAndMeExpensesAPI.Services
                     using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
                     {
                         // Determine correct socket options based on port
-                        // Port 465: Implicit SSL (SslOnConnect) - Preferred for cloud environments
+                        // Port 465: Implicit SSL (SslOnConnect)
                         // Port 587: Explicit SSL (StartTls)
                         var socketOptions = _emailSettings.SmtpPort == 465 
                             ? SecureSocketOptions.SslOnConnect 

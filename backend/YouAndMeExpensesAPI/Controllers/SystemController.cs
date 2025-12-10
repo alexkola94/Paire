@@ -9,6 +9,7 @@ namespace YouAndMeExpenses.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Route("api/system")]
     public class SystemController : ControllerBase
     {
         private readonly ILogger<SystemController> _logger;
@@ -125,6 +126,111 @@ namespace YouAndMeExpenses.Controllers
                     success = false,
                     message = "Error clearing data",
                     error = ex.Message
+                });
+            }
+        }
+        /// <summary>
+        /// Runs a diagnostic test for SMTP connectivity
+        /// </summary>
+        [HttpGet("diagnostics/email")]
+        public async Task<IActionResult> TestSmtpConnectivity()
+        {
+            var results = new Dictionary<string, string>();
+            var logs = new List<string>();
+
+            void Log(string message)
+            {
+                _logger.LogInformation(message);
+                logs.Add($"[{DateTime.UtcNow:HH:mm:ss}] {message}");
+            }
+
+            try
+            {
+                Log("🔍 Starting SMTP Connectivity Test...");
+                
+                // 1. DNS Resolution
+                Log("1️⃣ Testing DNS Resolution for smtp.gmail.com...");
+                try
+                {
+                    var addresses = await System.Net.Dns.GetHostAddressesAsync("smtp.gmail.com");
+                    foreach (var addr in addresses)
+                    {
+                        Log($"   Found IP: {addr} ({addr.AddressFamily})");
+                    }
+                    results["DNS"] = "✅ Success";
+                }
+                catch (Exception ex)
+                {
+                    Log($"❌ DNS Lookup Failed: {ex.Message}");
+                    results["DNS"] = "❌ Failed";
+                }
+
+                // 2. TCP Connection Test to 587
+                Log("2️⃣ Testing TCP Connect to smtp.gmail.com:587 (STARTTLS)...");
+                try
+                {
+                    using var tcp = new System.Net.Sockets.TcpClient();
+                    var connectTask = tcp.ConnectAsync("smtp.gmail.com", 587);
+                    var completedTask = await Task.WhenAny(connectTask, Task.Delay(5000));
+                    
+                    if (completedTask == connectTask)
+                    {
+                        await connectTask; // Propagate exceptions
+                        Log("✅ TCP Connection Established on Port 587");
+                        results["TCP-587"] = "✅ Success";
+                    }
+                    else
+                    {
+                        Log("❌ TCP Connection Timed Out on Port 587 after 5s");
+                        results["TCP-587"] = "❌ Timed Out";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"❌ TCP Connection Failed on Port 587: {ex.Message}");
+                    results["TCP-587"] = "❌ Failed";
+                }
+
+                // 3. TCP Connection Test to 465
+                Log("3️⃣ Testing TCP Connect to smtp.gmail.com:465 (SSL)...");
+                try
+                {
+                    using var tcp = new System.Net.Sockets.TcpClient();
+                    var connectTask = tcp.ConnectAsync("smtp.gmail.com", 465);
+                    var completedTask = await Task.WhenAny(connectTask, Task.Delay(5000));
+                    
+                    if (completedTask == connectTask)
+                    {
+                        await connectTask; // Propagate exceptions
+                        Log("✅ TCP Connection Established on Port 465");
+                        results["TCP-465"] = "✅ Success";
+                    }
+                    else
+                    {
+                        Log("❌ TCP Connection Timed Out on Port 465 after 5s");
+                        results["TCP-465"] = "❌ Timed Out";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"❌ TCP Connection Failed on Port 465: {ex.Message}");
+                    results["TCP-465"] = "❌ Failed";
+                }
+
+                return Ok(new
+                {
+                    status = "Completed",
+                    results,
+                    logs
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    status = "Error",
+                    error = ex.Message,
+                    logs
                 });
             }
         }
