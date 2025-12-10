@@ -2,6 +2,8 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using System.Net;
+using System.Net.Sockets;
 using YouAndMeExpensesAPI.Models;
 
 namespace YouAndMeExpensesAPI.Services
@@ -102,6 +104,10 @@ namespace YouAndMeExpensesAPI.Services
                 // Send email via SMTP with timeout
                 using (var client = new SmtpClient())
                 {
+                    // FORCE IPv4: Bind to a local IPv4 address.
+                    // This is critical for Docker/Render environments where IPv6 routing often fails/timeouts against Google.
+                    client.LocalEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
                     // Disable certificate revocation check to prevent hangs in restricted environments
                     client.CheckCertificateRevocation = false;
 
