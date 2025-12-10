@@ -4,6 +4,7 @@ import { authService } from './services/auth'
 import { sessionManager } from './services/sessionManager'
 import { isTokenExpired, getTimeUntilExpiration } from './utils/tokenUtils'
 import LogoLoader from './components/LogoLoader'
+import { ToastProvider } from './components/Toast'
 
 // Lazy load pages for code splitting and faster initial load
 // Only load components when they're actually needed
@@ -99,22 +100,22 @@ function App() {
       if (redirectingRef.current) {
         return
       }
-      
+
       // Only handle if we actually had a session
       if (!sessionRef.current) {
         return
       }
-      
+
       redirectingRef.current = true
       console.log('Session invalidated:', e.detail?.reason)
       setSession(null)
       sessionRef.current = null
-      
+
       // Redirect to login if not already there
       const currentPath = window.location.pathname
       const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
       const loginPath = `${basename}/login`
-      
+
       if (currentPath !== loginPath && !currentPath.endsWith('/login')) {
         // Use replace to prevent back button issues and stop the loop
         window.location.replace(loginPath)
@@ -143,7 +144,7 @@ function App() {
 
     window.addEventListener('session-invalidated', handleSessionInvalidated)
     window.addEventListener('auth-storage-change', handleSessionChange)
-    
+
     return () => {
       window.removeEventListener('session-invalidated', handleSessionInvalidated)
       window.removeEventListener('auth-storage-change', handleSessionChange)
@@ -164,89 +165,90 @@ function App() {
   const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
 
   return (
-    <Router basename={basename}>
-      {/* Handle GitHub Pages redirects */}
-      <RedirectHandler />
-      
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          {/* Public routes */}
-          <Route
-            path="/login"
-            element={!session ? <Login /> : <Navigate to="/dashboard" />}
-          />
-          <Route
-            path="/forgot-password"
-            element={!session ? <ForgotPassword /> : <Navigate to="/dashboard" />}
-          />
-          <Route
-            path="/confirm-email"
-            element={<EmailConfirmation />}
-          />
-          <Route
-            path="/reset-password"
-            element={<ResetPassword />}
-          />
-          <Route
-            path="/accept-invitation"
-            element={<AcceptInvitation />}
-          />
-          <Route
-            path="/bank-callback"
-            element={<BankCallback />}
-          />
+    <ToastProvider>
+      <Router basename={basename}>
+        {/* Handle GitHub Pages redirects */}
+        <RedirectHandler />
 
-          {/* Protected routes - Require authentication */}
-          {/* Check both session state and sessionStorage to avoid race conditions after login */}
-          <Route
-            path="/"
-            element={
-              (() => {
-                // Check session state first
-                if (session) return <Layout />
-                // Fallback: check sessionStorage directly (for race condition after login)
-                const token = sessionManager.getToken()
-                const user = sessionManager.getCurrentUser()
-                if (token && user) {
-                  // Session exists in storage but state hasn't updated yet
-                  // Trigger state update and allow access
-                  setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent('auth-storage-change'))
-                  }, 0)
-                  return <Layout />
-                }
-                return <Navigate to="/login" />
-              })()
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="expenses" element={<Expenses />} />
-            <Route path="income" element={<Income />} />
-            <Route path="transactions" element={<AllTransactions />} />
-            <Route path="loans" element={<Loans />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="budgets" element={<Budgets />} />
-            <Route path="savings-goals" element={<SavingsGoals />} />
-            <Route path="recurring-bills" element={<RecurringBills />} />
-            <Route path="shopping-lists" element={<ShoppingLists />} />
-            <Route path="economic-news" element={<EconomicNews />} />
-            <Route path="achievements" element={<Achievements />} />
-            <Route path="partnership" element={<Partnership />} />
-            <Route path="reminders" element={<ReminderSettings />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            {/* Public routes */}
+            <Route
+              path="/login"
+              element={!session ? <Login /> : <Navigate to="/dashboard" />}
+            />
+            <Route
+              path="/forgot-password"
+              element={!session ? <ForgotPassword /> : <Navigate to="/dashboard" />}
+            />
+            <Route
+              path="/confirm-email"
+              element={<EmailConfirmation />}
+            />
+            <Route
+              path="/reset-password"
+              element={<ResetPassword />}
+            />
+            <Route
+              path="/accept-invitation"
+              element={<AcceptInvitation />}
+            />
+            <Route
+              path="/bank-callback"
+              element={<BankCallback />}
+            />
 
-          {/* Catch all - redirect to login or dashboard */}
-          <Route
-            path="*"
-            element={<Navigate to={session ? "/dashboard" : "/login"} />}
-          />
-        </Routes>
-      </Suspense>
-    </Router>
+            {/* Protected routes - Require authentication */}
+            {/* Check both session state and sessionStorage to avoid race conditions after login */}
+            <Route
+              path="/"
+              element={
+                (() => {
+                  // Check session state first
+                  if (session) return <Layout />
+                  // Fallback: check sessionStorage directly (for race condition after login)
+                  const token = sessionManager.getToken()
+                  const user = sessionManager.getCurrentUser()
+                  if (token && user) {
+                    // Session exists in storage but state hasn't updated yet
+                    // Trigger state update and allow access
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('auth-storage-change'))
+                    }, 0)
+                    return <Layout />
+                  }
+                  return <Navigate to="/login" />
+                })()
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="expenses" element={<Expenses />} />
+              <Route path="income" element={<Income />} />
+              <Route path="transactions" element={<AllTransactions />} />
+              <Route path="loans" element={<Loans />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="budgets" element={<Budgets />} />
+              <Route path="savings-goals" element={<SavingsGoals />} />
+              <Route path="recurring-bills" element={<RecurringBills />} />
+              <Route path="shopping-lists" element={<ShoppingLists />} />
+              <Route path="economic-news" element={<EconomicNews />} />
+              <Route path="achievements" element={<Achievements />} />
+              <Route path="partnership" element={<Partnership />} />
+              <Route path="reminders" element={<ReminderSettings />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+
+            {/* Catch all - redirect to login or dashboard */}
+            <Route
+              path="*"
+              element={<Navigate to={session ? "/dashboard" : "/login"} />}
+            />
+          </Routes>
+        </Suspense>
+      </Router>
+    </ToastProvider>
   )
 }
 
 export default App
-

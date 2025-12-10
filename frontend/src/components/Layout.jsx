@@ -140,7 +140,18 @@ function Layout() {
       <header className="layout-header">
         <div className="header-content">
           <div className="header-left">
-            <div className="header-brand">
+            <div
+              className="header-brand"
+              onClick={() => navigate('/dashboard')}
+              style={{ cursor: 'pointer' }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  navigate('/dashboard')
+                }
+              }}
+            >
               <img
                 src={`${import.meta.env.BASE_URL}paire-logo.svg`}
                 alt="Paire"

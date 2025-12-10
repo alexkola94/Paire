@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ToastProvider, useToast } from '../../components/Toast'
 
@@ -15,6 +15,13 @@ const TestComponent = () => {
     </div>
   )
 }
+
+// Mock translation
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key) => key
+  })
+}))
 
 describe('Toast', () => {
   it('should show success toast', async () => {
@@ -58,17 +65,19 @@ describe('Toast', () => {
 
     expect(screen.getByText('Info message')).toBeInTheDocument()
 
-    const dismissButton = screen.getByLabelText('Dismiss')
+    const dismissButton = screen.getByLabelText('common.close')
     await user.click(dismissButton)
 
+    // Wait for exit animation
     await waitFor(() => {
       expect(screen.queryByText('Info message')).not.toBeInTheDocument()
-    })
+    }, { timeout: 2000 })
   })
 
   it('should auto-dismiss after duration', async () => {
     vi.useFakeTimers()
-    
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
     render(
       <ToastProvider>
         <TestComponent />
@@ -76,18 +85,18 @@ describe('Toast', () => {
     )
 
     const successButton = screen.getByRole('button', { name: 'Success' })
-    await userEvent.click(successButton)
+    await user.click(successButton)
 
     expect(screen.getByText('Success message')).toBeInTheDocument()
 
-    // Fast-forward time
-    vi.advanceTimersByTime(3000)
-
-    await waitFor(() => {
-      expect(screen.queryByText('Success message')).not.toBeInTheDocument()
+    // Fast-forward time (duration 3000ms + animation 300ms + buffer)
+    await act(async () => {
+      vi.advanceTimersByTime(3500)
     })
+
+    // Check directly without waitFor to avoid fake timer conflicts
+    expect(screen.queryByText('Success message')).not.toBeInTheDocument()
 
     vi.useRealTimers()
   })
 })
-
