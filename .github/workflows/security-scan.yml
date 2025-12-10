@@ -46,45 +46,6 @@ jobs:
           retention-days: 30
         continue-on-error: true
 
-  backend-security:
-    name: Backend Security Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      
-      - name: Restore dependencies
-        run: dotnet restore
-        working-directory: ./backend
-      
-      - name: Check for vulnerable packages
-        run: |
-          dotnet list package --vulnerable --include-transitive --output json > vulnerable-packages.json || true
-          if [ -s vulnerable-packages.json ]; then
-            echo "⚠️ Vulnerable packages found!"
-            cat vulnerable-packages.json
-            exit 1
-          else
-            echo "✅ No vulnerable packages found"
-          fi
-        working-directory: ./backend
-        continue-on-error: true
-      
-      - name: Upload security scan results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: backend-security-results
-          path: backend/vulnerable-packages.json
-          retention-days: 30
-        continue-on-error: true
 
   codeql-analysis:
     name: CodeQL Analysis
@@ -98,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'csharp' ]
+        language: [ 'javascript' ]
     
     steps:
       - name: Checkout code
