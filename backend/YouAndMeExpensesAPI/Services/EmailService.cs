@@ -102,11 +102,14 @@ namespace YouAndMeExpensesAPI.Services
                 // Send email via SMTP with timeout
                 using (var client = new SmtpClient())
                 {
-                    // Set timeout to prevent hanging (30 seconds)
-                    client.Timeout = 30000;
+                    // Disable certificate revocation check to prevent hangs in restricted environments
+                    client.CheckCertificateRevocation = false;
+
+                    // Set timeout to prevent hanging (60 seconds)
+                    client.Timeout = 60000;
                     
                     // Connect to Gmail SMTP server with timeout
-                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
                     {
                         // Determine correct socket options based on port
                         // Port 465: Implicit SSL (SslOnConnect) - Preferred for cloud environments
