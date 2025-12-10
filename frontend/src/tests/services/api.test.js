@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { transactionService, loanService } from '../../services/api'
-import { getBackendUrl } from '../../utils/getBackendUrl'
 
 // Mock the dependencies
 vi.mock('../../utils/getBackendUrl', () => ({
@@ -23,12 +22,12 @@ vi.mock('../../services/sessionManager', () => ({
 }))
 
 // Mock global fetch
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 describe('API Services', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockResolvedValue({
       ok: true,
       headers: {
         get: () => 'application/json'
@@ -42,7 +41,7 @@ describe('API Services', () => {
     describe('getAll', () => {
       it('should fetch transactions with correct URL and headers', async () => {
         const mockData = [{ id: 1, amount: 100 }]
-        global.fetch.mockResolvedValueOnce({
+        globalThis.fetch.mockResolvedValueOnce({
           ok: true,
           headers: { get: () => 'application/json' },
           json: () => Promise.resolve(mockData)
@@ -51,7 +50,7 @@ describe('API Services', () => {
         const result = await transactionService.getAll({ type: 'expense' })
 
         expect(result).toEqual(mockData)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(globalThis.fetch).toHaveBeenCalledWith(
           expect.stringContaining('/api/transactions?type=expense'),
           expect.objectContaining({
             headers: expect.objectContaining({
@@ -65,7 +64,7 @@ describe('API Services', () => {
     describe('create', () => {
       it('should post new transaction', async () => {
         const newTransaction = { amount: 50, type: 'expense' }
-        global.fetch.mockResolvedValueOnce({
+        globalThis.fetch.mockResolvedValueOnce({
           ok: true,
           headers: { get: () => 'application/json' },
           json: () => Promise.resolve({ id: 2, ...newTransaction })
@@ -73,7 +72,7 @@ describe('API Services', () => {
 
         await transactionService.create(newTransaction)
 
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(globalThis.fetch).toHaveBeenCalledWith(
           expect.stringContaining('/api/transactions'),
           expect.objectContaining({
             method: 'POST',
@@ -87,7 +86,7 @@ describe('API Services', () => {
   describe('loanService', () => {
     it('should fetch loans', async () => {
       await loanService.getAll()
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/loans'),
         expect.any(Object)
       )
