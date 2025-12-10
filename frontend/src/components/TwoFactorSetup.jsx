@@ -198,12 +198,12 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
    * Download backup codes as text file
    */
   const handleDownloadBackupCodes = () => {
-    const content = `You & Me Expenses - Backup Codes\n\nGenerated: ${new Date().toLocaleString()}\n\n${backupCodes.join('\n')}\n\nStore these codes in a secure place. Each code can only be used once.`;
+    const content = `Paire - Backup Codes\n\nGenerated: ${new Date().toLocaleString()}\n\n${backupCodes.join('\n')}\n\nStore these codes in a secure place. Each code can only be used once.`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'you-me-expenses-backup-codes.txt';
+    a.download = 'pair-expenses-backup-codes.txt';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

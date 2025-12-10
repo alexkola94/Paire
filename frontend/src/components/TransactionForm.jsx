@@ -22,15 +22,15 @@ import './TransactionForm.css'
  * Transaction Form Component
  * Reusable form for creating/editing expenses and income
  */
-function TransactionForm({ 
-  transaction = null, 
-  type = 'expense', 
-  onSubmit, 
+function TransactionForm({
+  transaction = null,
+  type = 'expense',
+  onSubmit,
   onCancel,
-  loading = false 
+  loading = false
 }) {
   const { t } = useTranslation()
-  
+
   // Form state
   const [formData, setFormData] = useState({
     amount: transaction?.amount || '',
@@ -42,7 +42,7 @@ function TransactionForm({
     // Phase 3: Advanced features
     isRecurring: transaction?.isRecurring || transaction?.is_recurring || false,
     recurrencePattern: transaction?.recurrencePattern || transaction?.recurrence_pattern || 'monthly',
-    recurrenceEndDate: transaction?.recurrenceEndDate || transaction?.recurrence_end_date ? 
+    recurrenceEndDate: transaction?.recurrenceEndDate || transaction?.recurrence_end_date ?
       (transaction.recurrenceEndDate || transaction.recurrence_end_date).split('T')[0] : '',
     splitType: transaction?.splitType || transaction?.split_type || null,
     splitPercentage: transaction?.splitPercentage || transaction?.split_percentage || 50,
@@ -146,10 +146,10 @@ function TransactionForm({
     }
 
     try {
-      let finalData = { 
-        ...formData, 
+      let finalData = {
+        ...formData,
         amount: parseFloat(formData.amount),
-        type 
+        type
       }
 
       // Upload file if selected
@@ -271,24 +271,26 @@ function TransactionForm({
           disabled={loading || uploadProgress}
           showQuickButtons={true}
         />
+
+        {/* Description with Auto-complete */}
+        <div className="form-layout-item-full">
+          <AutoCompleteInput
+            value={formData.description}
+            onChange={handleChange}
+            suggestions={descriptionSuggestions}
+            name="description"
+            id="description"
+            label={t('transaction.description')}
+            placeholder={t('transaction.descriptionPlaceholder')}
+            disabled={loading || uploadProgress}
+            maxSuggestions={5}
+            minChars={2}
+          />
+        </div>
       </FormSection>
 
       {/* Additional Details Section */}
-      <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.description || !!formData.attachment_url || formData.tags.length > 0}>
-        {/* Description with Auto-complete */}
-        <AutoCompleteInput
-          value={formData.description}
-          onChange={handleChange}
-          suggestions={descriptionSuggestions}
-          name="description"
-          id="description"
-          label={t('transaction.description')}
-          placeholder={t('transaction.descriptionPlaceholder')}
-          disabled={loading || uploadProgress}
-          maxSuggestions={5}
-          minChars={2}
-        />
-
+      <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.attachment_url || formData.tags.length > 0}>
         {/* Tags Input */}
         <TagsInput
           tags={formData.tags}
@@ -303,38 +305,38 @@ function TransactionForm({
           <label>
             {t('transaction.attachment')}
           </label>
-        
-        {!file && !formData.attachment_url ? (
-          <div className="file-upload">
-            <input
-              type="file"
-              id="file-input"
-              accept="image/*,.pdf"
-              onChange={handleFileChange}
-              className="file-input-hidden"
-            />
-            <label htmlFor="file-input" className="file-upload-label">
-              <FiUpload size={20} />
-              <span>{t('transaction.uploadReceipt')}</span>
-            </label>
-          </div>
-        ) : (
-          <div className="file-preview">
-            <FiFileText size={20} />
-            <span className="file-name">
-              {file?.name || t('transaction.attachedFile')}
-            </span>
-            <button
-              type="button"
-              onClick={removeFile}
-              className="remove-file-btn"
-              aria-label={t('transaction.deleteAttachment')}
-            >
-              <FiX size={18} />
-            </button>
-          </div>
-        )}
-      </div>
+
+          {!file && !formData.attachment_url ? (
+            <div className="file-upload">
+              <input
+                type="file"
+                id="file-input"
+                accept="image/*,.pdf"
+                onChange={handleFileChange}
+                className="file-input-hidden"
+              />
+              <label htmlFor="file-input" className="file-upload-label">
+                <FiUpload size={20} />
+                <span>{t('transaction.uploadReceipt')}</span>
+              </label>
+            </div>
+          ) : (
+            <div className="file-preview">
+              <FiFileText size={20} />
+              <span className="file-name">
+                {file?.name || t('transaction.attachedFile')}
+              </span>
+              <button
+                type="button"
+                onClick={removeFile}
+                className="remove-file-btn"
+                aria-label={t('transaction.deleteAttachment')}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+          )}
+        </div>
       </FormSection>
 
       {/* Advanced Features Section */}
@@ -356,8 +358,8 @@ function TransactionForm({
             splitType={formData.splitType || 'equal'}
             splitPercentage={formData.splitPercentage}
             paidBy={formData.paidBy}
-            onToggle={(checked) => setFormData(prev => ({ 
-              ...prev, 
+            onToggle={(checked) => setFormData(prev => ({
+              ...prev,
               splitType: checked ? 'equal' : null,
               splitPercentage: checked ? 50 : 50
             }))}

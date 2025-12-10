@@ -1069,16 +1069,26 @@ namespace YouAndMeExpensesAPI.Controllers
         private async Task SendConfirmationEmail(string userEmail, string? userDisplayName, string userId, string token)
         {
             // Get frontend URL from configuration
-            var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
-            
-            // Generate frontend confirmation URL (frontend will handle the UI and call the backend API)
+    var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
+
+    // Extract first URL if multiple are provided (comma or semicolon separated)
+    if (frontendUrl.Contains(';'))
+    {
+        frontendUrl = frontendUrl.Split(';')[0].Trim();
+    }
+    else if (frontendUrl.Contains(','))
+    {
+        frontendUrl = frontendUrl.Split(',')[0].Trim();
+    }
+    
+    // Generate frontend confirmation URL (frontend will handle the UI and call the backend API)
             var confirmUrl = $"{frontendUrl}/confirm-email?userId={userId}&token={Uri.EscapeDataString(token)}";
 
             var emailBody = $@"
 <html>
 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
     <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-        <h2 style='color: #4CAF50;'>Welcome to You & Me Expenses! 🎉</h2>
+        <h2 style='color: #4CAF50;'>Welcome to Paire! 🎉</h2>
         
         <p>Hi {userDisplayName ?? "User"},</p>
         
@@ -1098,7 +1108,7 @@ namespace YouAndMeExpensesAPI.Controllers
         
         <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
         <p style='font-size: 12px; color: #999;'>
-            You & Me Expenses - Shared Finance Management
+            Paire - Shared Finance Management
         </p>
     </div>
 </body>
@@ -1108,7 +1118,7 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 ToEmail = userEmail,
                 ToName = userDisplayName ?? "User",
-                Subject = "Confirm Your Email - You & Me Expenses",
+                Subject = "Confirm Your Email - Paire",
                 Body = emailBody,
                 IsHtml = true
             };
@@ -1157,7 +1167,7 @@ namespace YouAndMeExpensesAPI.Controllers
         
         <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
         <p style='font-size: 12px; color: #999;'>
-            You & Me Expenses - Shared Finance Management
+            Paire - Shared Finance Management
         </p>
     </div>
 </body>
@@ -1167,7 +1177,7 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 ToEmail = user.Email!,
                 ToName = user.DisplayName ?? "User",
-                Subject = "Password Reset - You & Me Expenses",
+                Subject = "Password Reset - Paire",
                 Body = emailBody,
                 IsHtml = true
             };

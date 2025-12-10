@@ -4,7 +4,9 @@ import './LoadingProgress.css'
  * Loading Progress Component
  * Shows progress indicator during form submission
  */
-function LoadingProgress({ progress = 0, message = 'Saving...' }) {
+function LoadingProgress({ show = true, progress = 0, message = 'Saving...' }) {
+  if (!show) return null
+
   return (
     <div className="loading-progress">
       <div className="loading-progress-content">
@@ -16,8 +18,8 @@ function LoadingProgress({ progress = 0, message = 'Saving...' }) {
         {message && <p className="loading-message">{message}</p>}
         {progress > 0 && progress < 100 && (
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${progress}%` }}
             ></div>
           </div>

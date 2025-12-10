@@ -20,11 +20,11 @@ import { getBackendUrl as getBackendApiUrl } from '../utils/getBackendUrl';
 const getCurrentUser = () => {
   const token = getToken()
   const user = getStoredUser()
-  
+
   if (!token || !user) {
     throw new Error('User not authenticated')
   }
-  
+
   return user
 }
 
@@ -47,39 +47,39 @@ const handleSessionExpiration = () => {
  */
 const apiRequest = async (url, options = {}) => {
   const token = getToken()
-  
+
   // Check if token is expired before making request
   if (token && isTokenExpired(token)) {
     console.warn('Token expired, clearing session')
     handleSessionExpiration()
     throw new Error('Session expired. Please log in again.')
   }
-  
+
   // Get URL dynamically on each request to ensure it uses current window location
   let backendApiUrl = getBackendApiUrl()
-  
+
   // CRITICAL SAFETY CHECK: If we're on an IP but got localhost, FORCE use the IP
   if (typeof window !== 'undefined' && window.location) {
     const currentHostname = window.location.hostname
     const currentProtocol = window.location.protocol
-    
+
     // If we're accessing via IP but got localhost, something is very wrong
-    if (currentHostname && 
-        currentHostname !== 'localhost' && 
-        currentHostname !== '127.0.0.1' &&
-        backendApiUrl.includes('localhost')) {
+    if (currentHostname &&
+      currentHostname !== 'localhost' &&
+      currentHostname !== '127.0.0.1' &&
+      backendApiUrl.includes('localhost')) {
       // FORCE use the IP - override whatever getBackendApiUrl() returned
       backendApiUrl = `${currentProtocol}//${currentHostname}:5038`
     }
   }
-  
+
   // Normalize backend URL (remove trailing slash)
   backendApiUrl = backendApiUrl.replace(/\/+$/, '');
-  
+
   // Ensure URL path starts with / and doesn't create double slashes
   const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
   const fullUrl = `${backendApiUrl}${normalizedUrl}`
-  
+
   const headers = {
     ...options.headers
   }
@@ -124,7 +124,7 @@ const apiRequest = async (url, options = {}) => {
     if (contentType && contentType.includes('application/json')) {
       return await response.json()
     }
-    
+
     return await response.text()
   } catch (error) {
     // Network errors (CORS, connection refused, etc.)
@@ -145,6 +145,8 @@ export const transactionService = {
     if (filters.type) params.append('type', filters.type)
     if (filters.startDate) params.append('startDate', filters.startDate)
     if (filters.endDate) params.append('endDate', filters.endDate)
+    if (filters.page) params.append('page', filters.page)
+    if (filters.pageSize) params.append('pageSize', filters.pageSize)
 
     return await apiRequest(`/api/transactions?${params}`)
   },
@@ -186,7 +188,7 @@ export const transactionService = {
     }, { income: 0, expenses: 0 })
 
     summary.balance = summary.income - summary.expenses
-    
+
     return summary
   }
 }

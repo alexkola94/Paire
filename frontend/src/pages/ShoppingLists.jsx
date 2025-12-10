@@ -4,13 +4,15 @@ import {
   FiShoppingCart, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiSquare, FiCheckSquare, FiPackage, FiList, FiUpload, FiX
 } from 'react-icons/fi'
-import { formatCurrency } from '../utils/formatCurrency'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import { shoppingListService } from '../services/api'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import CurrencyInput from '../components/CurrencyInput'
 import CategorySelector from '../components/CategorySelector'
 import FormSection from '../components/FormSection'
+import LoadingProgress from '../components/LoadingProgress'
+import SuccessAnimation from '../components/SuccessAnimation'
 import './ShoppingLists.css'
 
 /**
@@ -19,6 +21,7 @@ import './ShoppingLists.css'
  */
 function ShoppingLists() {
   const { t } = useTranslation()
+  const formatCurrency = useCurrencyFormatter()
   const [loading, setLoading] = useState(true)
   const [lists, setLists] = useState([])
   const [selectedList, setSelectedList] = useState(null)
@@ -27,7 +30,10 @@ function ShoppingLists() {
   const [editingList, setEditingList] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
   const [deleteListModal, setDeleteListModal] = useState({ isOpen: false, listId: null })
+
   const [deleteItemModal, setDeleteItemModal] = useState({ isOpen: false, itemId: null })
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+  const [showLoadingProgress, setShowLoadingProgress] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [togglingItems, setTogglingItems] = useState(new Set()) // Track items being toggled to prevent double-tap
@@ -95,9 +101,9 @@ function ShoppingLists() {
     }
   }, [selectedList])
 
-  const loadLists = async () => {
+  const loadLists = async (background = false) => {
     try {
-      setLoading(true)
+      if (!background) setLoading(true)
       const data = await shoppingListService.getAll()
       // Map snake_case to camelCase
       const mappedLists = (data || []).map(list => ({
@@ -117,7 +123,7 @@ function ShoppingLists() {
     } catch (error) {
       console.error('Error loading shopping lists:', error)
     } finally {
-      setLoading(false)
+      if (!background) setLoading(false)
     }
   }
 
@@ -171,6 +177,10 @@ function ShoppingLists() {
   const handleListSubmit = async (e) => {
     e.preventDefault()
     try {
+      // Close form immediately and show loader
+      setShowListForm(false)
+      setShowLoadingProgress(true)
+
       if (editingList) {
         await shoppingListService.update(editingList.id, {
           name: listFormData.name,
@@ -184,10 +194,19 @@ function ShoppingLists() {
           notes: listFormData.notes || null
         })
       }
-      await loadLists()
+
+      // Background refresh
+      await loadLists(true)
+
+      // Success
+      setShowLoadingProgress(false)
+      setShowSuccessAnimation(true)
+
       resetListForm()
     } catch (error) {
       console.error('Error saving list:', error)
+      setShowLoadingProgress(false)
+      setShowListForm(true) // Re-open
       alert(t('shoppingLists.errorSaving'))
     }
   }
@@ -197,6 +216,10 @@ function ShoppingLists() {
     if (!selectedList) return
 
     try {
+      // Close form immediately and show loader
+      setShowItemForm(false)
+      setShowLoadingProgress(true)
+
       const itemData = {
         name: itemFormData.name,
         quantity: parseInt(itemFormData.quantity) || 1,
@@ -211,10 +234,23 @@ function ShoppingLists() {
       } else {
         await shoppingListService.addItem(selectedList.list.id, itemData)
       }
+
+      // We need to refresh the list details. Since loadListDetails manages its own state
+      // efficiently (only updates what changed), we can call it.
+      // But we need to make sure we don't trigger full page loading if possible.
+      // loadListDetails doesn't have a background param but it doesn't set global 'loading' state
+      // that hides the whole page, so it's safe-ish.
       await loadListDetails(selectedList.list.id)
+
+      // Success
+      setShowLoadingProgress(false)
+      setShowSuccessAnimation(true)
+
       resetItemForm()
     } catch (error) {
       console.error('Error saving item:', error)
+      setShowLoadingProgress(false)
+      setShowItemForm(true) // Re-open
       alert(t('shoppingLists.errorSavingItem'))
     }
   }
@@ -1215,6 +1251,16 @@ function ShoppingLists() {
         message={t('shoppingLists.confirmDeleteItem')}
         confirmText={t('common.delete')}
         variant="danger"
+      />
+
+      {/* Loading Progress Overlay */}
+      <LoadingProgress show={showLoadingProgress} />
+
+      {/* Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        onComplete={() => setShowSuccessAnimation(false)}
+        message={t('common.savedSuccess')}
       />
     </div>
   )

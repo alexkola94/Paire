@@ -1,15 +1,16 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { 
-  FiTrendingUp, 
-  FiTrendingDown, 
-  FiArrowRight 
+import {
+  FiTrendingUp,
+  FiTrendingDown,
+  FiArrowRight
 } from 'react-icons/fi'
 import { transactionService } from '../services/api'
 import { format } from 'date-fns'
 import SecurityBadge from '../components/SecurityBadge'
 import LogoLoader from '../components/LogoLoader'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './Dashboard.css'
 
 /**
@@ -26,6 +27,7 @@ function Dashboard() {
     balance: 0
   })
   const [recentTransactions, setRecentTransactions] = useState([])
+  const [visibleCount, setVisibleCount] = useState(5)
 
   // Memoize date calculations to avoid recalculation on every render
   const dateRange = useMemo(() => {
@@ -43,7 +45,7 @@ function Dashboard() {
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true)
-      
+
       // Fetch summary for current month
       const summaryData = await transactionService.getSummary(
         dateRange.startOfMonth.toISOString(),
@@ -51,9 +53,11 @@ function Dashboard() {
       )
       setSummary(summaryData)
 
-      // Fetch recent transactions (last 10)
+      // Fetch recent transactions (fetch all, then slice locally for display)
       const transactions = await transactionService.getAll()
-      setRecentTransactions(transactions.slice(0, 10))
+      // Ensure they are sorted by date desc
+      const sortedTransactions = transactions.sort((a, b) => new Date(b.date) - new Date(a.date))
+      setRecentTransactions(sortedTransactions)
     } catch (error) {
       console.error('❌ Error loading dashboard data:', error)
     } finally {
@@ -69,20 +73,22 @@ function Dashboard() {
   }, [loadDashboardData])
 
   /**
-   * Format currency for display
-   * Memoized to avoid creating new formatter on every render
+   * Handle Load More
    */
-  const formatCurrency = useCallback((amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount)
-  }, [])
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + 5)
+  }
 
-  // Memoize recent transactions to prevent unnecessary re-renders
-  const memoizedTransactions = useMemo(() => {
-    return recentTransactions
-  }, [recentTransactions])
+  /**
+   * Format currency for display
+   * Using custom hook for locale awareness
+   */
+  const formatCurrency = useCurrencyFormatter()
+
+  // Memoize displayed transactions to prevent unnecessary re-renders
+  const displayedTransactions = useMemo(() => {
+    return recentTransactions.slice(0, visibleCount)
+  }, [recentTransactions, visibleCount])
 
   if (loading) {
     return (
@@ -166,16 +172,30 @@ function Dashboard() {
             </div>
           </div>
         ) : (
-          <div className="transactions-list">
-            {memoizedTransactions.map((transaction) => (
-              <TransactionItem
-                key={transaction.id}
-                transaction={transaction}
-                formatCurrency={formatCurrency}
-                t={t}
-              />
-            ))}
-          </div>
+          <>
+            <div className="transactions-list">
+              {displayedTransactions.map((transaction) => (
+                <TransactionItem
+                  key={transaction.id}
+                  transaction={transaction}
+                  formatCurrency={formatCurrency}
+                  t={t}
+                />
+              ))}
+            </div>
+
+            {visibleCount < recentTransactions.length && (
+              <div className="load-more-container">
+                <button
+                  onClick={handleLoadMore}
+                  className="btn btn-secondary btn-sm"
+                  style={{ width: '100%', marginTop: '1rem' }}
+                >
+                  {t('common.loadMore', 'Load More')}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

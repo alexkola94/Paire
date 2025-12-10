@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { 
-  FiTrendingUp, 
-  FiTrendingDown, 
+import {
+  FiTrendingUp,
+  FiTrendingDown,
   FiPieChart,
   FiBarChart2,
   FiActivity,
@@ -16,6 +16,7 @@ import { getStoredUser } from '../services/auth'
 import { format, subDays } from 'date-fns'
 import LogoLoader from '../components/LogoLoader'
 import Dropdown from '../components/Dropdown'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './Analytics.css'
 
 // Register Chart.js components
@@ -31,12 +32,9 @@ ChartJS.register(
   Legend
 )
 
-/**
- * Analytics Page Component
- * Displays financial insights, charts, and partner comparisons
- */
 function Analytics() {
   const { t } = useTranslation()
+  const formatCurrency = useCurrencyFormatter()
   const [loading, setLoading] = useState(true)
   const [analytics, setAnalytics] = useState(null)
   const [loanAnalytics, setLoanAnalytics] = useState(null)
@@ -84,23 +82,23 @@ function Analytics() {
    */
   const filterTransactions = (transactions) => {
     if (!transactions || transactions.length === 0) return []
-    
+
     const currentUser = getStoredUser()
     if (!currentUser) return transactions
 
     const currentUserId = currentUser.id
     const currentUserEmail = currentUser.email?.toLowerCase()
-    
+
     return transactions.filter(transaction => {
       // Check by user_id first (more reliable)
       const transactionUserId = transaction.user_id || transaction.userId
       const isCurrentUserById = transactionUserId === currentUserId
-      
+
       // Fallback to email check if user_id doesn't match
-      const userEmail = transaction.user_profiles?.email?.toLowerCase() || 
-                        transaction.userProfiles?.email?.toLowerCase()
+      const userEmail = transaction.user_profiles?.email?.toLowerCase() ||
+        transaction.userProfiles?.email?.toLowerCase()
       const isCurrentUserByEmail = userEmail === currentUserEmail
-      
+
       // Determine transaction ownership
       const isCurrentUser = isCurrentUserById || isCurrentUserByEmail
       const isPartner = !isCurrentUser && (transactionUserId || userEmail)
@@ -234,7 +232,7 @@ function Analytics() {
     try {
       setLoading(true)
       const range = getDateRange()
-      
+
       console.log('📊 Loading analytics for date range:', range, 'filter:', viewFilter)
 
       // Fetch all transactions first to filter them
@@ -246,11 +244,11 @@ function Analytics() {
         })
         console.log('✅ Transactions loaded:', allTransactions?.length)
         setAllTransactions(allTransactions || [])
-        
+
         // Filter transactions based on view filter
         const filteredTransactions = filterTransactions(allTransactions || [])
         console.log('✅ Filtered transactions:', filteredTransactions.length, 'filter:', viewFilter)
-        
+
         // Calculate analytics from filtered transactions
         const calculatedAnalytics = calculateAnalyticsFromTransactions(filteredTransactions)
         console.log('✅ Calculated analytics:', calculatedAnalytics)
@@ -296,15 +294,7 @@ function Analytics() {
     }
   }
 
-  /**
-   * Format currency for display
-   */
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount)
-  }
+
 
   /**
    * Prepare category breakdown pie chart data
@@ -332,7 +322,7 @@ function Analytics() {
     ]
 
     // Repeat colors if needed
-    const colors = categories.map((_, index) => 
+    const colors = categories.map((_, index) =>
       colorPalette[index % colorPalette.length]
     )
 
@@ -432,7 +422,7 @@ function Analytics() {
           </h1>
           <p className="page-subtitle">{t('analytics.subtitle')}</p>
         </div>
-        
+
         {/* Filters */}
         <div className="analytics-filters">
           {/* View Filter */}
@@ -447,7 +437,7 @@ function Analytics() {
             onChange={(value) => setViewFilter(value)}
             className="analytics-filter"
           />
-          
+
           {/* Date Range Selector */}
           <Dropdown
             icon={<FiCalendar size={18} />}
@@ -525,15 +515,15 @@ function Analytics() {
               <div className="chart-container pie-chart">
                 <Pie data={getCategoryChartData()} options={chartOptions} />
               </div>
-            
+
               {/* Category List - Show all categories */}
               <div className="category-list">
                 {analytics.categoryBreakdown.map((cat, index) => (
                   <div key={index} className="category-item">
                     <div className="category-info">
-                      <span 
+                      <span
                         className="category-color-indicator"
-                        style={{ 
+                        style={{
                           backgroundColor: getCategoryChartData()?.datasets[0]?.backgroundColor[index] || '#6C5CE7'
                         }}
                       />
@@ -608,7 +598,7 @@ function Analytics() {
             <div className="card-header">
               <h2>{t('analytics.loanSummary')}</h2>
             </div>
-            
+
             <div className="loan-stats-grid">
               <div className="loan-stat">
                 <label>{t('analytics.loansGiven')}</label>

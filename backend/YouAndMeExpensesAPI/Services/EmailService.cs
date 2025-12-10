@@ -185,7 +185,7 @@ namespace YouAndMeExpensesAPI.Services
             {
                 ToEmail = toEmail,
                 ToName = "Test User",
-                Subject = "Test Email from You & Me Expenses",
+                Subject = "Test Email from Paire",
                 Body = GetTestEmailTemplate(),
                 IsHtml = true
             };
@@ -201,7 +201,7 @@ namespace YouAndMeExpensesAPI.Services
             var frontendUrl = "http://localhost:3000"; // Default for test emails
             var message = @"
                 <p>Hi there!</p>
-                <p>This is a test email to confirm that your <strong>You & Me Expenses</strong> email reminder system is working correctly.</p>
+                <p>This is a test email to confirm that your <strong>Paire</strong> email reminder system is working correctly.</p>
                 <p>You will now receive:</p>
                 <ul style='margin: 15px 0; padding-left: 25px;'>
                     <li style='margin: 8px 0;'>📅 Bill payment reminders</li>
@@ -387,7 +387,7 @@ namespace YouAndMeExpensesAPI.Services
             </div>
         </div>
         <div class=""footer"">
-            <p><strong>You & Me Expenses</strong></p>
+            <p><strong>Paire</strong></p>
             <p>Your Personal Finance Manager</p>
             <p><small>You're receiving this because you have email reminders enabled.</small></p>
         </div>

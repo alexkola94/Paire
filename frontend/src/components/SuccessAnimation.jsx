@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FiCheckCircle } from 'react-icons/fi'
+import { FiCheck } from 'react-icons/fi'
 import './SuccessAnimation.css'
 
 /**
@@ -14,8 +14,8 @@ function SuccessAnimation({ show, onComplete, message = 'Saved successfully!' })
     if (show) {
       setIsVisible(true)
       setIsAnimating(true)
-      
-      // Complete animation after 2 seconds
+
+      // Complete animation after 0.8 seconds to match modal close timing
       const timer = setTimeout(() => {
         setIsAnimating(false)
         setTimeout(() => {
@@ -24,7 +24,7 @@ function SuccessAnimation({ show, onComplete, message = 'Saved successfully!' })
             onComplete()
           }
         }, 300) // Wait for fade out
-      }, 2000)
+      }, 800)
 
       return () => clearTimeout(timer)
     }
@@ -36,7 +36,7 @@ function SuccessAnimation({ show, onComplete, message = 'Saved successfully!' })
     <div className={`success-animation-overlay ${isAnimating ? 'animating' : 'fading'}`}>
       <div className="success-animation-content">
         <div className="success-icon-wrapper">
-          <FiCheckCircle className="success-icon" size={64} />
+          <FiCheck className="success-icon" size={64} />
           <div className="success-ripple"></div>
           <div className="success-ripple delay-1"></div>
           <div className="success-ripple delay-2"></div>

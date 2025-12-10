@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import { 
-  FiTrendingUp, 
+import {
+  FiTrendingUp,
   FiTrendingDown,
   FiArrowLeft,
   FiChevronRight
@@ -22,6 +22,7 @@ function AllTransactions() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [transactions, setTransactions] = useState([])
+  const [visibleCount, setVisibleCount] = useState(10)
 
   /**
    * Fetch all transactions (both income and expenses)
@@ -52,6 +53,13 @@ function AllTransactions() {
   }, [loadTransactions])
 
   /**
+   * Handle Load More
+   */
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + 10)
+  }
+
+  /**
    * Format currency for display
    * Memoized to avoid creating new formatter on every render
    */
@@ -63,9 +71,9 @@ function AllTransactions() {
   }, [])
 
   // Memoize transactions to prevent unnecessary re-renders
-  const memoizedTransactions = useMemo(() => {
-    return transactions
-  }, [transactions])
+  const displayedTransactions = useMemo(() => {
+    return transactions.slice(0, visibleCount)
+  }, [transactions, visibleCount])
 
   if (loading) {
     return (
@@ -123,7 +131,7 @@ function AllTransactions() {
       ) : (
         <div className="card transactions-container">
           <div className="transactions-list">
-            {memoizedTransactions.map((transaction) => (
+            {displayedTransactions.map((transaction) => (
               <TransactionItem
                 key={transaction.id}
                 transaction={transaction}
@@ -132,6 +140,18 @@ function AllTransactions() {
               />
             ))}
           </div>
+
+          {visibleCount < transactions.length && (
+            <div className="load-more-container" style={{ padding: '1rem', textAlign: 'center' }}>
+              <button
+                onClick={handleLoadMore}
+                className="btn btn-secondary"
+                style={{ minWidth: '200px' }}
+              >
+                {t('common.loadMore', 'Load More')}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { FiTag, FiX } from 'react-icons/fi'
 import './TagsInput.css'
 
+const DEFAULT_SUGGESTIONS = []
+
 /**
  * Tags Input Component
  * Allows users to add and manage tags for transactions
  */
 function TagsInput({
   tags = [],
-  suggestions = [],
+  suggestions = DEFAULT_SUGGESTIONS,
   onChange,
   name = 'tags',
   label,
@@ -32,7 +34,7 @@ function TagsInput({
     }
 
     const filtered = suggestions
-      .filter(s => 
+      .filter(s =>
         !tags.includes(s) &&
         s.toLowerCase().includes(inputValue.toLowerCase())
       )
@@ -54,7 +56,7 @@ function TagsInput({
    */
   const handleAddTag = (tagValue) => {
     const trimmedTag = (tagValue || inputValue).trim().toLowerCase()
-    
+
     if (!trimmedTag || tags.length >= maxTags) return
     if (tags.includes(trimmedTag)) return
 
@@ -67,7 +69,7 @@ function TagsInput({
         }
       })
     }
-    
+
     setInputValue('')
     setShowSuggestions(false)
     inputRef.current?.focus()

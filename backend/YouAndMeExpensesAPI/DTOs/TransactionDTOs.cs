@@ -1,0 +1,111 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace YouAndMeExpensesAPI.DTOs
+{
+    /// <summary>
+    /// DTO for creating a new transaction
+    /// Accepts date as string to handle frontend date format
+    /// </summary>
+    public class CreateTransactionRequest
+    {
+        [Required]
+        public string Type { get; set; } = string.Empty; // "expense" or "income"
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than zero")]
+        public decimal Amount { get; set; }
+
+        [Required]
+        public string Category { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
+        [Required]
+        public string Date { get; set; } = string.Empty; // Accept as string (YYYY-MM-DD or ISO 8601)
+
+        public string? AttachmentUrl { get; set; }
+
+        public string? AttachmentPath { get; set; }
+
+        public bool IsRecurring { get; set; }
+
+        public string? RecurrencePattern { get; set; } // "daily", "weekly", "monthly", "yearly"
+
+        public string? RecurrenceEndDate { get; set; } // Accept as string
+
+        public string? PaidBy { get; set; }
+
+        public string? SplitType { get; set; }
+
+        public decimal? SplitPercentage { get; set; }
+
+        public string[]? Tags { get; set; }
+
+        public string? Notes { get; set; }
+
+        /// <summary>
+        /// Convert the DTO to a Transaction model
+        /// </summary>
+        public Models.Transaction ToTransaction()
+        {
+            // Parse date string to DateTime
+            DateTime parsedDate;
+            if (string.IsNullOrEmpty(Date))
+            {
+                parsedDate = DateTime.UtcNow;
+            }
+            else if (DateTime.TryParse(Date, out var date))
+            {
+                parsedDate = date.Kind == DateTimeKind.Utc ? date : date.ToUniversalTime();
+            }
+            else
+            {
+                // Try parsing as date-only string (YYYY-MM-DD)
+                if (DateTime.TryParseExact(Date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var dateOnly))
+                {
+                    parsedDate = dateOnly.ToUniversalTime();
+                }
+                else
+                {
+                    parsedDate = DateTime.UtcNow;
+                }
+            }
+
+            // Parse recurrence end date if provided
+            DateTime? parsedRecurrenceEndDate = null;
+            if (!string.IsNullOrEmpty(RecurrenceEndDate))
+            {
+                if (DateTime.TryParse(RecurrenceEndDate, out var recurrenceDate))
+                {
+                    parsedRecurrenceEndDate = recurrenceDate.Kind == DateTimeKind.Utc 
+                        ? recurrenceDate 
+                        : recurrenceDate.ToUniversalTime();
+                }
+                else if (DateTime.TryParseExact(RecurrenceEndDate, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var recurrenceDateOnly))
+                {
+                    parsedRecurrenceEndDate = recurrenceDateOnly.ToUniversalTime();
+                }
+            }
+
+            return new Models.Transaction
+            {
+                Type = Type,
+                Amount = Amount,
+                Category = Category,
+                Description = Description,
+                Date = parsedDate,
+                AttachmentUrl = AttachmentUrl,
+                AttachmentPath = AttachmentPath,
+                IsRecurring = IsRecurring,
+                RecurrencePattern = RecurrencePattern,
+                RecurrenceEndDate = parsedRecurrenceEndDate,
+                PaidBy = PaidBy,
+                SplitType = SplitType,
+                SplitPercentage = SplitPercentage,
+                Tags = Tags,
+                Notes = Notes
+            };
+        }
+    }
+}
+

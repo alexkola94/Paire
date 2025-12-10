@@ -5,13 +5,15 @@ import {
   FiClock, FiAlertCircle, FiRepeat, FiX
 } from 'react-icons/fi'
 import { recurringBillService } from '../services/api'
-import { formatCurrency } from '../utils/formatCurrency'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import DateInput from '../components/DateInput'
 import CurrencyInput from '../components/CurrencyInput'
 import CategorySelector from '../components/CategorySelector'
 import FormSection from '../components/FormSection'
+import SuccessAnimation from '../components/SuccessAnimation'
+import LoadingProgress from '../components/LoadingProgress'
 import './RecurringBills.css'
 
 /**
@@ -20,12 +22,15 @@ import './RecurringBills.css'
  */
 function RecurringBills() {
   const { t } = useTranslation()
+  const formatCurrency = useCurrencyFormatter()
   const [loading, setLoading] = useState(true)
   const [bills, setBills] = useState([])
   const [summary, setSummary] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editingBill, setEditingBill] = useState(null)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, billId: null })
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+  const [showLoadingProgress, setShowLoadingProgress] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -68,9 +73,9 @@ function RecurringBills() {
   /**
    * Fetch bills and summary data
    */
-  const loadData = async () => {
+  const loadData = async (background = false) => {
     try {
-      setLoading(true)
+      if (!background) setLoading(true)
       const [billsData, summaryData] = await Promise.all([
         recurringBillService.getAll(),
         recurringBillService.getSummary()
@@ -80,7 +85,7 @@ function RecurringBills() {
     } catch (error) {
       console.error('Error loading recurring bills:', error)
     } finally {
-      setLoading(false)
+      if (!background) setLoading(false)
     }
   }
 
@@ -136,6 +141,10 @@ function RecurringBills() {
     e.preventDefault()
 
     try {
+      // Close form immediately and show full screen loader
+      setShowForm(false)
+      setShowLoadingProgress(true)
+
       const billData = {
         ...formData,
         amount: parseFloat(formData.amount),
@@ -149,10 +158,18 @@ function RecurringBills() {
         await recurringBillService.create(billData)
       }
 
-      await loadData()
+      // Refresh list in background
+      await loadData(true)
+
+      // Show success animation
+      setShowLoadingProgress(false)
+      setShowSuccessAnimation(true)
+
       resetForm()
     } catch (error) {
       console.error('Error saving bill:', error)
+      setShowLoadingProgress(false)
+      setShowForm(true) // Re-open form on error
       alert(t('recurringBills.errorSaving'))
     }
   }
@@ -340,6 +357,7 @@ function RecurringBills() {
                   getDaysUntil={getDaysUntil}
                   t={t}
                   status="overdue"
+                  formatCurrency={formatCurrency}
                 />
               ))}
             </div>
@@ -365,6 +383,7 @@ function RecurringBills() {
                   getDaysUntil={getDaysUntil}
                   t={t}
                   status="upcoming"
+                  formatCurrency={formatCurrency}
                 />
               ))}
             </div>
@@ -390,6 +409,7 @@ function RecurringBills() {
                   getDaysUntil={getDaysUntil}
                   t={t}
                   status="later"
+                  formatCurrency={formatCurrency}
                 />
               ))}
             </div>
@@ -546,6 +566,16 @@ function RecurringBills() {
         </Modal>
       )}
 
+      {/* Loading Progress Overlay */}
+      <LoadingProgress show={showLoadingProgress} />
+
+      {/* Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        onComplete={() => setShowSuccessAnimation(false)}
+        message={t('recurringBills.savedSuccess')}
+      />
+
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
@@ -563,7 +593,7 @@ function RecurringBills() {
 /**
  * Bill Card Component
  */
-function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatDueDate, getDaysUntil, t, status }) {
+function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency }) {
   const daysUntil = getDaysUntil(bill.nextDueDate || bill.next_due_date)
   const icon = getCategoryIcon(bill.category)
 

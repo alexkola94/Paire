@@ -59,21 +59,13 @@ namespace YouAndMeExpensesAPI.Services
         /// </summary>
         public async Task InitializeDefaultAchievementsAsync()
         {
-            // Check if achievements already exist
-            if (await _context.Achievements.AnyAsync())
-            {
-                _logger.LogInformation("Achievements already initialized. Skipping.");
-                return;
-            }
-
-            var achievements = new List<Achievement>
+            var defaultAchievements = new List<Achievement>
             {
                 // ============================================
                 // TRANSACTION ACHIEVEMENTS
                 // ============================================
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "FIRST_EXPENSE",
                     Name = "First Expense",
                     Description = "Record your first expense",
@@ -88,7 +80,6 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "EXPENSE_10",
                     Name = "Getting Started",
                     Description = "Record 10 expenses",
@@ -103,7 +94,6 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "EXPENSE_50",
                     Name = "Regular Tracker",
                     Description = "Record 50 expenses",
@@ -118,7 +108,6 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "EXPENSE_100",
                     Name = "Dedicated Tracker",
                     Description = "Record 100 expenses",
@@ -133,7 +122,20 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
+                    Code = "EXPENSE_500",
+                    Name = "Power Tracker",
+                    Description = "Record 500 expenses",
+                    Category = "transactions",
+                    Icon = "FiTrendingDown",
+                    Color = "gold",
+                    Points = 300,
+                    Rarity = "legendary",
+                    CriteriaType = "count",
+                    CriteriaValue = JsonSerializer.Serialize(new { type = "expense", count = 500 }),
+                    SortOrder = 5
+                },
+                new Achievement
+                {
                     Code = "FIRST_INCOME",
                     Name = "First Income",
                     Description = "Record your first income",
@@ -144,11 +146,10 @@ namespace YouAndMeExpensesAPI.Services
                     Rarity = "common",
                     CriteriaType = "count",
                     CriteriaValue = JsonSerializer.Serialize(new { type = "income", count = 1 }),
-                    SortOrder = 5
+                    SortOrder = 6
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "TOTAL_EXPENSES_1000",
                     Name = "Big Spender",
                     Description = "Track €1,000 in total expenses",
@@ -159,7 +160,7 @@ namespace YouAndMeExpensesAPI.Services
                     Rarity = "rare",
                     CriteriaType = "amount",
                     CriteriaValue = JsonSerializer.Serialize(new { type = "expense", amount = 1000 }),
-                    SortOrder = 6
+                    SortOrder = 7
                 },
 
                 // ============================================
@@ -167,7 +168,6 @@ namespace YouAndMeExpensesAPI.Services
                 // ============================================
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "FIRST_BUDGET",
                     Name = "Budget Planner",
                     Description = "Create your first budget",
@@ -182,7 +182,6 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "BUDGET_MASTER",
                     Name = "Budget Master",
                     Description = "Stay within budget for 3 consecutive months",
@@ -201,7 +200,6 @@ namespace YouAndMeExpensesAPI.Services
                 // ============================================
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "FIRST_SAVINGS_GOAL",
                     Name = "Goal Setter",
                     Description = "Create your first savings goal",
@@ -216,7 +214,6 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "SAVINGS_GOAL_ACHIEVED",
                     Name = "Goal Achiever",
                     Description = "Achieve your first savings goal",
@@ -231,7 +228,6 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "SAVINGS_1000",
                     Name = "Saver",
                     Description = "Save €1,000 across all goals",
@@ -244,13 +240,26 @@ namespace YouAndMeExpensesAPI.Services
                     CriteriaValue = JsonSerializer.Serialize(new { type = "savings", amount = 1000 }),
                     SortOrder = 22
                 },
+                new Achievement
+                {
+                    Code = "SAVINGS_10000",
+                    Name = "Wealth Builder",
+                    Description = "Save €10,000 across all goals",
+                    Category = "savings",
+                    Icon = "FiPieChart",
+                    Color = "gold",
+                    Points = 500,
+                    Rarity = "legendary",
+                    CriteriaType = "amount",
+                    CriteriaValue = JsonSerializer.Serialize(new { type = "savings", amount = 10000 }),
+                    SortOrder = 23
+                },
 
                 // ============================================
                 // LOAN ACHIEVEMENTS
                 // ============================================
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "LOAN_SETTLED",
                     Name = "Debt Free",
                     Description = "Settle your first loan",
@@ -269,7 +278,6 @@ namespace YouAndMeExpensesAPI.Services
                 // ============================================
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "PARTNERSHIP_CREATED",
                     Name = "Together",
                     Description = "Create a partnership",
@@ -284,7 +292,6 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "SHARED_EXPENSES_10",
                     Name = "Team Player",
                     Description = "Record 10 shared expenses with your partner",
@@ -303,7 +310,6 @@ namespace YouAndMeExpensesAPI.Services
                 // ============================================
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "LOGIN_STREAK_7",
                     Name = "Week Warrior",
                     Description = "Login for 7 consecutive days",
@@ -318,7 +324,6 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "LOGIN_STREAK_30",
                     Name = "Monthly Master",
                     Description = "Login for 30 consecutive days",
@@ -331,13 +336,26 @@ namespace YouAndMeExpensesAPI.Services
                     CriteriaValue = JsonSerializer.Serialize(new { type = "login", days = 30 }),
                     SortOrder = 51
                 },
+                new Achievement
+                {
+                    Code = "LOGIN_STREAK_60",
+                    Name = "Committed",
+                    Description = "Login for 60 consecutive days",
+                    Category = "consistency",
+                    Icon = "FiCalendar",
+                    Color = "gold",
+                    Points = 400,
+                    Rarity = "legendary",
+                    CriteriaType = "streak",
+                    CriteriaValue = JsonSerializer.Serialize(new { type = "login", days = 60 }),
+                    SortOrder = 52
+                },
 
                 // ============================================
                 // MILESTONE ACHIEVEMENTS
                 // ============================================
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
                     Code = "TOTAL_TRANSACTIONS_100",
                     Name = "Century Club",
                     Description = "Record 100 total transactions",
@@ -352,7 +370,20 @@ namespace YouAndMeExpensesAPI.Services
                 },
                 new Achievement
                 {
-                    Id = Guid.NewGuid(),
+                    Code = "TOTAL_TRANSACTIONS_500",
+                    Name = "Data Hoarder",
+                    Description = "Record 500 total transactions",
+                    Category = "milestone",
+                    Icon = "FiAward",
+                    Color = "gold",
+                    Points = 350,
+                    Rarity = "legendary",
+                    CriteriaType = "count",
+                    CriteriaValue = JsonSerializer.Serialize(new { type = "transaction", count = 500 }),
+                    SortOrder = 61
+                },
+                new Achievement
+                {
                     Code = "TOTAL_SAVED_5000",
                     Name = "Big Saver",
                     Description = "Save €5,000 across all goals",
@@ -363,13 +394,28 @@ namespace YouAndMeExpensesAPI.Services
                     Rarity = "legendary",
                     CriteriaType = "amount",
                     CriteriaValue = JsonSerializer.Serialize(new { type = "savings", amount = 5000 }),
-                    SortOrder = 61
+                    SortOrder = 62
                 }
             };
 
-            await _context.Achievements.AddRangeAsync(achievements);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation($"Initialized {achievements.Count} default achievements.");
+            var existingCodes = await _context.Achievements.Select(a => a.Code).ToListAsync();
+            var newAchievements = defaultAchievements.Where(a => !existingCodes.Contains(a.Code)).ToList();
+
+            if (newAchievements.Any())
+            {
+                foreach (var achievement in newAchievements)
+                {
+                    achievement.Id = Guid.NewGuid(); // Ensure ID is set
+                }
+                
+                await _context.Achievements.AddRangeAsync(newAchievements);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Initialized {newAchievements.Count} new achievements.");
+            }
+            else
+            {
+                _logger.LogInformation("No new default achievements to initialize.");
+            }
         }
 
         public async Task<List<UserAchievement>> CheckTransactionAchievementsAsync(string userId)
@@ -685,40 +731,47 @@ namespace YouAndMeExpensesAPI.Services
                 .Where(sg => sg.UserId == userId)
                 .SumAsync(sg => (decimal?)sg.CurrentAmount) ?? 0;
 
-            // Total transactions milestone
-            var transactionMilestone = await _context.Achievements
-                .FirstOrDefaultAsync(a => a.Code == "TOTAL_TRANSACTIONS_100" && a.IsActive);
+            // Get all milestone achievements
+            var milestones = await _context.Achievements
+                .Where(a => a.IsActive && a.Category == "milestone")
+                .ToListAsync();
 
-            if (transactionMilestone != null && totalTransactions >= 100)
+            foreach (var achievement in milestones)
             {
-                if (!await _context.UserAchievements.AnyAsync(ua => ua.UserId == userId && ua.AchievementId == transactionMilestone.Id))
+                // Skip if already unlocked
+                if (await _context.UserAchievements.AnyAsync(ua => ua.UserId == userId && ua.AchievementId == achievement.Id))
+                    continue;
+
+                bool criteriaMet = false;
+                var criteria = JsonSerializer.Deserialize<JsonObject>(achievement.CriteriaValue ?? "{}");
+                var type = criteria?["type"]?.ToString() ?? "";
+
+                if (type == "transaction" && achievement.CriteriaType == "count")
                 {
-                    var userAchievement = new UserAchievement
-                    {
-                        Id = Guid.NewGuid(),
-                        UserId = userId,
-                        AchievementId = transactionMilestone.Id,
-                        Progress = 100,
-                        UnlockedAt = DateTime.UtcNow
-                    };
-                    newAchievements.Add(userAchievement);
-                    await _context.UserAchievements.AddAsync(userAchievement);
+                    var targetCount = criteria?["count"] != null 
+                        ? criteria["count"]!.GetValue<int>() 
+                        : 0;
+                    
+                    if (totalTransactions >= targetCount)
+                        criteriaMet = true;
                 }
-            }
+                else if (type == "savings" && achievement.CriteriaType == "amount")
+                {
+                    var targetAmount = criteria?["amount"] != null 
+                        ? criteria["amount"]!.GetValue<decimal>() 
+                        : 0;
+                        
+                    if (totalSaved >= targetAmount)
+                        criteriaMet = true;
+                }
 
-            // Total saved milestone
-            var savingsMilestone = await _context.Achievements
-                .FirstOrDefaultAsync(a => a.Code == "TOTAL_SAVED_5000" && a.IsActive);
-
-            if (savingsMilestone != null && totalSaved >= 5000)
-            {
-                if (!await _context.UserAchievements.AnyAsync(ua => ua.UserId == userId && ua.AchievementId == savingsMilestone.Id))
+                if (criteriaMet)
                 {
                     var userAchievement = new UserAchievement
                     {
                         Id = Guid.NewGuid(),
                         UserId = userId,
-                        AchievementId = savingsMilestone.Id,
+                        AchievementId = achievement.Id,
                         Progress = 100,
                         UnlockedAt = DateTime.UtcNow
                     };

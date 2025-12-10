@@ -416,7 +416,7 @@ function Partnership() {
 
       {/* Invite Form Modal */}
       {showInviteForm && (
-        <div className="form-modal" onClick={(e) => e.target === e.currentTarget && !saving && (setShowInviteForm(false), setPartnerEmail(''))}>
+        <div className="form-modal">
           <div className="card form-card">
             <div className="card-header form-header">
               <h2>{t('partnership.invitePartner')}</h2>

@@ -9,6 +9,9 @@ import LogoLoader from '../components/LogoLoader'
 import CurrencyInput from '../components/CurrencyInput'
 import DateInput from '../components/DateInput'
 import FormSection from '../components/FormSection'
+import SuccessAnimation from '../components/SuccessAnimation'
+import LoadingProgress from '../components/LoadingProgress'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './Loans.css'
 
 /**
@@ -27,6 +30,8 @@ function Loans() {
   const [showPaymentForm, setShowPaymentForm] = useState(false)
   const [deleteLoanModal, setDeleteLoanModal] = useState({ isOpen: false, loan: null })
   const [deletePaymentModal, setDeletePaymentModal] = useState({ isOpen: false, paymentId: null })
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+  const [showLoadingProgress, setShowLoadingProgress] = useState(false)
   const [paymentFormData, setPaymentFormData] = useState({
     amount: '',
     principalAmount: '',
@@ -55,15 +60,15 @@ function Loans() {
   /**
    * Fetch loans from API
    */
-  const loadLoans = async () => {
+  const loadLoans = async (background = false) => {
     try {
-      setLoading(true)
+      if (!background) setLoading(true)
       const data = await loanService.getAll()
       setLoans(data)
     } catch (error) {
       console.error('Error loading loans:', error)
     } finally {
-      setLoading(false)
+      if (!background) setLoading(false)
     }
   }
 
@@ -91,7 +96,9 @@ function Loans() {
     e.preventDefault()
 
     try {
-      setFormLoading(true)
+      // Close form immediately and show loader
+      setShowForm(false)
+      setShowLoadingProgress(true)
 
       // Prepare loan data based on type
       // For new loans, remainingAmount should equal amount (no payments yet)
@@ -120,12 +127,21 @@ function Loans() {
         await loanService.create(loanData)
       }
 
-      await loadLoans()
+      // Background refresh
+      await loadLoans(true)
+
+      // Success
+      setShowLoadingProgress(false)
+      setShowSuccessAnimation(true)
+
       closeForm()
     } catch (error) {
       console.error('Error saving loan:', error)
+      setShowLoadingProgress(false)
+      setShowForm(true) // Re-open form on error
+      // Note: we can show an error toast here if available, or just console log
     } finally {
-      setFormLoading(false)
+      // No need to setFormLoading(false) as we are using the overlay
     }
   }
 
@@ -299,22 +315,24 @@ function Loans() {
   /**
    * Format currency with safety check for null/undefined/NaN values
    */
+  /**
+   * Format currency with safety check for null/undefined/NaN values
+   */
+  const formatBaseCurrency = useCurrencyFormatter()
+
   const formatCurrency = (amount) => {
     // Handle null, undefined, NaN, or invalid values
     if (amount == null || isNaN(amount) || amount === 'NaN') {
-      return '€0.00'
+      return formatBaseCurrency(0)
     }
 
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
 
     if (isNaN(numAmount)) {
-      return '€0.00'
+      return formatBaseCurrency(0)
     }
 
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(numAmount)
+    return formatBaseCurrency(numAmount)
   }
 
   if (loading) {
@@ -493,6 +511,16 @@ function Loans() {
           </div>
         </form>
       </Modal>
+
+      {/* Loading Progress Overlay */}
+      <LoadingProgress show={showLoadingProgress} />
+
+      {/* Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        onComplete={() => setShowSuccessAnimation(false)}
+        message={t('loans.savedSuccess')}
+      />
 
       {/* Loans List */}
       {loans.length === 0 ? (

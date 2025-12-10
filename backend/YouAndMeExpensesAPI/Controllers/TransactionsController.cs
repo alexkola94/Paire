@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
+using YouAndMeExpensesAPI.DTOs;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -40,11 +41,13 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <param name="startDate">Optional: Filter transactions from this date (inclusive)</param>
         /// <param name="endDate">Optional: Filter transactions until this date (inclusive)</param>
         /// <returns>List of transactions with user profile data</returns>
-        [HttpGet]
+[HttpGet]
         public async Task<IActionResult> GetTransactions(
             [FromQuery] string? type = null,
             [FromQuery] DateTime? startDate = null,
-            [FromQuery] DateTime? endDate = null)
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] int? page = null,
+            [FromQuery] int? pageSize = null)
         {
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return error;
@@ -96,10 +99,26 @@ namespace YouAndMeExpensesAPI.Controllers
                     query = query.Where(t => t.Date <= endOfDay);
                 }
 
-                // Get transactions with ordering
-                var transactions = await query
-                    .OrderByDescending(t => t.Date)
-                    .ToListAsync();
+                int totalCount = 0;
+                // If pagination is requested, get total count first
+                if (page.HasValue && pageSize.HasValue)
+                {
+                    totalCount = await query.CountAsync();
+                }
+
+                // Apply ordering
+                var orderedQuery = query.OrderByDescending(t => t.Date);
+
+                // Apply pagination if requested
+                if (page.HasValue && pageSize.HasValue)
+                {
+                    orderedQuery = (IOrderedQueryable<Transaction>)orderedQuery
+                        .Skip((page.Value - 1) * pageSize.Value)
+                        .Take(pageSize.Value);
+                }
+
+                // Get transactions
+                var transactions = await orderedQuery.ToListAsync();
 
                 // Get user profiles for all transaction creators
                 var userIds = transactions.Select(t => t.UserId).Distinct().ToList();
@@ -143,6 +162,19 @@ namespace YouAndMeExpensesAPI.Controllers
                     updatedAt = t.UpdatedAt,
                     user_profiles = profileDict.ContainsKey(t.UserId) ? profileDict[t.UserId] : null
                 }).ToList();
+
+                // Return paged response if pagination was requested
+                if (page.HasValue && pageSize.HasValue)
+                {
+                     return Ok(new
+                     {
+                         items = enrichedTransactions,
+                         totalCount = totalCount,
+                         page = page.Value,
+                         pageSize = pageSize.Value,
+                         totalPages = (int)Math.Ceiling(totalCount / (double)pageSize.Value)
+                     });
+                }
 
                 return Ok(enrichedTransactions);
             }
@@ -219,49 +251,41 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <summary>
         /// Creates a new transaction
         /// </summary>
-        /// <param name="transaction">Transaction data</param>
+        /// <param name="request">Transaction data</param>
         /// <returns>Created transaction</returns>
         [HttpPost]
-        public async Task<ActionResult<Transaction>> CreateTransaction([FromBody] Transaction transaction)
+        public async Task<ActionResult<Transaction>> CreateTransaction([FromBody] CreateTransactionRequest request)
         {
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return Unauthorized(new { error = "User not authenticated" });
 
-            // Validate transaction
-            if (transaction.Amount <= 0)
+            // Validate request object is not null
+            if (request == null)
             {
-                return BadRequest(new { message = "Amount must be greater than zero" });
+                _logger.LogWarning("CreateTransaction: Received null request object");
+                return BadRequest(new { message = "Transaction data is required" });
             }
 
-            if (string.IsNullOrEmpty(transaction.Category))
-            {
-                return BadRequest(new { message = "Category is required" });
-            }
+            // Log received data for debugging
+            _logger.LogInformation("CreateTransaction: Received request - Type: {Type}, Amount: {Amount}, Category: {Category}, Date: {Date}", 
+                request.Type, request.Amount, request.Category, request.Date);
 
-            if (string.IsNullOrEmpty(transaction.Type))
+            // Validate request using model validation
+            if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Type is required" });
+                return BadRequest(new { message = "Invalid transaction data", errors = ModelState });
             }
 
             try
             {
+                // Convert DTO to Transaction model
+                var transaction = request.ToTransaction();
+                
                 // Set transaction properties
                 transaction.Id = Guid.NewGuid();
                 transaction.UserId = userId.ToString();
                 transaction.CreatedAt = DateTime.UtcNow;
                 transaction.UpdatedAt = DateTime.UtcNow;
-                
-                // Ensure Date is UTC for PostgreSQL compatibility
-                if (transaction.Date.Kind != DateTimeKind.Utc)
-                {
-                    transaction.Date = transaction.Date.ToUniversalTime();
-                }
-                
-                // Ensure RecurrenceEndDate is UTC if provided
-                if (transaction.RecurrenceEndDate.HasValue && transaction.RecurrenceEndDate.Value.Kind != DateTimeKind.Utc)
-                {
-                    transaction.RecurrenceEndDate = transaction.RecurrenceEndDate.Value.ToUniversalTime();
-                }
 
                 _dbContext.Transactions.Add(transaction);
                 await _dbContext.SaveChangesAsync();

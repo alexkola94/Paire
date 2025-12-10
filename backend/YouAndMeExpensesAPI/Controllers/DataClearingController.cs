@@ -367,7 +367,7 @@ namespace YouAndMeExpensesAPI.Controllers
         
         <p>Hi {partnerName},</p>
         
-        <p><strong>{requesterName}</strong> has requested to <strong>clear all data</strong> from your shared You & Me Expenses account.</p>
+        <p><strong>{requesterName}</strong> has requested to <strong>clear all data</strong> from your shared Paire account.</p>
         
         <div style='background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
             <strong>⚠️ Warning:</strong> This will permanently delete:
@@ -402,7 +402,7 @@ namespace YouAndMeExpensesAPI.Controllers
         
         <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
         <p style='font-size: 12px; color: #999;'>
-            You & Me Expenses - Shared Finance Management
+            Paire - Shared Finance Management
         </p>
     </div>
 </body>
@@ -441,7 +441,7 @@ namespace YouAndMeExpensesAPI.Controllers
         
         <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
         <p style='font-size: 12px; color: #999;'>
-            You & Me Expenses - Shared Finance Management
+            Paire - Shared Finance Management
         </p>
     </div>
 </body>

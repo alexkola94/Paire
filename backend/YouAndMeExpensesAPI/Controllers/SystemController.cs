@@ -34,7 +34,7 @@ namespace YouAndMeExpenses.Controllers
                 status = "healthy",
                 timestamp = DateTime.UtcNow,
                 version = "1.0.0",
-                service = "You & Me Expenses API"
+                service = "Paire API"
             });
         }
 
@@ -47,7 +47,7 @@ namespace YouAndMeExpenses.Controllers
         {
             return Ok(new
             {
-                name = "You & Me Expenses API",
+                name = "Paire API",
                 version = "1.0.0",
                 description = "API for managing couple expenses, income, and loans",
                 documentation = "/swagger",

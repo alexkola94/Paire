@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiX } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import LogoLoader from '../components/LogoLoader'
+import SuccessAnimation from '../components/SuccessAnimation'
+import LoadingProgress from '../components/LoadingProgress'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './Income.css'
 
 /**
@@ -21,26 +24,51 @@ function Income() {
   const [editingIncome, setEditingIncome] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, income: null })
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+  const [showLoadingProgress, setShowLoadingProgress] = useState(false)
+
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const PAGE_SIZE = 6
 
   /**
    * Load incomes on mount
    */
   useEffect(() => {
     loadIncomes()
-  }, [])
+  }, [page])
 
   /**
    * Fetch incomes from API
    */
-  const loadIncomes = async () => {
+  const loadIncomes = async (background = false) => {
     try {
-      setLoading(true)
-      const data = await transactionService.getAll({ type: 'income' })
-      setIncomes(data)
+      if (!background) {
+        setLoading(true)
+      }
+      const data = await transactionService.getAll({
+        type: 'income',
+        page: page,
+        pageSize: PAGE_SIZE
+      })
+
+      if (data.items) {
+        setIncomes(data.items)
+        setTotalPages(data.totalPages)
+        setTotalItems(data.totalCount)
+      } else {
+        setIncomes(data)
+        setTotalPages(1)
+        setTotalItems(data.length)
+      }
     } catch (error) {
       console.error('Error loading incomes:', error)
     } finally {
-      setLoading(false)
+      if (!background) {
+        setLoading(false)
+      }
     }
   }
 
@@ -50,11 +78,27 @@ function Income() {
   const handleCreate = async (incomeData) => {
     try {
       setFormLoading(true)
-      await transactionService.create(incomeData)
-      await loadIncomes()
+      // Close form immediately and show full screen loader
       setShowForm(false)
+      setShowLoadingProgress(true)
+
+      const createdIncome = await transactionService.create(incomeData)
+
+      // Phase 5: Success animation
+      setShowLoadingProgress(false)
+      setShowSuccessAnimation(true)
+
+      // showSuccess(t('income.createdSuccess'))
+      // announce(t('income.createdSuccess'))
+
+      // Refresh list in background - PREVENTS FLASH
+      await loadIncomes(true)
+
     } catch (error) {
       console.error('Error creating income:', error)
+      setShowLoadingProgress(false)
+      setShowForm(true) // Re-open form on error
+      // showError(t('income.createError'))
       throw error
     } finally {
       setFormLoading(false)
@@ -67,12 +111,33 @@ function Income() {
   const handleUpdate = async (incomeData) => {
     try {
       setFormLoading(true)
-      await transactionService.update(editingIncome.id, incomeData)
-      await loadIncomes()
-      setEditingIncome(null)
+      // Close form immediately and show full screen loader
       setShowForm(false)
+      setShowLoadingProgress(true)
+
+      // Save old data for undo
+      const oldIncomeData = { ...editingIncome }
+
+      await transactionService.update(editingIncome.id, incomeData)
+
+      // Phase 5: Success animation
+      setShowLoadingProgress(false)
+      setShowSuccessAnimation(true)
+
+      setEditingIncome(null)
+      // Form is already closed
+
+      // showSuccess(t('income.updatedSuccess'))
+      // announce(t('income.updatedSuccess'))
+
+      // Refresh list in background - PREVENTS FLASH
+      await loadIncomes(true)
+
     } catch (error) {
       console.error('Error updating income:', error)
+      setShowLoadingProgress(false)
+      setShowForm(true) // Re-open form on error
+      // showError(t('income.updateError'))
       throw error
     } finally {
       setFormLoading(false)
@@ -102,16 +167,28 @@ function Income() {
 
     try {
       setFormLoading(true)
+      // Note: For delete, we typically keep the confirmation modal open with spinner? 
+      // User asked for "Save" flow specifically. 
+      // I'll leave delete as-is (spinner in button) to avoid UX jarring on small actions, or should I apply it?
+      // "when we press save we should remove immediately the form" -> Implies Create/Update.
+
+      const incomeToDelete = { ...income }
+
       // Delete attachment if exists
       if (income.attachment_path) {
         await storageService.deleteFile(income.attachment_path)
       }
 
       await transactionService.delete(income.id)
-      await loadIncomes()
+
+      // Refresh list in background - PREVENTS FLASH
+      await loadIncomes(true)
+
       closeDeleteModal()
+
     } catch (error) {
       console.error('Error deleting income:', error)
+      // showError(t('income.deleteError'))
     } finally {
       setFormLoading(false)
     }
@@ -136,12 +213,7 @@ function Income() {
   /**
    * Format currency
    */
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount)
-  }
+  const formatCurrency = useCurrencyFormatter()
 
   if (loading) {
     return (
@@ -158,7 +230,7 @@ function Income() {
         <div>
           <h1>{t('income.title')}</h1>
           <p className="page-subtitle">
-            {t('income.totalCount', { count: incomes.length })}
+            {t('income.totalCount', { count: totalItems })}
           </p>
         </div>
         {!showForm && (
@@ -186,6 +258,20 @@ function Income() {
           loading={formLoading}
         />
       </Modal>
+
+      {/* Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        onComplete={() => setShowSuccessAnimation(false)}
+        message={t('income.savedSuccess')}
+      />
+
+      {/* Phase 5: Loading Progress */}
+      {showLoadingProgress && (
+        <LoadingProgress
+          message={formLoading ? t('common.saving') : t('common.loading')}
+        />
+      )}
 
       {/* Income List */}
       {incomes.length === 0 ? (
@@ -261,6 +347,33 @@ function Income() {
         </div>
       )}
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pagination-controls">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="btn btn-secondary pagination-btn"
+          >
+            <FiChevronLeft />
+            {t('common.previous')}
+          </button>
+
+          <span className="pagination-info">
+            {t('common.page')} {page} {t('common.of')} {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="btn btn-secondary pagination-btn"
+          >
+            {t('common.next')}
+            <FiChevronRight />
+          </button>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
@@ -277,4 +390,3 @@ function Income() {
 }
 
 export default Income
-

@@ -8,12 +8,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   pointer-events: none;
+  backdrop-filter: blur(2px);
+  transition: backdrop-filter var(--transition);
 }
 
 .success-animation-overlay.animating {
@@ -28,6 +30,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -37,6 +40,7 @@
   from {
     opacity: 1;
   }
+
   to {
     opacity: 0;
   }
@@ -58,11 +62,14 @@
 }
 
 .success-icon {
-  color: var(--success-dark);
+  color: var(--primary);
   z-index: 2;
   position: relative;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
   animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  filter: drop-shadow(0 4px 12px rgba(76, 175, 80, 0.4));
+  filter: drop-shadow(0 4px 12px rgba(108, 92, 231, 0.4));
 }
 
 @keyframes scaleIn {
@@ -70,9 +77,11 @@
     transform: scale(0);
     opacity: 0;
   }
+
   50% {
     transform: scale(1.2);
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -84,7 +93,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  border: 3px solid var(--success-dark);
+  border: 3px solid var(--primary);
   opacity: 0;
   animation: ripple 1.5s ease-out infinite;
 }
@@ -102,6 +111,7 @@
     transform: scale(0.8);
     opacity: 0.8;
   }
+
   100% {
     transform: scale(2.5);
     opacity: 0;
@@ -111,10 +121,9 @@
 .success-message {
   font-size: 1.25rem;
   font-weight: 600;
-  color: white;
+  color: var(--text-primary);
   margin: 0;
   animation: slideUp 0.5s ease-out 0.3s both;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes slideUp {
@@ -122,6 +131,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -138,4 +148,3 @@
     font-size: 1.125rem;
   }
 }
-

@@ -243,19 +243,23 @@ function Achievements() {
                 {/* Progress Bar */}
                 {!isUnlocked && progress > 0 && (
                   <div className="achievement-progress">
+                    <div className="progress-header">
+                      <span>{t('common.progress', 'Progress')}</span>
+                      <span>{Math.round(progress)}%</span>
+                    </div>
                     <div className="progress-bar">
                       <div
                         className="progress-fill"
                         style={{ width: `${progress}%` }}
                       ></div>
                     </div>
-                    <span className="progress-text">{Math.round(progress)}%</span>
                   </div>
                 )}
 
                 {isUnlocked && item.userAchievement && (
                   <div className="achievement-unlocked-date">
-                    {t('achievements.unlockedOn')} {new Date(item.userAchievement.unlockedAt).toLocaleDateString()}
+                    <FiCheckCircle size={14} />
+                    <span>{t('achievements.unlockedOn')} {new Date(item.userAchievement.unlockedAt).toLocaleDateString()}</span>
                   </div>
                 )}
               </div>

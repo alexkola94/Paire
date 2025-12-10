@@ -5,13 +5,15 @@ import {
   FiCalendar, FiCheckCircle, FiArrowUp, FiArrowDown
 } from 'react-icons/fi'
 import { savingsGoalService } from '../services/api'
-import { formatCurrency } from '../utils/formatCurrency'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import CurrencyInput from '../components/CurrencyInput'
 import DateInput from '../components/DateInput'
 import CategorySelector from '../components/CategorySelector'
 import FormSection from '../components/FormSection'
+import SuccessAnimation from '../components/SuccessAnimation'
+import LoadingProgress from '../components/LoadingProgress'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './SavingsGoals.css'
 
 /**
@@ -20,6 +22,7 @@ import './SavingsGoals.css'
  */
 function SavingsGoals() {
   const { t } = useTranslation()
+  const formatCurrency = useCurrencyFormatter()
   const [loading, setLoading] = useState(true)
   const [goals, setGoals] = useState([])
   const [summary, setSummary] = useState(null)
@@ -28,6 +31,8 @@ function SavingsGoals() {
   const [showDepositForm, setShowDepositForm] = useState(null)
   const [depositAmount, setDepositAmount] = useState('')
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, goalId: null })
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+  const [showLoadingProgress, setShowLoadingProgress] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     targetAmount: '',
@@ -69,9 +74,9 @@ function SavingsGoals() {
   /**
    * Fetch goals and summary data
    */
-  const loadData = async () => {
+  const loadData = async (background = false) => {
     try {
-      setLoading(true)
+      if (!background) setLoading(true)
       const [goalsData, summaryData] = await Promise.all([
         savingsGoalService.getAll(),
         savingsGoalService.getSummary()
@@ -81,7 +86,7 @@ function SavingsGoals() {
     } catch (error) {
       console.error('Error loading savings goals:', error)
     } finally {
-      setLoading(false)
+      if (!background) setLoading(false)
     }
   }
 
@@ -136,6 +141,10 @@ function SavingsGoals() {
     e.preventDefault()
 
     try {
+      // Close form immediately and show full screen loader
+      setShowForm(false)
+      setShowLoadingProgress(true)
+
       const goalData = {
         ...formData,
         targetAmount: parseFloat(formData.targetAmount),
@@ -149,10 +158,18 @@ function SavingsGoals() {
         await savingsGoalService.create(goalData)
       }
 
-      await loadData()
+      // Refresh list in background
+      await loadData(true)
+
+      // Show success animation
+      setShowLoadingProgress(false)
+      setShowSuccessAnimation(true)
+
       resetForm()
     } catch (error) {
       console.error('Error saving goal:', error)
+      setShowLoadingProgress(false)
+      setShowForm(true) // Re-open form on error
       alert(t('savingsGoals.errorSaving'))
     }
   }
@@ -345,11 +362,11 @@ function SavingsGoals() {
             return (
               <div
                 key={goal.id}
-                className={`goal-card ${goal.isAchieved ? 'achieved' : ''}`}
+                className={`goal - card ${goal.isAchieved ? 'achieved' : ''} `}
                 style={{ borderLeftColor: goal.color || priorityColor }}
               >
                 <div className="goal-header">
-                  <div className="goal-icon" style={{ backgroundColor: `${goal.color}20` }}>
+                  <div className="goal-icon" style={{ backgroundColor: `${goal.color} 20` }}>
                     {icon}
                   </div>
                   <div className="goal-info">
@@ -392,7 +409,7 @@ function SavingsGoals() {
                     <div
                       className="progress-fill"
                       style={{
-                        width: `${progress}%`,
+                        width: `${progress}% `,
                         backgroundColor: goal.color || priorityColor
                       }}
                     />
@@ -406,7 +423,7 @@ function SavingsGoals() {
                       <FiCalendar />
                       <span>
                         {daysRemaining !== null && daysRemaining >= 0
-                          ? `${daysRemaining} ${t('savingsGoals.daysLeft')}`
+                          ? `${daysRemaining} ${t('savingsGoals.daysLeft')} `
                           : t('savingsGoals.overdue')
                         }
                       </span>
@@ -514,7 +531,7 @@ function SavingsGoals() {
                 onChange={handleChange}
                 name="targetAmount"
                 id="targetAmount"
-                label={`${t('savingsGoals.targetAmount')} *`}
+                label={`${t('savingsGoals.targetAmount')} * `}
                 required
                 quickAmounts={[1000, 5000, 10000, 50000]}
               />
@@ -616,6 +633,16 @@ function SavingsGoals() {
           </div>
         </form>
       </Modal>
+
+      {/* Loading Progress Overlay */}
+      <LoadingProgress show={showLoadingProgress} />
+
+      {/* Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        onComplete={() => setShowSuccessAnimation(false)}
+        message={t('savingsGoals.savedSuccess')}
+      />
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal

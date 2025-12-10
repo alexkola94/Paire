@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { 
-  FiShoppingBag, FiTruck, FiHome, FiZap, 
+import {
+  FiShoppingBag, FiTruck, FiHome, FiZap,
   FiFilm, FiHeart, FiBook, FiDollarSign,
   FiBriefcase, FiTrendingUp, FiGift, FiMoreHorizontal,
   FiCreditCard, FiShield, FiWifi, FiPhone, FiActivity,
@@ -16,9 +16,9 @@ import './CategorySelector.css'
  * - Better mobile experience
  * - Maintains accessibility
  */
-function CategorySelector({ 
-  value = '', 
-  onChange, 
+function CategorySelector({
+  value = '',
+  onChange,
   name = 'category',
   categories = [],
   type = 'expense',
@@ -112,7 +112,7 @@ function CategorySelector({
    */
   const handleSelect = (categoryValue) => {
     if (disabled) return
-    
+
     if (onChange) {
       onChange({
         target: {
@@ -151,8 +151,8 @@ function CategorySelector({
   // Default categories if none provided
   const defaultExpenseCategories = ['food', 'transport', 'utilities', 'entertainment', 'healthcare', 'shopping', 'education', 'other']
   const defaultIncomeCategories = ['salary', 'freelance', 'investment', 'gift', 'other']
-  const finalCategories = categories && categories.length > 0 
-    ? categories 
+  const finalCategories = categories && categories.length > 0
+    ? categories
     : (type === 'expense' ? defaultExpenseCategories : defaultIncomeCategories)
 
   return (
@@ -162,29 +162,29 @@ function CategorySelector({
           {label}
         </label>
       )}
-      
-      <div 
-        className="category-grid" 
-        role="radiogroup" 
+
+      <div
+        className="category-grid"
+        role="radiogroup"
         aria-label={label || t('transaction.category')}
         aria-required={required}
       >
         {finalCategories.map(category => {
           const isSelected = value === category
           const categoryColor = getColor(category)
-          
+
           // Helper function to get category translation
           const getCategoryTranslation = (cat) => {
             const mainCategoryKey = `categories.${cat}`
             const billCategoryKey = `recurringBills.categories.${cat}`
             const shoppingListCategoryKey = `shoppingLists.categories.${cat}`
             const savingsGoalCategoryKey = `savingsGoals.categories.${cat}`
-            
+
             const mainTranslation = t(mainCategoryKey, null)
             const billTranslation = t(billCategoryKey, null)
             const shoppingListTranslation = t(shoppingListCategoryKey, null)
             const savingsGoalTranslation = t(savingsGoalCategoryKey, null)
-            
+
             // If translation key exists (not the same as the key), use it
             // Check in order: main categories, recurringBills, shoppingLists, savingsGoals
             if (mainTranslation !== mainCategoryKey) {
@@ -202,9 +202,9 @@ function CategorySelector({
             // Fallback to category name with first letter capitalized
             return cat.charAt(0).toUpperCase() + cat.slice(1)
           }
-          
+
           const categoryLabel = getCategoryTranslation(category)
-          
+
           return (
             <button
               key={category}
@@ -246,10 +246,10 @@ function CategorySelector({
         type="text"
         name={name}
         value={value}
-        onChange={() => {}} // Controlled by button clicks
+        onChange={() => { }} // Controlled by button clicks
         required={required}
         disabled={disabled}
-        style={{ display: 'none' }}
+        style={{ opacity: 0, height: 0, width: 0, position: 'absolute', pointerEvents: 'none' }}
         tabIndex={-1}
       />
     </div>

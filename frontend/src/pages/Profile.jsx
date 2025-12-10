@@ -667,7 +667,7 @@ function Profile() {
 
       {/* Clear Data Confirmation Modal */}
       {showClearDataModal && (
-        <div className="modal-overlay" onClick={() => !clearingData && setShowClearDataModal(false)}>
+        <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>

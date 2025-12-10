@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiX } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
@@ -15,6 +15,7 @@ import useUndo from '../hooks/useUndo'
 import ToastContainer from '../components/ToastContainer'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './Expenses.css'
 
 /**
@@ -30,6 +31,12 @@ function Expenses() {
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, expense: null })
 
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const PAGE_SIZE = 6
+
   // Phase 4: Mobile & Accessibility hooks
   const { announce } = useScreenReader()
   const { toasts, showSuccess, showError, removeToast } = useToast()
@@ -44,20 +51,38 @@ function Expenses() {
    */
   useEffect(() => {
     loadExpenses()
-  }, [])
+  }, [page])
 
   /**
    * Fetch expenses from API
    */
-  const loadExpenses = async () => {
+  const loadExpenses = async (background = false) => {
     try {
-      setLoading(true)
-      const data = await transactionService.getAll({ type: 'expense' })
-      setExpenses(data)
+      if (!background) {
+        setLoading(true)
+      }
+      const data = await transactionService.getAll({
+        type: 'expense',
+        page: page,
+        pageSize: PAGE_SIZE
+      })
+
+      if (data.items) {
+        setExpenses(data.items)
+        setTotalPages(data.totalPages)
+        setTotalItems(data.totalCount)
+      } else {
+        // Fallback for non-paged response
+        setExpenses(data)
+        setTotalPages(1)
+        setTotalItems(data.length)
+      }
     } catch (error) {
       console.error('Error loading expenses:', error)
     } finally {
-      setLoading(false)
+      if (!background) {
+        setLoading(false)
+      }
     }
   }
 
@@ -67,28 +92,32 @@ function Expenses() {
   const handleCreate = async (expenseData) => {
     try {
       setFormLoading(true)
+      // Close form immediately and show full screen loader
+      setShowForm(false)
       setShowLoadingProgress(true)
 
       const createdExpense = await transactionService.create(expenseData)
 
       // Phase 5: Success animation
       setShowLoadingProgress(false)
-      setShowForm(false)
       setShowSuccessAnimation(true)
 
       showSuccess(t('expenses.createdSuccess'))
       announce(t('expenses.createdSuccess'))
 
+      // Refresh list in background
+      await loadExpenses(true)
+
       // Phase 5: Undo functionality
       performUndoableAction(
         async () => {
-          await loadExpenses()
+          await loadExpenses(true)
         },
         async () => {
           // Undo: delete the created expense
           try {
             await transactionService.delete(createdExpense.id)
-            await loadExpenses()
+            await loadExpenses(true)
             showSuccess(t('expenses.undoSuccess'))
             announce(t('expenses.undoSuccess'))
           } catch (error) {
@@ -101,6 +130,7 @@ function Expenses() {
     } catch (error) {
       console.error('Error creating expense:', error)
       setShowLoadingProgress(false)
+      setShowForm(true) // Re-open form on error
       showError(t('expenses.createError'))
       announce(t('expenses.createError'), 'assertive')
       throw error
@@ -115,6 +145,8 @@ function Expenses() {
   const handleUpdate = async (expenseData) => {
     try {
       setFormLoading(true)
+      // Close form immediately and show full screen loader
+      setShowForm(false)
       setShowLoadingProgress(true)
 
       // Save old data for undo
@@ -124,23 +156,27 @@ function Expenses() {
 
       // Phase 5: Success animation
       setShowLoadingProgress(false)
-      setEditingExpense(null)
-      setShowForm(false)
       setShowSuccessAnimation(true)
+
+      setEditingExpense(null)
+      // Form is already closed
 
       showSuccess(t('expenses.updatedSuccess'))
       announce(t('expenses.updatedSuccess'))
 
+      // Refresh list in background
+      await loadExpenses(true)
+
       // Phase 5: Undo functionality
       performUndoableAction(
         async () => {
-          await loadExpenses()
+          await loadExpenses(true)
         },
         async () => {
           // Undo: restore old data
           try {
             await transactionService.update(editingExpense.id, oldExpenseData)
-            await loadExpenses()
+            await loadExpenses(true)
             showSuccess(t('expenses.undoSuccess'))
             announce(t('expenses.undoSuccess'))
           } catch (error) {
@@ -153,6 +189,7 @@ function Expenses() {
     } catch (error) {
       console.error('Error updating expense:', error)
       setShowLoadingProgress(false)
+      setShowForm(true) // Re-open form on error
       showError(t('expenses.updateError'))
       announce(t('expenses.updateError'), 'assertive')
       throw error
@@ -184,7 +221,7 @@ function Expenses() {
 
     try {
       setFormLoading(true)
-      setShowLoadingProgress(true)
+      // Removed intrusive full-screen loader to keep modal visible
 
       // Save expense data for undo
       const expenseToDelete = { ...expense }
@@ -196,8 +233,8 @@ function Expenses() {
 
       await transactionService.delete(expense.id)
 
-      setShowLoadingProgress(false)
-      await loadExpenses()
+      // Refresh list in background - PREVENTS FLASH
+      await loadExpenses(true)
       closeDeleteModal()
 
       // Phase 5: Undo functionality
@@ -207,7 +244,7 @@ function Expenses() {
           // Undo: restore deleted expense
           try {
             await transactionService.create(expenseToDelete)
-            await loadExpenses()
+            await loadExpenses(true)
             showSuccess(t('expenses.undoSuccess'))
             announce(t('expenses.undoSuccess'))
           } catch (error) {
@@ -219,7 +256,6 @@ function Expenses() {
       )
     } catch (error) {
       console.error('Error deleting expense:', error)
-      setShowLoadingProgress(false)
       showError(t('expenses.deleteError'))
     } finally {
       setFormLoading(false)
@@ -263,12 +299,10 @@ function Expenses() {
   /**
    * Format currency
    */
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount)
-  }
+  /**
+   * Format currency
+   */
+  const formatCurrency = useCurrencyFormatter()
 
   if (loading) {
     return (
@@ -285,7 +319,7 @@ function Expenses() {
         <div>
           <h1>{t('expenses.title')}</h1>
           <p className="page-subtitle">
-            {t('expenses.totalCount', { count: expenses.length })}
+            {t('expenses.totalCount', { count: totalItems })}
           </p>
         </div>
         {!showForm && (
@@ -416,6 +450,33 @@ function Expenses() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pagination-controls">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="btn btn-secondary pagination-btn"
+          >
+            <FiChevronLeft />
+            {t('common.previous')}
+          </button>
+
+          <span className="pagination-info">
+            {t('common.page')} {page} {t('common.of')} {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="btn btn-secondary pagination-btn"
+          >
+            {t('common.next')}
+            <FiChevronRight />
+          </button>
         </div>
       )}
 

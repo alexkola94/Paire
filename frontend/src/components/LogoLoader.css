@@ -94,36 +94,59 @@
   left: 50%;
   transform: translate(-50%, -50%) translateZ(0);
   border: 3px solid transparent;
-  border-top-color: var(--primary, #6c5ce7);
-  border-right-color: var(--primary, #6c5ce7);
   border-radius: 50%;
-  /* Smooth rotation with pulse */
-  animation: ringRotate 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite,
-             ringPulse 2s ease-in-out infinite;
+  /* Smooth rotation with closing circle animation */
+  animation: ringRotateAndClose 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   /* Performance optimization */
-  will-change: transform, opacity;
+  will-change: transform, border-color;
   z-index: 1;
+  /* Smooth transitions */
+  transition: border-color 0.3s ease;
+  /* Ensure complete circle rendering */
+  box-sizing: border-box;
 }
 
-/* Ring rotation animation */
-@keyframes ringRotate {
+/* Combined ring rotation and closing circle animation */
+@keyframes ringRotateAndClose {
   0% {
     transform: translate(-50%, -50%) rotate(0deg) translateZ(0);
+    border-top-color: var(--primary, #6c5ce7);
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+    opacity: 0.6;
+  }
+  25% {
+    transform: translate(-50%, -50%) rotate(90deg) translateZ(0);
+    border-top-color: var(--primary, #6c5ce7);
+    border-right-color: var(--primary, #6c5ce7);
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) translateZ(0);
+    border-top-color: var(--primary, #6c5ce7);
+    border-right-color: var(--primary, #6c5ce7);
+    border-bottom-color: var(--primary, #6c5ce7);
+    border-left-color: transparent;
+    opacity: 1;
+  }
+  75% {
+    transform: translate(-50%, -50%) rotate(270deg) translateZ(0);
+    border-top-color: var(--primary, #6c5ce7);
+    border-right-color: var(--primary, #6c5ce7);
+    border-bottom-color: var(--primary, #6c5ce7);
+    border-left-color: var(--primary, #6c5ce7);
+    opacity: 1;
   }
   100% {
     transform: translate(-50%, -50%) rotate(360deg) translateZ(0);
-  }
-}
-
-/* Ring pulse animation for breathing effect */
-@keyframes ringPulse {
-  0%, 100% {
-    opacity: 0.6;
-    transform: translate(-50%, -50%) scale(1) translateZ(0);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.1) translateZ(0);
+    border-top-color: var(--primary, #6c5ce7);
+    border-right-color: var(--primary, #6c5ce7);
+    border-bottom-color: var(--primary, #6c5ce7);
+    border-left-color: var(--primary, #6c5ce7);
+    opacity: 0.9;
   }
 }
 

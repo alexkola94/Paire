@@ -61,10 +61,8 @@ function Layout() {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const moreMenuRef = useRef(null)
 
-  // Memoize navigation items to prevent recreation on every render
   // Primary navigation items (always visible on desktop)
-  // Include i18n.language in dependencies to update immediately when language changes
-  const mainNavItems = useMemo(() => [
+  const mainNavItems = [
     { path: '/dashboard', icon: FiHome, label: t('navigation.dashboard') },
     { path: '/expenses', icon: FiTrendingDown, label: t('navigation.expenses') },
     { path: '/income', icon: FiTrendingUp, label: t('navigation.income') },
@@ -72,19 +70,18 @@ function Layout() {
     { path: '/recurring-bills', icon: FiBell, label: t('navigation.recurringBills') },
     { path: '/shopping-lists', icon: FiShoppingCart, label: t('navigation.shoppingLists') },
     { path: '/loans', icon: EuroIcon, label: t('navigation.loans') },
-  ], [t, i18n.language])
+  ]
 
   // Secondary navigation items (inside "More" dropdown on desktop)
-  // Include i18n.language in dependencies to update immediately when language changes
-  const moreNavItems = useMemo(() => [
+  const moreNavItems = [
     { path: '/analytics', icon: FiBarChart2, label: t('navigation.analytics') },
     { path: '/partnership', icon: FiUsers, label: t('navigation.partnership') },
     { path: '/savings-goals', icon: FiPieChart, label: t('navigation.savingsGoals') },
     { path: '/achievements', icon: FiAward, label: t('navigation.achievements') },
-  ], [t, i18n.language])
+  ]
 
-  // All navigation items (for mobile menu) - memoized
-  const allNavItems = useMemo(() => [...mainNavItems, ...moreNavItems], [mainNavItems, moreNavItems])
+  // All navigation items (for mobile menu)
+  const allNavItems = [...mainNavItems, ...moreNavItems]
 
   // Memoize handlers with useCallback to prevent unnecessary re-renders
   const handleLogout = useCallback(async () => {
@@ -379,5 +376,5 @@ function Layout() {
   )
 }
 
-export default memo(Layout)
+export default Layout
 

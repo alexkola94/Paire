@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiAlertTriangle, FiX } from 'react-icons/fi'
 import './ConfirmationModal.css'
@@ -5,16 +7,10 @@ import './ConfirmationModal.css'
 /**
  * Confirmation Modal Component
  * Reusable modal for delete confirmations and other critical actions
+ * Rendered via Portal to ensure correct z-index stacking
  * 
  * @param {boolean} isOpen - Whether the modal is visible
- * @param {function} onClose - Function to call when modal is closed
- * @param {function} onConfirm - Function to call when user confirms
- * @param {string} title - Modal title
- * @param {string} message - Confirmation message
- * @param {string} confirmText - Text for confirm button (default: "Delete")
- * @param {string} cancelText - Text for cancel button (default: "Cancel")
- * @param {string} variant - Modal variant: "danger" (default) or "warning"
- * @param {boolean} loading - Whether the action is in progress
+ * ...
  */
 function ConfirmationModal({
   isOpen,
@@ -29,24 +25,36 @@ function ConfirmationModal({
 }) {
   const { t } = useTranslation()
 
+  // Handle Escape key and body scroll lock
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen && !loading) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'hidden' // Prevent background scrolling
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [isOpen, onClose, loading])
+
   if (!isOpen) return null
 
   // Default texts
-  const defaultTitle = variant === 'danger' 
-    ? t('confirmationModal.deleteTitle') 
+  const defaultTitle = variant === 'danger'
+    ? t('confirmationModal.deleteTitle')
     : t('confirmationModal.warningTitle')
   const defaultMessage = t('confirmationModal.defaultMessage')
   const defaultConfirmText = variant === 'danger'
     ? t('confirmationModal.delete')
     : t('confirmationModal.confirm')
   const defaultCancelText = t('common.cancel')
-
-  // Handle backdrop click
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget && !loading) {
-      onClose()
-    }
-  }
 
   // Handle confirm action
   const handleConfirm = () => {
@@ -55,12 +63,14 @@ function ConfirmationModal({
     }
   }
 
-  return (
-    <div 
+  return createPortal(
+    <div
       className={`confirmation-modal-overlay ${variant}`}
-      onClick={handleBackdropClick}
+      onClick={(e) => {
+        if (!loading) onClose()
+      }}
     >
-      <div 
+      <div
         className="confirmation-modal-content"
         onClick={(e) => e.stopPropagation()}
       >
@@ -113,7 +123,8 @@ function ConfirmationModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

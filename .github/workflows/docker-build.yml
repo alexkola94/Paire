@@ -1,0 +1,55 @@
+name: Docker Build & Test
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**/Dockerfile'
+      - 'backend/**/*.csproj'
+      - '.github/workflows/docker-build.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**/Dockerfile'
+      - 'backend/**/*.csproj'
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same workflow and branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend/YouAndMeExpensesAPI
+          file: ./backend/YouAndMeExpensesAPI/Dockerfile
+          push: false
+          tags: youandmeexpenses-api:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+      
+      - name: Test Docker image
+        run: |
+          docker run --rm -d --name test-container -p 8080:80 youandmeexpenses-api:test
+          sleep 10
+          # Check if container is running
+          docker ps | grep test-container
+          # Cleanup
+          docker stop test-container || true
+        continue-on-error: true
+

@@ -5,6 +5,9 @@ import { budgetService, transactionService } from '../services/api'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import LogoLoader from '../components/LogoLoader'
+import SuccessAnimation from '../components/SuccessAnimation'
+import LoadingProgress from '../components/LoadingProgress'
+import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './Budgets.css'
 
 /**
@@ -19,6 +22,8 @@ function Budgets() {
   const [showForm, setShowForm] = useState(false)
   const [editingBudget, setEditingBudget] = useState(null)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, budgetId: null })
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+  const [showLoadingProgress, setShowLoadingProgress] = useState(false)
   const [formData, setFormData] = useState({
     category: '',
     amount: '',
@@ -40,9 +45,12 @@ function Budgets() {
   /**
    * Fetch budgets and expenses
    */
-  const loadData = async () => {
+  /**
+   * Fetch budgets and expenses
+   */
+  const loadData = async (background = false) => {
     try {
-      setLoading(true)
+      if (!background) setLoading(true)
 
       // Get current month date range
       const now = new Date()
@@ -64,7 +72,7 @@ function Budgets() {
     } catch (error) {
       console.error('Error loading budgets:', error)
     } finally {
-      setLoading(false)
+      if (!background) setLoading(false)
     }
   }
 
@@ -99,10 +107,17 @@ function Budgets() {
   /**
    * Handle form submission
    */
+  /**
+   * Handle form submission
+   */
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     try {
+      // Close form immediately and show loader
+      setShowForm(false)
+      setShowLoadingProgress(true)
+
       const budgetData = {
         ...formData,
         amount: parseFloat(formData.amount)
@@ -114,10 +129,18 @@ function Budgets() {
         await budgetService.create(budgetData)
       }
 
-      await loadData()
+      // Background refresh
+      await loadData(true)
+
+      // Success
+      setShowLoadingProgress(false)
+      setShowSuccessAnimation(true)
+
       handleCancel()
     } catch (error) {
       console.error('Error saving budget:', error)
+      setShowLoadingProgress(false)
+      setShowForm(true)
       alert(t('budgets.saveError'))
     }
   }
@@ -182,12 +205,10 @@ function Budgets() {
   /**
    * Format currency for display
    */
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount)
-  }
+  /**
+   * Format currency for display
+   */
+  const formatCurrency = useCurrencyFormatter()
 
   if (loading) {
     return (
@@ -294,6 +315,16 @@ function Budgets() {
           </div>
         </form>
       </Modal>
+
+      {/* Loading Progress Overlay */}
+      <LoadingProgress show={showLoadingProgress} />
+
+      {/* Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        onComplete={() => setShowSuccessAnimation(false)}
+        message={t('budgets.savedSuccess')}
+      />
 
       {/* Budgets List */}
       {budgets.length === 0 ? (

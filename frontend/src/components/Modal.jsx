@@ -37,7 +37,7 @@ const Modal = ({
     if (!isOpen) return null;
 
     return ReactDOM.createPortal(
-        <div className="portal-modal-overlay" onClick={onClose}>
+        <div className="portal-modal-overlay">
             <div
                 className={`portal-modal-content ${className}`}
                 onClick={e => e.stopPropagation()}

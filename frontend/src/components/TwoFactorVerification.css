@@ -352,12 +352,17 @@
   height: 20px;
   border: 2px solid var(--primary-light);
   border-top-color: var(--primary);
+  border-right-color: var(--primary);
+  border-bottom-color: var(--primary);
+  border-left-color: var(--primary);
   border-radius: 50%;
   animation: spinSmoothVerifying 1s cubic-bezier(0.4, 0, 0.2, 1) infinite, pulse 2s ease-in-out infinite;
   /* Mobile performance optimization */
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   will-change: transform;
+  /* Smooth transitions */
+  transition: border-color 0.3s ease;
 }
 
 @keyframes spinSmoothVerifying {
@@ -390,13 +395,16 @@
   height: 20px;
   border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
+  border-right-color: white;
+  border-bottom-color: white;
+  border-left-color: white;
   border-radius: 50%;
   animation: spinSmooth 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   /* Performance optimization */
   will-change: transform;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, border-color 0.3s ease;
 }
 
 @keyframes spinSmooth {

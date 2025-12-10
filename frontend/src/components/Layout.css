@@ -50,7 +50,8 @@
 
 .header-left {
   flex: 1;
-  min-width: 0; /* Allow text truncation */
+  min-width: 0;
+  /* Allow text truncation */
 }
 
 /* Paire brand header styling */
@@ -78,7 +79,8 @@
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0;
-  color: white !important; /* Ensure header brand stays white */
+  color: white !important;
+  /* Ensure header brand stays white */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -88,8 +90,10 @@
   font-size: 0.75rem;
   margin: 4px 0 0 0;
   opacity: 0.9;
-  color: white !important; /* Ensure header tagline stays white */
-  display: none; /* Hidden on mobile */
+  color: white !important;
+  /* Ensure header tagline stays white */
+  display: none;
+  /* Hidden on mobile */
 }
 
 /* Header Actions Container */
@@ -107,7 +111,8 @@
   height: 40px;
   border-radius: var(--radius-md);
   cursor: pointer;
-  display: none; /* Hidden on mobile, shown on desktop */
+  display: none;
+  /* Hidden on mobile, shown on desktop */
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
@@ -126,9 +131,12 @@
 
 /* Pulsing animation for live indicator effect - heartbeat style */
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
   }
+
   50% {
     box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
   }
@@ -149,7 +157,8 @@
 /* User Menu - Desktop */
 .user-menu {
   position: relative;
-  display: none; /* Hidden on mobile, shown on desktop */
+  display: none;
+  /* Hidden on mobile, shown on desktop */
 }
 
 .user-menu-btn {
@@ -189,6 +198,7 @@
     opacity: 0;
     transform: translateX(-50%) translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -428,7 +438,8 @@
 
 .more-menu-container {
   position: relative;
-  overflow: visible; /* Allow dropdown to escape container */
+  overflow: visible;
+  /* Allow dropdown to escape container */
   /* Ensure container has stable dimensions for dropdown positioning */
   display: flex;
   align-items: center;
@@ -459,9 +470,11 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   min-width: 220px;
-  width: max-content; /* Ensure width is calculated before transform */
+  width: max-content;
+  /* Ensure width is calculated before transform */
   overflow: hidden;
-  z-index: 1001; /* Higher z-index to ensure it's above navigation */
+  z-index: 1001;
+  /* Higher z-index to ensure it's above navigation */
   animation: slideDown 0.2s ease;
   /* Ensure dropdown is not clipped by parent overflow */
   white-space: nowrap;
@@ -537,8 +550,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ================================
@@ -558,6 +576,7 @@
    Tablet: 768px+ (Icon-only nav with tooltips)
    ================================ */
 @media (min-width: 768px) {
+
   /* Show desktop elements, hide mobile */
   .mobile-only {
     display: none !important;
@@ -598,7 +617,8 @@
     border-bottom: 2px solid var(--bg-tertiary);
     box-shadow: var(--shadow-sm);
     z-index: 99;
-    overflow: visible; /* Allow dropdown to be visible */
+    overflow: visible;
+    /* Allow dropdown to be visible */
   }
 
   .nav-list {
@@ -609,7 +629,8 @@
     gap: var(--spacing-xs);
     justify-content: center;
     overflow-x: visible;
-    overflow-y: visible; /* Allow dropdown to be visible on tablet/desktop */
+    overflow-y: visible;
+    /* Allow dropdown to be visible on tablet/desktop */
   }
 
   /* Ensure more menu container allows dropdown to escape */
@@ -685,6 +706,7 @@
       opacity: 0;
       transform: translateY(-10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -701,6 +723,7 @@
    Desktop: 1024px+ (Icon + text nav)
    ================================ */
 @media (min-width: 1024px) {
+
   /* Header adjustments */
   .app-title {
     font-size: 1.75rem;
@@ -745,11 +768,12 @@
     display: block;
   }
 
-  /* More dropdown centered on desktop */
+  /* More dropdown centered on desktop - CHANGED to right-aligned to prevent overflow */
   .more-dropdown {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
+    left: auto;
+    right: 0;
+    transform: none;
+    animation: slideDownRight 0.2s ease;
   }
 
   /* Ensure more menu container allows dropdown to escape on desktop */
@@ -775,4 +799,3 @@
     padding: 12px 24px;
   }
 }
-
