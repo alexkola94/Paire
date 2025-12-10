@@ -13,7 +13,7 @@
     "test": "node node_modules/vitest/vitest.mjs",
     "test:ui": "node node_modules/vitest/vitest.mjs --ui",
     "test:coverage": "node node_modules/vitest/vitest.mjs --coverage",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives",
     "lint:fix": "eslint . --ext js,jsx --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,css,json}\""

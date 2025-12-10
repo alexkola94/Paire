@@ -23,14 +23,14 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
+window.IntersectionObserver = class IntersectionObserver {
+  constructor() { }
+  disconnect() { }
+  observe() { }
   takeRecords() {
     return []
   }
-  unobserve() {}
+  unobserve() { }
 }
 
 // Mock localStorage
@@ -40,5 +40,5 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 }
-global.localStorage = localStorageMock
+Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 

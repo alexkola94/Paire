@@ -32,9 +32,9 @@ class ErrorBoundary extends Component {
         <div className="error-boundary">
           <div className="error-content">
             <h1>😕 Oops! Something went wrong</h1>
-            <p>We're sorry for the inconvenience. Please try refreshing the page.</p>
-            
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            <p>We&apos;re sorry for the inconvenience. Please try refreshing the page.</p>
+
+            {import.meta.env.MODE === 'development' && this.state.error && (
               <details className="error-details">
                 <summary>Error Details (Development Only)</summary>
                 <pre>{this.state.error.toString()}</pre>
@@ -42,8 +42,8 @@ class ErrorBoundary extends Component {
               </details>
             )}
 
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="btn btn-primary"
             >
               Refresh Page
