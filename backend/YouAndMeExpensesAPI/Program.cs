@@ -8,7 +8,27 @@ using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+// Create builder with specific configuration to avoid inotify limits in production
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = Directory.GetCurrentDirectory()
+});
+
+// Clear default configuration sources and add them back with reloadOnChange: false
+// This prevents "System.IO.IOException: The configured user limit (1024) on the number of inotify instances has been reached"
+// which happens in Docker/Render.com environments
+builder.Configuration.Sources.Clear();
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false)
+    .AddEnvironmentVariables();
+
+// Restore User Secrets in development (standard behavior)
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
 
 // =====================================================
 // Configure Services
