@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom'
 import {
   FiTrendingUp,
   FiTrendingDown,
-  FiArrowRight
+  FiArrowRight,
+  FiFileText
 } from 'react-icons/fi'
 import { transactionService } from '../services/api'
 import { format } from 'date-fns'
@@ -145,6 +146,81 @@ function Dashboard() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Quick Access Buttons */}
+      <div className="quick-access-section" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <Link
+          to="/currency-calculator"
+          className="quick-access-btn"
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            background: 'white',
+            padding: '1.25rem',
+            borderRadius: '16px',
+            textDecoration: 'none',
+            color: '#334155',
+            fontWeight: '600',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e2e8f0',
+            transition: 'all 0.2s'
+          }}
+        >
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            background: '#eff6ff',
+            color: '#6366f1',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.25rem',
+            fontWeight: 'bold'
+          }}>
+            €
+          </div>
+          <span>{t('navigation.currencyCalculator')}</span>
+        </Link>
+
+        <Link
+          to="/economic-news"
+          className="quick-access-btn"
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            background: 'white',
+            padding: '1.25rem',
+            borderRadius: '16px',
+            textDecoration: 'none',
+            color: '#334155',
+            fontWeight: '600',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e2e8f0',
+            transition: 'all 0.2s'
+          }}
+        >
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            background: '#eff6ff',
+            color: '#6366f1',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <FiFileText size={20} />
+          </div>
+          <span>{t('navigation.economicNews')}</span>
+        </Link>
       </div>
 
       {/* Recent Transactions */}

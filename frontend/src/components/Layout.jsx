@@ -19,8 +19,12 @@ import {
   FiMoreHorizontal,
   FiChevronDown,
   FiActivity,
-  FiAward
+  FiAward,
+  FiRefreshCw, // Keeping if used elsewhere, but mainly replacing usage
+  FiFileText,
+  FiDollarSign
 } from 'react-icons/fi'
+
 
 // Euro icon component to replace dollar sign - memoized to prevent re-renders
 const EuroIcon = memo(({ size = 24, className = '', style = {} }) => {
@@ -79,6 +83,7 @@ function Layout() {
     { path: '/savings-goals', icon: FiPieChart, label: t('navigation.savingsGoals') },
     { path: '/achievements', icon: FiAward, label: t('navigation.achievements') },
   ]
+
 
   // All navigation items (for mobile menu)
   const allNavItems = [...mainNavItems, ...moreNavItems]
@@ -177,7 +182,19 @@ function Layout() {
               role="button"
               tabIndex={0}
             >
-              <FiActivity size={22} />
+              <FiFileText size={22} />
+            </span>
+
+            {/* Currency Calculator - desktop only */}
+            <span
+              className="header-icon-btn desktop-only"
+              onClick={() => handleNavigation('/currency-calculator')}
+              aria-label={t('navigation.currencyCalculator')}
+              title={t('navigation.currencyCalculator')}
+              role="button"
+              tabIndex={0}
+            >
+              <EuroIcon size={22} />
             </span>
 
             {/* Notifications bell - desktop only */}
@@ -321,6 +338,18 @@ function Layout() {
           </li>
 
           {/* Mobile-only account items */}
+          <li className="mobile-only">
+            <NavLink
+              to="/currency-calculator"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? 'active' : ''}`
+              }
+              onClick={closeMobileMenu}
+            >
+              <EuroIcon style={{ width: '20px', height: '20px' }} className="nav-icon" />
+              <span className="nav-label">{t('navigation.currencyCalculator')}</span>
+            </NavLink>
+          </li>
           <li className="mobile-only">
             <NavLink
               to="/reminders"

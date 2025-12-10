@@ -49,7 +49,8 @@
     "profile": "Profile",
     "achievements": "Achievements",
     "more": "More",
-    "account": "Account"
+    "account": "Account",
+    "currencyCalculator": "Currency Calculator"
   },
   "dashboard": {
     "title": "Financial Overview",
@@ -910,5 +911,19 @@
       "epic": "Epic",
       "legendary": "Legendary"
     }
+  },
+  "currencyCalculator": {
+    "title": "Currency Converter",
+    "subtitle": "Real-time exchange rates for major currencies",
+    "amount": "Amount",
+    "from": "From",
+    "to": "To",
+    "convert": "Convert Now",
+    "converting": "Converting...",
+    "rateInfo": "1 {{from}} = {{rate}} {{to}} • Updated just now",
+    "popularRates": "Current Rates for 1 {{currency}}",
+    "error": "Conversion failed. Please check your connection.",
+    "loadError": "Failed to load currencies. Please try again later.",
+    "swap": "Swap currencies"
   }
 }

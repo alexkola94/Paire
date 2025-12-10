@@ -15,6 +15,7 @@ namespace YouAndMeExpensesAPI.Services
     {
         private readonly AppDbContext _dbContext;
         private readonly IAnalyticsService _analyticsService;
+        private readonly ICurrencyService _currencyService;
         private readonly ILogger<ChatbotService> _logger;
 
         // Pattern definitions for query recognition (enhanced with more patterns)
@@ -212,6 +213,14 @@ namespace YouAndMeExpensesAPI.Services
             ["help"] = new() { 
                 "help", "what.*can.*do", "commands", "capabilities",
                 "how.*use", "what.*questions", "guide"
+            },
+            
+            // Currency Conversion
+            ["currency_conversion"] = new() { 
+                "convert", "exchange.*rate", "how.*much.*in", "currency", 
+                "(\\d+).*([a-zA-Z]{3}).*to.*([a-zA-Z]{3})",
+                "([a-zA-Z]{3}).*in.*([a-zA-Z]{3})",
+                "price.*of.*([a-zA-Z]{3})"
             }
         };
 
@@ -341,6 +350,14 @@ namespace YouAndMeExpensesAPI.Services
             ["help"] = new() { 
                 "βοήθεια", "τι.*μπορώ.*να.*κάνω", "εντολές", "δυνατότητες",
                 "πώς.*χρησιμοποιώ", "τι.*ερωτήσεις", "οδηγός"
+            },
+            
+            // Currency Conversion (Greek)
+            ["currency_conversion"] = new() { 
+                "μετατροπή", "ισοτιμία", "πόσο.*κάνει", "συνάλλαγμα", 
+                "(\\d+).*([a-zA-Z]{3}).*σε.*([a-zA-Z]{3})",
+                "([a-zA-Z]{3}).*σε.*([a-zA-Z]{3})",
+                "τιμή.*([a-zA-Z]{3})"
             }
         };
 
@@ -355,10 +372,12 @@ namespace YouAndMeExpensesAPI.Services
         public ChatbotService(
             AppDbContext dbContext,
             IAnalyticsService analyticsService,
+            ICurrencyService currencyService,
             ILogger<ChatbotService> logger)
         {
             _dbContext = dbContext;
             _analyticsService = analyticsService;
+            _currencyService = currencyService;
             _logger = logger;
         }
 
@@ -438,6 +457,7 @@ namespace YouAndMeExpensesAPI.Services
                     "financial_health_score" => await GetFinancialHealthScoreAsync(userId, language),
                     "subscription_analysis" => await GetSubscriptionAnalysisAsync(userId, language),
                     "bill_negotiation" => GetBillNegotiationTipsAsync(language),
+                    "currency_conversion" => await GetCurrencyConversionAsync(normalizedQuery, language),
                     // TODO: Implement these methods when needed
                     // "investment_advice" => GetInvestmentBasicsAsync(),
                     // "seasonal_spending" => await GetSeasonalSpendingAsync(userId),
@@ -5560,6 +5580,145 @@ I use natural language and advanced calculations to help you make smart financia
                 QuickActions = quickActions,
                 ActionLink = "/analytics"
             };
+        }
+        /// <summary>
+        /// Process currency conversion query
+        /// </summary>
+        private async Task<ChatbotResponse> GetCurrencyConversionAsync(string query, string language = "en")
+        {
+            try
+            {
+                // Pattern matching to extract amount and currencies
+                // English: "convert 100 USD to EUR", "100 USD to EUR", "USD to EUR", "price of BTC"
+                // Greek: "μετατροπή 100 USD σε EUR", "100 USD σε EUR", "USD σε EUR"
+                
+                string? fromCurrency = null;
+                string? toCurrency = null;
+                decimal amount = 1; // Default
+                bool amountFound = false;
+
+                // Regex for amount
+                // 1. Look for amount specified in query
+                var amountMatch = Regex.Match(query, @"(\d+(\.\d+)?)");
+                if (amountMatch.Success)
+                {
+                    if (decimal.TryParse(amountMatch.Value, out var parsedAmount))
+                    {
+                        amount = parsedAmount;
+                        amountFound = true;
+                    }
+                }
+
+                // Regex for currencies (3 letter codes)
+                var currencyMatches = Regex.Matches(query.ToUpperInvariant(), @"\b([A-Z]{3})\b");
+                
+                if (currencyMatches.Count >= 2)
+                {
+                    fromCurrency = currencyMatches[0].Value;
+                    toCurrency = currencyMatches[1].Value;
+                }
+                else if (currencyMatches.Count == 1)
+                {
+                    // Likely "price of BTC" or "USD to EUR" where one matched
+                    // If we have "price of BTC", base currency is usually USD or EUR depending on setting, defaulting to USD
+                    var currency = currencyMatches[0].Value;
+                    if (query.ToLowerInvariant().Contains("price") || query.ToLowerInvariant().Contains("τιμή"))
+                    {
+                        fromCurrency = currency;
+                        toCurrency = "USD"; // Default to USD for price lookup
+                    }
+                    else
+                    {
+                        // Assume conversion to local currency? Or prompt?
+                        // Let's assume EUR as default base if only one provided (e.g. "100 USD")
+                        fromCurrency = currency;
+                        toCurrency = "EUR";
+                    }
+                }
+
+                // If couldn't extract currencies, try to infer from common names if regex failed?
+                // For now, assume user provides codes. If not, return guidance.
+                if (string.IsNullOrEmpty(fromCurrency) || string.IsNullOrEmpty(toCurrency))
+                {
+                    return new ChatbotResponse
+                    {
+                        Message = language == "el" 
+                            ? "Παρακαλώ προσδιορίστε τα νομίσματα για τη μετατροπή (π.χ., '100 USD σε EUR')."
+                            : "Please specify the currencies for conversion (e.g., '100 USD to EUR').",
+                        Type = "text"
+                    };
+                }
+
+                // Call Currency Service
+                try
+                {
+                    var result = await _currencyService.ConvertCurrencyAsync(fromCurrency, toCurrency, amount);
+                    
+                    // Format response
+                    var timestamp = DateTime.Now.ToString("g"); // General date/time
+                    
+                    string message;
+                    if (language == "el")
+                    {
+                        message = amountFound 
+                            ? $"💵 **Αποτέλεσμα Μετατροπής**\n{amount} {fromCurrency} = **{result:F2} {toCurrency}**"
+                            : $"💱 **Ισοτιμία Συναλλάγματος**\n1 {fromCurrency} = **{(result):F4} {toCurrency}**";
+                        message += $"\n_Ενημερώθηκε: {timestamp}_";
+                    }
+                    else
+                    {
+                         message = amountFound 
+                            ? $"💵 **Conversion Result**\n{amount} {fromCurrency} = **{result:F2} {toCurrency}**"
+                            : $"💱 **Exchange Rate**\n1 {fromCurrency} = **{(result):F4} {toCurrency}**";
+                         message += $"\n_Updated: {timestamp}_";
+                    }
+
+                    var quickActions = new List<string>();
+                    // Add reverse conversion action
+                    if (language == "el")
+                    {
+                        quickActions.Add($" {amount} {toCurrency} σε {fromCurrency}");
+                        quickActions.Add($"Τιμή {toCurrency}");
+                    }
+                    else
+                    {
+                        quickActions.Add($" {amount} {toCurrency} to {fromCurrency}");
+                        quickActions.Add($"Price of {toCurrency}");
+                    }
+
+                    return new ChatbotResponse
+                    {
+                        Message = message,
+                        Type = "text",
+                        Data = new { from = fromCurrency, to = toCurrency, amount, result },
+                        QuickActions = quickActions,
+                        ActionLink = "/currency-calculator"
+                    };
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Currency conversion failed in Chatbot");
+                    return new ChatbotResponse
+                    {
+                        Message = language == "el"
+                             ? "Δεν μπόρεσα να ανακτήσω τις τρέχουσες ισοτιμίες. Παρακαλώ ελέγξτε τους κωδικούς νομισμάτων και δοκιμάστε ξανά."
+                             : "I couldn't fetch the current exchange rates. Please check the currency codes and try again.",
+                        Type = "error"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                 _logger.LogError(ex, "Error parsing currency query");
+                   return new ChatbotResponse
+                    {
+                        Message = language == "el"
+                             ? "Συγγνώμη, δεν κατάλαβα το αίτημα μετατροπής. Δοκιμάστε '100 USD σε EUR'."
+                             : "Sorry, I didn't understand the conversion request. Try '100 USD to EUR'.",
+                        Type = "error"
+                    };
+            }
         }
     }
 }

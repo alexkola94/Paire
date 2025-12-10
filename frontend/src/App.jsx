@@ -29,6 +29,8 @@ const ShoppingLists = lazy(() => import('./pages/ShoppingLists'))
 const EconomicNews = lazy(() => import('./pages/EconomicNews'))
 const BankCallback = lazy(() => import('./pages/BankCallback'))
 const Achievements = lazy(() => import('./pages/Achievements'))
+const CurrencyCalculator = lazy(() => import('./pages/CurrencyCalculator'))
+
 
 // Layout - Keep synchronous as it's always needed
 import Layout from './components/Layout'
@@ -237,7 +239,9 @@ function App() {
               <Route path="partnership" element={<Partnership />} />
               <Route path="reminders" element={<ReminderSettings />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="currency-calculator" element={<CurrencyCalculator />} />
             </Route>
+
 
             {/* Catch all - redirect to login or dashboard */}
             <Route

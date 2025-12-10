@@ -19,7 +19,10 @@
   right: 0;
   bottom: 0;
   min-height: 100vh;
-  background: var(--bg-primary, #fafafa);
+  background: rgba(255, 255, 255, 0.95);
+  /* High opacity white for clean look */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 9999;
   animation: fadeIn 0.2s ease-out;
   /* Ensure it covers everything */
@@ -28,10 +31,24 @@
   overflow: hidden;
 }
 
+/* Dark mode support - removed hardcoded black to prevent jarring transitions */
+/* If the app implements a full dark theme later, this can be re-enabled with usage of CSS variables */
+/*
+@media (prefers-color-scheme: dark) {
+  .logo-loader-container--fullscreen {
+    background: rgba(20, 20, 20, 0.95);
+  }
+  .logo-loader__text {
+    color: #e5e7eb;
+  }
+}
+*/
+
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -79,9 +96,11 @@
   0% {
     transform: rotate(0deg) translateZ(0) scale(1);
   }
+
   50% {
     transform: rotate(180deg) translateZ(0) scale(1.05);
   }
+
   100% {
     transform: rotate(360deg) translateZ(0) scale(1);
   }
@@ -116,6 +135,7 @@
     border-left-color: transparent;
     opacity: 0.6;
   }
+
   25% {
     transform: translate(-50%, -50%) rotate(90deg) translateZ(0);
     border-top-color: var(--primary, #6c5ce7);
@@ -124,6 +144,7 @@
     border-left-color: transparent;
     opacity: 0.8;
   }
+
   50% {
     transform: translate(-50%, -50%) rotate(180deg) translateZ(0);
     border-top-color: var(--primary, #6c5ce7);
@@ -132,6 +153,7 @@
     border-left-color: transparent;
     opacity: 1;
   }
+
   75% {
     transform: translate(-50%, -50%) rotate(270deg) translateZ(0);
     border-top-color: var(--primary, #6c5ce7);
@@ -140,6 +162,7 @@
     border-left-color: var(--primary, #6c5ce7);
     opacity: 1;
   }
+
   100% {
     transform: translate(-50%, -50%) rotate(360deg) translateZ(0);
     border-top-color: var(--primary, #6c5ce7);
@@ -168,6 +191,7 @@
     opacity: 0;
     transform: translateY(10px) translateZ(0);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) translateZ(0);
@@ -319,15 +343,7 @@
    Dark Mode Support (if theme supports it)
    ================================ */
 
-@media (prefers-color-scheme: dark) {
-  .logo-loader-container--fullscreen {
-    background: var(--bg-primary-dark, #1a1a1a);
-  }
 
-  .logo-loader__text {
-    color: var(--text-secondary-dark, #9ca3af);
-  }
-}
 
 /* ================================
    Reduced Motion Support (Accessibility)
@@ -354,10 +370,10 @@
 
 /* Optimize for low-end devices */
 @media (max-width: 480px) {
+
   .logo-loader__image,
   .logo-loader__ring {
     /* Reduce animation complexity on mobile */
     animation-duration: 1.8s;
   }
 }
-
