@@ -134,9 +134,9 @@ namespace YouAndMeExpensesAPI.Services
             catch (TaskCanceledException ex)
             {
                 _logger.LogError(ex, "❌ SMTP connection timeout when sending email to {ToEmail}. " +
-                    "Check: 1) SMTP server is correct (smtp.gmail.com), 2) Port is correct (587), " +
+                    "Check: 1) SMTP server is correct (smtp.gmail.com), 2) Port is correct ({SmtpPort}), " +
                     "3) Firewall allows outbound connections, 4) Gmail App Password is correct",
-                    emailMessage.ToEmail);
+                    emailMessage.ToEmail, _emailSettings.SmtpPort);
                 return false;
             }
             catch (System.Net.Sockets.SocketException ex)
