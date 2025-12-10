@@ -59,10 +59,15 @@
    ================================ */
 
 .expense-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   position: relative;
-  padding: var(--spacing-lg);
-  transition: var(--transition);
-  border-left: 4px solid var(--error-dark);
+  /* Remove white background to allow glass effect */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
 }
 
 .expense-card:hover {
@@ -73,23 +78,22 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--spacing-md);
-  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .expense-category {
-  background: var(--error);
-  color: var(--error-dark);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.875rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary-dark);
+  /* Darker color for better visibility */
+  text-transform: capitalize;
 }
 
 .expense-amount {
-  font-size: 1.5rem;
   font-weight: 700;
-  color: var(--error-dark);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .expense-description {

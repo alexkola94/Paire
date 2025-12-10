@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, Suspense, lazy } from 'react'
 import { authService } from './services/auth'
 import { sessionManager } from './services/sessionManager'
 import { isTokenExpired, getTimeUntilExpiration } from './utils/tokenUtils'
+import { ThemeProvider } from './context/ThemeContext'
+import { AccessibilityProvider } from './context/AccessibilityContext'
 import LogoLoader from './components/LogoLoader'
 import { ToastProvider } from './components/Toast'
 
@@ -157,101 +159,100 @@ function App() {
   if (loading) {
     return <LogoLoader size="large" fullScreen />
   }
-
   // Loading fallback component for Suspense
   const LoadingFallback = () => (
     <LogoLoader size="large" fullScreen />
   )
 
-  // Use basename only in production (GitHub Pages)
-  const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
-
   return (
-    <ToastProvider>
-      <Router basename={basename}>
-        {/* Handle GitHub Pages redirects */}
-        <RedirectHandler />
+    <ThemeProvider>
+      <AccessibilityProvider>
+        <ToastProvider>
+          <Router basename={import.meta.env.MODE === 'production' ? '/Paire' : ''}>
+            {/* Handle GitHub Pages redirects */}
+            <RedirectHandler />
 
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            {/* Public routes */}
-            <Route
-              path="/login"
-              element={!session ? <Login /> : <Navigate to="/dashboard" />}
-            />
-            <Route
-              path="/forgot-password"
-              element={!session ? <ForgotPassword /> : <Navigate to="/dashboard" />}
-            />
-            <Route
-              path="/confirm-email"
-              element={<EmailConfirmation />}
-            />
-            <Route
-              path="/reset-password"
-              element={<ResetPassword />}
-            />
-            <Route
-              path="/accept-invitation"
-              element={<AcceptInvitation />}
-            />
-            <Route
-              path="/bank-callback"
-              element={<BankCallback />}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                {/* Public routes */}
+                <Route
+                  path="/login"
+                  element={!session ? <Login /> : <Navigate to="/dashboard" />}
+                />
+                <Route
+                  path="/forgot-password"
+                  element={!session ? <ForgotPassword /> : <Navigate to="/dashboard" />}
+                />
+                <Route
+                  path="/confirm-email"
+                  element={<EmailConfirmation />}
+                />
+                <Route
+                  path="/reset-password"
+                  element={<ResetPassword />}
+                />
+                <Route
+                  path="/accept-invitation"
+                  element={<AcceptInvitation />}
+                />
+                <Route
+                  path="/bank-callback"
+                  element={<BankCallback />}
+                />
 
-            {/* Protected routes - Require authentication */}
-            {/* Check both session state and sessionStorage to avoid race conditions after login */}
-            <Route
-              path="/"
-              element={
-                (() => {
-                  // Check session state first
-                  if (session) return <Layout />
-                  // Fallback: check sessionStorage directly (for race condition after login)
-                  const token = sessionManager.getToken()
-                  const user = sessionManager.getCurrentUser()
-                  if (token && user) {
-                    // Session exists in storage but state hasn't updated yet
-                    // Trigger state update and allow access
-                    setTimeout(() => {
-                      window.dispatchEvent(new CustomEvent('auth-storage-change'))
-                    }, 0)
-                    return <Layout />
+                {/* Protected routes - Require authentication */}
+                {/* Check both session state and sessionStorage to avoid race conditions after login */}
+                <Route
+                  path="/"
+                  element={
+                    (() => {
+                      // Check session state first
+                      if (session) return <Layout />
+                      // Fallback: check sessionStorage directly (for race condition after login)
+                      const token = sessionManager.getToken()
+                      const user = sessionManager.getCurrentUser()
+                      if (token && user) {
+                        // Session exists in storage but state hasn't updated yet
+                        // Trigger state update and allow access
+                        setTimeout(() => {
+                          window.dispatchEvent(new CustomEvent('auth-storage-change'))
+                        }, 0)
+                        return <Layout />
+                      }
+                      return <Navigate to="/login" />
+                    })()
                   }
-                  return <Navigate to="/login" />
-                })()
-              }
-            >
-              <Route index element={<Navigate to="/dashboard" />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="expenses" element={<Expenses />} />
-              <Route path="income" element={<Income />} />
-              <Route path="transactions" element={<AllTransactions />} />
-              <Route path="loans" element={<Loans />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="budgets" element={<Budgets />} />
-              <Route path="savings-goals" element={<SavingsGoals />} />
-              <Route path="recurring-bills" element={<RecurringBills />} />
-              <Route path="shopping-lists" element={<ShoppingLists />} />
-              <Route path="economic-news" element={<EconomicNews />} />
-              <Route path="achievements" element={<Achievements />} />
-              <Route path="partnership" element={<Partnership />} />
-              <Route path="reminders" element={<ReminderSettings />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="currency-calculator" element={<CurrencyCalculator />} />
-            </Route>
+                >
+                  <Route index element={<Navigate to="/dashboard" />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="expenses" element={<Expenses />} />
+                  <Route path="income" element={<Income />} />
+                  <Route path="transactions" element={<AllTransactions />} />
+                  <Route path="loans" element={<Loans />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="budgets" element={<Budgets />} />
+                  <Route path="savings-goals" element={<SavingsGoals />} />
+                  <Route path="recurring-bills" element={<RecurringBills />} />
+                  <Route path="shopping-lists" element={<ShoppingLists />} />
+                  <Route path="economic-news" element={<EconomicNews />} />
+                  <Route path="achievements" element={<Achievements />} />
+                  <Route path="partnership" element={<Partnership />} />
+                  <Route path="reminders" element={<ReminderSettings />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="currency-calculator" element={<CurrencyCalculator />} />
+                </Route>
 
-
-            {/* Catch all - redirect to login or dashboard */}
-            <Route
-              path="*"
-              element={<Navigate to={session ? "/dashboard" : "/login"} />}
-            />
-          </Routes>
-        </Suspense>
-      </Router>
-    </ToastProvider>
+                {/* Catch all - redirect to login or dashboard */}
+                <Route
+                  path="*"
+                  element={<Navigate to={session ? "/dashboard" : "/login"} />}
+                />
+              </Routes>
+            </Suspense>
+          </Router>
+        </ToastProvider>
+      </AccessibilityProvider>
+    </ThemeProvider>
   )
 }
 

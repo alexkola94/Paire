@@ -1,16 +1,13 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation, Outlet, NavLink } from 'react-router-dom'
 import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense, memo } from 'react'
 import { useTranslation } from 'react-i18next'
+
+import { useTheme } from '../context/ThemeContext'
 import PageTransition from './PageTransition'
 import {
   FiHome,
   FiTrendingDown,
   FiTrendingUp,
-  FiUser,
-  FiMenu,
-  FiX,
-  FiLogOut,
-  FiBarChart2,
   FiTarget,
   FiUsers,
   FiBell,
@@ -20,9 +17,17 @@ import {
   FiChevronDown,
   FiActivity,
   FiAward,
-  FiRefreshCw, // Keeping if used elsewhere, but mainly replacing usage
+  FiRefreshCw,
   FiFileText,
-  FiDollarSign
+  FiDollarSign,
+  FiMenu,
+  FiX,
+  FiLogOut,
+  FiBarChart2,
+  FiSun,
+  FiMoon,
+  FiUser,
+  FiType
 } from 'react-icons/fi'
 
 
@@ -51,6 +56,8 @@ import { authService } from '../services/auth'
 import LogoLoader from './LogoLoader'
 // Lazy load Chatbot - it's not critical for initial render
 const Chatbot = lazy(() => import('./Chatbot'))
+import BottomNavigation from './BottomNavigation'
+import AccessibilitySettings from './AccessibilitySettings'
 import './Layout.css'
 
 /**
@@ -60,9 +67,12 @@ import './Layout.css'
  */
 function Layout() {
   const { t, i18n } = useTranslation()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false)
   const moreMenuRef = useRef(null)
 
   // Primary navigation items (always visible on desktop)
@@ -173,6 +183,30 @@ function Layout() {
 
           {/* Header actions - right side */}
           <div className="header-actions">
+            {/* Theme Toggle - desktop only */}
+            <span
+              className="header-icon-btn theme-toggle-btn"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
+              title={theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
+              role="button"
+              tabIndex={0}
+            >
+              {theme === 'dark' ? <FiSun size={22} /> : <FiMoon size={22} />}
+            </span>
+
+            {/* Accessibility Settings */}
+            <span
+              className="header-icon-btn"
+              onClick={() => setIsAccessibilityOpen(true)}
+              aria-label={t('common.accessibility') || 'Accessibility'}
+              title={t('common.accessibility') || 'Accessibility'}
+              role="button"
+              tabIndex={0}
+            >
+              <FiType size={22} />
+            </span>
+
             {/* Economic News - desktop only */}
             <span
               className="header-icon-btn news-button desktop-only"
@@ -412,6 +446,15 @@ function Layout() {
       <Suspense fallback={null}>
         <Chatbot />
       </Suspense>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation />
+
+      {/* Accessibility Settings Modal */}
+      <AccessibilitySettings
+        isOpen={isAccessibilityOpen}
+        onClose={() => setIsAccessibilityOpen(false)}
+      />
     </div>
   )
 }

@@ -33,7 +33,7 @@
   cursor: not-allowed;
 }
 
-.shopping-lists-page .header-content > div {
+.shopping-lists-page .header-content>div {
   display: flex;
   gap: var(--spacing-sm);
   align-items: center;
@@ -159,22 +159,27 @@
 /* List Card */
 .list-card {
   padding: var(--spacing-md);
-  background: var(--bg-primary);
-  border-radius: var(--radius-md);
+  /* Glassmorphism */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
   border-left: 3px solid var(--primary);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: var(--transition);
 }
 
 .list-card:hover {
   transform: translateX(4px);
-  box-shadow: var(--shadow-md);
-  background: var(--bg-secondary);
+  box-shadow: var(--glass-shadow);
+  border-color: var(--primary-dark);
 }
 
 .list-card.selected {
   border-left-color: var(--primary-dark);
-  background: var(--secondary);
+  background: rgba(255, 255, 255, 0.95);
+  /* Slightly more opaque when selected */
   box-shadow: var(--shadow-md);
 }
 
@@ -302,10 +307,12 @@
   flex-direction: column;
   gap: var(--spacing-md);
   overflow-y: auto;
-  overflow-x: visible; /* Allow swipe indicator to be visible */
+  overflow-x: visible;
+  /* Allow swipe indicator to be visible */
   max-height: calc(100vh - 400px);
   padding-right: var(--spacing-xs);
-  padding-left: 0; /* No left padding to allow indicator visibility */
+  padding-left: 0;
+  /* No left padding to allow indicator visibility */
 }
 
 /* Item Card */
@@ -323,19 +330,23 @@
   min-height: 60px;
   /* Consistent minimum height */
   touch-action: pan-y;
-  overflow: hidden; /* Hide overflow by default */
+  overflow: hidden;
+  /* Hide overflow by default */
 }
 
 /* Swipe animation state */
 .item-card.swiping {
-  transition: none; /* Disable transition during swipe for smooth dragging */
+  transition: none;
+  /* Disable transition during swipe for smooth dragging */
   cursor: grabbing;
-  will-change: transform; /* Optimize for animation */
+  will-change: transform;
+  /* Optimize for animation */
   /* Prevent text selection during swipe */
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
-  overflow: visible; /* Allow swipe indicator to be visible when swiping */
+  overflow: visible;
+  /* Allow swipe indicator to be visible when swiping */
 }
 
 /* Swipe action indicator (Apple Mail style) */
@@ -356,7 +367,8 @@
 
 /* Check indicator on the left when swiping right - positioned in the white space */
 .swipe-check-indicator {
-  left: 16px; /* Positioned near left edge, becomes visible in white space as card slides right */
+  left: 16px;
+  /* Positioned near left edge, becomes visible in white space as card slides right */
   background: var(--success-dark);
   color: white;
   box-shadow: 0 2px 6px rgba(46, 125, 50, 0.3);
@@ -365,7 +377,8 @@
 
 /* Uncheck indicator on the right when swiping left - positioned in the white space */
 .swipe-uncheck-indicator {
-  right: 16px; /* Positioned near right edge, becomes visible in white space as card slides left */
+  right: 16px;
+  /* Positioned near right edge, becomes visible in white space as card slides left */
   background: var(--error-dark);
   color: white;
   box-shadow: 0 2px 6px rgba(211, 47, 47, 0.3);
@@ -539,9 +552,13 @@
 
 .mobile-list-card {
   padding: var(--spacing-md);
-  background: var(--bg-primary);
-  border-radius: var(--radius-md);
+  /* Glassmorphism */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
   border-left: 3px solid var(--primary);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
@@ -549,8 +566,8 @@
 
 .mobile-list-card:active {
   transform: scale(0.98);
-  box-shadow: var(--shadow-md);
-  background: var(--bg-secondary);
+  box-shadow: var(--glass-shadow);
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .mobile-list-card h5 {
@@ -651,6 +668,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -830,15 +848,19 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -872,6 +894,7 @@
    ================================ */
 
 @media (min-width: 1024px) {
+
   /* Desktop: Position modals on the right side - no overlay since list is visible */
   .modal-overlay {
     justify-content: flex-end;
@@ -904,11 +927,12 @@
   }
 
   /* Ensure form content is scrollable */
-  .modal-content > form {
+  .modal-content>form {
     flex: 1;
     overflow-y: auto;
     padding: var(--spacing-xl);
-    min-height: 0; /* Important for flex children to allow scrolling */
+    min-height: 0;
+    /* Important for flex children to allow scrolling */
   }
 
   @keyframes slideInRight {
@@ -916,6 +940,7 @@
       opacity: 0;
       transform: translateX(100%);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
@@ -937,9 +962,10 @@
     order: 2;
     max-height: 300px;
     overflow-y: auto;
-    display: none; /* Hide sidebar by default on mobile */
+    display: none;
+    /* Hide sidebar by default on mobile */
   }
-  
+
   /* Show sidebar only when explicitly opened (mobile-open class) */
   .lists-sidebar.mobile-open {
     display: flex;
@@ -951,7 +977,7 @@
     padding: var(--spacing-md);
     border-radius: var(--radius-md);
   }
-  
+
   /* Ensure empty selection is visible on mobile */
   .items-panel:not(.mobile-fullscreen) .empty-selection {
     display: flex;
@@ -961,23 +987,23 @@
     min-height: 60vh;
     padding: var(--spacing-lg);
   }
-  
+
   /* Mobile lists preview styling */
   .mobile-lists-preview {
     width: 100%;
     margin-top: var(--spacing-lg);
   }
-  
+
   .mobile-lists-grid {
     grid-template-columns: 1fr;
     gap: var(--spacing-sm);
   }
-  
+
   .mobile-list-card {
     padding: var(--spacing-md);
     min-height: 60px;
   }
-  
+
   .mobile-list-card h5 {
     font-size: 1rem;
   }
@@ -1000,7 +1026,7 @@
     border-radius: 0;
     padding-top: calc(var(--spacing-md) + env(safe-area-inset-top, 0px));
   }
-  
+
   /* Ensure close button is visible and accessible */
   .items-panel.mobile-fullscreen .mobile-close-btn {
     position: relative;
@@ -1037,6 +1063,7 @@
     from {
       transform: translateX(100%);
     }
+
     to {
       transform: translateX(0);
     }
@@ -1046,9 +1073,9 @@
   .shopping-content:has(.items-panel.mobile-fullscreen) .lists-sidebar {
     display: none;
   }
-  
+
   /* Alternative selector for browsers that don't support :has() */
-  .shopping-content .items-panel.mobile-fullscreen ~ .lists-sidebar {
+  .shopping-content .items-panel.mobile-fullscreen~.lists-sidebar {
     display: none;
   }
 
@@ -1352,7 +1379,7 @@
     gap: var(--spacing-sm);
   }
 
-  .shopping-lists-page .header-content > div {
+  .shopping-lists-page .header-content>div {
     width: 100%;
     flex-direction: row;
     gap: var(--spacing-sm);
@@ -1382,6 +1409,7 @@
     from {
       transform: translateY(100%);
     }
+
     to {
       transform: translateY(0);
     }

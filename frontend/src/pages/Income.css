@@ -34,37 +34,44 @@
    ================================ */
 
 .income-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   position: relative;
-  padding: var(--spacing-lg);
-  transition: var(--transition);
-  border-left: 4px solid var(--success-dark);
+  /* Remove white background to allow glass effect */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
 }
 
 .income-card:hover {
   transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(46, 204, 113, 0.3);
 }
 
 .income-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   gap: var(--spacing-md);
 }
 
 .income-category {
-  background: var(--success);
+  font-weight: 700;
+  font-size: 1.1rem;
   color: var(--success-dark);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.875rem;
+  /* Darker color for better visibility */
+  text-transform: capitalize;
 }
 
 .income-amount {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: var(--success-dark);
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .income-description {

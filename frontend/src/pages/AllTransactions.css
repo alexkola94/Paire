@@ -7,8 +7,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ================================
@@ -181,8 +186,48 @@
 }
 
 .transaction-item.expense .transaction-icon {
-  background: var(--error);
+  background: var(--error-light);
   color: var(--error-dark);
+}
+
+/* Swipe Gestures */
+.transaction-item {
+  position: relative;
+  touch-action: pan-y;
+  user-select: none;
+  /* overflow: hidden; */
+}
+
+.transaction-item.swiping {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  background: var(--bg-secondary);
+  /* Ensure opaque background over indicators if z-index trick used, though we translate card */
+}
+
+/* Indicators */
+.swipe-indicator {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.swipe-check-indicator {
+  background: var(--success);
+  color: white;
+}
+
+.swipe-delete-indicator {
+  background: var(--danger);
+  color: white;
 }
 
 .transaction-details {
@@ -306,7 +351,8 @@
   }
 
   .back-button span {
-    display: none; /* Hide text on mobile, show only icon */
+    display: none;
+    /* Hide text on mobile, show only icon */
   }
 
   .back-button {
@@ -364,4 +410,3 @@
     padding: var(--spacing-lg) var(--spacing-xl);
   }
 }
-

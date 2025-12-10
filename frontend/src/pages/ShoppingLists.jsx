@@ -39,6 +39,10 @@ function ShoppingLists() {
   const [togglingItems, setTogglingItems] = useState(new Set()) // Track items being toggled to prevent double-tap
   const [swipeState, setSwipeState] = useState({}) // Track swipe gestures per item
 
+  // Pagination State
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 6
+
   const [listFormData, setListFormData] = useState({
     name: '',
     category: '',
@@ -120,6 +124,7 @@ function ShoppingLists() {
         userProfiles: list.user_profiles ?? list.userProfiles
       }))
       setLists(mappedLists)
+      setPage(1) // Reset page on load
     } catch (error) {
       console.error('Error loading shopping lists:', error)
     } finally {
@@ -720,6 +725,10 @@ function ShoppingLists() {
   const activeLists = lists.filter(l => !l.isCompleted)
   const completedLists = lists.filter(l => l.isCompleted)
 
+  // Pagination for Active Lists
+  const totalPages = Math.ceil(activeLists.length / PAGE_SIZE)
+  const displayedActiveLists = activeLists.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
   return (
     <div className="shopping-lists-page">
       <div className="page-header">
@@ -761,60 +770,96 @@ function ShoppingLists() {
                 </button>
               </div>
             ) : (
-              <div className="lists-grid">
-                {activeLists.map(list => (
-                  <div
-                    key={list.id}
-                    className={`list-card ${selectedList?.list.id === list.id ? 'selected' : ''}`}
-                    onClick={() => {
-                      // Toggle: if already selected, deselect it; otherwise, select it
-                      if (selectedList?.list.id === list.id) {
-                        setSelectedList(null)
-                      } else {
-                        loadListDetails(list.id)
-                      }
-                      setShowSidebar(false)
-                    }}
-                  >
-                    <div className="list-card-header">
-                      <div className="list-title-section">
-                        <h4>{list.name}</h4>
-                        {list.userProfiles && (
-                          <div className="list-added-by">
-                            {t('shoppingLists.addedBy')} {list.userProfiles.display_name || list.userProfiles.displayName}
-                          </div>
+              <>
+                <div className="lists-grid">
+                  {displayedActiveLists.map(list => (
+                    <div
+                      key={list.id}
+                      className={`list-card ${selectedList?.list.id === list.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        // Toggle: if already selected, deselect it; otherwise, select it
+                        if (selectedList?.list.id === list.id) {
+                          setSelectedList(null)
+                        } else {
+                          loadListDetails(list.id)
+                        }
+                        setShowSidebar(false)
+                      }}
+                    >
+                      <div className="list-card-header">
+                        <div className="list-title-section">
+                          <h4>{list.name}</h4>
+                          {list.userProfiles && (
+                            <div className="list-added-by">
+                              {t('shoppingLists.addedBy')} {list.userProfiles.display_name || list.userProfiles.displayName}
+                            </div>
+                          )}
+                        </div>
+                        <div className="list-actions">
+                          <button
+                            className="icon-btn"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleEditList(list)
+                            }}
+                          >
+                            <FiEdit />
+                          </button>
+                          <button
+                            className="icon-btn danger"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openDeleteListModal(list.id)
+                            }}
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </div>
+
+                      {list.notes && <p className="list-notes">{list.notes}</p>}
+
+                      <div className="list-meta">
+                        <span className="list-total">
+                          {t('shoppingLists.est', 'Est')}: {list.estimatedTotal ? formatCurrency(list.estimatedTotal) : formatCurrency(0)}
+                        </span>
+                        {list.actualTotal > 0 && (
+                          <span className="list-total actual">
+                            {t('shoppingLists.act', 'Act')}: {formatCurrency(list.actualTotal)}
+                          </span>
                         )}
                       </div>
-                      <div className="list-actions">
-                        <button
-                          className="icon-btn"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleEditList(list)
-                          }}
-                        >
-                          <FiEdit />
-                        </button>
-                        <button
-                          className="icon-btn danger"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            openDeleteListModal(list.id)
-                          }}
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
                     </div>
-                    {list.estimatedTotal && (
-                      <div className="list-estimate">
-                        <span style={{ fontSize: '14px', fontWeight: 'bold', marginRight: '4px' }}>€</span>
-                        <span>{formatCurrency(list.estimatedTotal)}</span>
-                      </div>
-                    )}
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="pagination-controls" style={{ marginTop: '1rem', padding: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="btn btn-sm btn-secondary"
+                      style={{ padding: '0.25rem 0.5rem' }}
+                    >
+                      &lt;
+                    </button>
+
+                    <span>
+                      {page} / {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="btn btn-sm btn-secondary"
+                      style={{ padding: '0.25rem 0.5rem' }}
+                    >
+                      &gt;
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
 

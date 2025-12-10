@@ -39,6 +39,9 @@ function Loans() {
     paymentDate: new Date().toISOString().split('T')[0],
     notes: ''
   })
+  /* Pagination State */
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 6
   const [formData, setFormData] = useState({
     type: 'given', // 'given' or 'received'
     lentBy: '',
@@ -57,6 +60,11 @@ function Loans() {
     loadLoans()
   }, [])
 
+  /* Reset page when loans change/filter changes if needed, but here loans are main list */
+  useEffect(() => {
+    setPage(1)
+  }, [loans.length])
+
   /**
    * Fetch loans from API
    */
@@ -71,6 +79,10 @@ function Loans() {
       if (!background) setLoading(false)
     }
   }
+
+  // Calculate pagination
+  const totalPages = Math.ceil(loans.length / PAGE_SIZE)
+  const displayedLoans = loans.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   /**
    * Handle form input changes
@@ -536,7 +548,7 @@ function Loans() {
         </div>
       ) : (
         <div className="loans-grid">
-          {loans.map((loan) => {
+          {displayedLoans.map((loan) => {
             // Handle both camelCase and snake_case property names
             const isGiven = (loan.lentBy || loan.lent_by) === 'Me'
             const partyName = isGiven ? (loan.borrowedBy || loan.borrowed_by) : (loan.lentBy || loan.lent_by)
@@ -617,6 +629,35 @@ function Loans() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pagination-controls" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="btn btn-secondary pagination-btn"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <FiChevronLeft />
+            {t('common.previous')}
+          </button>
+
+          <span className="pagination-info">
+            {t('common.page')} {page} {t('common.of')} {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="btn btn-secondary pagination-btn"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            {t('common.next')}
+            <FiChevronRight />
+          </button>
         </div>
       )}
 

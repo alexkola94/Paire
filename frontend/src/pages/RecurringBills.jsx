@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
-  FiClock, FiAlertCircle, FiRepeat, FiX
+  FiClock, FiAlertCircle, FiRepeat, FiX, FiLink, FiRotateCcw,
+  FiGrid, FiList
 } from 'react-icons/fi'
-import { recurringBillService } from '../services/api'
+import { format, subMonths, subYears, subWeeks, addMonths, addYears, addWeeks, isValid, parseISO } from 'date-fns'
+import { recurringBillService, loanService, loanPaymentService } from '../services/api'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
@@ -14,6 +16,9 @@ import CategorySelector from '../components/CategorySelector'
 import FormSection from '../components/FormSection'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
+import Skeleton from '../components/Skeleton'
+import useSwipeGesture from '../hooks/useSwipeGesture'
+import CalendarView from '../components/CalendarView'
 import './RecurringBills.css'
 
 /**
@@ -25,12 +30,14 @@ function RecurringBills() {
   const formatCurrency = useCurrencyFormatter()
   const [loading, setLoading] = useState(true)
   const [bills, setBills] = useState([])
+  const [loans, setLoans] = useState([])
   const [summary, setSummary] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editingBill, setEditingBill] = useState(null)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, billId: null })
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
+  const [viewMode, setViewMode] = useState('list') // 'list' or 'calendar'
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -40,8 +47,15 @@ function RecurringBills() {
     autoPay: false,
     reminderDays: '3',
     isActive: true,
-    notes: ''
+    notes: '',
+    loanId: ''
   })
+  const [processingBillId, setProcessingBillId] = useState(null)
+  // Unmark confirmation modal state
+  const [unmarkModal, setUnmarkModal] = useState({ isOpen: false, bill: null })
+
+  // Pagination State
+  const [page, setPage] = useState(1)
 
   // Bill categories
   const categories = [
@@ -64,26 +78,28 @@ function RecurringBills() {
   ]
 
   /**
-   * Load bills and summary on mount
+   * Load bills, loans and summary on mount
    */
   useEffect(() => {
     loadData()
   }, [])
 
   /**
-   * Fetch bills and summary data
+   * Fetch bills, loans and summary data
    */
   const loadData = async (background = false) => {
     try {
       if (!background) setLoading(true)
-      const [billsData, summaryData] = await Promise.all([
+      const [billsData, summaryData, loansData] = await Promise.all([
         recurringBillService.getAll(),
-        recurringBillService.getSummary()
+        recurringBillService.getSummary(),
+        loanService.getAll()
       ])
       setBills(billsData || [])
+      setLoans(loansData || [])
       setSummary(summaryData || null)
     } catch (error) {
-      console.error('Error loading recurring bills:', error)
+      console.error('Error loading recurring bills data:', error)
     } finally {
       if (!background) setLoading(false)
     }
@@ -145,12 +161,26 @@ function RecurringBills() {
       setShowForm(false)
       setShowLoadingProgress(true)
 
+      let notes = formData.notes || ''
+
+      // Clean up any existing LOAN_REF tag first
+      notes = notes.replace(/\[LOAN_REF:[^\]]+\]\s*/g, '').trim()
+
+      // Append new loan reference if a loan is selected
+      if (formData.category === 'loan' && formData.loanId) {
+        notes = `${notes} [LOAN_REF:${formData.loanId}]`.trim()
+      }
+
       const billData = {
         ...formData,
+        notes, // Use updated notes
         amount: parseFloat(formData.amount),
         dueDay: parseInt(formData.dueDay),
         reminderDays: parseInt(formData.reminderDays)
       }
+
+      // Remove loanId from payload as it's not in the schema (it's in notes)
+      delete billData.loanId
 
       if (editingBill) {
         await recurringBillService.update(editingBill.id, billData)
@@ -177,13 +207,193 @@ function RecurringBills() {
   /**
    * Handle mark bill as paid
    */
-  const handleMarkPaid = async (billId) => {
+  /**
+   * Handle mark bill as paid with Optimistic UI
+   */
+  const handleMarkPaid = async (billId, billAmount, notes) => {
+    if (processingBillId) return // Prevent double clicks
+
+    // 1. Optimistic Update
+    const billToUpdate = bills.find(b => b.id === billId)
+    if (!billToUpdate) return
+
+    // Store previous state for rollback
+    const previousBills = [...bills]
+    const previousSummary = summary ? { ...summary } : null
+
+    // Calculate next due date locally
+    const currentDueDate = new Date(billToUpdate.nextDueDate || billToUpdate.next_due_date)
+    let nextDueDate = new Date(currentDueDate)
+
+    if (billToUpdate.frequency === 'monthly') {
+      nextDueDate = addMonths(currentDueDate, 1)
+    } else if (billToUpdate.frequency === 'yearly') {
+      nextDueDate = addYears(currentDueDate, 1)
+    } else if (billToUpdate.frequency === 'weekly') {
+      nextDueDate = addWeeks(currentDueDate, 1)
+    } else if (billToUpdate.frequency === 'quarterly') {
+      nextDueDate = addMonths(currentDueDate, 3)
+    }
+
+    // Update local state immediately
+    const updatedBill = {
+      ...billToUpdate,
+      nextDueDate: nextDueDate.toISOString(),
+      next_due_date: nextDueDate.toISOString() // Handle both casing
+    }
+
+    setBills(prevBills => prevBills.map(b => b.id === billId ? updatedBill : b))
+
+    // Optimistically update summary (approximate)
+    if (summary) {
+      setSummary(prev => ({
+        ...prev,
+        overdueBills: isOverdue(currentDueDate) ? Math.max(0, prev.overdueBills - 1) : prev.overdueBills,
+        upcomingBills: isDueSoon(currentDueDate) ? Math.max(0, prev.upcomingBills - 1) : prev.upcomingBills
+        // Note: strictly we should also increment correct category, but this is enough for "instant feel"
+      }))
+    }
+
     try {
+      setProcessingBillId(billId)
+
+      // Check for loan reference in notes
+      const loanRefMatch = notes && notes.match(/\[LOAN_REF:([^\]]+)\]/)
+
+      if (loanRefMatch && loanRefMatch[1]) {
+        const loanId = loanRefMatch[1]
+
+        // Create loan payment
+        const paymentData = {
+          loanId: loanId,
+          amount: parseFloat(billAmount),
+          principalAmount: parseFloat(billAmount),
+          interestAmount: 0,
+          paymentDate: new Date().toISOString().split('T')[0],
+          notes: `Auto-payment from Recurring Bill`
+        }
+
+        try {
+          // This we can't fully optimistic update without complex logic, so we await
+          await loanPaymentService.create(paymentData)
+        } catch (paymentError) {
+          console.error('Error creating loan payment:', paymentError)
+          // Non-blocking error for the main action
+        }
+      }
+
       await recurringBillService.markPaid(billId)
-      await loadData()
+
+      // Trigger background refresh to ensure data consistency
+      await loadData(true)
     } catch (error) {
       console.error('Error marking bill as paid:', error)
+
+      // Rollback on error
+      setBills(previousBills)
+      if (previousSummary) setSummary(previousSummary)
+
       alert(t('recurringBills.errorMarkingPaid'))
+    } finally {
+      setProcessingBillId(null)
+    }
+  }
+
+  /**
+   * Handle unmark bill as paid (Revert)
+   */
+  /**
+   * Open unmark confirmation modal
+   */
+  const handleUnmarkPaid = (bill) => {
+    setUnmarkModal({ isOpen: true, bill })
+  }
+
+  /**
+   * Execute unmark action (Revert)
+   */
+  const confirmUnmark = async () => {
+    const { bill } = unmarkModal
+    if (!bill) return
+
+    try {
+      setProcessingBillId(bill.id)
+
+      // 1. Revert Due Date with robust handling using date-fns
+      const currentDueDate = new Date(bill.nextDueDate || bill.next_due_date)
+
+      if (!isValid(currentDueDate)) {
+        throw new Error("Invalid current due date")
+      }
+
+      let previousDueDate;
+
+      if (bill.frequency === 'monthly') {
+        previousDueDate = subMonths(currentDueDate, 1)
+      } else if (bill.frequency === 'yearly') {
+        previousDueDate = subYears(currentDueDate, 1)
+      } else if (bill.frequency === 'weekly') {
+        previousDueDate = subWeeks(currentDueDate, 1)
+      } else if (bill.frequency === 'quarterly') {
+        previousDueDate = subMonths(currentDueDate, 3)
+      } else {
+        // Default fallback
+        previousDueDate = subMonths(currentDueDate, 1)
+      }
+
+      if (!isValid(previousDueDate)) {
+        throw new Error("Calculated invalid date")
+      }
+
+      console.log('Unmarking bill:', bill.name)
+      console.log('Current Due Date:', currentDueDate.toISOString())
+      console.log('New Due Date (Calculated):', previousDueDate.toISOString())
+
+      // Construct full update object to prevent backend from seeing "MinValue" for missing date fields
+      // and crashing if it tries to manipulate them.
+      const updatePayload = {
+        ...bill,
+        nextDueDate: previousDueDate.toISOString()
+      }
+
+      // Remove readonly/navigation fields that might cause issues if sent back
+      delete updatePayload.user_profiles
+      delete updatePayload.loan
+      delete updatePayload.id
+      delete updatePayload.userId
+
+      await recurringBillService.update(bill.id, updatePayload)
+
+      // 2. Revert Loan Payment (if applicable)
+      const loanRefMatch = bill.notes && bill.notes.match(/\[LOAN_REF:([^\]]+)\]/)
+      if (loanRefMatch && loanRefMatch[1]) {
+        const loanId = loanRefMatch[1]
+
+        const payments = await loanPaymentService.getByLoan(loanId)
+
+        const today = new Date().toISOString().split('T')[0]
+        const paymentToDelete = payments.find(p => {
+          const paymentDate = p.paymentDate.split('T')[0]
+          const amountMatch = Math.abs(parseFloat(p.amount) - parseFloat(bill.amount)) < 0.01
+          const isAutoPayment = p.notes && p.notes.includes('Auto-payment')
+          return paymentDate === today && amountMatch && isAutoPayment
+        })
+
+        if (paymentToDelete) {
+          await loanPaymentService.delete(paymentToDelete.id)
+        }
+      }
+
+      await loadData()
+      setUnmarkModal({ isOpen: false, bill: null })
+      await loadData()
+      setUnmarkModal({ isOpen: false, bill: null })
+      alert(t('recurringBills.revertSuccess') || 'Bill payment reverted successfully')
+    } catch (error) {
+      console.error('Error unmarking bill:', error)
+      alert(t('recurringBills.errorUnmarking') || 'Failed to revert bill status.')
+    } finally {
+      setProcessingBillId(null)
     }
   }
 
@@ -192,6 +402,14 @@ function RecurringBills() {
    */
   const handleEdit = (bill) => {
     setEditingBill(bill)
+
+    // Check for loan reference in notes
+    const loanRefMatch = bill.notes && bill.notes.match(/\[LOAN_REF:([^\]]+)\]/)
+    const loanId = loanRefMatch ? loanRefMatch[1] : ''
+
+    // Clean notes for display
+    const displayNotes = bill.notes ? bill.notes.replace(/\[LOAN_REF:[^\]]+\]\s*/g, '').trim() : ''
+
     setFormData({
       name: bill.name,
       amount: bill.amount.toString(),
@@ -202,7 +420,8 @@ function RecurringBills() {
       autoPay: bill.autoPay ?? bill.auto_pay ?? false,
       reminderDays: (bill.reminderDays ?? bill.reminder_days ?? '3').toString(),
       isActive: bill.isActive ?? bill.is_active ?? true,
-      notes: bill.notes || ''
+      notes: displayNotes,
+      loanId: loanId
     })
     setShowForm(true)
   }
@@ -253,7 +472,8 @@ function RecurringBills() {
       autoPay: false,
       reminderDays: '3',
       isActive: true,
-      notes: ''
+      notes: '',
+      loanId: ''
     })
   }
 
@@ -268,15 +488,63 @@ function RecurringBills() {
     })
   }
 
-  if (loading) {
-    return <div className="loading">{t('common.loading')}</div>
-  }
-
   // Separate active and inactive bills (handle both camelCase and snake_case)
   const activeBills = bills.filter(b => (b.isActive ?? b.is_active) !== false)
   const overdueBills = activeBills.filter(b => isOverdue(b.nextDueDate || b.next_due_date))
   const upcomingBills = activeBills.filter(b => isDueSoon(b.nextDueDate || b.next_due_date) && !isOverdue(b.nextDueDate || b.next_due_date))
   const laterBills = activeBills.filter(b => !isDueSoon(b.nextDueDate || b.next_due_date) && !isOverdue(b.nextDueDate || b.next_due_date))
+
+  // Reset pagination when list changes
+  useEffect(() => {
+    setPage(1)
+  }, [laterBills.length])
+
+  // Filter for active loans only for the dropdown
+  const activeLoanOptions = loans.filter(l => !(l.isSettled ?? l.is_settled))
+
+  if (loading) {
+    return (
+      <div className="recurring-bills-page">
+        <div className="page-header flex-between">
+          <div>
+            <Skeleton height="32px" width="200px" style={{ marginBottom: '8px' }} />
+            <Skeleton height="20px" width="120px" />
+          </div>
+          <Skeleton height="40px" width="120px" style={{ borderRadius: '8px' }} />
+        </div>
+        <div className="stats-grid">
+          {[1, 2].map(i => (
+            <div key={i} className="stats-card glass-card">
+              <Skeleton height="24px" width="100px" style={{ marginBottom: '8px' }} />
+              <Skeleton height="32px" width="80px" />
+            </div>
+          ))}
+        </div>
+        <div className="bills-section">
+          <Skeleton height="24px" width="150px" style={{ marginBottom: '1rem' }} />
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bill-card card" style={{ height: '140px', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <Skeleton type="circular" width="48px" height="48px" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton height="20px" width="60%" style={{ marginBottom: '8px' }} />
+                  <Skeleton height="16px" width="100px" />
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Skeleton height="20px" width="120px" />
+                <Skeleton height="24px" width="80px" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  // Pagination for Later Bills - Derived variables
+  const PAGE_SIZE = 6
+  const totalPages = Math.ceil(laterBills.length / PAGE_SIZE)
+  const displayedLaterBills = laterBills.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <div className="recurring-bills-page">
@@ -286,9 +554,31 @@ function RecurringBills() {
             <FiCalendar className="page-icon" />
             {t('recurringBills.title')}
           </h1>
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            <FiPlus /> {t('recurringBills.addBill')}
-          </button>
+          <div className="header-actions-group" style={{ display: 'flex', gap: '1rem' }}>
+            {/* View Toggle */}
+            <div className="view-toggle glass-card" style={{ display: 'flex', padding: '4px', borderRadius: '8px', gap: '4px' }}>
+              <button
+                className={`btn-icon ${viewMode === 'list' ? 'active' : ''}`}
+                onClick={() => setViewMode('list')}
+                title="List View"
+                style={{ background: viewMode === 'list' ? 'var(--primary)' : 'transparent', color: viewMode === 'list' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer' }}
+              >
+                <FiList size={20} />
+              </button>
+              <button
+                className={`btn-icon ${viewMode === 'calendar' ? 'active' : ''}`}
+                onClick={() => setViewMode('calendar')}
+                title="Calendar View"
+                style={{ background: viewMode === 'calendar' ? 'var(--primary)' : 'transparent', color: viewMode === 'calendar' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer' }}
+              >
+                <FiGrid size={20} />
+              </button>
+            </div>
+
+            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+              <FiPlus /> <span className="mobile-hidden">{t('recurringBills.addBill')}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -336,8 +626,23 @@ function RecurringBills() {
         </div>
       )}
 
-      {/* Bills Sections */}
-      <div className="bills-container">
+      {/* Calendar View */}
+      {viewMode === 'calendar' && (
+        <div className="fade-in">
+          <CalendarView
+            bills={activeBills}
+            onEdit={handleEdit}
+            onDelete={openDeleteModal}
+            onMarkPaid={handleMarkPaid}
+            t={t}
+            formatCurrency={formatCurrency}
+          />
+        </div>
+      )}
+
+      {/* Bills Sections - List View */}
+      <div className={`bills-container ${viewMode === 'calendar' ? 'hidden' : ''}`} style={viewMode === 'calendar' ? { display: 'none' } : {}}>
+
         {/* Overdue Bills */}
         {overdueBills.length > 0 && (
           <div className="bills-section overdue-section">
@@ -352,6 +657,8 @@ function RecurringBills() {
                   onEdit={handleEdit}
                   onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
+                  onUnmark={handleUnmarkPaid}
+                  isProcessing={processingBillId === bill.id}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
                   getDaysUntil={getDaysUntil}
@@ -378,6 +685,8 @@ function RecurringBills() {
                   onEdit={handleEdit}
                   onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
+                  onUnmark={handleUnmarkPaid}
+                  isProcessing={processingBillId === bill.id}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
                   getDaysUntil={getDaysUntil}
@@ -397,13 +706,15 @@ function RecurringBills() {
               <FiCalendar /> {t('recurringBills.allBills')} ({laterBills.length})
             </h2>
             <div className="bills-grid">
-              {laterBills.map(bill => (
+              {displayedLaterBills.map(bill => (
                 <BillCard
                   key={bill.id}
                   bill={bill}
                   onEdit={handleEdit}
                   onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
+                  onUnmark={handleUnmarkPaid}
+                  isProcessing={processingBillId === bill.id}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
                   getDaysUntil={getDaysUntil}
@@ -413,6 +724,35 @@ function RecurringBills() {
                 />
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="pagination-controls" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="btn btn-secondary pagination-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <FiChevronLeft />
+                  {t('common.previous')}
+                </button>
+
+                <span className="pagination-info">
+                  {t('common.page')} {page} {t('common.of')} {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="btn btn-secondary pagination-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  {t('common.next')}
+                  <FiChevronRight />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -471,6 +811,42 @@ function RecurringBills() {
                   label={t('recurringBills.category')}
                 />
               </div>
+
+              {/* Loan Selection - ONLY if "Loan Payment" category is selected and we have active loans */}
+              {formData.category === 'loan' && activeLoanOptions.length > 0 && (
+                <div className="form-layout-item-full fade-in">
+                  <div className="form-group">
+                    <label style={{ color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FiLink /> Link to Loan
+                    </label>
+                    <select
+                      name="loanId"
+                      value={formData.loanId}
+                      onChange={handleChange}
+                      className="form-select"
+                      style={{ borderColor: 'var(--primary-color)' }}
+                    >
+                      <option value="">-- Select a Loan (Optional) --</option>
+                      {activeLoanOptions.map(loan => {
+                        const isGiven = (loan.lentBy || loan.lent_by) === 'Me'
+                        const partyName = isGiven ? (loan.borrowedBy || loan.borrowed_by) : (loan.lentBy || loan.lent_by)
+                        const type = isGiven ? t('loans.moneyLentShort') : t('loans.moneyBorrowedShort')
+                        const remaining = loan.remainingAmount ?? loan.remaining_amount ?? 0
+
+                        return (
+                          <option key={loan.id} value={loan.id}>
+                            {partyName} ({type}) - {formatCurrency(remaining)} remaining
+                          </option>
+                        )
+                      })}
+                    </select>
+                    <small className="form-hint">
+                      Marking this bill as paid will automatically add a payment to this loan.
+                    </small>
+                  </div>
+                </div>
+              )}
+
             </FormSection>
 
             <div className="form-row">
@@ -576,7 +952,7 @@ function RecurringBills() {
         message={t('recurringBills.savedSuccess')}
       />
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Payment Confirmation Modal */}
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
         onClose={closeDeleteModal}
@@ -586,6 +962,18 @@ function RecurringBills() {
         confirmText={t('common.delete')}
         variant="danger"
       />
+
+      {/* Unmark/Revert Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={unmarkModal.isOpen}
+        onClose={() => setUnmarkModal({ isOpen: false, bill: null })}
+        onConfirm={confirmUnmark}
+        title={t('recurringBills.confirmUnmarkTitle') || "Revert Payment?"}
+        message={t('recurringBills.confirmUnmarkMessage') || "This will revert the due date to the previous cycle and remove any linked loan payment created today. Are you sure?"}
+        confirmText={t('recurringBills.revert') || "Revert"}
+        variant="warning"
+        loading={processingBillId === unmarkModal.bill?.id}
+      />
     </div>
   )
 }
@@ -593,16 +981,65 @@ function RecurringBills() {
 /**
  * Bill Card Component
  */
-function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency }) {
-  const daysUntil = getDaysUntil(bill.nextDueDate || bill.next_due_date)
+function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, isProcessing, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency }) {
+  /* Swipe Gesture Integration */
+  const { handleTouchStart, handleTouchMove, handleTouchEnd, getSwipeProps } = useSwipeGesture({
+    onSwipeLeft: () => onDelete(bill.id),
+    onSwipeRight: () => onMarkPaid(bill.id, bill.amount, bill.notes),
+    threshold: 80
+  })
+
   const icon = getCategoryIcon(bill.category)
+  const daysUntil = getDaysUntil(bill.nextDueDate || bill.next_due_date)
+  const hasLoanLink = bill.notes && bill.notes.includes('[LOAN_REF:')
+
+  const swipeProps = getSwipeProps(bill.id)
+  const offset = swipeProps.offset || 0
+  const isSwipeRight = offset > 0
+  const isSwipeLeft = offset < 0
+  const swipeProgress = Math.min(100, (Math.abs(offset) / 80) * 100)
 
   return (
-    <div className={`bill-card ${status}`}>
+    <div
+      className={`bill-card ${status} ${swipeProps.className || ''}`}
+      style={swipeProps.style}
+      onTouchStart={(e) => handleTouchStart(bill.id, e)}
+      onTouchMove={(e) => handleTouchMove(bill.id, e)}
+      onTouchEnd={(e) => handleTouchEnd(bill.id, e)}
+    >
+      {/* Swipe Indicators */}
+      {isSwipeRight && (
+        <div
+          className="swipe-indicator swipe-check-indicator"
+          style={{
+            opacity: Math.min(1, swipeProgress / 50),
+            transform: `translate(${-offset + 16}px, -50%) scale(${Math.min(1, swipeProgress / 60)})`,
+            left: 0
+          }}
+        >
+          <FiCheck size={24} />
+        </div>
+      )}
+      {isSwipeLeft && (
+        <div
+          className="swipe-indicator swipe-delete-indicator"
+          style={{
+            opacity: Math.min(1, swipeProgress / 50),
+            transform: `translate(${-offset - 16}px, -50%) scale(${Math.min(1, swipeProgress / 60)})`,
+            right: 0
+          }}
+        >
+          <FiTrash2 size={24} />
+        </div>
+      )}
+
       <div className="bill-header">
         <div className="bill-icon">{icon}</div>
         <div className="bill-info">
-          <h3>{bill.name}</h3>
+          <h3>
+            {bill.name}
+            {hasLoanLink && <FiLink className="linked-icon" title="Linked to Loan" style={{ marginLeft: '6px', color: 'var(--primary-color)' }} />}
+          </h3>
           <span className="bill-frequency">{t(`recurringBills.frequencies.${bill.frequency}`)}</span>
         </div>
         <div className="bill-actions">
@@ -646,16 +1083,29 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, getCategoryIcon, formatD
 
       {bill.notes && (
         <div className="bill-notes">
-          <p>{bill.notes}</p>
+          <p>{bill.notes.replace(/\[LOAN_REF:[^\]]+\]/, '').trim()}</p>
         </div>
       )}
 
-      <div className="bill-footer">
+      <div className="bill-footer" style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+        <button
+          className="btn btn-sm btn-outline-secondary"
+          onClick={() => onUnmark(bill)}
+          title={t('recurringBills.unmarkPaid') || "Revert Last Payment"}
+        >
+          <FiRotateCcw />
+        </button>
         <button
           className="btn btn-sm btn-success"
-          onClick={() => onMarkPaid(bill.id)}
+          onClick={() => onMarkPaid(bill.id, bill.amount, bill.notes)}
+          style={{ flex: 1 }}
+          disabled={isProcessing}
         >
-          <FiCheck /> {t('recurringBills.markPaid')}
+          {isProcessing ? (
+            <><div className="spinner-small" style={{ width: '12px', height: '12px', marginRight: '5px' }}></div> {t('common.processing')}</>
+          ) : (
+            <><FiCheck /> {t('recurringBills.markPaid')}</>
+          )}
         </button>
       </div>
     </div>

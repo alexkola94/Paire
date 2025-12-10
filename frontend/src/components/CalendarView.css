@@ -1,0 +1,251 @@
+.calendar-view-container {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-bottom: 2rem;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.current-month-display {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.calendar-nav-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.calendar-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* Week Days Header */
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.weekday-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    padding: 0.5rem 0;
+}
+
+/* Calendar Grid */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    /* Square cells */
+    border-radius: 8px;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.02);
+    position: relative;
+    overflow: hidden;
+}
+
+.calendar-day:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.calendar-day.different-month {
+    opacity: 0.3;
+    pointer-events: none;
+    /* Optional: disable clicking other months */
+}
+
+.calendar-day.today {
+    background: rgba(var(--primary-rgb), 0.1);
+    /* Assuming primary variable usage */
+    border: 1px solid var(--primary);
+}
+
+.calendar-day.selected {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+}
+
+.day-number {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+/* Dots / Markers */
+.day-markers {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+.bill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--text-secondary);
+}
+
+.category-utilities {
+    background-color: #f1c40f;
+}
+
+.category-subscription {
+    background-color: #e74c3c;
+}
+
+.category-insurance {
+    background-color: #3498db;
+}
+
+.category-rent {
+    background-color: #9b59b6;
+}
+
+.category-loan {
+    background-color: #e67e22;
+}
+
+.category-internet {
+    background-color: #1abc9c;
+}
+
+.category-phone {
+    background-color: #34495e;
+}
+
+.category-gym {
+    background-color: #2ecc71;
+}
+
+.category-other {
+    background-color: #95a5a6;
+}
+
+.more-dots {
+    font-size: 8px;
+    line-height: 1;
+    color: var(--text-secondary);
+}
+
+.calendar-day.selected .bill-dot {
+    background-color: white;
+}
+
+.calendar-day.selected .more-dots {
+    color: white;
+}
+
+/* Selected Date Details */
+.selected-date-details {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--card-border);
+}
+
+.selected-date-details h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.bills-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bill-item-compact {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+    border-radius: 12px;
+}
+
+.category-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.bill-info {
+    display: flex;
+    justify-content: space-between;
+    flex: 1;
+    align-items: center;
+}
+
+.bill-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bill-amount {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.no-bills-message {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .calendar-view-container {
+        padding: 1rem;
+    }
+
+    .calendar-day {
+        padding: 2px;
+    }
+
+    .day-number {
+        font-size: 0.8rem;
+    }
+
+    .bill-dot {
+        width: 4px;
+        height: 4px;
+    }
+}

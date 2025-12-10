@@ -15,6 +15,7 @@ import useUndo from '../hooks/useUndo'
 import ToastContainer from '../components/ToastContainer'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
+import Skeleton from '../components/Skeleton'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './Expenses.css'
 
@@ -39,7 +40,7 @@ function Expenses() {
 
   // Phase 4: Mobile & Accessibility hooks
   const { announce } = useScreenReader()
-  const { toasts, showSuccess, showError, removeToast } = useToast()
+  const { toasts, success: showSuccess, error: showError, removeToast } = useToast()
 
   // Phase 5: Polish & Advanced UX
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
@@ -91,12 +92,14 @@ function Expenses() {
    */
   const handleCreate = async (expenseData) => {
     try {
-      setFormLoading(true)
+      console.log('--- handleCreate started ---')
       // Close form immediately and show full screen loader
       setShowForm(false)
       setShowLoadingProgress(true)
 
+      console.log('Calling transactionService.create...')
       const createdExpense = await transactionService.create(expenseData)
+      console.log('transactionService.create finished. Result:', createdExpense)
 
       // Phase 5: Success animation
       setShowLoadingProgress(false)
@@ -306,8 +309,30 @@ function Expenses() {
 
   if (loading) {
     return (
-      <div className="page-loading">
-        <LogoLoader size="medium" />
+      <div className="expenses-page">
+        <div className="page-header flex-between">
+          <div>
+            <Skeleton height="32px" width="150px" style={{ marginBottom: '8px' }} />
+            <Skeleton height="20px" width="100px" />
+          </div>
+          <Skeleton height="40px" width="140px" style={{ borderRadius: '8px' }} />
+        </div>
+        <div className="expenses-grid">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="expense-card card" style={{ height: '200px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <Skeleton height="24px" width="120px" />
+                <Skeleton height="24px" width="80px" />
+              </div>
+              <Skeleton height="16px" width="100%" style={{ marginBottom: '0.5rem' }} />
+              <Skeleton height="16px" width="60%" style={{ marginBottom: '1.5rem' }} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: 'auto' }}>
+                <Skeleton type="circular" width="32px" height="32px" />
+                <Skeleton type="circular" width="32px" height="32px" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

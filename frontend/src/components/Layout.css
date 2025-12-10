@@ -54,6 +54,45 @@
   /* Allow text truncation */
 }
 
+/* Theme Toggle Styles */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.theme-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.theme-toggle-sidebar {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.theme-toggle-sidebar:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--primary);
+}
+
+/* Dark mode adjustments for toggle */
+[data-theme='dark'] .theme-toggle-btn:hover,
+[data-theme='dark'] .theme-toggle-sidebar:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Paire brand header styling */
 .header-brand {
   display: flex;
@@ -116,6 +155,11 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+}
+
+/* Force theme toggle to be visible on mobile */
+.header-icon-btn.theme-toggle-btn {
+  display: flex !important;
 }
 
 .header-icon-btn:hover {
@@ -532,6 +576,12 @@
   /* Prevent white flash */
   position: relative;
   z-index: 1;
+}
+
+@media (max-width: 767px) {
+  .layout-main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
 }
 
 /* ================================

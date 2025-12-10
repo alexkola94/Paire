@@ -1,101 +1,151 @@
-import { useRef, useEffect, useState } from 'react'
+import { useState, useCallback } from 'react'
 
 /**
- * Custom hook for swipe gesture detection
- * Supports swipe down to close modals on mobile
+ * Custom hook to handle swipe gestures on mobile devices
+ * Supports swipe left (negative delta) and swipe right (positive delta)
+ * 
+ * @param {Object} options Configuration options
+ * @param {Function} options.onSwipeLeft Callback for left swipe (e.g., delete)
+ * @param {Function} options.onSwipeRight Callback for right swipe (e.g., approve/pay)
+ * @param {number} options.threshold Minimum distance in pixels to trigger swipe (default: 60)
+ * @returns {Object} { handleTouchStart, handleTouchMove, handleTouchEnd, swipeState }
  */
-function useSwipeGesture(onSwipeDown, threshold = 100) {
-  const [touchStart, setTouchStart] = useState(null)
-  const [touchEnd, setTouchEnd] = useState(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragDistance, setDragDistance] = useState(0)
-  const elementRef = useRef(null)
-
-  // Minimum swipe distance to trigger action
-  const minSwipeDistance = threshold
-
-  /**
-   * Handle touch start
-   */
-  const onTouchStart = (e) => {
-    setTouchEnd(null)
-    setTouchStart(e.targetTouches[0].clientY)
-    setIsDragging(true)
-    setDragDistance(0)
-  }
+const useSwipeGesture = ({
+  onSwipeLeft,
+  onSwipeRight,
+  threshold = 60,
+  preventScroll = true
+} = {}) => {
+  // State to track swipe per item ID
+  // Format: { [itemId]: { startX, startY, currentX, isSwiping } }
+  const [swipeState, setSwipeState] = useState({})
 
   /**
-   * Handle touch move
+   * Start tracking touch
    */
-  const onTouchMove = (e) => {
-    if (!touchStart) return
-    
-    const currentY = e.targetTouches[0].clientY
-    const distance = currentY - touchStart
-    
-    // Only allow downward swipes
-    if (distance > 0) {
-      setDragDistance(distance)
+  const handleTouchStart = useCallback((itemId, e) => {
+    // Only handle touch events
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return
+
+    // Ignore if clicking interactive elements (buttons, inputs)
+    if (e.target.closest('button, a, input, select, .no-swipe')) return
+
+    const touch = e.touches[0]
+    setSwipeState(prev => ({
+      ...prev,
+      [itemId]: {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        currentX: touch.clientX,
+        isSwiping: false
+      }
+    }))
+  }, [])
+
+  /**
+   * Track movement
+   */
+  const handleTouchMove = useCallback((itemId, e) => {
+    const touch = e.touches[0]
+    const state = swipeState[itemId]
+
+    if (!state) return
+
+    const deltaX = touch.clientX - state.startX
+    const deltaY = Math.abs(touch.clientY - state.startY)
+    const absDeltaX = Math.abs(deltaX)
+
+    // Determine if horizontal movement dominates vertical
+    // This prevents accidental swipes while scrolling locally
+    const horizontalDominance = absDeltaX > deltaY * 1.5
+
+    if (absDeltaX > 10 && horizontalDominance) {
+      // If movement is horizontal enough, maybe lock scroll
+      if (preventScroll && e.cancelable) {
+        // Determine direction validity
+        const isLeft = deltaX < 0
+        const isRight = deltaX > 0
+
+        // Only prevent default if we actually have a handler for this direction
+        const hasHandler = (isLeft && onSwipeLeft) || (isRight && onSwipeRight)
+
+        if (hasHandler) {
+          if (absDeltaX > 30) {
+            e.preventDefault() // Lock vertical scroll once committed
+          }
+
+          setSwipeState(prev => ({
+            ...prev,
+            [itemId]: {
+              ...prev[itemId],
+              currentX: touch.clientX,
+              isSwiping: true
+            }
+          }))
+        }
+      }
+    }
+  }, [swipeState, onSwipeLeft, onSwipeRight, preventScroll])
+
+  /**
+   * End tracking and trigger callbacks
+   */
+  const handleTouchEnd = useCallback((itemId, e) => {
+    const state = swipeState[itemId]
+    if (!state) return
+
+    // Calculate final delta (use changedTouches if available, otherwise fallback)
+    const touch = e.changedTouches ? e.changedTouches[0] : null
+    const endX = touch ? touch.clientX : state.currentX
+    const deltaX = endX - state.startX
+    const absDeltaX = Math.abs(deltaX)
+
+    if (state.isSwiping && absDeltaX > threshold) {
+      if (deltaX > 0 && onSwipeRight) {
+        onSwipeRight(itemId)
+      } else if (deltaX < 0 && onSwipeLeft) {
+        onSwipeLeft(itemId)
+      }
+    }
+
+    // Reset state for this item
+    setSwipeState(prev => {
+      const next = { ...prev }
+      delete next[itemId]
+      return next
+    })
+  }, [swipeState, onSwipeLeft, onSwipeRight, threshold])
+
+  /**
+   * Get visual properties for an item (transform, style classes)
+   */
+  const getSwipeProps = (itemId) => {
+    const state = swipeState[itemId]
+    if (!state || !state.isSwiping) return {}
+
+    const deltaX = state.currentX - state.startX
+
+    // Limit max drag visual distance to avoid weirdness
+    const maxDrag = 150
+    const constrainedDelta = Math.max(Math.min(deltaX, maxDrag), -maxDrag)
+
+    return {
+      style: {
+        transform: `translateX(${constrainedDelta}px)`,
+        transition: 'none'
+      },
+      className: `swiping ${deltaX > 0 ? 'swipe-right' : 'swipe-left'}`,
+      offset: deltaX
     }
   }
-
-  /**
-   * Handle touch end
-   */
-  const onTouchEnd = (e) => {
-    if (!touchStart || !touchEnd) return
-    
-    const distance = touchStart - touchEnd
-    const isDownSwipe = distance > minSwipeDistance
-
-    if (isDownSwipe && onSwipeDown) {
-      onSwipeDown()
-    }
-
-    setIsDragging(false)
-    setDragDistance(0)
-    setTouchStart(null)
-    setTouchEnd(null)
-  }
-
-  /**
-   * Update touch end position
-   */
-  const onTouchEndPosition = (e) => {
-    setTouchEnd(e.changedTouches[0].clientY)
-  }
-
-  useEffect(() => {
-    const element = elementRef.current
-    if (!element) return
-
-    element.addEventListener('touchstart', onTouchStart, { passive: true })
-    element.addEventListener('touchmove', onTouchMove, { passive: true })
-    element.addEventListener('touchend', onTouchEndPosition, { passive: true })
-    element.addEventListener('touchend', onTouchEnd, { passive: true })
-
-    return () => {
-      element.removeEventListener('touchstart', onTouchStart)
-      element.removeEventListener('touchmove', onTouchMove)
-      element.removeEventListener('touchend', onTouchEndPosition)
-      element.removeEventListener('touchend', onTouchEnd)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [touchStart, touchEnd])
 
   return {
-    elementRef,
-    isDragging,
-    dragDistance,
-    style: isDragging && dragDistance > 0
-      ? {
-          transform: `translateY(${Math.min(dragDistance, 200)}px)`,
-          transition: dragDistance > minSwipeDistance ? 'transform 0.2s ease-out' : 'none',
-          opacity: dragDistance > minSwipeDistance ? 0.8 : 1
-        }
-      : {}
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    getSwipeProps,
+    isSwiping: (itemId) => swipeState[itemId]?.isSwiping
   }
 }
 
 export default useSwipeGesture
-

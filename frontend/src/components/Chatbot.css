@@ -672,6 +672,25 @@ body.shopping-list-fullscreen .chatbot-container {
   }
 }
 
+/* Mobile Adjustments for Bottom Navigation */
+@media (max-width: 767px) {
+  .chatbot-fab {
+    bottom: calc(85px + env(safe-area-inset-bottom));
+  }
+
+  .chatbot-reveal-btn {
+    bottom: calc(85px + env(safe-area-inset-bottom));
+  }
+
+  .chatbot-window.minimized {
+    bottom: calc(85px + env(safe-area-inset-bottom));
+  }
+
+  /* Ensure open chatbot window respects bottom nav if needed, 
+     or keep full screen. Let's keep full screen for immersion 
+     but ensure the close button/header is accessible. */
+}
+
 /* Scrollbar styling */
 .chatbot-messages::-webkit-scrollbar {
   width: 6px;

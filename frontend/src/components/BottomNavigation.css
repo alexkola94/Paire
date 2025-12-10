@@ -1,0 +1,104 @@
+/* Bottom Navigation - Mobile Only */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: calc(60px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+    display: none;
+    /* Hidden by default (desktop) */
+}
+
+/* Container */
+.bottom-nav-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Nav Items */
+.bottom-nav .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 500;
+    height: 100%;
+    gap: 4px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.bottom-nav .nav-item.active {
+    color: var(--primary);
+}
+
+.bottom-nav .nav-item .icon-container {
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.bottom-nav .nav-item.active .icon-container {
+    transform: translateY(-2px);
+}
+
+/* Active Indicator Dot */
+.bottom-nav .nav-item.active::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 25%;
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--primary-light);
+}
+
+/* FAB - Floating Action Button */
+.bottom-nav .fab-container {
+    position: relative;
+    top: -20px;
+    /* Lift it up */
+}
+
+.bottom-nav .fab-button {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px rgba(108, 92, 231, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 4px solid rgba(255, 255, 255, 0.9);
+    /* Border creates gap from bar */
+}
+
+.bottom-nav .fab-button:active {
+    transform: scale(0.92);
+}
+
+/* Show on Mobile */
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: block;
+    }
+}
