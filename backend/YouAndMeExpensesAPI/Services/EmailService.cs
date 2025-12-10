@@ -108,7 +108,14 @@ namespace YouAndMeExpensesAPI.Services
                     // Connect to Gmail SMTP server with timeout
                     using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
                     {
-                        await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, SecureSocketOptions.StartTls, cts.Token);
+                        // Determine correct socket options based on port
+                        // Port 465: Implicit SSL (SslOnConnect) - Preferred for cloud environments
+                        // Port 587: Explicit SSL (StartTls)
+                        var socketOptions = _emailSettings.SmtpPort == 465 
+                            ? SecureSocketOptions.SslOnConnect 
+                            : SecureSocketOptions.StartTls;
+
+                        await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, socketOptions, cts.Token);
 
                         // Authenticate
                         await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password, cts.Token);
