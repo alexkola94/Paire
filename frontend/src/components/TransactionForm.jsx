@@ -148,7 +148,9 @@ function TransactionForm({
     try {
       let finalData = {
         ...formData,
+        id: transaction?.id,
         amount: parseFloat(formData.amount),
+        recurrenceEndDate: formData.recurrenceEndDate || null,
         type
       }
 

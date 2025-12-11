@@ -458,11 +458,11 @@ namespace YouAndMeExpensesAPI.Services
                     "subscription_analysis" => await GetSubscriptionAnalysisAsync(userId, language),
                     "bill_negotiation" => GetBillNegotiationTipsAsync(language),
                     "currency_conversion" => await GetCurrencyConversionAsync(normalizedQuery, language),
-                    // TODO: Implement these methods when needed
-                    // "investment_advice" => GetInvestmentBasicsAsync(),
-                    // "seasonal_spending" => await GetSeasonalSpendingAsync(userId),
-                    // "financial_ratios" => await GetFinancialRatiosAsync(userId),
-                    // "money_tips" => GetMoneyTipsAsync(),
+                    // Features Enabled for Expansion
+                    "investment_advice" => GetInvestmentBasicsAsync(),
+                    "seasonal_spending" => await GetSeasonalSpendingAsync(userId),
+                    "financial_ratios" => await GetFinancialRatiosAsync(userId),
+                    "money_tips" => GetMoneyTipsAsync(),
                     "help" => GetHelpResponse(language),
                     _ => GetUnknownResponse(normalizedQuery, history, language)
                 };
@@ -1261,49 +1261,73 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         /// <summary>
-        /// Get current balance
+        /// Get current balance (Global Net Worth)
         /// </summary>
         private async Task<ChatbotResponse> GetCurrentBalanceAsync(string userId, string language = "en")
         {
-            var now = DateTime.UtcNow;
-            var start = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            // Calculate global balance directly in DB for performance
+            var income = await _dbContext.Transactions
+                .Where(t => t.UserId == userId && t.Type == "income")
+                .SumAsync(t => t.Amount);
 
-            var transactions = await _dbContext.Transactions
-                .Where(t => t.UserId == userId)
-                .Where(t => t.Date >= start)
-                .ToListAsync();
+            var expenses = await _dbContext.Transactions
+                .Where(t => t.UserId == userId && t.Type == "expense")
+                .SumAsync(t => t.Amount);
 
-            var income = transactions.Where(t => t.Type == "income").Sum(t => t.Amount);
-            var expenses = transactions.Where(t => t.Type == "expense").Sum(t => t.Amount);
             var balance = income - expenses;
 
-            var message = language == "el"
-                ? (balance >= 0
-                    ? $"Το τρέχον υπόλοιπό σας αυτόν τον μήνα είναι ${balance:N2}. Τα πάτε πολύ καλά! 💰"
-                    : $"Το τρέχον υπόλοιπό σας αυτόν τον μήνα είναι -${Math.Abs(balance):N2}. Σκεφτείτε να εξετάσετε τα έξοδά σας.")
-                : (balance >= 0
-                    ? $"Your current balance this month is ${balance:N2}. You're doing great! 💰"
-                    : $"Your current balance this month is -${Math.Abs(balance):N2}. Consider reviewing your expenses.");
+            // Get monthly stats for context
+            var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            
+            var monthlyIncome = await _dbContext.Transactions
+                .Where(t => t.UserId == userId && t.Type == "income" && t.Date >= monthStart)
+                .SumAsync(t => t.Amount);
+                
+            var monthlyExpenses = await _dbContext.Transactions
+                .Where(t => t.UserId == userId && t.Type == "expense" && t.Date >= monthStart)
+                .SumAsync(t => t.Amount);
+
+            var message = "";
+            
+            if (language == "el")
+            {
+                message = $"### 💰 Τρέχον Υπόλοιπο\n" +
+                         $"**Συνολικό Υπόλοιπο:** ${(balance):N2}\n\n" +
+                         $"#### Επισκόπηση Αυτού του Μήνα:\n" +
+                         $"* 📥 Έσοδα: ${monthlyIncome:N2}\n" +
+                         $"* 📤 Έξοδα: ${monthlyExpenses:N2}\n" +
+                         $"* 📉 Καθαρή Ροή: ${(monthlyIncome - monthlyExpenses):N2}";
+            }
+            else
+            {
+                message = $"### 💰 Current Balance\n" +
+                         $"**Net Balance:** ${(balance):N2}\n\n" +
+                         $"#### This Month's Overview:\n" +
+                         $"* 📥 Income: ${monthlyIncome:N2}\n" +
+                         $"* 📤 Expenses: ${monthlyExpenses:N2}\n" +
+                         $"* 📉 Net Flow: ${(monthlyIncome - monthlyExpenses):N2}";
+            }
 
             var quickActions = language == "el"
                 ? new List<string>
                 {
-                    "Δείξε μου πού ξόδεψα",
-                    "Πώς μπορώ να αποταμιεύσω χρήματα;",
-                    "Σύγκρινε με τον προηγούμενο μήνα"
+                    "Δείξε πηγές εσόδων",
+                    "Ανάλυση εξόδων",
+                    "Κατάσταση προϋπολογισμού"
                 }
                 : new List<string>
                 {
-                    "Show me where I spent",
-                    "How can I save money?",
-                    "Compare with last month"
+                    "Show income sources",
+                    "Expense analysis",
+                    "Budget status"
                 };
 
             return new ChatbotResponse
             {
                 Message = message,
                 Type = balance >= 0 ? "insight" : "warning",
-                Data = new { income, expenses, balance },
+                Data = new { totalIncome = income, totalExpenses = expenses, balance, monthlyNet = monthlyIncome - monthlyExpenses },
                 QuickActions = quickActions,
                 ActionLink = "/dashboard"
             };
@@ -1554,32 +1578,27 @@ namespace YouAndMeExpensesAPI.Services
 
             if (language == "el")
             {
-                suggestions.Add("💡 **Προσωποποιημένες Συμβουλές Αποταμίευσης**\n");
-                suggestions.Add("🎯 **Βασισμένο στα Μοτίβα Δαπανών σας:**\n");
+                suggestions.Add("### 💡 Προσωποποιημένες Συμβουλές Αποταμίευσης\n");
+                suggestions.Add("#### 🎯 Ανάλυση Δαπανών\n");
                 
+                // Table Header
+                suggestions.Add("| Κατηγορία | % | Αποταμίευση | Στρατηγική |");
+                suggestions.Add("| --- | --- | --- | --- |");
+
                 foreach (var category in analytics.CategoryBreakdown.Take(5))
                 {
-                    if (category.Percentage > 35)
+                    if (category.Percentage > 20)
                     {
-                        var savings = category.Amount * 0.15m;
+                        var savingsPercent = category.Percentage > 35 ? 0.15m : 0.10m;
+                        var savings = category.Amount * savingsPercent;
                         potentialSavings += savings;
                         var emoji = GetCategoryEmoji(category.Category);
-                        suggestions.Add($"{emoji} **{category.Category}** ({category.Percentage:F0}% των δαπανών)");
-                        suggestions.Add($"   • Αποταμιεύστε ${savings:N2}/μήνα με 15% μείωση");
-                        suggestions.Add(GetCategorySavingTip(category.Category, language));
-                        suggestions.Add("");
-                    }
-                    else if (category.Percentage > 20)
-                    {
-                        var savings = category.Amount * 0.10m;
-                        potentialSavings += savings;
-                        var emoji = GetCategoryEmoji(category.Category);
-                        suggestions.Add($"{emoji} **{category.Category}**");
-                        suggestions.Add($"   • Δυνητική αποταμίευση: ${savings:N2}/μήνα");
-                        suggestions.Add(GetCategorySavingTip(category.Category, language));
-                        suggestions.Add("");
+                        var tip = GetCategorySavingTip(category.Category, language).Replace("   💡 Συμβουλή: ", "").Trim();
+                        
+                        suggestions.Add($"| {emoji} {category.Category} | {category.Percentage:F0}% | ${savings:N2} | {tip} |");
                     }
                 }
+                suggestions.Add(""); // Space after table
 
                 if (analytics.AverageDailySpending > 100)
                 {
@@ -1587,49 +1606,42 @@ namespace YouAndMeExpensesAPI.Services
                     var monthlySavings = (analytics.AverageDailySpending - targetDaily) * 30;
                     potentialSavings += monthlySavings;
                     
-                    suggestions.Add($"📊 **Πρόκληση Ημερήσιων Δαπανών:**");
-                    suggestions.Add($"   • Τρέχον: ${analytics.AverageDailySpending:N2}/ημέρα");
-                    suggestions.Add($"   • Στόχος: ${targetDaily:N2}/ημέρα");
-                    suggestions.Add($"   • Μηνιαία Αποταμίευση: ${monthlySavings:N2}");
-                    suggestions.Add("");
+                    suggestions.Add($"#### 📊 Πρόκληση Ημερήσιων Δαπανών");
+                    suggestions.Add($"* **Τρέχον:** ${analytics.AverageDailySpending:N2}/ημέρα");
+                    suggestions.Add($"* **Στόχος:** ${targetDaily:N2}/ημέρα");
+                    suggestions.Add($"* **Όφελος:** ${monthlySavings:N2}/μήνα\n");
                 }
 
-                suggestions.Add("💰 **Γρήγορες Νίκες:**");
-                suggestions.Add("✓ Ακύρωση αχρησιμοποίητων συνδρομών");
-                suggestions.Add("✓ Ρύθμιση αυτόματης αποταμίευσης (πληρώστε πρώτα τον εαυτό σας!)");
-                suggestions.Add("✓ Χρησιμοποιήστε τον κανόνα 24 ωρών για μη απαραίτητες αγορές");
-                suggestions.Add("✓ Προετοιμασία γευμάτων τις Κυριακές για μείωση εξόδων εστιατορίου");
-                suggestions.Add("✓ Σύγκριση τιμών και χρήση εφαρμογών cashback");
-                suggestions.Add("✓ Ρύθμιση ειδοποιήσεων δαπανών για τις κύριες κατηγορίες σας\n");
+                suggestions.Add("#### 💰 Γρήγορες Νίκες");
+                suggestions.Add("* Ακύρωση αχρησιμοποίητων συνδρομών");
+                suggestions.Add("* Ρύθμιση αυτόματης αποταμίευσης");
+                suggestions.Add("* Κανόνας 24 ωρών για αγορές");
+                suggestions.Add("* Προετοιμασία γευμάτων (Meal prep)");
+                suggestions.Add("* Χρήση εφαρμογών cashback\n");
             }
             else
             {
-                suggestions.Add("💡 **Personalized Money-Saving Tips**\n");
-                suggestions.Add("🎯 **Based on Your Spending Patterns:**\n");
+                suggestions.Add("### 💡 Personalized Money-Saving Tips\n");
+                suggestions.Add("#### 🎯 Spending Analysis\n");
                 
+                // Table Header
+                suggestions.Add("| Category | % | Savings | Strategy |");
+                suggestions.Add("| --- | --- | --- | --- |");
+
                 foreach (var category in analytics.CategoryBreakdown.Take(5))
                 {
-                    if (category.Percentage > 35)
+                    if (category.Percentage > 20)
                     {
-                        var savings = category.Amount * 0.15m;
+                        var savingsPercent = category.Percentage > 35 ? 0.15m : 0.10m;
+                        var savings = category.Amount * savingsPercent;
                         potentialSavings += savings;
                         var emoji = GetCategoryEmoji(category.Category);
-                        suggestions.Add($"{emoji} **{category.Category}** ({category.Percentage:F0}% of spending)");
-                        suggestions.Add($"   • Save ${savings:N2}/month with a 15% reduction");
-                        suggestions.Add(GetCategorySavingTip(category.Category, language));
-                        suggestions.Add("");
-                    }
-                    else if (category.Percentage > 20)
-                    {
-                        var savings = category.Amount * 0.10m;
-                        potentialSavings += savings;
-                        var emoji = GetCategoryEmoji(category.Category);
-                        suggestions.Add($"{emoji} **{category.Category}**");
-                        suggestions.Add($"   • Potential savings: ${savings:N2}/month");
-                        suggestions.Add(GetCategorySavingTip(category.Category, language));
-                        suggestions.Add("");
+                        var tip = GetCategorySavingTip(category.Category, language).Replace("   💡 Tip: ", "").Trim();
+                        
+                        suggestions.Add($"| {emoji} {category.Category} | {category.Percentage:F0}% | ${savings:N2} | {tip} |");
                     }
                 }
+                suggestions.Add("");
 
                 if (analytics.AverageDailySpending > 100)
                 {
@@ -1637,23 +1649,21 @@ namespace YouAndMeExpensesAPI.Services
                     var monthlySavings = (analytics.AverageDailySpending - targetDaily) * 30;
                     potentialSavings += monthlySavings;
                     
-                    suggestions.Add($"📊 **Daily Spending Challenge:**");
-                    suggestions.Add($"   • Current: ${analytics.AverageDailySpending:N2}/day");
-                    suggestions.Add($"   • Target: ${targetDaily:N2}/day");
-                    suggestions.Add($"   • Monthly Savings: ${monthlySavings:N2}");
-                    suggestions.Add("");
+                    suggestions.Add($"#### 📊 Daily Spending Challenge");
+                    suggestions.Add($"* **Current:** ${analytics.AverageDailySpending:N2}/day");
+                    suggestions.Add($"* **Target:** ${targetDaily:N2}/day");
+                    suggestions.Add($"* **Benefit:** ${monthlySavings:N2}/month\n");
                 }
 
-                suggestions.Add("💰 **Quick Wins:**");
-                suggestions.Add("✓ Cancel unused subscriptions");
-                suggestions.Add("✓ Set up automatic savings (pay yourself first!)");
-                suggestions.Add("✓ Use the 24-hour rule for non-essential purchases");
-                suggestions.Add("✓ Meal prep on Sundays to reduce dining out");
-                suggestions.Add("✓ Compare prices and use cashback apps");
-                suggestions.Add("✓ Set spending alerts for your main categories\n");
+                suggestions.Add("#### 💰 Quick Wins");
+                suggestions.Add("* Cancel unused subscriptions");
+                suggestions.Add("* Set up automatic savings");
+                suggestions.Add("* 24-hour rule for non-essentials");
+                suggestions.Add("* Sunday meal prep");
+                suggestions.Add("* Use cashback apps\n");
             }
 
-            // 50/30/20 rule analysis
+            // 50/30/20 rule analysis (Markdown)
             if (analytics.TotalIncome > 0)
             {
                 var needs = analytics.TotalIncome * 0.5m;
@@ -1662,11 +1672,12 @@ namespace YouAndMeExpensesAPI.Services
                 
                 if (language == "el")
                 {
-                    suggestions.Add("📈 **Κανόνας Προϋπολογισμού 50/30/20:**");
-                    suggestions.Add($"   Βάσει εσόδων ${analytics.TotalIncome:N2}:");
-                    suggestions.Add($"   • Ανάγκες (50%): ${needs:N2}");
-                    suggestions.Add($"   • Επιθυμίες (30%): ${wants:N2}");
-                    suggestions.Add($"   • Αποταμιεύσεις (20%): ${savings:N2}");
+                    suggestions.Add("#### 📈 Κανόνας 50/30/20");
+                    suggestions.Add($"| Κατηγορία | Στόχος | Ποσό |");
+                    suggestions.Add($"| --- | --- | --- |");
+                    suggestions.Add($"| Ανάγκες (50%) | ${needs:N2} |");
+                    suggestions.Add($"| Επιθυμίες (30%) | ${wants:N2} |");
+                    suggestions.Add($"| Αποταμιεύσεις (20%) | ${savings:N2} |");
                     
                     var actualSavings = analytics.Balance;
                     var savingsRate = analytics.TotalIncome > 0 ? (actualSavings / analytics.TotalIncome) * 100 : 0;
@@ -1674,21 +1685,22 @@ namespace YouAndMeExpensesAPI.Services
                     if (savingsRate < 20)
                     {
                         var gap = savings - actualSavings;
-                        suggestions.Add($"\n   ⚡ Αποταμιεύετε {savingsRate:F1}%. Αυξήστε κατά ${gap:N2} για να φτάσετε 20%!");
+                        suggestions.Add($"\n⚡ **Προσοχή:** Αποταμιεύετε {savingsRate:F1}%. Στόχος: +${gap:N2}.");
                         potentialSavings += gap;
                     }
                     else
                     {
-                        suggestions.Add($"\n   ✅ Υπερβαίνετε τον στόχο αποταμίευσης 20%! Εξαιρετικά!");
+                        suggestions.Add($"\n✅ **Μπράβο:** Υπερβαίνετε τον στόχο (20%)!");
                     }
                 }
                 else
                 {
-                    suggestions.Add("📈 **50/30/20 Budget Rule:**");
-                    suggestions.Add($"   Based on income of ${analytics.TotalIncome:N2}:");
-                    suggestions.Add($"   • Needs (50%): ${needs:N2}");
-                    suggestions.Add($"   • Wants (30%): ${wants:N2}");
-                    suggestions.Add($"   • Savings (20%): ${savings:N2}");
+                    suggestions.Add("#### 📈 50/30/20 Budget Rule");
+                    suggestions.Add($"| Category | Target | Amount |");
+                    suggestions.Add($"| --- | --- | --- |");
+                    suggestions.Add($"| Needs (50%) | ${needs:N2} |");
+                    suggestions.Add($"| Wants (30%) | ${wants:N2} |");
+                    suggestions.Add($"| Savings (20%) | ${savings:N2} |");
                     
                     var actualSavings = analytics.Balance;
                     var savingsRate = analytics.TotalIncome > 0 ? (actualSavings / analytics.TotalIncome) * 100 : 0;
@@ -1696,12 +1708,12 @@ namespace YouAndMeExpensesAPI.Services
                     if (savingsRate < 20)
                     {
                         var gap = savings - actualSavings;
-                        suggestions.Add($"\n   ⚡ You're saving {savingsRate:F1}%. Increase by ${gap:N2} to reach 20%!");
+                        suggestions.Add($"\n⚡ **Action:** Current savings rate {savingsRate:F1}%. Aim for +${gap:N2}.");
                         potentialSavings += gap;
                     }
                     else
                     {
-                        suggestions.Add($"\n   ✅ You're exceeding the 20% savings target! Amazing!");
+                         suggestions.Add($"\n✅ **Great job:** Exceeding 20% target!");
                     }
                 }
             }
@@ -1711,13 +1723,13 @@ namespace YouAndMeExpensesAPI.Services
             {
                 if (language == "el")
                 {
-                    suggestions.Add($"\n🎉 **Συνολική Δυνητική Αποταμίευση:** ${potentialSavings:N2}/μήνα");
-                    suggestions.Add($"   Αυτό είναι ${potentialSavings * 12:N2} ετησίως!");
+                    suggestions.Add($"\n### 🎉 Συνολική Δυνητική Αποταμίευση: ${potentialSavings:N2}/μήνα");
+                    suggestions.Add($"*Ετήσιο όφελος: ${potentialSavings * 12:N2}*");
                 }
                 else
                 {
-                    suggestions.Add($"\n🎉 **Total Potential Savings:** ${potentialSavings:N2}/month");
-                    suggestions.Add($"   That's ${potentialSavings * 12:N2} per year!");
+                    suggestions.Add($"\n### 🎉 Total Potential Savings: ${potentialSavings:N2}/month");
+                    suggestions.Add($"*Yearly benefit: ${potentialSavings * 12:N2}*");
                 }
             }
 
@@ -3299,20 +3311,22 @@ I use natural language and advanced calculations to help you make smart financia
             var annualIncome = analytics.TotalIncome * 12;
 
             var insights = new List<string>();
-            insights.Add("🚀 **Long-Term Wealth Projection**\n");
+            insights.Add("### 🚀 Long-Term Wealth Projection\n");
 
-            insights.Add($"**Starting Position:**");
-            insights.Add($"• Current Savings: ${currentSavings:N2}");
-            insights.Add($"• Monthly Savings: ${monthlySavings:N2}");
-            insights.Add($"• Annual Income: ${annualIncome:N2}\n");
+            insights.Add("| Current Position | Amount |");
+            insights.Add("| --- | --- |");
+            insights.Add($"| Current Savings | ${currentSavings:N2} |");
+            insights.Add($"| Monthly Savings | ${monthlySavings:N2} |");
+            insights.Add($"| Annual Income | ${annualIncome:N2} |");
+            insights.Add("");
 
             if (monthlySavings <= 0)
             {
                 insights.Add("⚠️ **Note:** Currently spending more than earning.\n");
                 insights.Add("To build wealth, you need to:\n");
-                insights.Add("1. Create a surplus by reducing expenses");
-                insights.Add("2. Increase income through raises or side income");
-                insights.Add("3. Start with small savings goals ($25-50/month)\n");
+                insights.Add("1.  Create a surplus by reducing expenses");
+                insights.Add("2.  Increase income through raises or side income");
+                insights.Add("3.  Start with small savings goals ($25-50/month)\n");
                 
                 return new ChatbotResponse
                 {
@@ -3327,41 +3341,29 @@ I use natural language and advanced calculations to help you make smart financia
                 };
             }
 
-            insights.Add("📊 **Wealth Projection Scenarios:**\n");
+            insights.Add("#### 📊 Wealth Projection Scenarios\n");
 
             // Different investment return scenarios
             var returnRates = new[] 
             {
-                (scenario: "Conservative (Savings Account)", rate: 0.02m, risk: "Very Low"),
+                (scenario: "Conservative (Savings)", rate: 0.02m, risk: "Low"),
                 (scenario: "Moderate (Bonds/CD)", rate: 0.05m, risk: "Low"),
-                (scenario: "Balanced (60/40 Portfolio)", rate: 0.07m, risk: "Medium"),
-                (scenario: "Growth (Stock Market Avg)", rate: 0.10m, risk: "Medium-High"),
-                (scenario: "Aggressive (Growth Stocks)", rate: 0.12m, risk: "High")
+                (scenario: "Balanced (60/40)", rate: 0.07m, risk: "Med"),
+                (scenario: "Growth (Market Avg)", rate: 0.10m, risk: "Med-High")
             };
 
-            var timeframes = new[] { 5, 10, 20, 30 };
+            insights.Add("| Scenario | Rate | 10 Years | 30 Years |");
+            insights.Add("| --- | --- | --- | --- |");
 
             foreach (var (scenario, rate, risk) in returnRates)
             {
-                insights.Add($"💰 **{scenario}** ({rate * 100:F0}% return, {risk} risk)");
-
-                foreach (var years in timeframes)
-                {
-                    var futureValue = CalculateCompoundInterest(currentSavings, monthlySavings, 12, rate, years);
-                    var totalContributions = currentSavings + (monthlySavings * 12 * years);
-                    var investmentGains = futureValue - totalContributions;
-
-                    if (years == 10 || years == 30) // Show detail for key milestones
-                    {
-                        insights.Add($"   {years} years: **${futureValue:N0}**");
-                        insights.Add($"   (Contributed: ${totalContributions:N0}, Gains: ${investmentGains:N0})");
-                    }
-                }
-                insights.Add("");
+                var val10 = CalculateCompoundInterest(currentSavings, monthlySavings, 12, rate, 10);
+                var val30 = CalculateCompoundInterest(currentSavings, monthlySavings, 12, rate, 30);
+                insights.Add($"| {scenario} | {rate*100:F0}% | ${val10:N0} | ${val30:N0} |");
             }
 
             // Specific milestone projections
-            insights.Add("🎯 **When You'll Reach Key Milestones:**\n");
+            insights.Add("\n#### 🎯 Milestones (at 7% return)\n");
 
             var targetAmounts = new[] { 100000m, 250000m, 500000m, 1000000m };
             var defaultRate = 0.07m; // 7% balanced return
@@ -3380,24 +3382,18 @@ I use natural language and advanced calculations to help you make smart financia
                         _ => "🎯"
                     };
                     
-                    insights.Add($"{emoji} **${target:N0}** by {targetDate.Year} ({years} years)");
+                    insights.Add($"*   {emoji} **${target:N0}**: by {targetDate.Year} ({years} years)");
                 }
             }
 
-            insights.Add("\n💡 **Wealth-Building Strategies:**");
-            insights.Add("✓ Start investing early - time is your biggest advantage");
-            insights.Add("✓ Maximize employer 401(k) match (free money!)");
-            insights.Add("✓ Open Roth IRA for tax-free growth");
-            insights.Add("✓ Invest consistently, even small amounts");
-            insights.Add("✓ Increase savings rate by 1% annually");
-            insights.Add("✓ Reinvest dividends and returns");
-            insights.Add("✓ Stay invested through market ups and downs");
+            insights.Add("\n#### 💡 Wealth-Building Strategies");
+            insights.Add("*   Start investing early - time is your biggest advantage");
+            insights.Add("*   Maximize employer 401(k) match (free money!)");
+            insights.Add("*   Open Roth IRA for tax-free growth");
+            insights.Add("*   Invest consistently, even small amounts");
+            insights.Add("*   Reinvest dividends and returns\n");
             
-            insights.Add("\n⚠️ **Important Notes:**");
-            insights.Add("• Past returns don't guarantee future results");
-            insights.Add("• Higher returns come with higher risk");
-            insights.Add("• Diversification is key to managing risk");
-            insights.Add("• Consider speaking with a financial advisor");
+            insights.Add("> **Note:** Past returns don't guarantee future results. Diversification is key to managing risk.");
 
             return new ChatbotResponse
             {
@@ -3466,24 +3462,24 @@ I use natural language and advanced calculations to help you make smart financia
                 .ToListAsync();
 
             var insights = new List<string>();
-            insights.Add("💼 **Tax Planning & Optimization Tips**\n");
+            insights.Add("### 💼 Tax Planning & Optimization\n");
 
             var totalExpenses = yearlyTransactions.Where(t => t.Type == "expense").Sum(t => t.Amount);
             var totalIncome = yearlyTransactions.Where(t => t.Type == "income").Sum(t => t.Amount);
 
-            insights.Add($"**Year-to-Date Summary (Jan-{now:MMM}):**");
-            insights.Add($"• Total Income: ${totalIncome:N2}");
-            insights.Add($"• Total Expenses: ${totalExpenses:N2}\n");
+            insights.Add($"#### Year-to-Date Summary (Jan-{now:MMM})");
+            insights.Add($"*   **Total Income:** ${totalIncome:N2}");
+            insights.Add($"*   **Total Expenses:** ${totalExpenses:N2}\n");
 
             // Potentially deductible categories
             var deductibleCategories = new Dictionary<string, string>
             {
-                { "health", "Medical & Health Expenses" },
-                { "medical", "Medical & Health Expenses" },
-                { "home", "Home Office & Mortgage Interest" },
-                { "education", "Education & Professional Development" },
-                { "charity", "Charitable Donations" },
-                { "donation", "Charitable Donations" }
+                { "health", "Medical & Health" },
+                { "medical", "Medical & Health" },
+                { "home", "Home Office/Mortgage" },
+                { "education", "Education" },
+                { "charity", "Charity" },
+                { "donation", "Charity" }
             };
 
             var potentialDeductions = new Dictionary<string, decimal>();
@@ -3501,54 +3497,48 @@ I use natural language and advanced calculations to help you make smart financia
 
             if (potentialDeductions.Any())
             {
-                insights.Add("📋 **Potential Tax Deductions Found:**\n");
+                insights.Add("#### 📋 Potential Tax Deductions\n");
+                insights.Add("| Category | Amount |");
+                insights.Add("| --- | --- |");
+                
                 var totalDeductions = 0m;
                 foreach (var (category, amount) in potentialDeductions.OrderByDescending(kvp => kvp.Value))
                 {
-                    insights.Add($"✓ {category}: ${amount:N2}");
+                    insights.Add($"| {category} | ${amount:N2} |");
                     totalDeductions += amount;
                 }
                 
                 var estimatedTaxSavings = totalDeductions * 0.22m; // Assuming 22% tax bracket
-                insights.Add($"\n💰 Total Potential Deductions: **${totalDeductions:N2}**");
-                insights.Add($"   Estimated Tax Savings: **${estimatedTaxSavings:N2}** (at 22% bracket)\n");
+                insights.Add($"\n*   **Total Potential:** ${totalDeductions:N2}");
+                insights.Add($"*   **Est. Tax Savings (22%):** ${estimatedTaxSavings:N2}\n");
             }
 
-            insights.Add("💡 **Tax-Smart Strategies:**\n");
+            insights.Add("#### 💡 Tax-Smart Strategies\n");
             
-            insights.Add("**💰 Maximize Deductions:**");
-            insights.Add("✓ Keep receipts for medical expenses over 7.5% of income");
-            insights.Add("✓ Track home office expenses if self-employed");
-            insights.Add("✓ Document charitable donations (cash & items)");
-            insights.Add("✓ Save education/professional development receipts");
-            insights.Add("✓ Track business mileage and expenses\n");
+            insights.Add("**Maximize Deductions**");
+            insights.Add("*   Keep receipts for medical expenses over 7.5% of income");
+            insights.Add("*   Track home office expenses if self-employed");
+            insights.Add("*   Document charitable donations (cash & items)");
+            insights.Add("*   Save education/professional development receipts\n");
 
-            insights.Add("**📊 Smart Tax Moves:**");
-            insights.Add("✓ Max out retirement contributions (401k, IRA)");
-            insights.Add("   → 401k: up to $23,000/year (2024)");
-            insights.Add("   → IRA: up to $7,000/year");
-            insights.Add("✓ Use HSA for triple tax advantage");
-            insights.Add("✓ Harvest tax losses in investment accounts");
-            insights.Add("✓ Time large deductible expenses strategically");
-            insights.Add("✓ Consider bunching deductions in one year\n");
+            insights.Add("**Smart Tax Moves**");
+            insights.Add("*   Max out retirement contributions (401k, IRA)");
+            insights.Add("*   Use HSA for triple tax advantage");
+            insights.Add("*   Harvest tax losses in investment accounts");
+            insights.Add("*   Consider bunching deductions in one year\n");
 
-            insights.Add("**🎓 Tax-Advantaged Accounts:**");
-            insights.Add("✓ 529 Plan for education savings");
-            insights.Add("✓ FSA for healthcare & dependent care");
-            insights.Add("✓ Roth IRA for tax-free retirement");
-            insights.Add("✓ HSA for medical expenses (triple tax benefit!)\n");
+            insights.Add("**Tax-Advantaged Accounts**");
+            insights.Add("*   **529 Plan:** Education savings");
+            insights.Add("*   **FSA:** Healthcare & dependent care");
+            insights.Add("*   **Roth IRA:** Tax-free retirement");
+            insights.Add("*   **HSA:** Medical expenses (triple tax benefit!)\n");
 
-            insights.Add("**📅 Important Dates:**");
-            insights.Add($"• Tax Filing Deadline: April 15, {now.Year + 1}");
-            insights.Add($"• Q4 Estimated Tax: January 15, {now.Year + 1}");
-            insights.Add($"• IRA Contribution Deadline: April 15, {now.Year + 1}");
-            insights.Add($"• Extension Deadline: October 15, {now.Year + 1}\n");
+            insights.Add("#### 📅 Important Dates");
+            insights.Add($"*   **Apr 15:** Tax Filing Deadline");
+            insights.Add($"*   **Jan 15:** Q4 Estimated Tax");
+            insights.Add($"*   **Oct 15:** Extension Deadline\n");
 
-            insights.Add("⚠️ **Remember:**");
-            insights.Add("• This is educational information, not tax advice");
-            insights.Add("• Consult a CPA or tax professional for your situation");
-            insights.Add("• Keep organized records throughout the year");
-            insights.Add("• Review tax law changes annually");
+            insights.Add("> **Disclaimer:** This is educational information, not tax advice. Consult a CPA for your situation.");
 
             return new ChatbotResponse
             {
@@ -3584,7 +3574,7 @@ I use natural language and advanced calculations to help you make smart financia
             var budgets = await _dbContext.Budgets.Where(b => b.UserId == userId && b.IsActive).ToListAsync();
 
             var insights = new List<string>();
-            insights.Add("📊 **Your Financial Health Score**\n");
+            insights.Add("### 📊 Your Financial Health Score\n");
 
             // Calculate individual scores
             var scores = new Dictionary<string, (int score, string status, string emoji)>();
@@ -3605,7 +3595,7 @@ I use natural language and advanced calculations to help you make smart financia
                            debtToIncome < 0.20m ? 16 :
                            debtToIncome < 0.36m ? 12 :
                            debtToIncome < 0.50m ? 8 : 4;
-            scores["Debt Management"] = (debtScore, $"{debtToIncome * 100:F0}% debt-to-income", "💳");
+            scores["Debt Management"] = (debtScore, $"{debtToIncome * 100:F0}% DTI", "💳");
 
             // 3. Budget Adherence (20 points)
             var budgetScore = 10; // Default if no budgets
@@ -3662,28 +3652,27 @@ I use natural language and advanced calculations to help you make smart financia
                 _ => "❌"
             };
 
-            insights.Add($"**Overall Score: {totalScore}/100** {gradeEmoji}");
-            insights.Add($"**Grade: {grade}**\n");
+            insights.Add($"#### Overall Score: {totalScore}/100 {gradeEmoji}");
+            insights.Add($"> **Grade: {grade}**\n");
 
-            insights.Add("📈 **Score Breakdown:**\n");
+            insights.Add("#### 📈 Score Breakdown\n");
+            insights.Add("| Category | Score | Metric |");
+            insights.Add("| --- | --- | --- |");
+
             foreach (var (category, (score, status, emoji)) in scores.OrderByDescending(kvp => kvp.Value.score))
             {
-                var percentage = (score / 20m) * 100;
-                var bar = new string('█', score / 2) + new string('░', 10 - (score / 2));
-                insights.Add($"{emoji} **{category}**: {score}/20");
-                insights.Add($"   {bar} {percentage:F0}%");
-                insights.Add($"   Status: {status}\n");
+                insights.Add($"| {emoji} {category} | **{score}/20** | {status} |");
             }
 
             // Recommendations
-            insights.Add("💡 **Recommendations to Improve:**\n");
+            insights.Add("\n#### 💡 Recommendations\n");
 
             var improvements = new List<string>();
-            if (savingsScore < 16) improvements.Add("💰 Increase your savings rate to 15-20%");
-            if (debtScore < 16) improvements.Add("💳 Work on reducing your debt-to-income ratio below 36%");
-            if (budgetScore < 15) improvements.Add("🎯 Create and stick to budgets for major categories");
-            if (emergencyScore < 15) improvements.Add("🛡️ Build 3-6 months of expenses in emergency fund");
-            if (goalsScore < 15) improvements.Add("🎯 Set clear financial goals and track progress");
+            if (savingsScore < 16) improvements.Add("*   💰 **Savings:** Increase your savings rate to 15-20%");
+            if (debtScore < 16) improvements.Add("*   💳 **Debt:** Work on reducing your debt-to-income ratio below 36%");
+            if (budgetScore < 15) improvements.Add("*   🎯 **Budget:** Create and stick to budgets for major categories");
+            if (emergencyScore < 15) improvements.Add("*   🛡️ **Emergency:** Build 3-6 months of expenses in emergency fund");
+            if (goalsScore < 15) improvements.Add("*   🎯 **Goals:** Set clear financial goals and track progress");
 
             if (!improvements.Any())
             {
@@ -3737,7 +3726,7 @@ I use natural language and advanced calculations to help you make smart financia
                 .ToListAsync();
 
             var insights = new List<string>();
-            insights.Add("📱 **Subscription & Recurring Expense Analysis**\n");
+            insights.Add("### 📱 Subscription Analysis\n");
 
             // Find potential subscriptions (similar amounts appearing multiple times)
             var potentialSubscriptions = transactions
@@ -3762,52 +3751,52 @@ I use natural language and advanced calculations to help you make smart financia
             {
                 insights.Add("✅ **No recurring subscriptions detected** in the last 3 months.");
                 insights.Add("\nThis could mean:");
-                insights.Add("• You don't have subscriptions");
-                insights.Add("• Subscription names vary (check your statement)");
-                insights.Add("• You pay subscriptions annually\n");
+                insights.Add("*   You don't have subscriptions");
+                insights.Add("*   Subscription names vary (check your statement)");
+                insights.Add("*   You pay subscriptions annually\n");
 
-                insights.Add("💡 **Common Subscriptions to Review:**");
-                insights.Add("• Streaming (Netflix, Hulu, Disney+, Spotify)");
-                insights.Add("• Cloud Storage (iCloud, Google Drive, Dropbox)");
-                insights.Add("• Fitness (Gym membership, Fitness apps)");
-                insights.Add("• Software (Adobe, Microsoft 365, etc.)");
-                insights.Add("• News/Magazines");
-                insights.Add("• Food Delivery (DoorDash Pass, Uber Eats+)");
+                insights.Add("#### 💡 Common Subscriptions to Review");
+                insights.Add("*   Streaming (Netflix, Hulu, Disney+, Spotify)");
+                insights.Add("*   Cloud Storage (iCloud, Google Drive, Dropbox)");
+                insights.Add("*   Fitness (Gym membership, Fitness apps)");
+                insights.Add("*   Software (Adobe, Microsoft 365, etc.)");
+                insights.Add("*   News/Magazines");
+                insights.Add("*   Food Delivery (DoorDash Pass, Uber Eats+)\n");
             }
             else
             {
                 insights.Add($"**Found {potentialSubscriptions.Count} potential subscriptions:**\n");
+                insights.Add("| Service | Amount | Freq | Est. Yearly |");
+                insights.Add("| --- | --- | --- | --- |");
 
                 var totalMonthly = 0m;
                 var totalYearly = 0m;
 
                 foreach (var sub in potentialSubscriptions.Take(15))
                 {
-                    var monthlyEstimate = sub.Amount;
+                    var monthlyEstimate = sub.Amount; // Simplification, seeing it monthly
                     var yearlyEstimate = sub.Amount * 12;
                     
                     totalMonthly += monthlyEstimate;
                     totalYearly += yearlyEstimate;
 
-                    insights.Add($"📍 **{sub.Name}**");
-                    insights.Add($"   Amount: ${sub.Amount:N2}");
-                    insights.Add($"   Frequency: {sub.Frequency}x in 3 months");
-                    insights.Add($"   Last charged: {sub.LastDate:MMM dd}");
-                    insights.Add($"   Yearly cost: ~${yearlyEstimate:N2}\n");
+                    insights.Add($"| **{sub.Name}** | ${sub.Amount:N2} | {sub.Frequency}x/3mo | ${yearlyEstimate:N0} |");
                 }
 
                 // Get user's total expenses for comparison
                 var totalExpenses = await _dbContext.Transactions
                     .Where(t => t.UserId == userId && t.Type == "expense" && t.Date >= threeMonthsAgo)
                     .SumAsync(t => t.Amount);
+                
+                var percentage = totalExpenses > 0 ? (totalMonthly / totalExpenses) * 100 : 0;
 
-                insights.Add($"💰 **Total Impact:**");
-                insights.Add($"• Estimated Monthly: **${totalMonthly:N2}**");
-                insights.Add($"• Estimated Yearly: **${totalYearly:N2}**");
-                insights.Add($"• Percentage of spending: {(totalExpenses > 0 ? (totalMonthly / totalExpenses) * 100 : 0):F1}%\n");
+                insights.Add($"\n#### 💰 Total Impact");
+                insights.Add($"*   **Est. Monthly:** ${totalMonthly:N2}");
+                insights.Add($"*   **Est. Yearly:** ${totalYearly:N2}");
+                insights.Add($"*   **Wallet Share:** {percentage:F1}% of spending\n");
 
                 // Savings potential
-                insights.Add("💡 **Savings Potential:**\n");
+                insights.Add("#### 💡 Savings Potential\n");
                 
                 if (totalMonthly > 100)
                 {
@@ -3815,28 +3804,27 @@ I use natural language and advanced calculations to help you make smart financia
                     var save50Percent = totalMonthly * 0.50m;
                     
                     insights.Add($"**Cancel just 25% of subscriptions:**");
-                    insights.Add($"   Save ${save25Percent:N2}/month or ${save25Percent * 12:N2}/year\n");
+                    insights.Add($"*   Save ${save25Percent:N2}/month or **${save25Percent * 12:N0}/year**\n");
                     
                     insights.Add($"**Cancel 50% of subscriptions:**");
-                    insights.Add($"   Save ${save50Percent:N2}/month or ${save50Percent * 12:N2}/year\n");
+                    insights.Add($"*   Save ${save50Percent:N2}/month or **${save50Percent * 12:N0}/year**\n");
                 }
             }
 
-            insights.Add("✂️ **Subscription Optimization Tips:**\n");
-            insights.Add("**Audit & Cancel:**");
-            insights.Add("✓ Review each subscription - still using it?");
-            insights.Add("✓ Cancel unused/forgotten subscriptions");
-            insights.Add("✓ Use free alternatives when possible");
-            insights.Add("✓ Share family plans with trusted people\n");
+            insights.Add("#### ✂️ Optimization Tips\n");
+            
+            insights.Add("**Audit & Cancel**");
+            insights.Add("*   Review each subscription - still using it?");
+            insights.Add("*   Cancel unused/forgotten subscriptions");
+            insights.Add("*   Use free alternatives when possible");
+            insights.Add("*   Share family plans with trusted people\n");
 
-            insights.Add("**Smart Strategies:**");
-            insights.Add("✓ Rotate streaming services monthly");
-            insights.Add("✓ Buy annual plans (usually 20% cheaper)");
-            insights.Add("✓ Use student/military discounts if eligible");
-            insights.Add("✓ Set calendar reminders before renewal");
-            insights.Add("✓ Use virtual cards to control recurring charges\n");
-
-            insights.Add("**Money-Saving Swaps:**");
+            insights.Add("**Smart Strategies**");
+            insights.Add("*   Rotate streaming services monthly");
+            insights.Add("*   Buy annual plans (usually 20% cheaper)");
+            insights.Add("*   Use student/military discounts if eligible");
+            insights.Add("*   Set calendar reminders before renewal");
+            insights.Add("*   Use virtual cards to control recurring charges\n");
             insights.Add("• Streaming: Rotate instead of keeping all");
             insights.Add("• Music: Free Spotify vs Premium ($10/month saved)");
             insights.Add("• Cloud Storage: Compress files, use free tiers");
@@ -3872,75 +3860,77 @@ I use natural language and advanced calculations to help you make smart financia
         private ChatbotResponse GetBillNegotiationTipsAsync(string language = "en")
         {
             var insights = new List<string>();
-            insights.Add("💬 **Bill Negotiation Strategies**\n");
+            insights.Add("### 💬 Bill Negotiation Strategies\n");
 
-            insights.Add("🎯 **What You Can Negotiate:**");
-            insights.Add("✓ Cable/Internet bills");
-            insights.Add("✓ Phone plans");
-            insights.Add("✓ Insurance (car, home, life)");
-            insights.Add("✓ Credit card interest rates");
-            insights.Add("✓ Gym memberships");
-            insights.Add("✓ Medical bills");
-            insights.Add("✓ Subscription services\n");
+            insights.Add("#### 🎯 What You Can Negotiate");
+            insights.Add("*   Cable/Internet bills");
+            insights.Add("*   Phone plans");
+            insights.Add("*   Insurance (car, home, life)");
+            insights.Add("*   Credit card interest rates");
+            insights.Add("*   Gym memberships");
+            insights.Add("*   Medical bills");
+            insights.Add("*   Subscription services\n");
 
-            insights.Add("📞 **The Negotiation Script:**\n");
+            insights.Add("#### 📞 The Negotiation Script\n");
 
             insights.Add("**Step 1: Research**");
-            insights.Add("\"I've been a loyal customer for [X years], and I've noticed competitor [Company] offers [service] for $[amount less]. Can you match that?\"\n");
+            insights.Add("> \"I've been a loyal customer for [X years], and I've noticed competitor [Company] offers [service] for $[amount less]. Can you match that?\"\n");
 
             insights.Add("**Step 2: Be Polite But Firm**");
-            insights.Add("\"I really value your service, but this price is above my budget. What options do you have to lower my bill?\"\n");
+            insights.Add("> \"I really value your service, but this price is above my budget. What options do you have to lower my bill?\"\n");
 
             insights.Add("**Step 3: Ask for Retention**");
-            insights.Add("\"May I speak with your retention or customer loyalty department?\"\n");
+            insights.Add("> \"May I speak with your retention or customer loyalty department?\"\n");
 
             insights.Add("**Step 4: Be Ready to Walk**");
-            insights.Add("\"I appreciate your help, but if we can't find a better rate, I'll need to switch to [competitor].\"\n");
+            insights.Add("> \"I appreciate your help, but if we can't find a better rate, I'll need to switch to [competitor].\"\n");
 
-            insights.Add("💡 **Pro Tips:**\n");
-            insights.Add("**Best Practices:**");
-            insights.Add("✓ Call at the end of your contract/billing cycle");
-            insights.Add("✓ Have competitor prices ready");
-            insights.Add("✓ Ask for supervisor if first rep can't help");
-            insights.Add("✓ Be polite - rep is more likely to help");
-            insights.Add("✓ Document everything (name, date, promises)");
-            insights.Add("✓ Call during slow hours (mid-week mornings)\n");
+            insights.Add("#### 💡 Pro Tips\n");
+            
+            insights.Add("**Best Practices**");
+            insights.Add("*   Call at the end of your contract/billing cycle");
+            insights.Add("*   Have competitor prices ready");
+            insights.Add("*   Ask for supervisor if first rep can't help");
+            insights.Add("*   Be polite - rep is more likely to help");
+            insights.Add("*   Document everything (name, date, promises)");
+            insights.Add("*   Call during slow hours (mid-week mornings)\n");
 
-            insights.Add("**What Works:**");
-            insights.Add("✓ Loyalty: \"I've been with you for X years\"");
-            insights.Add("✓ Competition: \"Company X offers it for less\"");
-            insights.Add("✓ Hardship: \"This is outside my current budget\"");
-            insights.Add("✓ Bundle: \"What if I add another service?\"");
-            insights.Add("✓ Downgrade: \"What's your most basic plan?\"\n");
+            insights.Add("**What Works**");
+            insights.Add("*   Loyalty: \"I've been with you for X years\"");
+            insights.Add("*   Competition: \"Company X offers it for less\"");
+            insights.Add("*   Hardship: \"This is outside my current budget\"");
+            insights.Add("*   Bundle: \"What if I add another service?\"");
+            insights.Add("*   Downgrade: \"What's your most basic plan?\"\n");
 
-            insights.Add("📊 **Expected Savings:**\n");
-            insights.Add("• Cable/Internet: $20-50/month (50% success rate)");
-            insights.Add("• Phone Plans: $10-30/month (40% success rate)");
-            insights.Add("• Insurance: $200-500/year (60% success rate)");
-            insights.Add("• Credit Cards: 3-5% APR reduction (50% success)");
-            insights.Add("• Gym: $10-20/month (70% success rate)\n");
+            insights.Add("#### 📊 Expected Savings\n");
+            insights.Add("| Bill Type | Est. Savings | Success Rate |");
+            insights.Add("| --- | --- | --- |");
+            insights.Add("| Cable/Internet | $20-50/mo | 50% |");
+            insights.Add("| Phone Plans | $10-30/mo | 40% |");
+            insights.Add("| Insurance | $200-500/yr | 60% |");
+            insights.Add("| Credit Cards | 3-5% APR | 50% |");
+            insights.Add("| Gym | $10-20/mo | 70% |\n");
 
-            insights.Add("🏥 **Medical Bills Special Tips:**");
-            insights.Add("✓ Always ask for an itemized bill");
-            insights.Add("✓ Look for billing errors (very common!)");
-            insights.Add("✓ Ask about financial assistance programs");
-            insights.Add("✓ Offer to pay in full for a discount (20-40% off)");
-            insights.Add("✓ Negotiate before it goes to collections\n");
+            insights.Add("#### 🏥 Medical Bills Special Tips");
+            insights.Add("*   Always ask for an itemized bill");
+            insights.Add("*   Look for billing errors (very common!)");
+            insights.Add("*   Ask about financial assistance programs");
+            insights.Add("*   Offer to pay in full for a discount (20-40% off)");
+            insights.Add("*   Negotiate before it goes to collections\n");
 
-            insights.Add("⚠️ **What NOT to Do:**");
-            insights.Add("✗ Don't be rude or aggressive");
-            insights.Add("✗ Don't accept first offer - always counter");
-            insights.Add("✗ Don't lie about competitor prices");
-            insights.Add("✗ Don't threaten without being ready to follow through");
-            insights.Add("✗ Don't forget to get agreement in writing\n");
+            insights.Add("#### ⚠️ What NOT to Do");
+            insights.Add("*   ❌ Don't be rude or aggressive");
+            insights.Add("*   ❌ Don't accept first offer - always counter");
+            insights.Add("*   ❌ Don't lie about competitor prices");
+            insights.Add("*   ❌ Don't threaten without being ready to follow through");
+            insights.Add("*   ❌ Don't forget to get agreement in writing\n");
 
-            insights.Add("💰 **Potential Annual Savings:**");
-            insights.Add("If you successfully negotiate:");
-            insights.Add("• Internet: $360/year");
-            insights.Add("• Phone: $240/year");
-            insights.Add("• Insurance: $400/year");
-            insights.Add("• Gym: $180/year");
-            insights.Add("**Total: ~$1,180/year!** 🎉");
+            insights.Add("#### 💰 Potential Annual Savings");
+            insights.Add("*   Internet: $360/year");
+            insights.Add("*   Phone: $240/year");
+            insights.Add("*   Insurance: $400/year");
+            insights.Add("*   Gym: $180/year");
+            insights.Add("*   **Total: ~$1,180/year!** 🎉");
 
             return new ChatbotResponse
             {
@@ -3958,118 +3948,115 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Investment basics and recommendations
         /// </summary>
+        /// <summary>
+        /// Investment basics and recommendations
+        /// </summary>
         private ChatbotResponse GetInvestmentBasicsAsync()
         {
             var insights = new List<string>();
-            insights.Add("📈 **Investment Basics & Getting Started**\n");
+            insights.Add("### 📈 Investment Basics & Getting Started\n");
 
-            insights.Add("🎯 **Investment Priority Checklist:**\n");
+            insights.Add("#### 🎯 Investment Priority Checklist\n");
             insights.Add("Before investing, ensure you have:");
-            insights.Add("✅ Emergency fund (3-6 months expenses)");
-            insights.Add("✅ High-interest debt paid off (>7% APR)");
-            insights.Add("✅ Stable income");
-            insights.Add("✅ Basic understanding of investments\n");
+            insights.Add("*   ✅ Emergency fund (3-6 months expenses)");
+            insights.Add("*   ✅ High-interest debt paid off (>7% APR)");
+            insights.Add("*   ✅ Stable income");
+            insights.Add("*   ✅ Basic understanding of investments\n");
 
-            insights.Add("💰 **Where to Start Investing:**\n");
+            insights.Add("#### 💰 Where to Start Investing\n");
 
             insights.Add("**1. Employer 401(k) (START HERE!)**");
-            insights.Add("   • Contribute at least to get full match (FREE MONEY!)");
-            insights.Add("   • Limit: $23,000/year (2024)");
-            insights.Add("   • Tax-deferred growth");
-            insights.Add("   • Often has company match (50-100% of contribution)\n");
+            insights.Add("*   Contribute at least to get full match (FREE MONEY!)");
+            insights.Add("*   Limit: $23,000/year (2024)");
+            insights.Add("*   Tax-deferred growth");
+            insights.Add("*   Often has company match (50-100% of contribution)\n");
 
             insights.Add("**2. Roth IRA (Tax-Free Growth)**");
-            insights.Add("   • Contribute up to $7,000/year");
-            insights.Add("   • Withdrawals in retirement are TAX-FREE");
-            insights.Add("   • Income limits apply");
-            insights.Add("   • Perfect for young investors\n");
+            insights.Add("*   Contribute up to $7,000/year");
+            insights.Add("*   Withdrawals in retirement are TAX-FREE");
+            insights.Add("*   Income limits apply");
+            insights.Add("*   Perfect for young investors\n");
 
             insights.Add("**3. Taxable Brokerage Account**");
-            insights.Add("   • No contribution limits");
-            insights.Add("   • More flexibility");
-            insights.Add("   • Pay taxes on gains");
-            insights.Add("   • Good for goals before retirement\n");
+            insights.Add("*   No contribution limits");
+            insights.Add("*   More flexibility");
+            insights.Add("*   Pay taxes on gains");
+            insights.Add("*   Good for goals before retirement\n");
 
-            insights.Add("📊 **Investment Options by Risk:**\n");
+            insights.Add("#### 📊 Investment Options by Risk\n");
 
             insights.Add("**Low Risk (2-4% return):**");
-            insights.Add("• High-Yield Savings Accounts (HYSA)");
-            insights.Add("• Certificates of Deposit (CDs)");
-            insights.Add("• Treasury Bonds");
-            insights.Add("• Money Market Funds\n");
+            insights.Add("*   High-Yield Savings Accounts (HYSA)");
+            insights.Add("*   Certificates of Deposit (CDs)");
+            insights.Add("*   Treasury Bonds");
+            insights.Add("*   Money Market Funds\n");
 
             insights.Add("**Medium Risk (5-8% return):**");
-            insights.Add("• Index Funds (S&P 500, Total Market)");
-            insights.Add("• Bond Index Funds");
-            insights.Add("• Target-Date Funds");
-            insights.Add("• Balanced Mutual Funds\n");
+            insights.Add("*   Index Funds (S&P 500, Total Market)");
+            insights.Add("*   Bond Index Funds");
+            insights.Add("*   Target-Date Funds");
+            insights.Add("*   Balanced Mutual Funds\n");
 
             insights.Add("**Higher Risk (8-12%+ potential):**");
-            insights.Add("• Individual Stocks");
-            insights.Add("• Growth Stocks");
-            insights.Add("• Real Estate Investment Trusts (REITs)");
-            insights.Add("• Emerging Market Funds\n");
+            insights.Add("*   Individual Stocks");
+            insights.Add("*   Growth Stocks");
+            insights.Add("*   Real Estate Investment Trusts (REITs)");
+            insights.Add("*   Emerging Market Funds\n");
 
-            insights.Add("🎯 **Recommended Portfolio by Age:**\n");
+            insights.Add("#### 🎯 Recommended Portfolio by Age\n");
 
             insights.Add("**20s-30s (Aggressive Growth):**");
-            insights.Add("• 90% Stocks (80% US, 10% International)");
-            insights.Add("• 10% Bonds");
-            insights.Add("• Time to recover from market dips\n");
+            insights.Add("*   90% Stocks (80% US, 10% International)");
+            insights.Add("*   10% Bonds");
+            insights.Add("*   Time to recover from market dips\n");
 
             insights.Add("**40s-50s (Balanced):**");
-            insights.Add("• 70% Stocks");
-            insights.Add("• 30% Bonds");
-            insights.Add("• Balance growth and stability\n");
+            insights.Add("*   70% Stocks");
+            insights.Add("*   30% Bonds");
+            insights.Add("*   Balance growth and stability\n");
 
             insights.Add("**60s+ (Conservative):**");
-            insights.Add("• 40-50% Stocks");
-            insights.Add("• 50-60% Bonds");
-            insights.Add("• Protect your gains\n");
+            insights.Add("*   40-50% Stocks");
+            insights.Add("*   50-60% Bonds");
+            insights.Add("*   Protect your gains\n");
 
-            insights.Add("💡 **Golden Rules of Investing:**\n");
-            insights.Add("1️⃣ **Start Early** - Time is your best friend");
-            insights.Add("   $100/month from age 25-65 = $320K (at 8%)");
-            insights.Add("   Same from age 35-65 = $150K\n");
+            insights.Add("#### 💡 Golden Rules of Investing\n");
+            insights.Add("**1️⃣ Start Early** - Time is your best friend");
+            insights.Add("> $100/month from age 25-65 = $320K (at 8%)");
+            insights.Add("> Same from age 35-65 = $150K\n");
 
-            insights.Add("2️⃣ **Diversify** - Don't put all eggs in one basket");
-            insights.Add("   Use index funds for instant diversification\n");
+            insights.Add("**2️⃣ Diversify** - Don't put all eggs in one basket");
+            insights.Add("> Use index funds for instant diversification\n");
 
-            insights.Add("3️⃣ **Low Fees Matter** - Keep expense ratios < 0.20%");
-            insights.Add("   1% fee can cost you $100K+ over 30 years!\n");
+            insights.Add("**3️⃣ Low Fees Matter** - Keep expense ratios < 0.20%");
+            insights.Add("> 1% fee can cost you $100K+ over 30 years!\n");
 
-            insights.Add("4️⃣ **Stay Invested** - Don't panic sell");
-            insights.Add("   Market downturns are temporary");
-            insights.Add("   Historically markets always recover\n");
+            insights.Add("**4️⃣ Stay Invested** - Don't panic sell");
+            insights.Add("> Market downturns are temporary");
+            insights.Add("> Historically markets always recover\n");
 
-            insights.Add("5️⃣ **Automate** - Set it and forget it");
-            insights.Add("   Auto-invest every paycheck");
-            insights.Add("   Removes emotion from investing\n");
+            insights.Add("**5️⃣ Automate** - Set it and forget it");
+            insights.Add("> Auto-invest every paycheck");
+            insights.Add("> Removes emotion from investing\n");
 
-            insights.Add("🏆 **Top Investment Platforms:**\n");
+            insights.Add("#### 🏆 Top Investment Platforms\n");
             insights.Add("**For Beginners:**");
-            insights.Add("• Vanguard (low fees, great index funds)");
-            insights.Add("• Fidelity (no minimums, excellent service)");
-            insights.Add("• Charles Schwab (user-friendly, low costs)\n");
+            insights.Add("*   Vanguard (low fees, great index funds)");
+            insights.Add("*   Fidelity (no minimums, excellent service)");
+            insights.Add("*   Charles Schwab (user-friendly, low costs)\n");
 
             insights.Add("**For Robo-Advisors:**");
-            insights.Add("• Wealthfront (automated, tax-loss harvesting)");
-            insights.Add("• Betterment (goal-based investing)");
-            insights.Add("• M1 Finance (free, customizable)\n");
+            insights.Add("*   Wealthfront (automated, tax-loss harvesting)");
+            insights.Add("*   Betterment (goal-based investing)");
+            insights.Add("*   M1 Finance (free, customizable)\n");
 
-            insights.Add("📚 **Learn More:**");
-            insights.Add("Books:");
-            insights.Add("• 'The Simple Path to Wealth' - JL Collins");
-            insights.Add("• 'A Random Walk Down Wall Street' - Burton Malkiel");
-            insights.Add("• 'The Bogleheads' Guide to Investing'\n");
-
-            insights.Add("⚠️ **Avoid These Mistakes:**");
-            insights.Add("✗ Trying to time the market");
-            insights.Add("✗ Day trading (95% lose money)");
-            insights.Add("✗ Following hot tips");
-            insights.Add("✗ Investing money you need soon");
-            insights.Add("✗ High-fee funds and advisors");
-            insights.Add("✗ Keeping too much in cash");
+            insights.Add("### ⚠️ Avoid These Mistakes\n");
+            insights.Add("*   ❌ Trying to time the market");
+            insights.Add("*   ❌ Day trading (95% lose money)");
+            insights.Add("*   ❌ Following hot tips");
+            insights.Add("*   ❌ Investing money you need soon");
+            insights.Add("*   ❌ High-fee funds and advisors");
+            insights.Add("*   ❌ Keeping too much in cash");
 
             return new ChatbotResponse
             {
@@ -4098,7 +4085,7 @@ I use natural language and advanced calculations to help you make smart financia
                 .ToListAsync();
 
             var insights = new List<string>();
-            insights.Add("📅 **Seasonal Spending Patterns**\n");
+            insights.Add("### 📅 Seasonal Spending Patterns\n");
 
             if (!transactions.Any())
             {
@@ -4134,28 +4121,29 @@ I use natural language and advanced calculations to help you make smart financia
             var highestMonth = monthlySpending.OrderByDescending(m => m.Total).First();
             var lowestMonth = monthlySpending.OrderBy(m => m.Total).First();
 
-            insights.Add($"**12-Month Overview:**");
-            insights.Add($"• Average Monthly: ${avgMonthly:N2}");
-            insights.Add($"• Highest: {highestMonth.MonthName} ${highestMonth.Total:N2}");
-            insights.Add($"• Lowest: {lowestMonth.MonthName} ${lowestMonth.Total:N2}\n");
+            insights.Add($"#### 12-Month Overview");
+            insights.Add($"*   **Average Monthly:** ${avgMonthly:N2}");
+            insights.Add($"*   **Highest:** {highestMonth.MonthName} (${highestMonth.Total:N2})");
+            insights.Add($"*   **Lowest:** {lowestMonth.MonthName} (${lowestMonth.Total:N2})\n");
 
-            insights.Add("📊 **Month-by-Month Breakdown:**\n");
+            insights.Add("#### 📊 Month-by-Month Breakdown\n");
+            insights.Add("| Month | Total | vs Avg | Trend |");
+            insights.Add("| --- | --- | --- | --- |");
 
             foreach (var month in monthlySpending.TakeLast(12))
             {
                 var variance = ((month.Total - avgMonthly) / avgMonthly) * 100;
-                var emoji = month.Total > avgMonthly * 1.15m ? "🔴" :
-                           month.Total > avgMonthly * 1.05m ? "🟡" :
-                           month.Total < avgMonthly * 0.85m ? "🟢" : "⚪";
+                var trend = variance > 0 ? "📈" : "📉";
 
-                insights.Add($"{emoji} **{month.MonthName} {month.Year}**: ${month.Total:N2}");
-                if (Math.Abs(variance) > 5)
-                {
-                    insights.Add($"   {(variance > 0 ? "↑" : "↓")} {Math.Abs(variance):F0}% vs average");
-                }
+                // Simpler trend indicator for table
+                var varianceStr = Math.Abs(variance) > 5
+                    ? $"{(variance > 0 ? "+" : "-")}{Math.Abs(variance):F0}%"
+                    : "Avg";
+
+                insights.Add($"| {month.MonthName.Substring(0, 3)} | ${month.Total:N0} | {varianceStr} | {trend} |");
             }
 
-            insights.Add($"\n💡 **Seasonal Insights:**\n");
+            insights.Add($"\n#### 💡 Seasonal Insights\n");
 
             // Identify spending peaks
             var highSpendingMonths = monthlySpending
@@ -4172,35 +4160,28 @@ I use natural language and advanced calculations to help you make smart financia
                     var reason = month switch
                     {
                         "December" => "Holiday shopping, gifts, travel",
-                        "November" => "Black Friday, Thanksgiving, holiday prep",
-                        "January" => "Holiday bills, New Year resolutions",
-                        "July" => "Summer vacation, activities",
-                        "August" => "Back-to-school shopping",
+                        "November" => "Black Friday, Thanksgiving",
+                        "January" => "Holiday bills, goals",
+                        "July" => "Summer vacation",
+                        "August" => "Back-to-school",
                         _ => "Seasonal variation"
                     };
-                    insights.Add($"• {month}: Typically due to {reason}");
+                    insights.Add($"*   **{month}**: Typically due to {reason}");
                 }
                 insights.Add("");
             }
 
-            insights.Add("📈 **Prepare for Seasonal Spikes:**\n");
-            insights.Add("**Q4 (Oct-Dec) - Holiday Season:**");
-            insights.Add("✓ Start holiday budget in September");
-            insights.Add("✓ Use cashback for purchases");
-            insights.Add("✓ Set gift spending limit per person");
-            insights.Add("✓ Buy early to avoid last-minute markups\n");
+            insights.Add("#### 📈 Prepare for Seasonal Spikes\n");
 
-            insights.Add("**Summer (Jun-Aug):**");
-            insights.Add("✓ Plan vacation budget in advance");
-            insights.Add("✓ Look for travel deals in off-season");
-            insights.Add("✓ Pack snacks for activities");
-            insights.Add("✓ Consider staycation alternatives\n");
+            insights.Add("**Q4 (Oct-Dec) - Holiday Season**");
+            insights.Add("*   Start holiday budget in September");
+            insights.Add("*   Set gift spending limit per person");
+            insights.Add("*   Buy early to avoid last-minute markups\n");
 
-            insights.Add("**Back-to-School (Aug-Sep):**");
-            insights.Add("✓ Shop tax-free weekends");
-            insights.Add("✓ Buy last year's models");
-            insights.Add("✓ Check what can be reused");
-            insights.Add("✓ Compare prices across stores");
+            insights.Add("**Summer (Jun-Aug)**");
+            insights.Add("*   Plan vacation budget in advance");
+            insights.Add("*   Look for travel deals in off-season");
+            insights.Add("*   Consider staycation alternatives\n");
 
             return new ChatbotResponse
             {
@@ -4236,37 +4217,34 @@ I use natural language and advanced calculations to help you make smart financia
             var goals = await _dbContext.SavingsGoals.Where(g => g.UserId == userId).ToListAsync();
 
             var insights = new List<string>();
-            insights.Add("📊 **Your Key Financial Ratios**\n");
+            insights.Add("### 📊 Your Key Financial Ratios\n");
+
+            insights.Add("| Ratio | Result | Status | Benchmark |");
+            insights.Add("| --- | --- | --- | --- |");
 
             // 1. Savings Rate
             var savingsRate = analytics.TotalIncome > 0 ? (analytics.Balance / analytics.TotalIncome) * 100 : 0;
-            var savingsStatus = savingsRate >= 20 ? "Excellent ✅" :
-                               savingsRate >= 15 ? "Good 👍" :
-                               savingsRate >= 10 ? "Fair ⚪" :
-                               savingsRate >= 5 ? "Needs Improvement ⚠️" : "Critical 🔴";
+            var savingsStatus = savingsRate >= 20 ? "✅ Excellent" :
+                               savingsRate >= 15 ? "👍 Good" :
+                               savingsRate >= 10 ? "⚪ Fair" :
+                               savingsRate >= 5 ? "⚠️ Low" : "🔴 Critical";
 
-            insights.Add($"💰 **Savings Rate**: {savingsRate:F1}%");
-            insights.Add($"   Status: {savingsStatus}");
-            insights.Add($"   Benchmark: 20% (Excellent), 15% (Good), 10% (Minimum)");
-            insights.Add($"   Your Monthly: ${analytics.Balance:N2} / ${analytics.TotalIncome:N2}\n");
+            insights.Add($"| **Savings Rate** | {savingsRate:F1}% | {savingsStatus} | >20% |");
 
             // 2. Debt-to-Income Ratio
             var totalDebt = loans.Sum(l => l.RemainingAmount);
             var monthlyDebtPayment = loans.Sum(l => l.InstallmentAmount ?? 0);
             var debtToIncome = analytics.TotalIncome > 0 ? (monthlyDebtPayment / analytics.TotalIncome) * 100 : 0;
-            var dtiStatus = debtToIncome == 0 ? "Debt-Free! 🎉" :
-                           debtToIncome < 20 ? "Excellent ✅" :
-                           debtToIncome < 36 ? "Good 👍" :
-                           debtToIncome < 43 ? "High ⚠️" : "Very High 🔴";
+            var dtiStatus = debtToIncome == 0 ? "🎉 Free" :
+                           debtToIncome < 20 ? "✅ Excellent" :
+                           debtToIncome < 36 ? "👍 Good" :
+                           debtToIncome < 43 ? "⚠️ High" : "🔴 Danger";
 
-            insights.Add($"💳 **Debt-to-Income Ratio**: {debtToIncome:F1}%");
-            insights.Add($"   Status: {dtiStatus}");
-            insights.Add($"   Benchmark: <20% (Excellent), <36% (Good), <43% (Max)");
-            insights.Add($"   Your Monthly: ${monthlyDebtPayment:N2} / ${analytics.TotalIncome:N2}\n");
+            insights.Add($"| **Debt-to-Income** | {debtToIncome:F1}% | {dtiStatus} | <36% |");
 
-            // 3. Housing Ratio (if we can identify it)
+            // 3. Housing Ratio
             var housingExpenses = analytics.CategoryBreakdown
-                .Where(c => c.Category.ToLower().Contains("rent") || 
+                .Where(c => c.Category.ToLower().Contains("rent") ||
                            c.Category.ToLower().Contains("mortgage") ||
                            c.Category.ToLower().Contains("home"))
                 .Sum(c => c.Amount);
@@ -4274,84 +4252,51 @@ I use natural language and advanced calculations to help you make smart financia
             if (housingExpenses > 0)
             {
                 var housingRatio = analytics.TotalIncome > 0 ? (housingExpenses / analytics.TotalIncome) * 100 : 0;
-                var housingStatus = housingRatio < 28 ? "Excellent ✅" :
-                                   housingRatio < 33 ? "Acceptable 👍" :
-                                   housingRatio < 40 ? "High ⚠️" : "Very High 🔴";
+                var housingStatus = housingRatio < 28 ? "✅ Excellent" :
+                                   housingRatio < 33 ? "👍 Good" :
+                                   housingRatio < 40 ? "⚠️ High" : "🔴 Danger";
 
-                insights.Add($"🏠 **Housing Ratio**: {housingRatio:F1}%");
-                insights.Add($"   Status: {housingStatus}");
-                insights.Add($"   Benchmark: <28% (Ideal), <33% (Acceptable)");
-                insights.Add($"   Your Monthly: ${housingExpenses:N2} / ${analytics.TotalIncome:N2}\n");
+                insights.Add($"| **Housing** | {housingRatio:F1}% | {housingStatus} | <28% |");
             }
 
             // 4. Emergency Fund Ratio
             var currentSavings = goals.Sum(g => g.CurrentAmount);
             var monthsOfExpenses = analytics.TotalExpenses > 0 ? currentSavings / analytics.TotalExpenses : 0;
-            var emergencyStatus = monthsOfExpenses >= 6 ? "Excellent ✅" :
-                                 monthsOfExpenses >= 3 ? "Good 👍" :
-                                 monthsOfExpenses >= 1 ? "Minimum ⚪" :
-                                 monthsOfExpenses > 0 ? "Low ⚠️" : "None 🔴";
+            var emergencyStatus = monthsOfExpenses >= 6 ? "✅ Excellent" :
+                                 monthsOfExpenses >= 3 ? "👍 Good" :
+                                 monthsOfExpenses >= 1 ? "⚪ Minimal" : "🔴 None";
 
-            insights.Add($"🛡️ **Emergency Fund Coverage**: {monthsOfExpenses:F1} months");
-            insights.Add($"   Status: {emergencyStatus}");
-            insights.Add($"   Benchmark: 6 months (Ideal), 3 months (Minimum)");
-            insights.Add($"   Your Savings: ${currentSavings:N2}");
-            insights.Add($"   Monthly Expenses: ${analytics.TotalExpenses:N2}\n");
+            insights.Add($"| **Emergency Fund** | {monthsOfExpenses:F1} mo | {emergencyStatus} | 3-6 mo |");
 
-            // 5. Expense Ratios by Category
-            if (analytics.CategoryBreakdown.Any())
-            {
-                insights.Add("📈 **Expense Distribution:**\n");
-                var topCategories = analytics.CategoryBreakdown.Take(5);
-                
-                foreach (var cat in topCategories)
-                {
-                    var emoji = GetCategoryEmoji(cat.Category);
-                    var benchmark = GetCategoryBenchmark(cat.Category);
-                    var status = cat.Percentage < benchmark * 0.8m ? "✅" :
-                                cat.Percentage < benchmark * 1.2m ? "⚪" : "⚠️";
+            insights.Add("\n#### 💡 What These Numbers Mean\n");
 
-                    insights.Add($"{emoji} **{cat.Category}**: {cat.Percentage:F1}%");
-                    insights.Add($"   {status} Benchmark: ~{benchmark}% of income");
-                }
-                insights.Add("");
-            }
-
-            insights.Add("💡 **What These Numbers Mean:**\n");
-
-            var issues = new List<string>();
             var strengths = new List<string>();
+            var issues = new List<string>();
 
-            if (savingsRate >= 15) strengths.Add("✅ Strong savings habit");
-            else if (savingsRate < 10) issues.Add("⚠️ Increase your savings rate");
+            if (savingsRate >= 15) strengths.Add("*   ✅ **Strong Savings:** You're saving a healthy portion of income!");
+            else if (savingsRate < 10) issues.Add("*   ⚠️ **Low Savings:** Try to increase savings to at least 15%.");
 
-            if (debtToIncome == 0) strengths.Add("✅ Debt-free status");
-            else if (debtToIncome > 36) issues.Add("⚠️ High debt burden - focus on paydown");
+            if (debtToIncome == 0) strengths.Add("*   ✅ **Debt Free:** Amazing job being debt-free!");
+            else if (debtToIncome > 36) issues.Add("*   ⚠️ **High Debt:** Debt payments are eating up too much income.");
 
-            if (monthsOfExpenses >= 3) strengths.Add("✅ Good emergency fund");
-            else issues.Add("⚠️ Build emergency fund to 3-6 months");
+            if (monthsOfExpenses >= 3) strengths.Add("*   ✅ **Secure:** You have a solid emergency safety net.");
+            else if (monthsOfExpenses < 1) issues.Add("*   🔴 **Risk:** Build an emergency fund of 1 month expenses ASAP.");
 
             if (strengths.Any())
             {
                 insights.Add("**Strengths:**");
-                foreach (var strength in strengths)
-                {
-                    insights.Add(strength);
-                }
+                strengths.ForEach(s => insights.Add(s));
                 insights.Add("");
             }
 
             if (issues.Any())
             {
                 insights.Add("**Areas to Improve:**");
-                foreach (var issue in issues.Take(3))
-                {
-                    insights.Add(issue);
-                }
+                issues.ForEach(s => insights.Add(s));
             }
-            else
+            else if (!strengths.Any())
             {
-                insights.Add("🎉 Excellent financial health across all key ratios!");
+                insights.Add("Your finances are balanced, but there's room for optimization!");
             }
 
             return new ChatbotResponse
@@ -4401,7 +4346,7 @@ I use natural language and advanced calculations to help you make smart financia
         private ChatbotResponse GetMoneyTipsAsync()
         {
             var insights = new List<string>();
-            insights.Add("💎 **Smart Money Tips & Financial Wisdom**\n");
+            insights.Add("### 💎 Smart Money Tips & Financial Wisdom\n");
 
             var tips = new[]
             {
@@ -4427,25 +4372,27 @@ I use natural language and advanced calculations to help you make smart financia
                 ("🔒 Emergency Fund Priority", "$1,000 first, then 3-6 months expenses. Prevents debt spiral from emergencies.")
             };
 
-            // Randomly select 10 tips
-            var selectedTips = tips.OrderBy(x => Guid.NewGuid()).Take(10).ToList();
+            // Randomly select 5 tips only to keep it concise but varying
+            var selectedTips = tips.OrderBy(x => Guid.NewGuid()).Take(5).ToList();
+
+            insights.Add("#### 💡 Quick Tips for Today\n");
 
             foreach (var (title, description) in selectedTips)
             {
                 insights.Add($"**{title}**");
-                insights.Add($"{description}\n");
+                insights.Add($"*   {description}\n");
             }
 
-            insights.Add("🎓 **Warren Buffett's Wisdom:**");
-            insights.Add("• \"Do not save what is left after spending; spend what is left after saving.\"");
-            insights.Add("• \"Price is what you pay. Value is what you get.\"");
-            insights.Add("• \"The most important investment you can make is in yourself.\"\n");
+            insights.Add("#### 🎓 Warren Buffett's Wisdom\n");
+            insights.Add("> \"Do not save what is left after spending; spend what is left after saving.\"");
+            insights.Add("> \"Price is what you pay. Value is what you get.\"");
+            insights.Add("> \"The most important investment you can make is in yourself.\"\n");
 
-            insights.Add("💡 **Remember:**");
-            insights.Add("Building wealth is 80% behavior, 20% knowledge.");
-            insights.Add("It's not about earning more, it's about keeping more.");
-            insights.Add("Small consistent actions > big sporadic efforts.");
-            insights.Add("Financial freedom = having options.");
+            insights.Add("#### 📝 Remember\n");
+            insights.Add("*   Building wealth is 80% behavior, 20% knowledge.");
+            insights.Add("*   It's not about earning more, it's about keeping more.");
+            insights.Add("*   Small consistent actions > big sporadic efforts.");
+            insights.Add("*   Financial freedom = having options.");
 
             return new ChatbotResponse
             {
@@ -4683,14 +4630,185 @@ I use natural language and advanced calculations to help you make smart financia
             };
         }
         
-        private async Task<ChatbotResponse> GetTotalIncomeAsync(string userId, string language = "en") => 
-            await GetCurrentBalanceAsync(userId, language);
+        /// <summary>
+        /// Get total income for a period with trends
+        /// </summary>
+        private async Task<ChatbotResponse> GetTotalIncomeAsync(string userId, string query, string language = "en")
+        {
+            var period = ExtractTimePeriod(query, language);
+            var (start, end) = GetDateRange(period);
+
+            var transactions = await _dbContext.Transactions
+                .Where(t => t.UserId == userId && t.Type == "income")
+                .Where(t => t.Date >= start && t.Date <= end)
+                .ToListAsync();
+
+            var total = transactions.Sum(t => t.Amount);
+            var count = transactions.Count;
+            var avgPerTransaction = count > 0 ? total / count : 0;
+
+            // Get previous period for comparison
+            var periodDays = (end - start).Days + 1;
+            var prevStart = start.AddDays(-periodDays);
+            var prevEnd = start.AddDays(-1);
+            
+            var prevTransactions = await _dbContext.Transactions
+                .Where(t => t.UserId == userId && t.Type == "income")
+                .Where(t => t.Date >= prevStart && t.Date <= prevEnd)
+                .ToListAsync();
+            
+            var prevTotal = prevTransactions.Sum(t => t.Amount);
+            var change = total - prevTotal;
+            var changePercent = prevTotal > 0 ? (change / prevTotal) * 100 : 0;
+
+            var message = "";
+            var trendEmoji = change > 0 ? "📈" : change < 0 ? "📉" : "➖";
+            var trendText = "";
+
+            if (language == "el")
+            {
+                if (prevTotal > 0)
+                {
+                    trendText = change > 0 
+                        ? $"ανέβηκαν κατά {changePercent:F1}%" 
+                        : $"μειώθηκαν κατά {Math.Abs(changePercent):F1}%";
+                }
+
+                message = $"### 💰 Αναφορά Εσόδων\n" +
+                         $"**Σύνολο:** ${total:N2}\n" +
+                         $"*Περίοδος: {period}*\n\n" +
+                         $"**📊 Τάση:** {trendEmoji} {trendText} σε σχέση με την προηγούμενη περίοδο.\n" +
+                         $"* Προηγούμενο Σύνολο: ${prevTotal:N2}\n" +
+                         $"* Συναλλαγές: {count}";
+            }
+            else
+            {
+                if (prevTotal > 0)
+                {
+                    trendText = change > 0 
+                        ? $"up by {changePercent:F1}%" 
+                        : $"down by {Math.Abs(changePercent):F1}%";
+                }
+
+                message = $"### 💰 Income Report\n" +
+                         $"**Total:** ${total:N2}\n" +
+                         $"*Period: {period}*\n\n" +
+                         $"**📊 Trend:** {trendEmoji} {trendText} vs previous period.\n" +
+                         $"* Previous Total: ${prevTotal:N2}\n" +
+                         $"* Transactions: {count}";
+            }
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    "Δείξε πηγές εσόδων",
+                    "Τρέχον υπόλοιπο",
+                    "Κύρια έξοδα"
+                }
+                : new List<string>
+                {
+                    "Show income sources",
+                    "Current balance",
+                    "Top expenses"
+                };
+
+            return new ChatbotResponse
+            {
+                Message = message,
+                Type = "insight",
+                Data = new 
+                { 
+                    total, 
+                    count, 
+                    period, 
+                    startDate = start, 
+                    endDate = end,
+                    previousTotal = prevTotal,
+                    change,
+                    changePercent
+                },
+                QuickActions = quickActions,
+                ActionLink = "/transactions"
+            };
+        }
         
-        private async Task<ChatbotResponse> GetIncomeSourcesAsync(string userId, string language = "en") => 
-            await GetCurrentBalanceAsync(userId, language);
+        private async Task<ChatbotResponse> GetIncomeSourcesAsync(string userId, string language = "en")
+        {
+            var now = DateTime.UtcNow;
+            var start = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var transactions = await _dbContext.Transactions
+                .Where(t => t.UserId == userId && t.Type == "income")
+                .Where(t => t.Date >= start)
+                .ToListAsync();
+
+            if (!transactions.Any())
+            {
+                var noIncomeMessage = language == "el"
+                    ? "Δεν βρέθηκαν έσοδα για αυτόν τον μήνα. Καταγράψτε τα έσοδά σας για να δείτε ανάλυση!"
+                    : "No income found for this month. Track your income to see an analysis!";
+                
+                return new ChatbotResponse
+                {
+                    Message = noIncomeMessage,
+                    Type = "text"
+                };
+            }
+
+            var totalIncome = transactions.Sum(t => t.Amount);
+            var incomeBySource = transactions
+                .GroupBy(t => t.Category)
+                .Select(g => new 
+                { 
+                    Source = g.Key, 
+                    Amount = g.Sum(t => t.Amount),
+                    Count = g.Count(),
+                    Percentage = (g.Sum(t => t.Amount) / totalIncome) * 100
+                })
+                .OrderByDescending(x => x.Amount)
+                .ToList();
+
+            var insights = new List<string>();
+            
+            if (language == "el")
+            {
+                insights.Add("### 💰 Πηγές Εσόδων (Αυτός ο Μήνας)\n");
+                insights.Add($"**Σύνολο:** ${totalIncome:N2}\n");
+                
+                insights.Add("| Πηγή | Ποσό | % |");
+                insights.Add("| --- | --- | --- |");
+                
+                foreach (var source in incomeBySource)
+                {
+                    insights.Add($"| {source.Source} | ${source.Amount:N2} | {source.Percentage:F1}% |");
+                }
+            }
+            else
+            {
+                insights.Add("### 💰 Income Sources (This Month)\n");
+                insights.Add($"**Total:** ${totalIncome:N2}\n");
+                
+                insights.Add("| Source | Amount | % |");
+                insights.Add("| --- | --- | --- |");
+                
+                foreach (var source in incomeBySource)
+                {
+                    insights.Add($"| {source.Source} | ${source.Amount:N2} | {source.Percentage:F1}% |");
+                }
+            }
+
+            return new ChatbotResponse
+            {
+                Message = string.Join("\n", insights),
+                Type = "insight",
+                Data = new { totalIncome, incomeBySource },
+                QuickActions = language == "el" 
+                    ? new List<string> { "Δείξε μου έξοδα", "Τρέχον υπόλοιπο" } 
+                    : new List<string> { "Show expenses", "Current balance" }
+            };
+        }
         
-        private async Task<ChatbotResponse> GetSavingsAsync(string userId, string language = "en") => 
-            await GetCurrentBalanceAsync(userId, language);
+
         
         /// <summary>
         /// Compare spending between partners with fair analysis
@@ -4962,13 +5080,18 @@ I use natural language and advanced calculations to help you make smart financia
                 };
             }
 
-            // Calculate spending for each budget category
-            var transactions = await _dbContext.Transactions
-                .Where(t => t.UserId == userId && t.Type == "expense")
-                .Where(t => t.Date >= monthStart)
+            // Calculate dynamic spending
+            var currentMonthTransactions = await _dbContext.Transactions
+                .Where(t => t.UserId == userId && t.Type == "expense" && t.Date >= monthStart)
                 .ToListAsync();
 
-            var insights = new List<string>();
+            foreach (var budget in budgets)
+            {
+                budget.SpentAmount = currentMonthTransactions
+                    .Where(t => t.Category.Equals(budget.Category, StringComparison.OrdinalIgnoreCase))
+                    .Sum(t => t.Amount);
+            }
+
             var totalBudget = budgets.Sum(b => b.Amount);
             var totalSpent = budgets.Sum(b => b.SpentAmount);
             var totalRemaining = totalBudget - totalSpent;
@@ -4976,68 +5099,13 @@ I use natural language and advanced calculations to help you make smart financia
             var overBudgetCount = 0;
             var atRiskCount = 0;
 
-            if (language == "el")
-            {
-                insights.Add("💰 **Αναφορά Κατάστασης Προϋπολογισμού**\n");
-                insights.Add($"**Συνολική Πρόοδος:** {overallProgress:F1}%");
-                insights.Add($"• Συνολικός Προϋπολογισμός: ${totalBudget:N2}");
-                insights.Add($"• Συνολικά Ξοδεύτηκαν: ${totalSpent:N2}");
-                insights.Add($"• Υπόλοιπο: ${totalRemaining:N2}\n");
+            var insights = new List<string>();
+            insights.Add("### 📊 Budget Status\n");
 
-                insights.Add("**Ανάλυση Κατηγοριών:**");
-                foreach (var budget in budgets.OrderByDescending(b => (b.SpentAmount / b.Amount) * 100))
-                {
-                    var progress = budget.Amount > 0 ? (budget.SpentAmount / budget.Amount) * 100 : 0;
-                    var remaining = budget.Amount - budget.SpentAmount;
-                    var emoji = GetBudgetStatusEmoji(progress);
-
-                    insights.Add($"\n{emoji} **{budget.Category}**");
-                    insights.Add($"   ${budget.SpentAmount:N2} / ${budget.Amount:N2} ({progress:F0}%)");
-
-                    if (progress > 100)
-                    {
-                        overBudgetCount++;
-                        insights.Add($"   ⚠️ Πάνω από τον προϋπολογισμό κατά ${Math.Abs(remaining):N2}!");
-                    }
-                    else if (progress > 80)
-                    {
-                        atRiskCount++;
-                        insights.Add($"   ⚡ Πλησιάζει! ${remaining:N2} απομένουν");
-                    }
-                    else
-                    {
-                        insights.Add($"   ✅ ${remaining:N2} απομένουν");
-                    }
-                }
-
-                insights.Add($"\n📊 **Σύνοψη:**");
-                if (overBudgetCount > 0)
-                {
-                    insights.Add($"⚠️ {overBudgetCount} κατηγορία/κατηγορίες πάνω από τον προϋπολογισμό. Ώρα να εξετάσετε τις δαπάνες σας!");
-                }
-                else if (atRiskCount > 0)
-                {
-                    insights.Add($"⚡ {atRiskCount} κατηγορία/κατηγορίες πλησιάζουν τα όρια. Προσέξτε τις δαπάνες σας!");
-                }
-                else
-                {
-                    insights.Add($"✅ Όλοι οι προϋπολογισμοί είναι υγιείς! Καλή δουλειά στη διαχείριση των οικονομικών σας! 🎉");
-                }
-
-                var daysLeft = DateTime.DaysInMonth(now.Year, now.Month) - now.Day;
-                if (totalRemaining > 0 && daysLeft > 0)
-                {
-                    var dailyAllowance = totalRemaining / daysLeft;
-                    insights.Add($"💡 Ημερήσια δαπάνη για το υπόλοιπο του μήνα: ${dailyAllowance:N2}");
-                }
-            }
-            else
-            {
-                insights.Add("💰 **Budget Status Report**\n");
-                insights.Add($"**Overall Progress:** {overallProgress:F1}%");
-                insights.Add($"• Total Budget: ${totalBudget:N2}");
-                insights.Add($"• Total Spent: ${totalSpent:N2}");
-                insights.Add($"• Remaining: ${totalRemaining:N2}\n");
+            insights.Add($"**Overall Progress:** {overallProgress:F1}%");
+            insights.Add($"• Total Budget: ${totalBudget:N2}");
+            insights.Add($"• Total Spent: ${totalSpent:N2}");
+            insights.Add($"• Remaining: ${totalRemaining:N2}\n");
 
                 insights.Add("**Category Breakdown:**");
                 foreach (var budget in budgets.OrderByDescending(b => (b.SpentAmount / b.Amount) * 100))
@@ -5085,7 +5153,7 @@ I use natural language and advanced calculations to help you make smart financia
                     var dailyAllowance = totalRemaining / daysLeft;
                     insights.Add($"💡 Daily allowance for the rest of the month: ${dailyAllowance:N2}");
                 }
-            }
+
 
             var quickActions = language == "el"
                 ? new List<string>
@@ -5137,6 +5205,9 @@ I use natural language and advanced calculations to help you make smart financia
         
         private Task<ChatbotResponse> GetBudgetCategoryAsync(string userId, string query, string language = "en") => 
             Task.FromResult(GetUnknownResponse(null, null, language));
+
+        private async Task<ChatbotResponse> GetSavingsAsync(string userId, string language = "en") => 
+            await GetCurrentBalanceAsync(userId, language);
         
         private async Task<ChatbotResponse> GetSpendingTrendsAsync(string userId, string language = "en") => 
             await GetSpendingInsightsAsync(userId, language);

@@ -676,8 +676,8 @@ body.shopping-list-fullscreen .chatbot-container {
     right: 24px;
     left: auto;
     top: auto;
-    width: 380px;
-    height: 600px;
+    width: 500px;
+    height: 700px;
     max-height: calc(100vh - 48px);
     border-radius: 24px;
     border: var(--chatbot-border);
@@ -741,41 +741,146 @@ body.shopping-list-fullscreen .chatbot-container {
   background: rgba(0, 0, 0, 0.2);
 }
 
-/* Typing Indicator */
-.chatbot-typing {
+/* Thinking Indicator */
+.chatbot-thinking {
   display: flex;
-  gap: 5px;
+  align-items: center;
+  gap: 10px;
   padding: 8px 12px;
   background: var(--chatbot-bot-msg-bg);
   border-radius: 16px;
   width: fit-content;
+  color: var(--chatbot-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.chatbot-typing span {
-  width: 6px;
-  height: 6px;
-  background: #9ca3af;
+.chatbot-thinking-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-top-color: #6366f1;
   border-radius: 50%;
-  animation: typing 1.4s infinite ease-in-out both;
+  animation: chatbot-spin 1s linear infinite;
 }
 
-.chatbot-typing span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.chatbot-typing span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes typing {
-
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
+@keyframes chatbot-spin {
+  to {
+    transform: rotate(360deg);
   }
+}
 
-  40% {
-    transform: scale(1);
+/* Typewriter Cursor */
+.chatbot-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: #6366f1;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: chatbot-blink 1s step-end infinite;
+}
+
+@keyframes chatbot-blink {
+  50% {
+    opacity: 0;
   }
+}
+
+/* ==========================================
+   MARKDOWN CONTENT
+   ========================================== */
+
+.chatbot-markdown {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.chatbot-markdown p {
+  margin: 0 0 10px 0;
+}
+
+.chatbot-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.chatbot-markdown ul,
+.chatbot-markdown ol {
+  padding-left: 20px;
+  margin: 0 0 10px 0;
+}
+
+.chatbot-markdown li {
+  margin-bottom: 4px;
+}
+
+.chatbot-markdown h1,
+.chatbot-markdown h2,
+.chatbot-markdown h3,
+.chatbot-markdown h4 {
+  margin: 16px 0 8px 0;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.chatbot-markdown h1:first-child,
+.chatbot-markdown h2:first-child,
+.chatbot-markdown h3:first-child,
+.chatbot-markdown h4:first-child {
+  margin-top: 0;
+}
+
+.chatbot-markdown h3 {
+  font-size: 16px;
+}
+
+.chatbot-markdown h4 {
+  font-size: 15px;
+}
+
+/* Markdown Tables */
+.chatbot-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chatbot-markdown th,
+.chatbot-markdown td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.chatbot-markdown th {
+  background-color: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Dark mode overrides for table */
+[data-theme='dark'] .chatbot-markdown table {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .chatbot-markdown th {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--chatbot-text);
+}
+
+[data-theme='dark'] .chatbot-markdown th,
+[data-theme='dark'] .chatbot-markdown td {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Adjust cursor position */
+.chatbot-markdown .chatbot-cursor {
+  vertical-align: baseline;
+  margin-left: 2px;
 }

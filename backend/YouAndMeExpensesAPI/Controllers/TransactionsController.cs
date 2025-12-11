@@ -328,6 +328,11 @@ namespace YouAndMeExpensesAPI.Controllers
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return Unauthorized(new { error = "User not authenticated" });
 
+            if (transaction == null)
+            {
+                return BadRequest(new { message = "Transaction data is required" });
+            }
+
             if (id != transaction.Id)
             {
                 return BadRequest(new { message = "ID mismatch" });

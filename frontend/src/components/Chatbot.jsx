@@ -1,8 +1,40 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiMessageCircle, FiX, FiSend, FiMinus } from 'react-icons/fi'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import { chatbotService } from '../services/api'
 import './Chatbot.css'
+
+/**
+ * Typewriter effect component
+ */
+const TypewriterText = ({ text, onComplete }) => {
+  const [displayedText, setDisplayedText] = useState('')
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(prev => prev + text[currentIndex])
+        setCurrentIndex(prev => prev + 1)
+      }, 15) // Typing speed (smaller = faster)
+      return () => clearTimeout(timeout)
+    } else {
+      if (onComplete) onComplete()
+    }
+  }, [currentIndex, text, onComplete])
+
+  return (
+    <div className="chatbot-markdown">
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+        {displayedText}
+      </ReactMarkdown>
+      {currentIndex < text.length && <span className="chatbot-cursor"></span>}
+    </div>
+  )
+}
 
 /**
  * Mobile-First Floating Chatbot Component
@@ -105,7 +137,8 @@ function Chatbot() {
         data,
         quickActions,
         actionLink,
-        timestamp: new Date()
+        timestamp: new Date(),
+        typing: type === 'text' // Only type out text messages
       }
     ])
 
@@ -113,6 +146,15 @@ function Chatbot() {
     if (!isOpen || isMinimized) {
       setUnreadCount(prev => prev + 1)
     }
+  }
+
+  /**
+   * Handle typing completion
+   */
+  const handleTypingComplete = (id) => {
+    setMessages(prev => prev.map(msg =>
+      msg.id === id ? { ...msg, typing: false } : msg
+    ))
   }
 
   /**
@@ -348,13 +390,22 @@ function Chatbot() {
                     )}
                     <div className="chatbot-message-content">
                       <div className="chatbot-message-text">
-                        {msg.message.split('\n').map((line, i) => (
-                          <p key={i}>{line}</p>
-                        ))}
+                        {msg.typing && msg.role === 'bot' ? (
+                          <TypewriterText
+                            text={msg.message}
+                            onComplete={() => handleTypingComplete(msg.id)}
+                          />
+                        ) : (
+                          <div className="chatbot-markdown">
+                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                              {msg.message}
+                            </ReactMarkdown>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Quick Actions */}
-                      {msg.quickActions && msg.quickActions.length > 0 && (
+                      {/* Quick Actions - Only show after typing is done */}
+                      {!msg.typing && msg.quickActions && msg.quickActions.length > 0 && (
                         <div className="chatbot-quick-actions">
                           {msg.quickActions.map((action, i) => (
                             <button
@@ -368,8 +419,8 @@ function Chatbot() {
                         </div>
                       )}
 
-                      {/* Action Link */}
-                      {msg.actionLink && (
+                      {/* Action Link - Only show after typing is done */}
+                      {!msg.typing && msg.actionLink && (
                         <a
                           href={msg.actionLink}
                           className="chatbot-action-link"
@@ -392,10 +443,9 @@ function Chatbot() {
                   <div className="chatbot-message bot">
                     <div className="chatbot-message-avatar">💰</div>
                     <div className="chatbot-message-content">
-                      <div className="chatbot-typing">
-                        <span></span>
-                        <span></span>
-                        <span></span>
+                      <div className="chatbot-thinking">
+                        <div className="chatbot-thinking-spinner"></div>
+                        <span>{t('chatbot.thinking', 'Thinking...')}</span>
                       </div>
                     </div>
                   </div>

@@ -462,7 +462,8 @@
     "viewDetails": "View Details",
     "welcomeMessage": "Hi! 👋 I'm your financial assistant. Ask me anything about your expenses, income, or financial insights!",
     "errorMessage": "Sorry, I encountered an error. Please try again.",
-    "chatCleared": "Chat cleared! How can I help you?"
+    "chatCleared": "Chat cleared! How can I help you?",
+    "thinking": "Thinking..."
   },
   "reminders": {
     "title": "Reminder Settings",
