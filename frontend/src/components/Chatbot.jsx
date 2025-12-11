@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { FiMessageCircle, FiX, FiSend, FiMinus } from 'react-icons/fi'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -421,12 +422,12 @@ function Chatbot() {
 
                       {/* Action Link - Only show after typing is done */}
                       {!msg.typing && msg.actionLink && (
-                        <a
-                          href={msg.actionLink}
+                        <Link
+                          to={msg.actionLink}
                           className="chatbot-action-link"
                         >
                           {t('chatbot.viewDetails', 'View Details')} →
-                        </a>
+                        </Link>
                       )}
 
                       <span className="chatbot-message-time">
