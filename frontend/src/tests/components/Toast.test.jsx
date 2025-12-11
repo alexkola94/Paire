@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ToastProvider, useToast } from '../../components/Toast'
 
@@ -76,7 +76,6 @@ describe('Toast', () => {
 
   it('should auto-dismiss after duration', async () => {
     vi.useFakeTimers()
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
 
     render(
       <ToastProvider>
@@ -85,7 +84,7 @@ describe('Toast', () => {
     )
 
     const successButton = screen.getByRole('button', { name: 'Success' })
-    await user.click(successButton)
+    fireEvent.click(successButton)
 
     expect(screen.getByText('Success message')).toBeInTheDocument()
 
