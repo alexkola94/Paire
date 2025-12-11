@@ -180,7 +180,6 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.2);
     z-index: 1001;
     animation: fadeIn 0.3s ease;
 }
@@ -195,10 +194,13 @@
     }
 }
 
-/* Rotate FAB when active */
-.bottom-nav .fab-button.active {
+/* Rotate FAB when active - Force override */
+.bottom-nav .fab-button.active,
+.bottom-nav .fab-button.active:hover,
+.bottom-nav .fab-button.active:focus {
     transform: rotate(45deg);
     background: #ef4444;
-    box-shadow: none;
-    border-color: white;
+    box-shadow: none !important;
+    border: none !important;
+    outline: none;
 }
