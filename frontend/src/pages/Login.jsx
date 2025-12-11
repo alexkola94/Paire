@@ -106,7 +106,8 @@ function Login() {
       if (isSignUp) {
         // Sign up new user
         await authService.signUp(formData.email, formData.password)
-        setSuccess('Account created successfully! Please check your email to verify.')
+        // setSuccess('Account created successfully! Please check your email to verify.')
+        setSuccess('Account created successfully!')
 
         // After signup, check if there's a redirect URL (e.g., from invitation)
         if (redirectUrl) {
@@ -395,13 +396,13 @@ function Login() {
               )}
 
               {/* Forgot Password Link (Sign In only) */}
-              {!isSignUp && (
+              {/* {!isSignUp && (
                 <div className="forgot-password-link">
                   <Link to="/forgot-password">
                     {t('auth.forgotPassword')}
                   </Link>
                 </div>
-              )}
+              )} */}
 
               {/* Submit Button */}
               <button

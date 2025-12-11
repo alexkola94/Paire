@@ -130,9 +130,13 @@ function Partnership() {
       // Send invitation email
       await partnershipService.sendInvitation(trimmedEmail)
 
+      // setMessage({
+      //   type: 'success',
+      //   text: t('partnership.inviteSentSuccess') || 'Invitation sent successfully! The recipient will receive an email with instructions to accept.'
+      // })
       setMessage({
         type: 'success',
-        text: t('partnership.inviteSentSuccess') || 'Invitation sent successfully! The recipient will receive an email with instructions to accept.'
+        text: 'Invitation sent successfully!'
       })
       setShowInviteForm(false)
       setPartnerEmail('')

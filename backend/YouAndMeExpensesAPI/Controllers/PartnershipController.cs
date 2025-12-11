@@ -301,7 +301,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     IsHtml = true
                 };
 
-                await _emailService.SendEmailAsync(emailMessage);
+                // await _emailService.SendEmailAsync(emailMessage);
 
                 _logger.LogInformation("Invitation sent from {InviterId} to {Email}", userId, request.Email);
 
