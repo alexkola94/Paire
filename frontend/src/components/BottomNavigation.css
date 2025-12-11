@@ -5,8 +5,12 @@
     left: 0;
     right: 0;
     z-index: 1000;
-    height: calc(75px + env(safe-area-inset-bottom));
-    padding-bottom: calc(15px + env(safe-area-inset-bottom));
+    /* height: calc(75px + env(safe-area-inset-bottom)); removed fixed height */
+    min-height: calc(70px + env(safe-area-inset-bottom));
+    /* Allow flexible height */
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    /* Slightly reduced padding */
+    padding-top: 8px;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -20,7 +24,8 @@
 .bottom-nav-container {
     display: flex;
     justify-content: space-around;
-    align-items: center;
+    align-items: flex-start;
+    /* Align to top to handle wrapping gracefully */
     height: 100%;
     max-width: 600px;
     margin: 0 auto;
@@ -32,15 +37,35 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    /* pushed up slightly */
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    /* Slightly smaller font */
     font-weight: 500;
-    height: 100%;
-    gap: 4px;
+    min-height: 48px;
+    gap: 2px;
+    /* Reduced gap */
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    text-align: center;
+    /* Ensure wrapped text is centered */
+    padding: 0 2px;
+    /* Prevent text touching edges */
+}
+
+.bottom-nav .nav-label {
+    line-height: 1.1;
+    /* tighter line height for wrapped text */
+    max-width: 100%;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-wrap: break-word;
 }
 
 .bottom-nav .nav-item.active {

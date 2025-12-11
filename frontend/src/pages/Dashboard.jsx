@@ -281,7 +281,7 @@ function Dashboard() {
           <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FiPieChart /> {t('dashboard.savingGoals', 'Saving Goals')}
           </h2>
-          <Link to="/saving-goals" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+          <Link to="/savings-goals" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
             {t('common.viewAll')}
           </Link>
         </div>
