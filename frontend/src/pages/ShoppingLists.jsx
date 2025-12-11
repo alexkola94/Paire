@@ -625,7 +625,7 @@ function ShoppingLists() {
               .map(line => line.trim())
               .filter(line => line.length > 0)
 
-            items = lines.map((line, index) => {
+            items = lines.map((line, _) => {
               // Try to parse: "Item Name, Quantity, Unit, Price"
               const parts = line.split(',').map(p => p.trim())
 
@@ -954,7 +954,7 @@ function ShoppingLists() {
                     </button>
                   </div>
                 ) : (
-                  selectedList.items.map((item, index) => {
+                  selectedList.items.map((item) => {
                     const swipe = swipeState[item.id] || {}
                     const swipeOffset = swipe.isSwiping ? (swipe.currentX - swipe.startX) : 0
                     // Determine swipe direction for styling

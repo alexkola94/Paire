@@ -232,17 +232,17 @@ export const loanService = {
 // ========================================
 
 export const storageService = {
-  async uploadFile(file, bucket = 'receipts') {
+  async uploadFile() {
     // TODO: Implement file upload to your backend
     throw new Error('File upload not implemented yet')
   },
 
-  async deleteFile(path, bucket = 'receipts') {
+  async deleteFile() {
     // TODO: Implement file deletion
     throw new Error('File deletion not implemented yet')
   },
 
-  getPublicUrl(path, bucket = 'receipts') {
+  getPublicUrl() {
     // TODO: Return file URL from your backend
     return ''
   }
@@ -277,7 +277,7 @@ export const profileService = {
     })
   },
 
-  async uploadAvatar(file, userId) {
+  async uploadAvatar() {
     // TODO: Implement avatar upload
     throw new Error('Avatar upload not implemented yet')
   }

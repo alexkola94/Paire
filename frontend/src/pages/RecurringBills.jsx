@@ -2,15 +2,14 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
-  FiClock, FiAlertCircle, FiRepeat, FiX, FiLink, FiRotateCcw,
-  FiGrid, FiList
+  FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
+  FiGrid, FiList, FiChevronLeft, FiChevronRight
 } from 'react-icons/fi'
-import { format, subMonths, subYears, subWeeks, addMonths, addYears, addWeeks, isValid, parseISO } from 'date-fns'
+import { subMonths, subYears, subWeeks, addMonths, addYears, addWeeks, isValid } from 'date-fns'
 import { recurringBillService, loanService, loanPaymentService } from '../services/api'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
-import DateInput from '../components/DateInput'
 import CurrencyInput from '../components/CurrencyInput'
 import CategorySelector from '../components/CategorySelector'
 import FormSection from '../components/FormSection'

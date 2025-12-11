@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { reminderService } from '../services/api';
 import './ReminderSettings.css';
@@ -13,7 +13,7 @@ function ReminderSettings() {
   const [saving, setSaving] = useState(false);
   const [testingReminders, setTestingReminders] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  
+
   const [settings, setSettings] = useState({
     emailEnabled: true,
     billRemindersEnabled: true,
@@ -25,11 +25,7 @@ function ReminderSettings() {
     savingsMilestonesEnabled: true
   });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
       const data = await reminderService.getSettings();
@@ -40,7 +36,11 @@ function ReminderSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleSave = async () => {
     try {
@@ -68,7 +68,7 @@ function ReminderSettings() {
     try {
       setTestingReminders(true);
       const result = await reminderService.checkReminders();
-      
+
       if (result.success) {
         const count = result.remindersSent || 0;
         if (count > 0) {
