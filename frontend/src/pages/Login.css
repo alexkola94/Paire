@@ -28,6 +28,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -42,7 +43,8 @@
   background: linear-gradient(135deg, #6c5ce7 0%, #4a3f8f 100%);
   color: white;
   padding: var(--spacing-xl);
-  display: none; /* Hidden on mobile by default */
+  display: none;
+  /* Hidden on mobile by default */
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -50,7 +52,8 @@
 
 /* Mobile branding - show logo at top (hidden on desktop) */
 .login-branding-mobile {
-  display: none; /* Hidden on desktop by default */
+  display: none;
+  /* Hidden on desktop by default */
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -143,6 +146,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -247,9 +251,6 @@
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
-  border-right-color: white;
-  border-bottom-color: white;
-  border-left-color: white;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   /* Smooth transitions */
@@ -266,6 +267,7 @@
     transform: rotate(0deg) translateZ(0);
     -webkit-transform: rotate(0deg) translateZ(0);
   }
+
   100% {
     transform: rotate(360deg) translateZ(0);
     -webkit-transform: rotate(360deg) translateZ(0);
@@ -320,7 +322,8 @@
   }
 
   .login-branding-mobile {
-    display: none; /* Ensure mobile branding is hidden on tablet/desktop */
+    display: none;
+    /* Ensure mobile branding is hidden on tablet/desktop */
   }
 
   .login-form-container {
@@ -359,7 +362,8 @@
   }
 
   .login-branding {
-    display: none; /* Hide desktop branding on mobile */
+    display: none;
+    /* Hide desktop branding on mobile */
   }
 
   .login-form-container {
@@ -382,4 +386,3 @@
     gap: var(--spacing-md);
   }
 }
-
