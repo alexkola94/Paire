@@ -11,6 +11,7 @@
     "password": "Κωδικός",
     "confirmPassword": "Επιβεβαίωση Κωδικού",
     "forgotPassword": "Ξεχάσατε τον κωδικό;",
+    "rememberMe": "Να με θυμάσαι",
     "resetPassword": "Επαναφορά Κωδικού",
     "dontHaveAccount": "Δεν έχετε λογαριασμό;",
     "alreadyHaveAccount": "Έχετε ήδη λογαριασμό;",

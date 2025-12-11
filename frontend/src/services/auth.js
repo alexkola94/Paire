@@ -30,12 +30,12 @@ export const getStoredUser = () => {
 }
 
 /**
- * Store authentication data (per-tab session)
+ * Store authentication data (per-tab session or persistent)
  * The storeSession method automatically broadcasts SESSION_CREATED
  * which will invalidate other tabs with the same user
  */
-const storeAuthData = (token, refreshToken, user) => {
-  sessionManager.storeSession(token, refreshToken, user)
+const storeAuthData = (token, refreshToken, user, rememberMe = false) => {
+  sessionManager.storeSession(token, refreshToken, user, rememberMe)
 }
 
 /**
@@ -61,38 +61,38 @@ const handleSessionExpiration = () => {
  */
 const apiRequest = async (url, options = {}) => {
   const token = getToken()
-  
+
   // Check if token is expired before making request
   if (token && isTokenExpired(token)) {
     console.warn('Token expired, clearing session')
     handleSessionExpiration()
     throw new Error('Session expired. Please log in again.')
   }
-  
+
   let backendUrl = getBackendUrl()
-  
+
   // CRITICAL SAFETY CHECK: If we're on an IP but got localhost, FORCE use the IP
   if (typeof window !== 'undefined' && window.location) {
     const currentHostname = window.location.hostname
     const currentProtocol = window.location.protocol
-    
+
     // If we're accessing via IP but got localhost, something is very wrong
-    if (currentHostname && 
-        currentHostname !== 'localhost' && 
-        currentHostname !== '127.0.0.1' &&
-        backendUrl.includes('localhost')) {
+    if (currentHostname &&
+      currentHostname !== 'localhost' &&
+      currentHostname !== '127.0.0.1' &&
+      backendUrl.includes('localhost')) {
       // FORCE use the IP - override whatever getBackendUrl() returned
       backendUrl = `${currentProtocol}//${currentHostname}:5038`
     }
   }
-  
+
   // Normalize backend URL (remove trailing slash)
   backendUrl = backendUrl.replace(/\/+$/, '');
-  
+
   // Ensure URL path starts with / and doesn't create double slashes
   const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
   const fullUrl = `${backendUrl}${normalizedUrl}`
-  
+
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers
@@ -104,7 +104,7 @@ const apiRequest = async (url, options = {}) => {
 
   try {
     console.log('Making API request:', { method: options.method || 'GET', url: fullUrl });
-    
+
     const response = await fetch(fullUrl, {
       ...options,
       headers
@@ -150,7 +150,7 @@ export const authService = {
    * Sign in with email and password
    * Returns auth data if successful, or 2FA requirement if enabled
    */
-  async signIn(email, password) {
+  async signIn(email, password, rememberMe = false) {
     try {
       const data = await apiRequest('/api/auth/login', {
         method: 'POST',
@@ -163,8 +163,8 @@ export const authService = {
         return data
       }
 
-      // Store authentication data (no 2FA required) - per-tab session
-      storeAuthData(data.token, data.refreshToken, data.user)
+      // Store authentication data (no 2FA required)
+      storeAuthData(data.token, data.refreshToken, data.user, rememberMe)
 
       return data
     } catch (error) {
@@ -180,16 +180,16 @@ export const authService = {
     try {
       const backendUrl = getBackendUrl().replace(/\/+$/, '');
       const fullUrl = `${backendUrl}/api/auth/register`;
-      
+
       console.log('Registration request:', { email, url: fullUrl });
-      
+
       const data = await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ 
-          email, 
+        body: JSON.stringify({
+          email,
           password,
           confirmPassword: password,
-          displayName 
+          displayName
         })
       })
 
@@ -231,7 +231,7 @@ export const authService = {
       // Always clear local session data
       clearAuthData()
     }
-    
+
     // Note: Navigation is handled by the calling component (Layout.jsx)
   },
 
@@ -247,18 +247,18 @@ export const authService = {
 
     const token = getToken()
     const user = getStoredUser()
-    
+
     // Check if token is expired
     if (token && isTokenExpired(token)) {
       console.warn('Token expired in getSession, clearing session')
       handleSessionExpiration()
       return null
     }
-    
+
     if (token && user) {
       return { token, user }
     }
-    
+
     return null
   },
 
@@ -278,14 +278,14 @@ export const authService = {
 
       // Fetch from API
       const data = await apiRequest('/api/auth/me')
-      
+
       // Update stored user in session
       const token = getToken()
       const refreshToken = getRefreshToken()
       if (token && refreshToken) {
         storeAuthData(token, refreshToken, data)
       }
-      
+
       return data
     } catch (error) {
       console.error('Get user error:', error)
@@ -321,9 +321,9 @@ export const authService = {
     try {
       const data = await apiRequest('/api/auth/reset-password', {
         method: 'POST',
-        body: JSON.stringify({ 
-          token, 
-          email, 
+        body: JSON.stringify({
+          token,
+          email,
           newPassword,
           confirmPassword: newPassword
         })
@@ -343,8 +343,8 @@ export const authService = {
     try {
       const data = await apiRequest('/api/auth/change-password', {
         method: 'POST',
-        body: JSON.stringify({ 
-          currentPassword, 
+        body: JSON.stringify({
+          currentPassword,
           newPassword,
           confirmPassword: newPassword
         })

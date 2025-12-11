@@ -14,8 +14,9 @@ import './TwoFactorVerification.css';
  * @param {string} props.tempToken - Temporary token from login
  * @param {Function} props.onSuccess - Callback on successful verification
  * @param {Function} props.onCancel - Callback to cancel and go back
+ * @param {boolean} props.rememberMe - Whether to persist session
  */
-const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
+const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, rememberMe = false }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,12 +39,12 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
     if (hasCalledOnSuccess.current) {
       return;
     }
-    
+
     const code = codeToVerify || verificationCode;
-    
+
     // Normalize and validate code
     const normalizedCode = code.replace(/\D/g, '').slice(0, 6);
-    
+
     if (normalizedCode.length !== 6 || !normalizedCode.match(/^\d{6}$/)) {
       setError(t('twoFactor.invalidCode') || 'Please enter a valid 6-digit code.');
       hasAutoVerified.current = false;
@@ -125,16 +126,16 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       hasErrorOccurred.current = false;
       lastFailedCode.current = '';
 
-      // Store token and user data using sessionManager (per-tab session)
-      sessionManager.storeSession(data.token, data.refreshToken || '', data.user);
+      // Store token and user data using sessionManager (per-tab or persistent)
+      sessionManager.storeSession(data.token, data.refreshToken || '', data.user, rememberMe);
 
       // Show success animation before navigating
       setIsSuccess(true);
-      
+
       // Wait for success animation to play, then trigger exit animation
       setTimeout(() => {
         setIsExiting(true);
-        
+
         // After exit animation, notify parent and navigate
         setTimeout(() => {
           if (onSuccess && !hasCalledOnSuccess.current) {
@@ -151,7 +152,7 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       } else {
         errorMessage = err.message || t('twoFactor.verificationError') || 'Verification failed. Please try again.';
       }
-      
+
       setError(errorMessage);
       hasAutoVerified.current = false; // Reset on error so user can try again
       hasErrorOccurred.current = true; // Mark that an error occurred
@@ -195,16 +196,16 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
         throw new Error(data.error || t('twoFactor.verificationError'));
       }
 
-      // Store token and user data using sessionManager (per-tab session)
-      sessionManager.storeSession(data.token, data.refreshToken || '', data.user);
+      // Store token and user data using sessionManager (per-tab or persistent)
+      sessionManager.storeSession(data.token, data.refreshToken || '', data.user, rememberMe);
 
       // Show success animation before navigating
       setIsSuccess(true);
-      
+
       // Wait for success animation to play, then trigger exit animation
       setTimeout(() => {
         setIsExiting(true);
-        
+
         // After exit animation, notify parent and navigate
         setTimeout(() => {
           if (onSuccess && !hasCalledOnSuccess.current) {
@@ -250,15 +251,15 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
     // Prevent auto-verification if:
     // 1. There was an error and the code hasn't changed (same failed code)
     // 2. The code matches the last failed code (prevent infinite loop)
-    const isSameFailedCode = hasErrorOccurred.current && 
-                             lastFailedCode.current === verificationCode &&
-                             verificationCode.length === 6;
+    const isSameFailedCode = hasErrorOccurred.current &&
+      lastFailedCode.current === verificationCode &&
+      verificationCode.length === 6;
 
     // Only auto-verify if all conditions are met (for manual typing)
     if (
-      verificationCode.length === 6 && 
-      !loading && 
-      !useBackupCode && 
+      verificationCode.length === 6 &&
+      !loading &&
+      !useBackupCode &&
       !hasAutoVerified.current &&
       !isVerifyingRef.current &&
       !isSameFailedCode && // Prevent re-verifying the same failed code
@@ -266,13 +267,13 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
       verificationCode.match(/^\d{6}$/) // Ensure it's exactly 6 digits
     ) {
       hasAutoVerified.current = true;
-      
+
       // Small delay to ensure the last digit is fully entered and visible
       const timer = setTimeout(() => {
         // Double-check conditions before verifying
         if (
-          verificationCode.length === 6 && 
-          !loading && 
+          verificationCode.length === 6 &&
+          !loading &&
           !isVerifyingRef.current &&
           !hasCalledOnSuccess.current && // Don't verify if already succeeded
           !hasErrorOccurred.current && // Don't verify if there was an error
@@ -308,8 +309,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
           </div>
           <h2>{t('twoFactor.verificationTitle')}</h2>
           <p className="verification-subtitle">
-            {useBackupCode 
-              ? t('twoFactor.enterBackupCode') 
+            {useBackupCode
+              ? t('twoFactor.enterBackupCode')
               : t('twoFactor.enterVerificationCode')}
           </p>
         </div>
@@ -332,28 +333,28 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
               onChange={(code) => {
                 // Normalize code - remove any non-digit characters (spaces, dashes, etc.)
                 const normalizedCode = code.replace(/\D/g, '').slice(0, 6);
-                
+
                 // Stop any ongoing verification if user is editing
                 if (isVerifyingRef.current && normalizedCode.length < verificationCode.length) {
                   isVerifyingRef.current = false;
                   setLoading(false);
                 }
-                
+
                 // Always allow changes - don't block user input
                 setVerificationCode(normalizedCode);
-                
+
                 // Clear error and reset error flags when user edits the code
                 if (error) {
                   setError('');
                 }
-                
+
                 // Reset error tracking when user changes the code
                 // This allows auto-verification to work again with a new code
                 if (normalizedCode !== lastFailedCode.current) {
                   hasErrorOccurred.current = false;
                   lastFailedCode.current = '';
                 }
-                
+
                 // Reset auto-verify flag when user edits
                 if (normalizedCode.length < 6) {
                   hasAutoVerified.current = false;
@@ -363,8 +364,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
               }}
               numInputs={6}
               renderInput={(props) => (
-                <input 
-                  {...props} 
+                <input
+                  {...props}
                   className="verification-otp-input"
                   onKeyPress={handleKeyPress}
                   onPaste={async (e) => {
@@ -373,18 +374,18 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                     const pastedData = (e.clipboardData || window.clipboardData).getData('text');
                     // Extract only digits and limit to 6
                     const digits = pastedData.replace(/\D/g, '').slice(0, 6);
-                    
+
                     console.log('📋 [2FA] Paste detected:', { pastedData, digits, length: digits.length });
-                    
+
                     if (digits.length === 6) {
                       setVerificationCode(digits);
                       setError('');
                       hasAutoVerified.current = false; // Reset to allow auto-verify
                       hasErrorOccurred.current = false; // Reset error state for new code
                       lastFailedCode.current = ''; // Clear failed code tracking
-                      
+
                       console.log('✅ [2FA] Code pasted, will verify in 600ms');
-                      
+
                       // Wait a moment for UI to update, then verify
                       setTimeout(() => {
                         console.log('🔍 [2FA] Attempting auto-verify after paste:', {
@@ -394,7 +395,7 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                           hasSucceeded: hasCalledOnSuccess.current,
                           hasError: hasErrorOccurred.current
                         });
-                        
+
                         if (digits.length === 6 && !loading && !isVerifyingRef.current && !hasCalledOnSuccess.current && !hasErrorOccurred.current) {
                           console.log('🚀 [2FA] Triggering verification from paste handler');
                           handleVerifyCode(digits);
@@ -413,7 +414,7 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
                     }
                   }}
                   disabled={loading}
-                  style={{ 
+                  style={{
                     opacity: loading ? 0.7 : 1,
                     cursor: loading ? 'wait' : 'text',
                     // Ensure text is always visible
@@ -440,7 +441,7 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
               <div className="success-indicator">
                 <div className="success-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
                 <span className="success-text">{t('twoFactor.verificationSuccess') || 'Verification successful!'}</span>
@@ -507,8 +508,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
             className="link-btn"
             disabled={loading}
           >
-            {useBackupCode 
-              ? t('twoFactor.useAuthenticatorCode') 
+            {useBackupCode
+              ? t('twoFactor.useAuthenticatorCode')
               : t('twoFactor.useBackupCode')}
           </button>
         </div>
@@ -519,8 +520,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel }) => {
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
           </svg>
           <p>
-            {useBackupCode 
-              ? t('twoFactor.backupCodeHelp') 
+            {useBackupCode
+              ? t('twoFactor.backupCodeHelp')
               : t('twoFactor.authenticatorHelp')}
           </p>
         </div>

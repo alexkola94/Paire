@@ -36,17 +36,27 @@ function Login() {
     confirmPassword: ''
   })
 
+  // Remember Me state
+  const [rememberMe, setRememberMe] = useState(false)
+
   // Password visibility state
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   /**
-   * Check URL parameters on mount
+   * Check URL parameters and load saved email on mount
    */
   useEffect(() => {
     // Check if mode=signup is in the URL
     if (mode === 'signup') {
       setIsSignUp(true)
+    }
+
+    // Load saved email if exists
+    const savedEmail = localStorage.getItem('last_user_email')
+    if (savedEmail) {
+      setFormData(prev => ({ ...prev, email: savedEmail }))
+      setRememberMe(true)
     }
 
     // Pre-fill email if there's a pending invitation token
@@ -117,8 +127,15 @@ function Login() {
           }, 2000)
         }
       } else {
+        // Handle "Remember Email" persistence
+        if (rememberMe) {
+          localStorage.setItem('last_user_email', formData.email)
+        } else {
+          localStorage.removeItem('last_user_email')
+        }
+
         // Sign in existing user
-        const response = await authService.signIn(formData.email, formData.password)
+        const response = await authService.signIn(formData.email, formData.password, rememberMe)
 
         // Check if 2FA is required
         if (response.requiresTwoFactor) {
@@ -135,7 +152,7 @@ function Login() {
           window.dispatchEvent(new CustomEvent('auth-storage-change'))
 
           // Wait for App.jsx to update session state before navigating
-          // Poll sessionStorage to ensure it's actually stored
+          // Poll sessionStorage/localStorage to ensure it's actually stored
           let attempts = 0
           const maxAttempts = 10
           while (attempts < maxAttempts) {
@@ -263,6 +280,7 @@ function Login() {
         tempToken={tempToken}
         onSuccess={handle2FASuccess}
         onCancel={handle2FACancel}
+        rememberMe={rememberMe}
       />
     )
   }
@@ -395,14 +413,27 @@ function Login() {
                 </div>
               )}
 
-              {/* Forgot Password Link (Sign In only) */}
-              {/* {!isSignUp && (
-                <div className="forgot-password-link">
-                  <Link to="/forgot-password">
-                    {t('auth.forgotPassword')}
-                  </Link>
+              {/* Remember Me Checkbox */}
+              {!isSignUp && (
+                <div className="form-group remember-me-container">
+                  <label className="checkbox-label" htmlFor="rememberMe">
+                    <input
+                      type="checkbox"
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    <span className="checkbox-custom"></span>
+                    <span className="checkbox-text">{t('auth.rememberMe') || 'Remember me'}</span>
+                  </label>
+
+                  <div className="forgot-password-link">
+                    <Link to="/forgot-password">
+                      {t('auth.forgotPassword')}
+                    </Link>
+                  </div>
                 </div>
-              )} */}
+              )}
 
               {/* Submit Button */}
               <button

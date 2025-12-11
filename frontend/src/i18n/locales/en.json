@@ -11,6 +11,7 @@
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "forgotPassword": "Forgot Password?",
+    "rememberMe": "Remember me",
     "resetPassword": "Reset Password",
     "dontHaveAccount": "Don't have an account?",
     "alreadyHaveAccount": "Already have an account?",

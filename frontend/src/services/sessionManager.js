@@ -53,7 +53,7 @@ export const sessionManager = {
   init() {
     initBroadcastChannel()
     getTabId()
-    
+
     // Listen for cross-tab messages
     if (broadcastChannel) {
       broadcastChannel.onmessage = (event) => {
@@ -87,8 +87,8 @@ export const sessionManager = {
       if (data.userId && data.userId === currentUserId && this.hasSession()) {
         hasDispatchedInvalidation = true
         this.clearSession(false) // Don't broadcast - already handled
-        window.dispatchEvent(new CustomEvent('session-invalidated', { 
-          detail: { reason: 'Another tab logged in with the same user' } 
+        window.dispatchEvent(new CustomEvent('session-invalidated', {
+          detail: { reason: 'Another tab logged in with the same user' }
         }))
       }
     } else if (data.type === 'SESSION_CREATED') {
@@ -98,8 +98,8 @@ export const sessionManager = {
         // Same user logged in another tab - invalidate this session
         hasDispatchedInvalidation = true
         this.clearSession(false) // Don't broadcast - already handled
-        window.dispatchEvent(new CustomEvent('session-invalidated', { 
-          detail: { reason: 'Same user logged in another tab' } 
+        window.dispatchEvent(new CustomEvent('session-invalidated', {
+          detail: { reason: 'Same user logged in another tab' }
         }))
       }
     } else if (data.type === 'LOGOUT') {
@@ -107,8 +107,8 @@ export const sessionManager = {
       if (this.hasSession()) {
         hasDispatchedInvalidation = true
         this.clearSession(false) // Don't broadcast - already handled
-        window.dispatchEvent(new CustomEvent('session-invalidated', { 
-          detail: { reason: 'Logged out from another tab' } 
+        window.dispatchEvent(new CustomEvent('session-invalidated', {
+          detail: { reason: 'Logged out from another tab' }
         }))
       }
     }
@@ -122,35 +122,55 @@ export const sessionManager = {
       // Session changed in another tab
       const currentUserId = this.getCurrentUserId()
       const newUserId = localStorage.getItem(CROSS_TAB_USER_KEY)
-      
+
       if (currentUserId && newUserId && currentUserId !== newUserId) {
         // Different user logged in - clear this session
         this.clearSession()
-        window.dispatchEvent(new CustomEvent('session-invalidated', { 
-          detail: { reason: 'Different user logged in another tab' } 
+        window.dispatchEvent(new CustomEvent('session-invalidated', {
+          detail: { reason: 'Different user logged in another tab' }
         }))
       }
     }
   },
 
   /**
-   * Store session data (per-tab)
+   * Store session data (per-tab or persistent)
+   * @param {string} token - Auth token
+   * @param {string} refreshToken - Refresh token
+   * @param {Object} user - User object
+   * @param {boolean} rememberMe - Whether to persist session across browser restarts
    */
-  storeSession(token, refreshToken, user) {
+  storeSession(token, refreshToken, user, rememberMe = false) {
     // Reset invalidation flag when storing new session
     hasDispatchedInvalidation = false
-    
-    // Store in sessionStorage (per-tab)
-    sessionStorage.setItem(SESSION_TOKEN_KEY, token)
-    sessionStorage.setItem(SESSION_REFRESH_TOKEN_KEY, refreshToken)
-    sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(user))
 
-    // Store user ID in localStorage for cross-tab communication
+    if (rememberMe) {
+      // Store in localStorage (persistent)
+      localStorage.setItem(SESSION_TOKEN_KEY, token)
+      localStorage.setItem(SESSION_REFRESH_TOKEN_KEY, refreshToken)
+      localStorage.setItem(SESSION_USER_KEY, JSON.stringify(user))
+
+      // Clear sessionStorage to avoid duplicates/confusion
+      sessionStorage.removeItem(SESSION_TOKEN_KEY)
+      sessionStorage.removeItem(SESSION_REFRESH_TOKEN_KEY)
+      sessionStorage.removeItem(SESSION_USER_KEY)
+    } else {
+      // Store in sessionStorage (per-tab)
+      sessionStorage.setItem(SESSION_TOKEN_KEY, token)
+      sessionStorage.setItem(SESSION_REFRESH_TOKEN_KEY, refreshToken)
+      sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(user))
+
+      // Clear localStorage to avoid duplicates/confusion
+      localStorage.removeItem(SESSION_TOKEN_KEY)
+      localStorage.removeItem(SESSION_REFRESH_TOKEN_KEY)
+      localStorage.removeItem(SESSION_USER_KEY)
+    }
+
+    // Store user ID in localStorage for cross-tab communication (always needed)
     localStorage.setItem(CROSS_TAB_USER_KEY, user.id)
     localStorage.setItem(CROSS_TAB_SESSION_KEY, `${user.id}_${Date.now()}`)
 
     // Broadcast session creation to other tabs
-    // This will trigger other tabs with the same user to log out
     if (broadcastChannel) {
       broadcastChannel.postMessage({
         type: 'SESSION_CREATED',
@@ -161,24 +181,24 @@ export const sessionManager = {
   },
 
   /**
-   * Get session token (from sessionStorage)
+   * Get session token (checks localStorage then sessionStorage)
    */
   getToken() {
-    return sessionStorage.getItem(SESSION_TOKEN_KEY)
+    return localStorage.getItem(SESSION_TOKEN_KEY) || sessionStorage.getItem(SESSION_TOKEN_KEY)
   },
 
   /**
-   * Get refresh token (from sessionStorage)
+   * Get refresh token (checks localStorage then sessionStorage)
    */
   getRefreshToken() {
-    return sessionStorage.getItem(SESSION_REFRESH_TOKEN_KEY)
+    return localStorage.getItem(SESSION_REFRESH_TOKEN_KEY) || sessionStorage.getItem(SESSION_REFRESH_TOKEN_KEY)
   },
 
   /**
-   * Get current user (from sessionStorage)
+   * Get current user (checks localStorage then sessionStorage)
    */
   getCurrentUser() {
-    const userJson = sessionStorage.getItem(SESSION_USER_KEY)
+    const userJson = localStorage.getItem(SESSION_USER_KEY) || sessionStorage.getItem(SESSION_USER_KEY)
     return userJson ? JSON.parse(userJson) : null
   },
 
@@ -198,7 +218,7 @@ export const sessionManager = {
   },
 
   /**
-   * Clear session (per-tab)
+   * Clear session (both storages)
    * @param {boolean} broadcast - Whether to broadcast the logout to other tabs (default: true)
    */
   clearSession(broadcast = true) {
@@ -210,10 +230,15 @@ export const sessionManager = {
     isClearingSession = true
 
     try {
+      // Clear both storages
       sessionStorage.removeItem(SESSION_TOKEN_KEY)
       sessionStorage.removeItem(SESSION_REFRESH_TOKEN_KEY)
       sessionStorage.removeItem(SESSION_USER_KEY)
-      
+
+      localStorage.removeItem(SESSION_TOKEN_KEY)
+      localStorage.removeItem(SESSION_REFRESH_TOKEN_KEY)
+      localStorage.removeItem(SESSION_USER_KEY)
+
       // Clear cross-tab tracking
       localStorage.removeItem(CROSS_TAB_USER_KEY)
       localStorage.removeItem(CROSS_TAB_SESSION_KEY)
@@ -229,14 +254,12 @@ export const sessionManager = {
       // Reset flags after a short delay to allow cleanup
       setTimeout(() => {
         isClearingSession = false
-        // Don't reset hasDispatchedInvalidation here - let it reset on new session
       }, 100)
     }
   },
 
   /**
    * Broadcast session invalidation (when same user logs in)
-   * This is called when the same user logs in to invalidate other tabs
    */
   broadcastSessionInvalidation(userId) {
     if (broadcastChannel && userId) {
