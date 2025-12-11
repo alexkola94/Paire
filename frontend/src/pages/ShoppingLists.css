@@ -183,6 +183,12 @@
   box-shadow: var(--shadow-md);
 }
 
+[data-theme='dark'] .list-card.selected {
+  background: var(--bg-tertiary);
+  border-left-color: var(--primary-light);
+}
+
+
 .list-card.completed {
   border-left-color: var(--success-dark);
   opacity: 0.8;

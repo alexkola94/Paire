@@ -7,7 +7,7 @@ import {
   FiArrowRight,
   FiFileText
 } from 'react-icons/fi'
-import { transactionService, budgetService } from '../services/api'
+import { transactionService, budgetService, savingsGoalService } from '../services/api'
 import { format } from 'date-fns'
 import SecurityBadge from '../components/SecurityBadge'
 
@@ -16,7 +16,8 @@ import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import CountUpAnimation from '../components/CountUpAnimation'
 import PullToRefresh from '../components/PullToRefresh'
 import BudgetProgressBar from '../components/BudgetProgressBar'
-import { FiTarget } from 'react-icons/fi'
+import SavingGoalProgressBar from '../components/SavingGoalProgressBar'
+import { FiTarget, FiPieChart } from 'react-icons/fi'
 import './Dashboard.css'
 
 /**
@@ -36,6 +37,7 @@ function Dashboard() {
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 5
   const [budgets, setBudgets] = useState([])
+  const [savingGoals, setSavingGoals] = useState([])
 
   // Memoize date calculations to avoid recalculation on every render
   const dateRange = useMemo(() => {
@@ -73,6 +75,14 @@ function Dashboard() {
         setBudgets(budgetData || [])
       } catch (err) {
         console.warn('Failed to load budgets', err)
+      }
+
+      // Fetch saving goals
+      try {
+        const goalsData = await savingsGoalService.getAll()
+        setSavingGoals(goalsData || [])
+      } catch (err) {
+        console.warn('Failed to load saving goals', err)
       }
 
     } catch (error) {
@@ -265,39 +275,41 @@ function Dashboard() {
         )}
       </div>
 
+      {/* Saving Goals Section */}
+      <div className="saving-goals-section glass-card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FiPieChart /> {t('dashboard.savingGoals', 'Saving Goals')}
+          </h2>
+          <Link to="/saving-goals" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+            {t('common.viewAll')}
+          </Link>
+        </div>
+
+        {savingGoals.length > 0 ? (
+          savingGoals.slice(0, 3).map(goal => (
+            <SavingGoalProgressBar
+              key={goal.id}
+              label={goal.name}
+              currentAmount={goal.currentAmount}
+              targetAmount={goal.targetAmount}
+              currencyFormatter={formatCurrency}
+              icon={null}
+            />
+          ))
+        ) : (
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic' }}>
+            {t('dashboard.noSavingGoals', "Start saving for your dreams! Create a goal.")}
+          </p>
+        )}
+      </div>
+
       <div className="quick-access-section" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
         <Link
           to="/currency-calculator"
           className="quick-access-btn"
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.75rem',
-            background: 'white',
-            padding: '1.25rem',
-            borderRadius: '16px',
-            textDecoration: 'none',
-            color: '#334155',
-            fontWeight: '600',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e2e8f0',
-            transition: 'all 0.2s'
-          }}
         >
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: '#eff6ff',
-            color: '#6366f1',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.25rem',
-            fontWeight: 'bold'
-          }}>
+          <div className="quick-access-icon">
             €
           </div>
           <span>{t('navigation.currencyCalculator')}</span>
@@ -306,33 +318,8 @@ function Dashboard() {
         <Link
           to="/economic-news"
           className="quick-access-btn"
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.75rem',
-            background: 'white',
-            padding: '1.25rem',
-            borderRadius: '16px',
-            textDecoration: 'none',
-            color: '#334155',
-            fontWeight: '600',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e2e8f0',
-            transition: 'all 0.2s'
-          }}
         >
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: '#eff6ff',
-            color: '#6366f1',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
+          <div className="quick-access-icon">
             <FiFileText size={20} />
           </div>
           <span>{t('navigation.economicNews')}</span>

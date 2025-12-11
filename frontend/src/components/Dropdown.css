@@ -12,7 +12,8 @@
   position: relative;
   display: inline-block;
   width: 100%;
-  min-width: 0; /* Allow flexibility on mobile */
+  min-width: 0;
+  /* Allow flexibility on mobile */
 }
 
 /* Dropdown Button - Mobile First */
@@ -25,14 +26,16 @@
   gap: var(--spacing-xs, 0.5rem);
   /* Mobile-friendly padding and touch target */
   padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
-  min-height: 44px; /* Minimum touch target size */
+  min-height: 44px;
+  /* Minimum touch target size */
   /* WHITE BACKGROUND - matches app theme */
   background: #ffffff !important;
   border: 2px solid rgba(108, 92, 231, 0.25);
   border-radius: var(--radius-md, 12px);
   /* PURPLE TEXT - theme color */
   color: #6c5ce7 !important;
-  font-size: 0.875rem; /* Mobile font size */
+  font-size: 0.875rem;
+  /* Mobile font size */
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -73,7 +76,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--primary, #6c5ce7); /* Theme color */
+  color: var(--primary, #6c5ce7);
+  /* Theme color */
   font-weight: 600;
 }
 
@@ -101,8 +105,8 @@
     background: #ffffff !important;
     /* Enhanced shadowing effect */
     box-shadow: 0 4px 16px rgba(108, 92, 231, 0.25),
-                0 2px 8px rgba(108, 92, 231, 0.15),
-                0 0 0 1px rgba(108, 92, 231, 0.1);
+      0 2px 8px rgba(108, 92, 231, 0.15),
+      0 0 0 1px rgba(108, 92, 231, 0.1);
     transform: translateY(-2px) translateZ(0);
     -webkit-transform: translateY(-2px) translateZ(0);
     /* PURPLE TEXT - stays purple */
@@ -111,16 +115,19 @@
 
   .custom-dropdown__button:hover .custom-dropdown__icon {
     transform: scale(1.15);
-    color: #4a3f8f; /* Darker purple on hover */
+    color: #4a3f8f;
+    /* Darker purple on hover */
   }
 
   .custom-dropdown__button:hover .custom-dropdown__chevron {
-    color: #4a3f8f; /* Darker purple on hover */
+    color: #4a3f8f;
+    /* Darker purple on hover */
     opacity: 1;
   }
 
   .custom-dropdown__button:hover .custom-dropdown__selected {
-    color: #4a3f8f; /* Darker purple on hover */
+    color: #4a3f8f;
+    /* Darker purple on hover */
   }
 }
 
@@ -128,30 +135,36 @@
 .custom-dropdown__button:active {
   transform: scale(0.98) translateZ(0);
   -webkit-transform: scale(0.98) translateZ(0);
-  background: #ffffff !important; /* WHITE */
-  color: #6c5ce7 !important; /* PURPLE */
+  background: #ffffff !important;
+  /* WHITE */
+  color: #6c5ce7 !important;
+  /* PURPLE */
   box-shadow: 0 2px 6px rgba(108, 92, 231, 0.2);
 }
 
 /* Focus state - WHITE background, PURPLE text */
 .custom-dropdown__button:focus {
   border-color: #6c5ce7;
-  background: #ffffff !important; /* WHITE */
-  color: #6c5ce7 !important; /* PURPLE */
+  background: #ffffff !important;
+  /* WHITE */
+  color: #6c5ce7 !important;
+  /* PURPLE */
   box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15),
-              0 2px 8px rgba(108, 92, 231, 0.2),
-              0 4px 12px rgba(108, 92, 231, 0.1);
+    0 2px 8px rgba(108, 92, 231, 0.2),
+    0 4px 12px rgba(108, 92, 231, 0.1);
 }
 
 /* Active/Open state - WHITE background, PURPLE text */
 .custom-dropdown--open .custom-dropdown__button {
   border-color: #6c5ce7;
-  background: #ffffff !important; /* WHITE */
-  color: #6c5ce7 !important; /* PURPLE */
+  background: #ffffff !important;
+  /* WHITE */
+  color: #6c5ce7 !important;
+  /* PURPLE */
   /* Enhanced shadow for open state */
   box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15),
-              0 4px 16px rgba(108, 92, 231, 0.25),
-              0 2px 8px rgba(108, 92, 231, 0.15);
+    0 4px 16px rgba(108, 92, 231, 0.25),
+    0 2px 8px rgba(108, 92, 231, 0.15);
 }
 
 .custom-dropdown--open .custom-dropdown__chevron {
@@ -178,7 +191,8 @@
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   /* Max height for scrolling */
-  max-height: 250px; /* Smaller on mobile */
+  max-height: 250px;
+  /* Smaller on mobile */
   overflow-y: auto;
 }
 
@@ -188,6 +202,7 @@
     transform: translateY(-8px) translateZ(0);
     -webkit-transform: translateY(-8px) translateZ(0);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) translateZ(0);
@@ -204,11 +219,14 @@
   gap: var(--spacing-xs, 0.5rem);
   /* Mobile-friendly touch target */
   padding: var(--spacing-md, 1rem);
-  min-height: 44px; /* Minimum touch target */
+  min-height: 44px;
+  /* Minimum touch target */
   background: transparent;
   border: none;
-  color: var(--primary, #6c5ce7); /* Theme color instead of black */
-  font-size: 0.875rem; /* Mobile font size */
+  color: var(--primary, #6c5ce7);
+  /* Theme color instead of black */
+  font-size: 0.875rem;
+  /* Mobile font size */
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -240,6 +258,7 @@
 
 /* Focused/Hover state - Desktop only */
 @media (hover: hover) {
+
   .custom-dropdown__option:hover,
   .custom-dropdown__option--focused {
     background: linear-gradient(135deg, #f0e6ff 0%, #e8dfff 100%);
@@ -307,21 +326,40 @@
   }
 }
 
-/* ================================
-   Dark Mode Support - DISABLED
-   Keep white background to match app theme
-   ================================ */
+/* Dark Mode Support */
+[data-theme='dark'] .custom-dropdown__button {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--glass-border);
+  color: var(--text-primary) !important;
+}
 
-/* Dark mode disabled - always use white background to match app theme */
-/* @media (prefers-color-scheme: dark) {
-  ... removed to keep white background always
-} */
+[data-theme='dark'] .custom-dropdown__button .custom-dropdown__icon,
+[data-theme='dark'] .custom-dropdown__button .custom-dropdown__chevron,
+[data-theme='dark'] .custom-dropdown__button .custom-dropdown__selected {
+  color: var(--text-primary) !important;
+}
+
+[data-theme='dark'] .custom-dropdown__menu {
+  background: var(--bg-secondary);
+  border-color: var(--glass-border);
+}
+
+[data-theme='dark'] .custom-dropdown__option {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .custom-dropdown__option:hover,
+[data-theme='dark'] .custom-dropdown__option--focused {
+  background: var(--bg-tertiary);
+  color: white;
+}
 
 /* ================================
    Reduced Motion Support (Accessibility)
    ================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .custom-dropdown__button,
   .custom-dropdown__option,
   .custom-dropdown__chevron,

@@ -706,6 +706,9 @@
     }
   },
   "common": {
+    "accessibility": "Accessibility",
+    "reset": "Reset Defaults",
+    "done": "Done",
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
@@ -931,5 +934,13 @@
     "error": "Conversion failed. Please check your connection.",
     "loadError": "Failed to load currencies. Please try again later.",
     "swap": "Swap currencies"
+  },
+  "settings": {
+    "fontSize": "Font Size",
+    "fontSizeDesc": "Adjust text size for better readability",
+    "reducedMotion": "Reduced Motion",
+    "reducedMotionDesc": "Minimize animations and transitions",
+    "highContrast": "High Contrast",
+    "highContrastDesc": "Increase contrast for borders and text"
   }
 }

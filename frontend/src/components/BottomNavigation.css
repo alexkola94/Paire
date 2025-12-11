@@ -102,3 +102,103 @@
         display: block;
     }
 }
+
+/* Dark Mode Overrides */
+[data-theme='dark'] .bottom-nav {
+    background: rgba(15, 16, 22, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .bottom-nav .fab-button {
+    border-color: rgba(15, 16, 22, 0.9);
+}
+
+/* FAB Menu Styles */
+.fab-menu {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: bottom center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1002;
+    padding-bottom: 10px;
+}
+
+.fab-menu.open {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.fab-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: transform 0.2s;
+    min-width: 160px;
+}
+
+.fab-menu-item:active {
+    transform: scale(0.95);
+}
+
+.fab-menu-item.income {
+    color: #10b981;
+}
+
+.fab-menu-item.expense {
+    color: #ef4444;
+}
+
+/* Dark Mode Menu */
+[data-theme='dark'] .fab-menu-item {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Backdrop */
+.fab-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Rotate FAB when active */
+.bottom-nav .fab-button.active {
+    transform: rotate(45deg);
+    background: #ef4444;
+    box-shadow: none;
+    border-color: white;
+}

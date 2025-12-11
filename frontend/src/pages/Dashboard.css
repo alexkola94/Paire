@@ -7,8 +7,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ================================
@@ -257,6 +262,49 @@
   color: var(--error-dark);
 }
 
+/* Hover state text contrast adjustment */
+.transaction-item:hover .transaction-date {
+  color: var(--text-secondary);
+}
+
+.transaction-item:hover .added-by {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Dark theme specific overrides for hover state
+   Since the hover background (--secondary) is bright teal in dark mode,
+   we need dark text for contrast.
+*/
+[data-theme='dark'] .transaction-item:hover {
+  background: var(--secondary);
+  /* Ensure distinct hover bg */
+}
+
+[data-theme='dark'] .transaction-item:hover h4 {
+  color: #111827;
+  /* Dark text on bright teal */
+}
+
+[data-theme='dark'] .transaction-item:hover .transaction-date {
+  color: #374151;
+  /* Dark grey text */
+}
+
+[data-theme='dark'] .transaction-item:hover .added-by {
+  background: rgba(0, 0, 0, 0.1);
+  /* Subtle dark background for tag */
+  color: #111827;
+}
+
+[data-theme='dark'] .transaction-item:hover .added-by-email {
+  color: #4b5563;
+}
+
+[data-theme='dark'] .transaction-item:hover .transaction-amount {
+  /* Improve contrast for amount colors on teal background */
+  filter: brightness(0.4);
+}
+
 /* ================================
    Empty State
    ================================ */
@@ -278,6 +326,44 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* Quick Access Section Buttons */
+.quick-access-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: var(--bg-secondary);
+  padding: 1.25rem;
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.quick-access-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
+}
+
+.quick-access-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--primary-light-transparent, rgba(99, 102, 241, 0.1));
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
 
 /* Remove animations from icons in quick action buttons */
 .quick-actions .btn svg,
@@ -405,4 +491,3 @@
     font-size: 0.875rem;
   }
 }
-

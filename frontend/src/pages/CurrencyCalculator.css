@@ -372,3 +372,85 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Dark Mode Overrides */
+[data-theme='dark'] .currency-header p {
+    color: var(--text-secondary);
+}
+
+[data-theme='dark'] .currency-converter-card {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+[data-theme='dark'] .currency-converter-card::before {
+    opacity: 0.8;
+}
+
+[data-theme='dark'] .input-group label {
+    color: var(--text-secondary);
+}
+
+[data-theme='dark'] .amount-input,
+[data-theme='dark'] .currency-select {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme='dark'] .amount-input:focus,
+[data-theme='dark'] .currency-select:focus {
+    border-color: #6366f1;
+    background: var(--bg-secondary);
+}
+
+[data-theme='dark'] .swap-button {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--primary);
+}
+
+[data-theme='dark'] .swap-button:hover {
+    background: var(--bg-secondary);
+    color: #8b5cf6;
+}
+
+[data-theme='dark'] .result-container {
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .result-from {
+    color: var(--text-secondary);
+}
+
+[data-theme='dark'] .result-to {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme='dark'] .popular-header {
+    color: var(--text-primary);
+}
+
+[data-theme='dark'] .rate-card {
+    background: var(--bg-secondary);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .rate-card:hover {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .currency-code {
+    color: var(--text-primary);
+}
+
+[data-theme='dark'] .rate-name {
+    color: var(--text-secondary);
+}

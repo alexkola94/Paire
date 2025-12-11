@@ -59,6 +59,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -154,3 +155,20 @@
   }
 }
 
+/* Dark mode hover fixes */
+[data-theme='dark'] .quick-fill-item:hover .quick-fill-description,
+[data-theme='dark'] .quick-fill-item:hover .quick-fill-amount {
+  color: #111827;
+  /* Dark text for contrast on teal */
+}
+
+[data-theme='dark'] .quick-fill-item:hover .quick-fill-date,
+[data-theme='dark'] .quick-fill-item:hover .quick-fill-meta {
+  color: #374151;
+  /* Dark grey text */
+}
+
+[data-theme='dark'] .quick-fill-item:hover .quick-fill-category {
+  background: rgba(0, 0, 0, 0.1);
+  color: #111827;
+}

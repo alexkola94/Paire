@@ -349,6 +349,19 @@
   color: var(--error-dark);
 }
 
+/* Dark mode overrides */
+[data-theme='dark'] .loans-analytics-card {
+  /* Darker gradient */
+  background: linear-gradient(135deg, rgba(142, 68, 173, 0.2) 0%, rgba(0, 184, 148, 0.2) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .loan-stat {
+  /* Glassmorphism */
+  background: rgba(15, 16, 22, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 /* ================================
    Monthly Comparison Table
    ================================ */
@@ -478,7 +491,7 @@
     flex-direction: column;
   }
 
-  .analytics-page .page-header > div:last-child {
+  .analytics-page .page-header>div:last-child {
     width: 100%;
     flex-direction: column;
     gap: var(--spacing-sm);
@@ -518,4 +531,3 @@
     height: 300px;
   }
 }
-

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
@@ -33,11 +34,24 @@ function Income() {
   const [totalItems, setTotalItems] = useState(0)
   const PAGE_SIZE = 6
 
+  // Deep linking
+  const [searchParams, setSearchParams] = useSearchParams()
+
   /**
    * Load incomes on mount
    */
   useEffect(() => {
     loadIncomes()
+
+    // Check query params for actions
+    if (searchParams.get('action') === 'add') {
+      setShowForm(true)
+      // Clear param to prevent reopening on refresh
+      setSearchParams(params => {
+        params.delete('action')
+        return params
+      }, { replace: true })
+    }
   }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**

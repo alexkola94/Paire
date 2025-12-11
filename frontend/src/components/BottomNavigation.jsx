@@ -6,12 +6,13 @@ import {
     FiUser,
     FiPlus
 } from 'react-icons/fi'
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import './BottomNavigation.css'
 import { useTranslation } from 'react-i18next'
 
 const BottomNavigation = () => {
     const { t } = useTranslation()
+    const [showFabMenu, setShowFabMenu] = useState(false)
 
     return (
         <nav className="bottom-nav">
@@ -32,9 +33,41 @@ const BottomNavigation = () => {
 
                 {/* Floating Action Button (FAB) replacement for middle item */}
                 <div className="nav-item fab-container">
-                    <NavLink to="/expenses" className="fab-button" aria-label="Quick Add">
+                    <div className={`fab-menu ${showFabMenu ? 'open' : ''}`}>
+                        <NavLink
+                            to="/income?action=add"
+                            className="fab-menu-item income"
+                            onClick={() => setShowFabMenu(false)}
+                        >
+                            <FiTrendingUp size={20} />
+                            <span>{t('income.addIncome')}</span>
+                        </NavLink>
+                        <NavLink
+                            to="/expenses?action=add"
+                            className="fab-menu-item expense"
+                            onClick={() => setShowFabMenu(false)}
+                        >
+                            <FiTrendingDown size={20} />
+                            <span>{t('expenses.addExpense')}</span>
+                        </NavLink>
+                    </div>
+
+                    <button
+                        className={`fab-button ${showFabMenu ? 'active' : ''}`}
+                        onClick={() => setShowFabMenu(!showFabMenu)}
+                        aria-label="Quick Add"
+                        aria-expanded={showFabMenu}
+                    >
                         <FiPlus size={28} />
-                    </NavLink>
+                    </button>
+
+                    {/* Backdrop to close menu when clicking outside */}
+                    {showFabMenu && (
+                        <div
+                            className="fab-backdrop"
+                            onClick={() => setShowFabMenu(false)}
+                        />
+                    )}
                 </div>
 
                 <NavLink to="/income" className="nav-item">

@@ -597,7 +597,7 @@ function Profile() {
         }}
       />
 
-      {/* Open Banking Integration */}
+      {/* Open Banking Integration - Commented out
       <div className="card">
         <div className="card-header">
           <h2>
@@ -608,6 +608,7 @@ function Profile() {
 
         <BankConnections />
       </div>
+      */}
 
       {/* Danger Zone - Clear All Data */}
       <div className="card danger-zone">

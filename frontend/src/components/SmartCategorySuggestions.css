@@ -16,6 +16,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -102,3 +103,24 @@
   }
 }
 
+/* Dark mode overrides */
+[data-theme='dark'] .smart-category-suggestions {
+  background: rgba(30, 32, 45, 0.6);
+  /* Glassmorphism dark background */
+  border-color: var(--glass-border);
+}
+
+[data-theme='dark'] .smart-category-title {
+  color: var(--primary-light);
+}
+
+[data-theme='dark'] .smart-category-item {
+  background: var(--bg-tertiary);
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .smart-category-item:hover {
+  background: var(--primary);
+  color: white;
+}

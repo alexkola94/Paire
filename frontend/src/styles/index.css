@@ -382,6 +382,8 @@ select {
   font-family: inherit;
   transition: var(--transition);
   background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  /* Explicitly set text color */
   line-height: 1.5;
   /* Touch-friendly minimum size for mobile */
   min-height: 48px;
