@@ -6,7 +6,7 @@ import { getStoredUser } from '../services/auth'
 import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
 import LogoLoader from '../components/LogoLoader'
-import FormSection from '../components/FormSection'
+
 import './Partnership.css'
 
 /**
@@ -31,7 +31,7 @@ function Partnership() {
    */
   useEffect(() => {
     loadPartnership()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Fetch current user and partnership
@@ -48,8 +48,8 @@ function Partnership() {
       // Get user's profile
       const profile = await profileService.getProfile(user.id)
       if (!profile || !profile.display_name) {
-        setMessage({ 
-          type: 'warning', 
+        setMessage({
+          type: 'warning',
           text: t('partnership.needDisplayName')
         })
       }
@@ -96,7 +96,7 @@ function Partnership() {
    */
   const handleInvitePartner = async (e) => {
     e.preventDefault()
-    
+
     try {
       setSaving(true)
       setMessage({ type: '', text: '' })
@@ -110,9 +110,9 @@ function Partnership() {
 
       // Check if user is trying to invite themselves
       if (trimmedEmail === currentUser.email?.toLowerCase()) {
-        setMessage({ 
-          type: 'error', 
-          text: t('partnership.cannotInviteSelf') 
+        setMessage({
+          type: 'error',
+          text: t('partnership.cannotInviteSelf')
         })
         return
       }
@@ -120,9 +120,9 @@ function Partnership() {
       // Check if user has set display name
       const currentProfile = await profileService.getProfile(currentUser.id)
       if (!currentProfile || !currentProfile.display_name) {
-        setMessage({ 
-          type: 'error', 
-          text: t('partnership.setDisplayNameFirst') 
+        setMessage({
+          type: 'error',
+          text: t('partnership.setDisplayNameFirst')
         })
         return
       }
@@ -130,17 +130,17 @@ function Partnership() {
       // Send invitation email
       await partnershipService.sendInvitation(trimmedEmail)
 
-      setMessage({ 
-        type: 'success', 
+      setMessage({
+        type: 'success',
         text: t('partnership.inviteSentSuccess') || 'Invitation sent successfully! The recipient will receive an email with instructions to accept.'
       })
       setShowInviteForm(false)
       setPartnerEmail('')
-      
+
     } catch (error) {
       console.error('Error inviting partner:', error)
       let errorMessage = t('partnership.inviteError')
-      
+
       // Parse error message if available
       try {
         const errorData = JSON.parse(error.message)
@@ -148,9 +148,9 @@ function Partnership() {
       } catch {
         errorMessage = error.message || errorMessage
       }
-      
-      setMessage({ 
-        type: 'error', 
+
+      setMessage({
+        type: 'error',
         text: errorMessage
       })
     } finally {
@@ -168,26 +168,26 @@ function Partnership() {
 
       await partnershipService.acceptInvitation(token)
 
-      setMessage({ 
-        type: 'success', 
+      setMessage({
+        type: 'success',
         text: t('partnership.inviteAccepted') || 'Partnership invitation accepted successfully!'
       })
-      
+
       // Reload partnership to show the new partnership
       await loadPartnership()
     } catch (error) {
       console.error('Error accepting invitation:', error)
       let errorMessage = t('partnership.inviteAcceptError') || 'Failed to accept invitation'
-      
+
       try {
         const errorData = JSON.parse(error.message)
         errorMessage = errorData.message || errorMessage
       } catch {
         errorMessage = error.message || errorMessage
       }
-      
-      setMessage({ 
-        type: 'error', 
+
+      setMessage({
+        type: 'error',
         text: errorMessage
       })
     } finally {
@@ -219,19 +219,19 @@ function Partnership() {
 
       await partnershipService.endPartnership(partnership.id)
 
-      setMessage({ 
-        type: 'success', 
-        text: t('partnership.disconnectSuccess') 
+      setMessage({
+        type: 'success',
+        text: t('partnership.disconnectSuccess')
       })
-      
+
       // Reload partnership
       await loadPartnership()
       closeDisconnectModal()
     } catch (error) {
       console.error('Error disconnecting partnership:', error)
-      setMessage({ 
-        type: 'error', 
-        text: t('partnership.disconnectError') 
+      setMessage({
+        type: 'error',
+        text: t('partnership.disconnectError')
       })
     } finally {
       setSaving(false)
@@ -289,13 +289,13 @@ function Partnership() {
             {/* Partner Details */}
             <div className="partner-details">
               <h3>{partnerProfile.display_name || t('partnership.noName')}</h3>
-              
+
               <div className="partner-meta">
                 <div className="meta-item">
                   <FiMail size={16} />
                   <span>{partnerProfile.email}</span>
                 </div>
-                
+
                 {partnership.created_at && (
                   <div className="meta-item">
                     <FiCalendar size={16} />
@@ -334,7 +334,7 @@ function Partnership() {
                 <div key={invitation.id} className="pending-invitation-item">
                   <div className="invitation-info">
                     <p>
-                      <strong>{invitation.inviterName}</strong> ({invitation.inviterEmail}) 
+                      <strong>{invitation.inviterName}</strong> ({invitation.inviterEmail})
                       {' '}{t('partnership.invitedYou') || 'has invited you to become their financial partner.'}
                     </p>
                     {invitation.expiresAt && (
@@ -432,7 +432,7 @@ function Partnership() {
                 <FiX size={24} />
               </button>
             </div>
-            
+
             <form onSubmit={handleInvitePartner} className="invite-form">
               <div className="form-group">
                 <label htmlFor="partner-email">

@@ -20,14 +20,14 @@ export default function CurrencyCalculator() {
     // Fetch available currencies on mount
     useEffect(() => {
         fetchCurrencies()
-    }, [])
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     // Fetch rates for "fromCurrency" when changed or initially
     useEffect(() => {
         if (fromCurrency) {
             fetchPopularRates()
         }
-    }, [fromCurrency])
+    }, [fromCurrency]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchCurrencies = async () => {
         try {

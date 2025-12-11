@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+
 import { useLocation } from 'react-router-dom'
 import './PageTransition.css'
 
@@ -15,7 +15,7 @@ const PageTransition = ({ children }) => {
   const location = useLocation()
 
   return (
-    <div 
+    <div
       key={location.pathname}
       className="page-transition"
     >

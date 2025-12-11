@@ -401,6 +401,8 @@
   overflow-y: auto;
   /* Allow dropdown to escape overflow on desktop/tablet */
   overflow-x: visible;
+  /* Increase padding bottom to ensure logout button is visible above bottom nav */
+  padding-bottom: 120px;
 }
 
 /* Navigation Links - Mobile First */

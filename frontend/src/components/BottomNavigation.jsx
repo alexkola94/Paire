@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import {
     FiHome,
     FiTrendingDown,
@@ -12,15 +12,6 @@ import { useTranslation } from 'react-i18next'
 
 const BottomNavigation = () => {
     const { t } = useTranslation()
-    const location = useLocation()
-
-    // Quick Action FAB handler (placeholder for now)
-    const handleQuickAdd = (e) => {
-        e.preventDefault()
-        // This could open a modal or navigate to a quick-add page
-        // For now, let's just make it navigate to expenses add
-        // In future this should be a modal
-    }
 
     return (
         <nav className="bottom-nav">

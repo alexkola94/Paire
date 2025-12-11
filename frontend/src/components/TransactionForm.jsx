@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiUpload, FiX, FiFileText } from 'react-icons/fi'
 import { storageService } from '../services/api'
@@ -6,7 +6,7 @@ import CurrencyInput from './CurrencyInput'
 import CategorySelector from './CategorySelector'
 import DateInput from './DateInput'
 import FormSection from './FormSection'
-import FormLayout from './FormLayout'
+
 import AutoCompleteInput from './AutoCompleteInput'
 import DuplicateDetection from './DuplicateDetection'
 import SmartCategorySuggestions from './SmartCategorySuggestions'
@@ -72,12 +72,12 @@ function TransactionForm({
   // Get description suggestions
   const descriptionSuggestions = useMemo(() => {
     return getUniqueDescriptions()
-  }, [recentTransactions])
+  }, [recentTransactions]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Get suggested categories based on frequency
   const suggestedCategories = useMemo(() => {
     return getCategoryFrequency()
-  }, [recentTransactions])
+  }, [recentTransactions]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check for duplicate transactions
   const similarTransactions = useMemo(() => {
@@ -90,7 +90,7 @@ function TransactionForm({
       formData.date,
       formData.category
     )
-  }, [formData.amount, formData.description, formData.date, formData.category, duplicateDismissed])
+  }, [formData.amount, formData.description, formData.date, formData.category, duplicateDismissed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Handle input changes

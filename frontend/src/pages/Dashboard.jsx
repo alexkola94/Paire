@@ -10,7 +10,7 @@ import {
 import { transactionService, budgetService } from '../services/api'
 import { format } from 'date-fns'
 import SecurityBadge from '../components/SecurityBadge'
-import LogoLoader from '../components/LogoLoader'
+
 import Skeleton from '../components/Skeleton'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import CountUpAnimation from '../components/CountUpAnimation'

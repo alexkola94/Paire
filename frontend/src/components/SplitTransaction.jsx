@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiUsers, FiPercent, FiDollarSign, FiX } from 'react-icons/fi'
+import { FiUsers, FiPercent, FiDollarSign } from 'react-icons/fi'
 import './SplitTransaction.css'
 
 /**

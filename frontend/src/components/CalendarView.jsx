@@ -2,13 +2,13 @@ import { useState, useMemo } from 'react'
 import {
     format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
     eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths,
-    isToday, getDay
+    isToday
 } from 'date-fns'
-import { FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi'
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 
 import './CalendarView.css'
 
-export default function CalendarView({ bills, onEdit, onDelete, onMarkPaid, t, formatCurrency }) {
+export default function CalendarView({ bills, formatCurrency }) {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [selectedDate, setSelectedDate] = useState(new Date())
 
@@ -67,7 +67,7 @@ export default function CalendarView({ bills, onEdit, onDelete, onMarkPaid, t, f
 
             {/* Calendar Grid */}
             <div className="calendar-grid">
-                {calendarDays.map((day, idx) => {
+                {calendarDays.map((day) => {
                     const dayBills = getBillsForDate(day)
                     const isSelected = isSameDay(day, selectedDate)
                     const isCurrentMonth = isSameMonth(day, currentMonth)
@@ -87,7 +87,7 @@ export default function CalendarView({ bills, onEdit, onDelete, onMarkPaid, t, f
 
                             {/* Bill Markers */}
                             <div className="day-markers">
-                                {dayBills.slice(0, 3).map((bill, i) => (
+                                {dayBills.slice(0, 3).map((bill) => (
                                     <span
                                         key={bill.id}
                                         className={`bill-dot category-${bill.category}`}

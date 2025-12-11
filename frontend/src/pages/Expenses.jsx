@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
-import LogoLoader from '../components/LogoLoader'
+
 // import useSwipeGesture from '../hooks/useSwipeGesture'
 // import useFocusTrap from '../hooks/useFocusTrap'
 import useScreenReader from '../hooks/useScreenReader'
@@ -52,7 +52,7 @@ function Expenses() {
    */
   useEffect(() => {
     loadExpenses()
-  }, [page])
+  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Fetch expenses from API
@@ -297,7 +297,7 @@ function Expenses() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [showForm])
+  }, [showForm]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Format currency

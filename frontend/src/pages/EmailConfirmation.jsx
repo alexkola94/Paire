@@ -19,7 +19,7 @@ function EmailConfirmation() {
 
   useEffect(() => {
     confirmEmail()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Countdown timer for redirect
   useEffect(() => {
@@ -72,9 +72,9 @@ function EmailConfirmation() {
         <div className="confirmation-card">
           {/* Logo */}
           <div className="confirmation-logo">
-            <img 
-              src={`${import.meta.env.BASE_URL}paire-logo.svg`} 
-              alt={t('app.title')} 
+            <img
+              src={`${import.meta.env.BASE_URL}paire-logo.svg`}
+              alt={t('app.title')}
               width="80"
               height="80"
             />
@@ -99,13 +99,13 @@ function EmailConfirmation() {
               </div>
               <h1>{t('emailConfirmation.confirmedTitle')}</h1>
               <p className="success-message">{message}</p>
-              
+
               <div className="redirect-notice">
                 <FiMail size={20} />
                 <p>{t('emailConfirmation.redirecting', { count: countdown })}...</p>
               </div>
 
-              <button 
+              <button
                 onClick={() => navigate('/login')}
                 className="btn btn-primary"
               >
@@ -122,17 +122,17 @@ function EmailConfirmation() {
               </div>
               <h1>{t('emailConfirmation.failedTitle')}</h1>
               <p className="error-message">{message}</p>
-              
+
               <div className="error-actions">
-                <button 
+                <button
                   onClick={handleResendConfirmation}
                   className="btn btn-secondary"
                 >
                   <FiMail size={18} />
                   {t('emailConfirmation.resendConfirmation')}
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => navigate('/login')}
                   className="btn btn-outline"
                 >

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
 import OtpInput from 'react-otp-input';
 import { useTranslation } from 'react-i18next';
 import { getToken } from '../services/auth';

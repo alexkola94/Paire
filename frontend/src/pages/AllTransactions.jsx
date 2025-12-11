@@ -8,11 +8,9 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiEdit, // Add icons
-  FiTrash2,
-  FiCheck,
-  FiX
+  FiTrash2
 } from 'react-icons/fi'
-import { transactionService, storageService } from '../services/api'
+import { transactionService } from '../services/api'
 import { format } from 'date-fns'
 import LogoLoader from '../components/LogoLoader'
 import useSwipeGesture from '../hooks/useSwipeGesture'

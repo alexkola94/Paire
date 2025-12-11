@@ -19,7 +19,7 @@ function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  
+
   // Get redirect URL and mode from query parameters
   const redirectUrl = searchParams.get('redirect')
   const mode = searchParams.get('mode')
@@ -48,7 +48,7 @@ function Login() {
     if (mode === 'signup') {
       setIsSignUp(true)
     }
-    
+
     // Pre-fill email if there's a pending invitation token
     const pendingToken = sessionStorage.getItem('pendingInvitationToken')
     if (pendingToken) {
@@ -95,7 +95,7 @@ function Login() {
    */
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     setLoading(true)
@@ -107,7 +107,7 @@ function Login() {
         // Sign up new user
         await authService.signUp(formData.email, formData.password)
         setSuccess('Account created successfully! Please check your email to verify.')
-        
+
         // After signup, check if there's a redirect URL (e.g., from invitation)
         if (redirectUrl) {
           // Wait a moment for the user to see the success message
@@ -118,7 +118,7 @@ function Login() {
       } else {
         // Sign in existing user
         const response = await authService.signIn(formData.email, formData.password)
-        
+
         // Check if 2FA is required
         if (response.requiresTwoFactor) {
           setRequires2FA(true)
@@ -129,10 +129,10 @@ function Login() {
           // Session is already stored by authService.storeAuthData
           // The storeSession() method automatically broadcasts SESSION_CREATED
           // which will invalidate other tabs with the same user
-          
+
           // Trigger event to notify App.jsx that session has changed
           window.dispatchEvent(new CustomEvent('auth-storage-change'))
-          
+
           // Wait for App.jsx to update session state before navigating
           // Poll sessionStorage to ensure it's actually stored
           let attempts = 0
@@ -148,10 +148,10 @@ function Login() {
             await new Promise(resolve => setTimeout(resolve, 50))
             attempts++
           }
-          
+
           // Check if there's a redirect URL
           const targetPath = redirectUrl || '/dashboard'
-          
+
           // Navigate to dashboard
           navigate(targetPath, { replace: true })
         }
@@ -168,48 +168,48 @@ function Login() {
    * Handle successful 2FA verification
    */
   const handle2FASuccessRef = useRef(false); // Prevent multiple navigation calls
-  
-  const handle2FASuccess = async (authData) => {
+
+  const handle2FASuccess = async () => {
     // Prevent multiple navigation calls (infinite loop protection)
     if (handle2FASuccessRef.current) {
       return;
     }
-    
+
     try {
       handle2FASuccessRef.current = true;
-      
+
       // Token is already stored by TwoFactorVerification component
       // Ensure sessionStorage is written (mobile browsers may need more time)
       await new Promise(resolve => setTimeout(resolve, 200))
-      
+
       // Verify tokens are actually stored in sessionStorage
       const token = sessionManager.getToken()
       const user = sessionManager.getCurrentUser()
-      
+
       if (!token || !user) {
         console.error('Tokens not stored properly after 2FA verification')
         throw new Error('Failed to store authentication data')
       }
-      
+
       // Broadcast session invalidation to other tabs if same user
       const currentUserId = sessionManager.getCurrentUserId()
       if (currentUserId && currentUserId === user.id) {
         sessionManager.broadcastSessionInvalidation(user.id)
       }
-      
+
       // Trigger a custom event to notify App.jsx that session has changed
       window.dispatchEvent(new CustomEvent('auth-storage-change'))
-      
+
       // Detect if we're on a mobile device
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      
+
       if (isMobile) {
         // For mobile browsers, use window.location for more reliable navigation
         // This ensures a full page reload which properly initializes App.jsx
         const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
         const targetPath = redirectUrl || '/dashboard'
         const fullPath = `${basename}${targetPath}`
-        
+
         // Use window.location for mobile compatibility
         // This forces a full reload which ensures App.jsx re-checks session
         window.location.href = fullPath
@@ -217,7 +217,7 @@ function Login() {
         // For desktop, use React Router navigation (faster, no reload)
         // Longer delay for event processing
         await new Promise(resolve => setTimeout(resolve, 200))
-        
+
         // Check if there's a redirect URL
         if (redirectUrl) {
           navigate(redirectUrl, { replace: true })
@@ -271,9 +271,9 @@ function Login() {
       <div className="login-container">
         {/* Mobile Branding - shown on mobile only */}
         <div className="login-branding-mobile">
-          <img 
-            src={`${import.meta.env.BASE_URL}paire-logo.svg`} 
-            alt="Paire Logo" 
+          <img
+            src={`${import.meta.env.BASE_URL}paire-logo.svg`}
+            alt="Paire Logo"
             className="brand-logo"
             width="60"
             height="60"
@@ -285,9 +285,9 @@ function Login() {
         {/* Left side - Branding (Desktop/Tablet) */}
         <div className="login-branding">
           <div className="branding-content">
-            <img 
-              src={`${import.meta.env.BASE_URL}paire-logo.svg`} 
-              alt="Paire Logo" 
+            <img
+              src={`${import.meta.env.BASE_URL}paire-logo.svg`}
+              alt="Paire Logo"
               className="brand-logo"
               width="80"
               height="80"
@@ -404,8 +404,8 @@ function Login() {
               )}
 
               {/* Submit Button */}
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn btn-primary btn-block"
                 disabled={loading}
               >
@@ -423,12 +423,12 @@ function Login() {
             {/* Toggle Sign In/Sign Up */}
             <div className="form-footer">
               <p>
-                {isSignUp 
+                {isSignUp
                   ? t('auth.alreadyHaveAccount')
                   : t('auth.dontHaveAccount')
                 }
               </p>
-              <button 
+              <button
                 type="button"
                 className="btn-link"
                 onClick={toggleMode}

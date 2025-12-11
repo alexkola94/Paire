@@ -41,14 +41,13 @@ function Analytics() {
   const [comparativeAnalytics, setComparativeAnalytics] = useState(null)
   const [dateRange, setDateRange] = useState('month') // 'week', 'month', 'year'
   const [viewFilter, setViewFilter] = useState('together') // 'solo', 'partner', 'together'
-  const [allTransactions, setAllTransactions] = useState([])
 
   /**
    * Load analytics data on mount and when date range or filter changes
    */
   useEffect(() => {
     loadAnalytics()
-  }, [dateRange, viewFilter])
+  }, [dateRange, viewFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Get date range based on selection
@@ -243,7 +242,6 @@ function Analytics() {
           endDate: range.end
         })
         console.log('✅ Transactions loaded:', allTransactions?.length)
-        setAllTransactions(allTransactions || [])
 
         // Filter transactions based on view filter
         const filteredTransactions = filterTransactions(allTransactions || [])

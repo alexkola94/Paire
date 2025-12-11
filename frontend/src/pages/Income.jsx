@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
@@ -38,7 +38,7 @@ function Income() {
    */
   useEffect(() => {
     loadIncomes()
-  }, [page])
+  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Fetch incomes from API
@@ -82,7 +82,7 @@ function Income() {
       setShowForm(false)
       setShowLoadingProgress(true)
 
-      const createdIncome = await transactionService.create(incomeData)
+      await transactionService.create(incomeData)
 
       // Phase 5: Success animation
       setShowLoadingProgress(false)
@@ -115,8 +115,7 @@ function Income() {
       setShowForm(false)
       setShowLoadingProgress(true)
 
-      // Save old data for undo
-      const oldIncomeData = { ...editingIncome }
+
 
       await transactionService.update(editingIncome.id, incomeData)
 
@@ -172,7 +171,7 @@ function Income() {
       // I'll leave delete as-is (spinner in button) to avoid UX jarring on small actions, or should I apply it?
       // "when we press save we should remove immediately the form" -> Implies Create/Update.
 
-      const incomeToDelete = { ...income }
+
 
       // Delete attachment if exists
       if (income.attachment_path) {

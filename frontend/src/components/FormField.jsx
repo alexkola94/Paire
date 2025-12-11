@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiCheckCircle, FiAlertCircle, FiInfo, FiX } from 'react-icons/fi'
+import { FiCheckCircle, FiAlertCircle, FiInfo } from 'react-icons/fi'
 import { validateField, getCharacterCount, getWordCount } from '../utils/validation'
 import './FormField.css'
 
@@ -77,7 +77,9 @@ function FormField({
   const handleBlur = (e) => {
     setIsFocused(false)
     setHasInteracted(true)
-    validate()
+    if (validateOnBlur) {
+      validate()
+    }
 
     if (onBlur) {
       onBlur(e)
@@ -91,20 +93,14 @@ function FormField({
     setIsFocused(true)
   }
 
-  /**
-   * Clear validation
-   */
-  const clearValidation = () => {
-    setValidationResult(null)
-    setHasInteracted(false)
-  }
+
 
   // Validate on mount if value exists
   useEffect(() => {
     if (value && validationRules.length > 0) {
       validate()
     }
-  }, []) // Only on mount
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Get validation icon
   const getValidationIcon = () => {
@@ -183,9 +179,8 @@ function FormField({
       {(helpText || validationResult?.message) && (
         <div
           id={`${name}-help`}
-          className={`form-field-message ${
-            validationResult ? `form-field-message-${validationResult.type}` : 'form-field-message-help'
-          }`}
+          className={`form-field-message ${validationResult ? `form-field-message-${validationResult.type}` : 'form-field-message-help'
+            }`}
         >
           {validationResult?.message || helpText}
         </div>

@@ -130,7 +130,7 @@ function FileUpload({
         })
       }
     }
-  }, [onChange, showPreview, maxSize, accept, t])
+  }, [onChange, showPreview, maxSize, accept, t]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Handle file input change

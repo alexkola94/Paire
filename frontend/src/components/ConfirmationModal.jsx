@@ -66,7 +66,7 @@ function ConfirmationModal({
   return createPortal(
     <div
       className={`confirmation-modal-overlay ${variant}`}
-      onClick={(e) => {
+      onClick={() => {
         if (!loading) onClose()
       }}
     >

@@ -45,7 +45,7 @@ export default function BudgetProgressBar({
                     style={{
                         width: `${percentage}% `,
                         backgroundColor: progressColor,
-                        backgroundColor: progressColor
+
                     }}
                 />
             </div>

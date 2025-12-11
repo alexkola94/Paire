@@ -26,7 +26,7 @@ function BankCallback() {
         if (error) {
           setStatus('error')
           setMessage(t('profile.openBanking.callback.bankError', 'Bank authorization was cancelled or failed.'))
-          
+
           // Notify parent window of error
           if (window.opener) {
             window.opener.postMessage(
@@ -34,7 +34,7 @@ function BankCallback() {
               window.location.origin
             )
           }
-          
+
           // Close popup after 3 seconds
           setTimeout(() => {
             if (window.opener) {
@@ -68,14 +68,14 @@ function BankCallback() {
         // If we reach here, something unexpected happened
         setStatus('error')
         setMessage(t('profile.openBanking.callback.missingParams', 'Missing authorization parameters.'))
-        
+
         if (window.opener) {
           window.opener.postMessage(
             { type: 'BANK_CONNECTION_ERROR', error: 'Unexpected callback state' },
             window.location.origin
           )
         }
-        
+
         setTimeout(() => {
           if (window.opener) {
             window.close()
@@ -102,7 +102,7 @@ function BankCallback() {
     }
 
     processCallback()
-  }, [searchParams])
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="bank-callback-page">

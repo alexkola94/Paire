@@ -1,5 +1,5 @@
-import { useNavigate, useLocation, Outlet, NavLink } from 'react-router-dom'
-import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense, memo } from 'react'
+import { useNavigate, Outlet, NavLink } from 'react-router-dom'
+import { useState, useRef, useEffect, useCallback, lazy, Suspense, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useTheme } from '../context/ThemeContext'
@@ -15,11 +15,8 @@ import {
   FiPieChart,
   FiMoreHorizontal,
   FiChevronDown,
-  FiActivity,
   FiAward,
-  FiRefreshCw,
   FiFileText,
-  FiDollarSign,
   FiMenu,
   FiX,
   FiLogOut,
@@ -66,12 +63,12 @@ import './Layout.css'
  * Mobile-first approach with responsive navigation
  */
 function Layout() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
+
   const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false)
   const moreMenuRef = useRef(null)
 
@@ -96,7 +93,7 @@ function Layout() {
 
 
   // All navigation items (for mobile menu)
-  const allNavItems = [...mainNavItems, ...moreNavItems]
+
 
   // Memoize handlers with useCallback to prevent unnecessary re-renders
   const handleLogout = useCallback(async () => {
@@ -407,6 +404,19 @@ function Layout() {
               <FiUser style={{ width: '20px', height: '20px' }} className="nav-icon" />
               <span className="nav-label">{t('navigation.profile')}</span>
             </NavLink>
+          </li>
+
+          <li className="mobile-only">
+            <button
+              className="nav-link"
+              onClick={() => {
+                setIsAccessibilityOpen(true)
+                closeMobileMenu()
+              }}
+            >
+              <FiType style={{ width: '20px', height: '20px' }} className="nav-icon" />
+              <span className="nav-label">{t('common.accessibility')}</span>
+            </button>
           </li>
 
           {/* Mobile logout button */}

@@ -28,7 +28,7 @@ function Chatbot() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
@@ -54,7 +54,7 @@ function Chatbot() {
         scrollToBottom()
       }, 100)
     }
-  }, [isOpen])
+  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Auto-scroll to bottom when new messages arrive
@@ -73,7 +73,7 @@ function Chatbot() {
         scrollToBottom()
       }, 100)
     }
-  }, [isMinimized])
+  }, [isMinimized]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -108,7 +108,7 @@ function Chatbot() {
         timestamp: new Date()
       }
     ])
-    
+
     // Increment unread count if chat is closed or minimized
     if (!isOpen || isMinimized) {
       setUnreadCount(prev => prev + 1)
@@ -149,7 +149,7 @@ function Chatbot() {
       }))
 
       const response = await chatbotService.sendQuery(userMessage, history)
-      
+
       addBotMessage(
         response.message,
         response.type,
@@ -352,7 +352,7 @@ function Chatbot() {
                           <p key={i}>{line}</p>
                         ))}
                       </div>
-                      
+
                       {/* Quick Actions */}
                       {msg.quickActions && msg.quickActions.length > 0 && (
                         <div className="chatbot-quick-actions">

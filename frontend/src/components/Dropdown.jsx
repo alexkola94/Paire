@@ -23,10 +23,10 @@ import './Dropdown.css'
  * @param {string} props.className - Additional CSS classes
  * @param {string} props.id - ID for accessibility
  */
-const Dropdown = ({ 
-  options = [], 
-  value, 
-  onChange, 
+const Dropdown = ({
+  options = [],
+  value,
+  onChange,
   icon = null,
   placeholder = 'Select...',
   className = '',
@@ -68,13 +68,13 @@ const Dropdown = ({
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault()
-          setFocusedIndex(prev => 
+          setFocusedIndex(prev =>
             prev < options.length - 1 ? prev + 1 : 0
           )
           break
         case 'ArrowUp':
           e.preventDefault()
-          setFocusedIndex(prev => 
+          setFocusedIndex(prev =>
             prev > 0 ? prev - 1 : options.length - 1
           )
           break
@@ -102,7 +102,7 @@ const Dropdown = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, focusedIndex, options])
+  }, [isOpen, focusedIndex, options]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle option selection
   const handleSelect = (selectedValue) => {
@@ -122,7 +122,7 @@ const Dropdown = ({
   }
 
   return (
-    <div 
+    <div
       className={`custom-dropdown ${isOpen ? 'custom-dropdown--open' : ''} ${className}`}
       ref={dropdownRef}
     >
@@ -147,7 +147,7 @@ const Dropdown = ({
             {selectedOption?.label || placeholder}
           </span>
         </div>
-        <FiChevronDown 
+        <FiChevronDown
           className={`custom-dropdown__chevron ${isOpen ? 'custom-dropdown__chevron--open' : ''}`}
           size={16}
         />
@@ -164,11 +164,9 @@ const Dropdown = ({
               <button
                 key={option.value}
                 type="button"
-                className={`custom-dropdown__option ${
-                  isSelected ? 'custom-dropdown__option--selected' : ''
-                } ${
-                  isFocused ? 'custom-dropdown__option--focused' : ''
-                }`}
+                className={`custom-dropdown__option ${isSelected ? 'custom-dropdown__option--selected' : ''
+                  } ${isFocused ? 'custom-dropdown__option--focused' : ''
+                  }`}
                 onClick={() => handleSelect(option.value)}
                 role="option"
                 aria-selected={isSelected}

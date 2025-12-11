@@ -1,4 +1,3 @@
-import React from 'react'
 import { useTranslation } from 'react-i18next'
 import './LogoLoader.css'
 
@@ -18,11 +17,11 @@ import './LogoLoader.css'
  * @param {boolean} props.fullScreen - If true, renders as full-screen loading overlay
  * @param {string} props.className - Additional CSS classes
  */
-const LogoLoader = ({ 
-  size = 'medium', 
-  text = null, 
+const LogoLoader = ({
+  size = 'medium',
+  text = null,
   fullScreen = false,
-  className = '' 
+  className = ''
 }) => {
   const { t } = useTranslation()
 
@@ -31,8 +30,8 @@ const LogoLoader = ({
 
   // Determine size classes
   const sizeClass = `logo-loader--${size}`
-  const containerClass = fullScreen 
-    ? 'logo-loader-container logo-loader-container--fullscreen' 
+  const containerClass = fullScreen
+    ? 'logo-loader-container logo-loader-container--fullscreen'
     : 'logo-loader-container'
 
   return (
@@ -40,9 +39,9 @@ const LogoLoader = ({
       <div className={`logo-loader ${sizeClass}`}>
         {/* Logo with smooth animations */}
         <div className="logo-loader__wrapper">
-          <img 
+          <img
             src={`${import.meta.env.BASE_URL}paire-logo.svg`}
-            alt="Paire Logo" 
+            alt="Paire Logo"
             className="logo-loader__image"
             width="80"
             height="80"
@@ -50,7 +49,7 @@ const LogoLoader = ({
           {/* Animated ring around logo */}
           <div className="logo-loader__ring"></div>
         </div>
-        
+
         {/* Optional loading text */}
         {text !== false && (
           <p className="logo-loader__text">{loadingText}</p>

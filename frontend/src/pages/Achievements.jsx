@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FiAward, FiStar, FiTarget, FiTrendingDown, FiTrendingUp,
-  FiUsers, FiCalendar, FiCheckCircle, FiLock, FiUnlock
+  FiUsers, FiCalendar, FiCheckCircle, FiLock
 } from 'react-icons/fi'
 import { achievementService } from '../services/api'
 import './Achievements.css'
@@ -37,7 +37,7 @@ function Achievements() {
   useEffect(() => {
     loadData()
     checkForNewAchievements()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Fetch achievements and statistics

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { 
-  FiTrendingUp, 
+import {
+  FiTrendingUp,
   FiTrendingDown,
   FiBarChart2,
   FiRefreshCw,
@@ -16,8 +16,7 @@ import {
   FiClock
 } from 'react-icons/fi'
 import { greeceEconomicDataService } from '../services/greeceEconomicData'
-import { getToken } from '../services/auth'
-import { getBackendUrl } from '../utils/getBackendUrl'
+
 import LogoLoader from '../components/LogoLoader'
 import './EconomicNews.css'
 
@@ -30,13 +29,13 @@ function EconomicNews() {
   const { t } = useTranslation()
   const [initialLoading, setInitialLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  
+
   // Individual data states - each section loads independently
   const [cpiData, setCpiData] = useState(null)
   const [foodPricesData, setFoodPricesData] = useState(null)
   const [indicatorsData, setIndicatorsData] = useState(null)
   const [newsData, setNewsData] = useState(null)
-  
+
   // Loading states per section
   const [loadingStates, setLoadingStates] = useState({
     cpi: true,
@@ -44,7 +43,7 @@ function EconomicNews() {
     indicators: true,
     news: true
   })
-  
+
   // Error states per section
   const [errors, setErrors] = useState({
     cpi: null,
@@ -59,7 +58,7 @@ function EconomicNews() {
   const updateLoadingState = (section, isLoading) => {
     setLoadingStates(prev => {
       const updated = { ...prev, [section]: isLoading }
-      
+
       // Check if initial loading is complete (all sections have finished loading)
       if (!isLoading && initialLoading) {
         const allLoaded = Object.values(updated).every(loading => !loading)
@@ -68,7 +67,7 @@ function EconomicNews() {
           setTimeout(() => setInitialLoading(false), 0)
         }
       }
-      
+
       return updated
     })
   }
@@ -80,14 +79,14 @@ function EconomicNews() {
     try {
       updateLoadingState(sectionName, true)
       setErrors(prev => ({ ...prev, [sectionName]: null }))
-      
+
       const data = await fetchFunction()
       setDataFunction(data)
     } catch (err) {
       console.error(`Error loading ${sectionName}:`, err)
-      setErrors(prev => ({ 
-        ...prev, 
-        [sectionName]: err.message || t('economicNews.error.loading') 
+      setErrors(prev => ({
+        ...prev,
+        [sectionName]: err.message || t('economicNews.error.loading')
       }))
     } finally {
       updateLoadingState(sectionName, false)
@@ -114,7 +113,7 @@ function EconomicNews() {
           news: true
         })
       }
-      
+
       // Clear previous errors
       setErrors({
         cpi: null,
@@ -148,6 +147,7 @@ function EconomicNews() {
    */
   useEffect(() => {
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /**
@@ -165,7 +165,7 @@ function EconomicNews() {
     const isPositive = change >= 0
     const Icon = isPositive ? FiTrendingUp : FiTrendingDown
     const sign = isPositive ? '+' : ''
-    
+
     return (
       <span className={`change-indicator ${isPositive ? 'positive' : 'negative'}`}>
         <Icon size={16} />
@@ -219,7 +219,7 @@ function EconomicNews() {
           <h1>{t('economicNews.title')}</h1>
           <p className="header-subtitle">{t('economicNews.subtitle')}</p>
         </div>
-        <button 
+        <button
           className="refresh-button"
           onClick={handleRefresh}
           disabled={refreshing}
@@ -235,9 +235,9 @@ function EconomicNews() {
         <div className="last-updated-info">
           <FiInfo size={16} />
           <span>{t('economicNews.lastUpdated')}: {formatDate(
-            cpiData?.lastUpdated || 
-            foodPricesData?.lastUpdated || 
-            indicatorsData?.lastUpdated || 
+            cpiData?.lastUpdated ||
+            foodPricesData?.lastUpdated ||
+            indicatorsData?.lastUpdated ||
             newsData?.lastUpdated
           )}</span>
         </div>
@@ -400,7 +400,7 @@ function EconomicNews() {
                     {indicatorsData.unemployment.value ? `${indicatorsData.unemployment.value.toFixed(1)} ${indicatorsData.unemployment.unit}` : 'N/A'}
                   </div>
                   {formatChange(
-                    indicatorsData.unemployment.change, 
+                    indicatorsData.unemployment.change,
                     indicatorsData.unemployment.changePercent
                   )}
                   {indicatorsData.unemployment.period && (
@@ -421,7 +421,7 @@ function EconomicNews() {
                     {indicatorsData.inflation.value ? `${indicatorsData.inflation.value.toFixed(1)} ${indicatorsData.inflation.unit}` : 'N/A'}
                   </div>
                   {formatChange(
-                    indicatorsData.inflation.change, 
+                    indicatorsData.inflation.change,
                     indicatorsData.inflation.changePercent
                   )}
                   {indicatorsData.inflation.period && (
@@ -442,7 +442,7 @@ function EconomicNews() {
                     {indicatorsData.householdIncome.value ? `${indicatorsData.householdIncome.value.toLocaleString()} ${indicatorsData.householdIncome.unit}` : 'N/A'}
                   </div>
                   {formatChange(
-                    indicatorsData.householdIncome.change, 
+                    indicatorsData.householdIncome.change,
                     indicatorsData.householdIncome.changePercent
                   )}
                   {indicatorsData.householdIncome.period && (
@@ -492,8 +492,8 @@ function EconomicNews() {
                 <article key={index} className="news-card">
                   {article.imageUrl && (
                     <div className="news-image">
-                      <img 
-                        src={article.imageUrl} 
+                      <img
+                        src={article.imageUrl}
                         alt={article.title}
                         onError={(e) => {
                           e.target.style.display = 'none'
@@ -517,9 +517,9 @@ function EconomicNews() {
                     {article.description && (
                       <p className="news-description">{article.description}</p>
                     )}
-                    <a 
-                      href={article.url} 
-                      target="_blank" 
+                    <a
+                      href={article.url}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="news-link"
                     >
@@ -552,18 +552,18 @@ function EconomicNews() {
           <h2>{t('economicNews.links.title')}</h2>
         </div>
         <div className="links-content">
-          <a 
-            href="https://ec.europa.eu/eurostat" 
-            target="_blank" 
+          <a
+            href="https://ec.europa.eu/eurostat"
+            target="_blank"
             rel="noopener noreferrer"
             className="external-link"
           >
             <span>Eurostat (European Statistics)</span>
             <FiExternalLink size={16} />
           </a>
-          <a 
-            href="https://www.statistics.gr" 
-            target="_blank" 
+          <a
+            href="https://www.statistics.gr"
+            target="_blank"
             rel="noopener noreferrer"
             className="external-link"
           >

@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiCalendar } from 'react-icons/fi'
-import { format, isToday, isYesterday, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns'
+import { isToday, isYesterday, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns'
 import './DateInput.css'
 
 /**
@@ -12,9 +12,9 @@ import './DateInput.css'
  * - Better styling
  * - Smart defaults
  */
-function DateInput({ 
-  value = '', 
-  onChange, 
+function DateInput({
+  value = '',
+  onChange,
   name = 'date',
   id = 'date',
   required = false,
@@ -23,7 +23,6 @@ function DateInput({
   showQuickButtons = true
 }) {
   const { t } = useTranslation()
-  const [isFocused, setIsFocused] = useState(false)
   const dateInputRef = useRef(null)
 
   /**
@@ -42,19 +41,7 @@ function DateInput({
     return yesterday.toISOString().split('T')[0]
   }
 
-  /**
-   * Get start of this week (Monday)
-   */
-  const getThisWeekStart = () => {
-    return format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
-  }
 
-  /**
-   * Get end of this week (Sunday)
-   */
-  const getThisWeekEnd = () => {
-    return format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
-  }
 
   /**
    * Handle quick date selection
@@ -76,10 +63,10 @@ function DateInput({
    */
   const handleThisWeek = () => {
     const today = getToday()
-    
+
     // Set the date to today so calendar opens showing current week
     handleQuickDate(today)
-    
+
     // Open the calendar picker
     // Use setTimeout to ensure the date is set first
     setTimeout(() => {
@@ -164,8 +151,6 @@ function DateInput({
           required={required}
           disabled={disabled}
           className="date-input"
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           aria-label={label || t('transaction.date')}
           aria-required={required}
         />

@@ -1,4 +1,3 @@
-import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiX, FiType, FiActivity, FiEye } from 'react-icons/fi'
 import { useAccessibility } from '../context/AccessibilityContext'

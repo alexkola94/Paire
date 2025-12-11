@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDown, FiX } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDown, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { loanService, loanPaymentService } from '../services/api'
 import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -24,7 +24,8 @@ function Loans() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingLoan, setEditingLoan] = useState(null)
-  const [formLoading, setFormLoading] = useState(false)
+  // const [formLoading, setFormLoading] = useState(false) - unused variable removed
+  const [formLoading] = useState(false)
   const [viewingPayments, setViewingPayments] = useState(null)
   const [paymentHistory, setPaymentHistory] = useState([])
   const [showPaymentForm, setShowPaymentForm] = useState(false)

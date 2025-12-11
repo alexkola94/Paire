@@ -184,7 +184,7 @@ function Profile() {
     if (user?.id) {
       checkClearDataStatus()
     }
-  }, [user?.id])
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Check status of data clearing request
@@ -747,7 +747,7 @@ function BankConnections() {
   useEffect(() => {
     loadAccounts()
     loadBanks()
-  }, [country])
+  }, [country]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Listen for messages from bank callback popup
@@ -762,16 +762,16 @@ function BankConnections() {
       if (event.data.type === 'BANK_CONNECTION_SUCCESS') {
         // Connection successful - reload accounts
         setLoading(false)
-        setConnectionMessage({ 
-          type: 'success', 
+        setConnectionMessage({
+          type: 'success',
           text: t('profile.openBanking.connectionSuccess')
         })
         loadAccounts()
       } else if (event.data.type === 'BANK_CONNECTION_ERROR') {
         // Connection failed
         setLoading(false)
-        setConnectionMessage({ 
-          type: 'error', 
+        setConnectionMessage({
+          type: 'error',
           text: event.data.error || t('profile.openBanking.connectionError')
         })
       }
@@ -827,39 +827,37 @@ function BankConnections() {
    */
   const handleConnect = async () => {
     if (!selectedBank) return
-    
+
     try {
       setLoading(true)
       setConnectionMessage({ type: '', text: '' })
-      
+
       const service = await import('../services/openBanking').then(m => m.openBankingService)
       const authUrl = await service.startAuthorization(selectedBank, country)
-      
-      // Get backend URL to construct callback URL
-      const backendUrl = getBackendUrl()
-      const callbackUrl = `${backendUrl}/api/open-banking/callback`
-      
+
+
+
       // Open popup window with appropriate size
       const popupWidth = 600
       const popupHeight = 700
       const left = (window.screen.width - popupWidth) / 2
       const top = (window.screen.height - popupHeight) / 2
-      
+
       const popup = window.open(
         authUrl,
         'BankAuthorization',
         `width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
       )
-      
+
       if (!popup) {
         throw new Error(t('profile.openBanking.popupBlocked'))
       }
-      
+
       // Store interval IDs for cleanup
       let checkPopupInterval = null
       let backendPollInterval = null
       let timeoutId = null
-      
+
       // Helper function to cleanup all intervals and close popup
       const cleanup = () => {
         if (checkPopupInterval) clearInterval(checkPopupInterval)
@@ -869,21 +867,21 @@ function BankConnections() {
           popup.close()
         }
       }
-      
+
       // Helper function to handle successful connection
       const handleSuccess = async () => {
         cleanup()
         setLoading(false)
-              setConnectionMessage({ 
-                type: 'success', 
-                text: t('profile.openBanking.connectionSuccess')
-              })
+        setConnectionMessage({
+          type: 'success',
+          text: t('profile.openBanking.connectionSuccess')
+        })
         // Reload accounts after short delay to allow backend processing
         setTimeout(() => {
           loadAccounts()
         }, 1000)
       }
-      
+
       // Monitor popup for callback completion
       checkPopupInterval = setInterval(() => {
         try {
@@ -893,8 +891,8 @@ function BankConnections() {
             setLoading(false)
             // Don't show message if we already got a success/error message from postMessage
             if (!connectionMessage.text) {
-              setConnectionMessage({ 
-                type: 'info', 
+              setConnectionMessage({
+                type: 'info',
                 text: t('profile.openBanking.windowClosed')
               })
               // Reload accounts in case authorization completed before popup closed
@@ -904,7 +902,7 @@ function BankConnections() {
             }
             return
           }
-          
+
           // Check if popup has redirected to callback page
           // Note: We can only check location if popup is on same origin
           try {
@@ -922,14 +920,14 @@ function BankConnections() {
           console.error('Error checking popup status:', error)
         }
       }, 500) // Check every 500ms
-      
+
       // Fallback: Also poll backend to check if connection was established
       // This handles cases where popup redirects to cross-origin and we can't detect it
       backendPollInterval = setInterval(async () => {
         try {
           const currentAccounts = await import('../services/openBanking')
             .then(m => m.openBankingService.getAccounts())
-          
+
           // If we got new accounts, authorization likely completed
           if (currentAccounts.length > accounts.length) {
             handleSuccess()
@@ -939,22 +937,22 @@ function BankConnections() {
           // Ignore polling errors
         }
       }, 2000) // Poll backend every 2 seconds
-      
+
       // Cleanup intervals after 10 minutes (timeout)
       timeoutId = setTimeout(() => {
         cleanup()
         setLoading(false)
-        setConnectionMessage({ 
-          type: 'error', 
+        setConnectionMessage({
+          type: 'error',
           text: t('profile.openBanking.timeout')
         })
       }, 600000) // 10 minutes timeout
-      
+
     } catch (error) {
       console.error('Error connecting bank:', error)
       setLoading(false)
-      setConnectionMessage({ 
-        type: 'error', 
+      setConnectionMessage({
+        type: 'error',
         text: error.message || t('profile.openBanking.connectionError')
       })
     }
@@ -969,13 +967,13 @@ function BankConnections() {
       const service = await import('../services/openBanking').then(m => m.openBankingService)
       await service.disconnect()
       setAccounts([])
-      setConnectionMessage({ 
-        type: 'success', 
+      setConnectionMessage({
+        type: 'success',
         text: t('profile.openBanking.disconnectSuccess')
       })
     } catch (error) {
-      setConnectionMessage({ 
-        type: 'error', 
+      setConnectionMessage({
+        type: 'error',
         text: t('profile.openBanking.disconnectError')
       })
     }
@@ -991,21 +989,21 @@ function BankConnections() {
       await service.disconnectAccount(accountId)
       // Reload accounts to reflect the change
       await loadAccounts()
-      setConnectionMessage({ 
-        type: 'success', 
+      setConnectionMessage({
+        type: 'success',
         text: t('profile.openBanking.disconnectAccountSuccess')
       })
     } catch (error) {
       console.error('Disconnect account error:', error)
       let errorMessage = error.message || t('profile.openBanking.disconnectAccountError')
-      
+
       // Handle specific error cases
       if (error.message && error.message.includes('Unauthorized')) {
         errorMessage = t('profile.openBanking.unauthorized') || 'Please log in again to disconnect accounts'
       }
-      
-      setConnectionMessage({ 
-        type: 'error', 
+
+      setConnectionMessage({
+        type: 'error',
         text: errorMessage
       })
     }
@@ -1072,28 +1070,28 @@ function BankConnections() {
                       <FiPower size={18} />
                     </button>
                   </div>
-                  
+
                   {acc.accountName && (
                     <div className="account-name">
                       <FiCreditCard size={14} />
                       <span>{acc.accountName}</span>
                     </div>
                   )}
-                  
+
                   {acc.iban && (
                     <div className="account-iban">
                       <span className="iban-label">{t('profile.openBanking.iban', 'IBAN')}:</span>
                       <span className="iban-value">{acc.iban}</span>
                     </div>
                   )}
-                  
+
                   {acc.accountType && (
                     <div className="account-type">
                       <span className="type-label">{t('profile.openBanking.accountType', 'Type')}:</span>
                       <span className="type-value">{acc.accountType}</span>
                     </div>
                   )}
-                  
+
                   {acc.lastBalanceUpdate && (
                     <div className="account-last-update">
                       <FiCalendar size={12} />

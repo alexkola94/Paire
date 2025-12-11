@@ -88,7 +88,7 @@ function CurrencyInput({
   /**
    * Handle focus
    */
-  const handleFocus = (e) => {
+  const handleFocus = () => {
     setIsFocused(true)
     // Show raw number when focused
     if (value) {
@@ -99,7 +99,7 @@ function CurrencyInput({
   /**
    * Handle blur - format the value
    */
-  const handleBlur = (e) => {
+  const handleBlur = () => {
     setIsFocused(false)
     if (value) {
       setDisplayValue(formatCurrency(value))
