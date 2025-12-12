@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { openBankingService } from '../services/openBanking';
 import './PlaidConnect.css'; // Assuming we create a CSS file or use inline styles for now

@@ -6,7 +6,7 @@ import {
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
   FiGrid, FiList, FiChevronLeft, FiChevronRight
 } from 'react-icons/fi'
-import { subMonths, subYears, subWeeks, addMonths, addYears, addWeeks, isValid, startOfMonth, endOfMonth, isSameMonth, isAfter, isBefore } from 'date-fns'
+import { addMonths, addYears, addWeeks, startOfMonth, endOfMonth, isSameMonth, isAfter } from 'date-fns'
 import { recurringBillService, loanService, loanPaymentService } from '../services/api'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -446,7 +446,6 @@ function RecurringBills() {
   const activeBills = bills.filter(b => (b.isActive ?? b.is_active) !== false)
 
   const today = new Date()
-  const currentMonthStart = startOfMonth(today)
   const currentMonthEnd = endOfMonth(today)
 
   // 1. Overdue: Due date is strictly before today (and not paid)

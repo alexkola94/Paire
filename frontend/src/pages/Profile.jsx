@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle, FiPower, FiCreditCard, FiCalendar } from 'react-icons/fi'
+import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle, FiPower, FiCalendar } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
 import { getBackendUrl } from '../utils/getBackendUrl'
@@ -738,7 +738,6 @@ function Profile() {
 
 function BankConnections() {
   const { t } = useTranslation()
-  const [loading, setLoading] = useState(false)
   const [accounts, setAccounts] = useState([])
   const [connectionMessage, setConnectionMessage] = useState({ type: '', text: '' })
 
@@ -764,7 +763,7 @@ function BankConnections() {
 
   useEffect(() => {
     loadAccounts()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   /**
    * Auto-dismiss success/info messages after 5 seconds

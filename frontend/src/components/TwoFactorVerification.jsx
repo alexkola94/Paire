@@ -163,7 +163,7 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
       setLoading(false);
       isVerifyingRef.current = false;
     }
-  }, [verificationCode, email, tempToken, onSuccess, t]);
+  }, [verificationCode, email, tempToken, onSuccess, t, rememberMe]);
 
   /**
    * Verify backup code
