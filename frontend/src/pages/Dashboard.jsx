@@ -5,9 +5,12 @@ import {
   FiTrendingUp,
   FiTrendingDown,
   FiArrowRight,
-  FiFileText
+  FiFileText,
+  FiUsers,
+  FiUser
 } from 'react-icons/fi'
 import { transactionService, budgetService, savingsGoalService } from '../services/api'
+import { getStoredUser } from '../services/auth'
 import { format } from 'date-fns'
 import SecurityBadge from '../components/SecurityBadge'
 
@@ -28,12 +31,10 @@ import './Dashboard.css'
 function Dashboard() {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
-  const [summary, setSummary] = useState({
-    income: 0,
-    expenses: 0,
-    balance: 0
-  })
+  // Store raw transactions for the month to allow client-side filtering
+  const [monthTransactions, setMonthTransactions] = useState([])
   const [recentTransactions, setRecentTransactions] = useState([])
+  const [filterMode, setFilterMode] = useState('solo') // 'solo', 'together', 'partner'
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 5
   const [budgets, setBudgets] = useState([])
@@ -56,12 +57,13 @@ function Dashboard() {
     try {
       setLoading(true)
 
-      // Fetch summary for current month
-      const summaryData = await transactionService.getSummary(
-        dateRange.startOfMonth.toISOString(),
-        dateRange.endOfMonth.toISOString()
-      )
-      setSummary(summaryData)
+      // Fetch ALL transactions for current month (raw data instead of summary)
+      // This allows us to filter by user/partner on the client side
+      const monthData = await transactionService.getAll({
+        startDate: dateRange.startOfMonth.toISOString(),
+        endDate: dateRange.endOfMonth.toISOString()
+      })
+      setMonthTransactions(monthData || [])
 
       // Fetch recent transactions (fetch all, then slice locally for display)
       const transactions = await transactionService.getAll()
@@ -102,16 +104,79 @@ function Dashboard() {
 
 
   /**
+   * Filter Logic
+   */
+  const currentUser = getStoredUser()
+
+  // Filter items based on selected mode (Works for transactions, budgets, and goals)
+  const filterItem = useCallback((item) => {
+    if (!currentUser) return true // Fallback if no user
+
+    // Check both userId (standard) and user_id (from Budgets)
+    const itemUserId = item.userId || item.user_id || (item.user_profiles && item.user_profiles.id)
+    const currentUserId = currentUser.id || currentUser.Id
+
+    const isMyItem = String(itemUserId) === String(currentUserId)
+
+    switch (filterMode) {
+      case 'solo':
+        return isMyItem
+      case 'partner':
+        return !isMyItem
+      case 'together':
+      default:
+        return true
+    }
+  }, [filterMode, currentUser])
+
+  // Derived Summary based on filtered month transactions
+  const displayedSummary = useMemo(() => {
+    const filtered = monthTransactions.filter(filterItem)
+
+    const summary = filtered.reduce((acc, transaction) => {
+      if (transaction.type === 'expense') {
+        acc.expenses += transaction.amount
+      } else if (transaction.type === 'income') {
+        acc.income += transaction.amount
+      }
+      return acc
+    }, { income: 0, expenses: 0 })
+
+    summary.balance = summary.income - summary.expenses
+    return summary
+  }, [monthTransactions, filterItem])
+
+  // Filter recent transactions list
+  const filteredRecentTransactions = useMemo(() => {
+    return recentTransactions.filter(filterItem)
+  }, [recentTransactions, filterItem])
+
+  // Filter Budgets
+  const filteredBudgets = useMemo(() => {
+    return budgets.filter(filterItem)
+  }, [budgets, filterItem])
+
+  // Filter Saving Goals
+  const filteredSavingGoals = useMemo(() => {
+    return savingGoals.filter(filterItem)
+  }, [savingGoals, filterItem])
+
+  /**
    * Format currency for display
    * Using custom hook for locale awareness
    */
   const formatCurrency = useCurrencyFormatter()
 
   // Memoize displayed transactions to prevent unnecessary re-renders
-  const totalPages = Math.ceil(recentTransactions.length / PAGE_SIZE)
+  const totalPages = Math.ceil(filteredRecentTransactions.length / PAGE_SIZE)
   const displayedTransactions = useMemo(() => {
-    return recentTransactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  }, [recentTransactions, page])
+    return filteredRecentTransactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  }, [filteredRecentTransactions, page])
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setPage(1)
+  }, [filterMode])
 
   if (loading) {
     return (
@@ -182,6 +247,67 @@ function Dashboard() {
         <p className="page-subtitle">{t('dashboard.monthlyOverview')}</p>
       </div>
 
+      {/* Filter Controls */}
+      <div className="dashboard-filters" style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', padding: '0.25rem', background: 'var(--card-bg)', borderRadius: '12px', width: 'fit-content' }}>
+        <button
+          className={`filter-btn ${filterMode === 'solo' ? 'active' : ''}`}
+          onClick={() => setFilterMode('solo')}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            border: 'none',
+            background: filterMode === 'solo' ? 'var(--primary)' : 'transparent',
+            color: filterMode === 'solo' ? 'white' : 'var(--text-secondary)',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <FiUser /> {t('dashboard.filterSolo', 'Solo')}
+        </button>
+        <button
+          className={`filter-btn ${filterMode === 'together' ? 'active' : ''}`}
+          onClick={() => setFilterMode('together')}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            border: 'none',
+            background: filterMode === 'together' ? 'var(--primary)' : 'transparent',
+            color: filterMode === 'together' ? 'white' : 'var(--text-secondary)',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <FiUsers /> {t('dashboard.filterTogether', 'Together')}
+        </button>
+        <button
+          className={`filter-btn ${filterMode === 'partner' ? 'active' : ''}`}
+          onClick={() => setFilterMode('partner')}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            border: 'none',
+            background: filterMode === 'partner' ? 'var(--primary)' : 'transparent',
+            color: filterMode === 'partner' ? 'white' : 'var(--text-secondary)',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <FiUser /> {t('dashboard.filterPartner', 'Partner')}
+        </button>
+      </div>
+
       {/* Summary Cards */}
       <div className="summary-cards">
         {/* Income Card */}
@@ -192,7 +318,7 @@ function Dashboard() {
           <div className="card-content">
             <h3>{t('dashboard.totalIncome')}</h3>
             <p className="amount">
-              <CountUpAnimation value={summary.income} formatter={formatCurrency} />
+              <CountUpAnimation value={displayedSummary.income} formatter={formatCurrency} />
             </p>
           </div>
         </div>
@@ -205,7 +331,7 @@ function Dashboard() {
           <div className="card-content">
             <h3>{t('dashboard.totalExpenses')}</h3>
             <p className="amount">
-              <CountUpAnimation value={summary.expenses} formatter={formatCurrency} />
+              <CountUpAnimation value={displayedSummary.expenses} formatter={formatCurrency} />
             </p>
           </div>
         </div>
@@ -217,8 +343,8 @@ function Dashboard() {
           </div>
           <div className="card-content">
             <h3>{t('dashboard.balance')}</h3>
-            <p className={`amount ${summary.balance >= 0 ? 'positive' : 'negative'}`}>
-              <CountUpAnimation value={summary.balance} formatter={formatCurrency} />
+            <p className={`amount ${displayedSummary.balance >= 0 ? 'positive' : 'negative'}`}>
+              <CountUpAnimation value={displayedSummary.balance} formatter={formatCurrency} />
             </p>
           </div>
         </div>
@@ -236,8 +362,8 @@ function Dashboard() {
         </div>
 
 
-        {budgets.length > 0 ? (
-          budgets.slice(0, 3).map(budget => {
+        {filteredBudgets.length > 0 ? (
+          filteredBudgets.slice(0, 3).map(budget => {
             // Calculate spent amount for this category in current month
             // We need full expenses list for this, but currently we only have 'recentTransactions'
             // which might be incomplete if we rely on it for calculation.
@@ -247,7 +373,8 @@ function Dashboard() {
             // Let's assume we can rely on 'recentTransactions' if it contains all month's data,
             // BUT loadDashboardData creates 'recentTransactions' from ALL transactions, so we can filter locally.
 
-            const spent = recentTransactions
+            const spent = monthTransactions
+              .filter(filterItem)
               .filter(t =>
                 t.type === 'expense' &&
                 t.category === budget.category &&
@@ -286,8 +413,8 @@ function Dashboard() {
           </Link>
         </div>
 
-        {savingGoals.length > 0 ? (
-          savingGoals.slice(0, 3).map(goal => (
+        {filteredSavingGoals.length > 0 ? (
+          filteredSavingGoals.slice(0, 3).map(goal => (
             <SavingGoalProgressBar
               key={goal.id}
               label={goal.name}
@@ -353,14 +480,20 @@ function Dashboard() {
         ) : (
           <>
             <div className="transactions-list">
-              {displayedTransactions.map((transaction) => (
-                <TransactionItem
-                  key={transaction.id}
-                  transaction={transaction}
-                  formatCurrency={formatCurrency}
-                  t={t}
-                />
-              ))}
+              {displayedTransactions.length > 0 ? (
+                displayedTransactions.map((transaction) => (
+                  <TransactionItem
+                    key={transaction.id}
+                    transaction={transaction}
+                    formatCurrency={formatCurrency}
+                    t={t}
+                  />
+                ))
+              ) : (
+                <p style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  {t('common.noDataFound', 'No transactions found for this filter.')}
+                </p>
+              )}
             </div>
 
             {/* Pagination Controls */}

@@ -321,7 +321,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--bg-secondary);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right: var(--glass-border);
   transform: translateX(-100%);
   transition: transform 0.3s ease;
   z-index: 200;
@@ -337,8 +340,8 @@
 /* Mobile navigation header with close button */
 .mobile-nav-header {
   padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--bg-tertiary);
-  background-color: var(--bg-secondary);
+  border-bottom: var(--glass-border);
+  background: transparent;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -665,8 +668,11 @@
     right: auto;
     bottom: auto;
     transform: translateX(0);
-    background-color: var(--bg-secondary);
-    border-bottom: 2px solid var(--bg-tertiary);
+    transform: translateX(0);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: var(--glass-border);
     box-shadow: var(--shadow-sm);
     z-index: 99;
     overflow: visible;

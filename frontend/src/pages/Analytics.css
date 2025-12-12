@@ -26,13 +26,13 @@
    Mobile-First Responsive Design
    ================================ */
 
-/* Mobile First - Stack vertically */
+/* Mobile First - Grid Layout (2x2) */
 .analytics-filters {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--spacing-sm, 0.75rem);
   width: 100%;
-  align-items: stretch;
+  align-items: center;
 }
 
 /* Filter dropdown styling - Full width on mobile */
@@ -41,9 +41,16 @@
   min-width: 100%;
 }
 
+/* Ensure button fills grid cell on mobile */
+.analytics-filters .btn {
+  width: 100%;
+  justify-content: center;
+}
+
 /* Tablet - 768px and up - Horizontal layout */
 @media (min-width: 768px) {
   .analytics-filters {
+    display: flex;
     flex-direction: row;
     gap: var(--spacing-md, 1rem);
     align-items: center;
@@ -52,6 +59,10 @@
 
   .analytics-filter {
     min-width: 160px;
+    width: auto;
+  }
+
+  .analytics-filters .btn {
     width: auto;
   }
 }
@@ -493,7 +504,7 @@
 
   .analytics-page .page-header>div:last-child {
     width: 100%;
-    flex-direction: column;
+    /* Grid layout handles direction */
     gap: var(--spacing-sm);
   }
 

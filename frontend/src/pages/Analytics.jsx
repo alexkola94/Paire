@@ -7,7 +7,8 @@ import {
   FiBarChart2,
   FiActivity,
   FiCalendar,
-  FiFilter
+  FiFilter,
+  FiDownload
 } from 'react-icons/fi'
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import { Pie, Line, Bar } from 'react-chartjs-2'
@@ -17,6 +18,7 @@ import { format, subDays } from 'date-fns'
 import LogoLoader from '../components/LogoLoader'
 import Dropdown from '../components/Dropdown'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import { utils, writeFile } from 'xlsx'
 import './Analytics.css'
 
 // Register Chart.js components
@@ -41,6 +43,7 @@ function Analytics() {
   const [comparativeAnalytics, setComparativeAnalytics] = useState(null)
   const [dateRange, setDateRange] = useState('month') // 'week', 'month', 'year'
   const [viewFilter, setViewFilter] = useState('together') // 'solo', 'partner', 'together'
+  const [exportFormat, setExportFormat] = useState('csv') // 'csv', 'json', 'xlsx'
 
   /**
    * Load analytics data on mount and when date range or filter changes
@@ -232,57 +235,40 @@ function Analytics() {
       setLoading(true)
       const range = getDateRange()
 
-      console.log('📊 Loading analytics for date range:', range, 'filter:', viewFilter)
-
       // Fetch all transactions first to filter them
       try {
-        console.log('📝 Fetching all transactions...')
         const allTransactions = await transactionService.getAll({
           startDate: range.start,
           endDate: range.end
         })
-        console.log('✅ Transactions loaded:', allTransactions?.length)
 
         // Filter transactions based on view filter
         const filteredTransactions = filterTransactions(allTransactions || [])
-        console.log('✅ Filtered transactions:', filteredTransactions.length, 'filter:', viewFilter)
 
         // Calculate analytics from filtered transactions
         const calculatedAnalytics = calculateAnalyticsFromTransactions(filteredTransactions)
-        console.log('✅ Calculated analytics:', calculatedAnalytics)
         setAnalytics(calculatedAnalytics)
       } catch (error) {
-        console.error('❌ Error loading transactions:', error)
         // Fallback to API if transaction filtering fails
         try {
           const financial = await analyticsService.getFinancialAnalytics(range.start, range.end)
           setAnalytics(financial)
         } catch (apiError) {
-          console.error('❌ Error loading financial analytics:', apiError)
           setAnalytics(null)
         }
       }
 
       try {
-        console.log('💳 Fetching loan analytics...')
         const loans = await analyticsService.getLoanAnalytics(range.start, range.end)
-        console.log('✅ Loan analytics loaded:', loans)
         setLoanAnalytics(loans)
       } catch (error) {
-        console.error('❌ Error loading loan analytics:', error)
-        console.error('Error details:', error.message, error.stack)
         setLoanAnalytics(null)
       }
 
       try {
-        console.log('📈 Fetching comparative analytics...')
         const comparative = await analyticsService.getComparativeAnalytics(range.start, range.end)
-        console.log('✅ Comparative analytics loaded:', comparative)
         setComparativeAnalytics(comparative)
       } catch (error) {
-        console.error('❌ Error loading comparative analytics:', error)
-        console.error('Error details:', error.message, error.stack)
-        console.error('This is expected if you have no partnership or no transactions')
         setComparativeAnalytics(null)
       }
     } catch (error) {
@@ -401,6 +387,176 @@ function Analytics() {
     }
   }
 
+
+
+  /**
+   * Generate CSV export
+   */
+  const generateCSV = () => {
+    // BOM for Excel to correct display characters
+    let csvContent = '\uFEFF'
+
+    // 1. Summary Section
+    csvContent += '--- Summary ---\n'
+    csvContent += `Period,${dateRange}\n`
+    csvContent += `Filter,${viewFilter}\n`
+    csvContent += `${t('analytics.totalIncome')},${analytics.totalIncome}\n`
+    csvContent += `${t('analytics.totalExpenses')},${analytics.totalExpenses}\n`
+    csvContent += `${t('analytics.netBalance')},${analytics.balance}\n`
+    csvContent += `${t('analytics.avgDailySpending')},${analytics.averageDailySpending}\n\n`
+
+    // 2. Category Breakdown
+    if (analytics.categoryBreakdown && analytics.categoryBreakdown.length > 0) {
+      csvContent += '--- Category Breakdown ---\n'
+      csvContent += 'Category,Amount,Percentage\n'
+      analytics.categoryBreakdown.forEach(cat => {
+        const categoryName = t(`categories.${cat.category}`) || cat.category
+        csvContent += `"${categoryName}",${cat.amount},${cat.percentage.toFixed(2)}%\n`
+      })
+      csvContent += '\n'
+    }
+
+    // 3. Monthly Comparison
+    if (analytics.monthlyComparison && analytics.monthlyComparison.length > 0) {
+      csvContent += '--- Monthly Comparison ---\n'
+      csvContent += 'Month,Income,Expenses,Balance\n'
+      analytics.monthlyComparison.forEach(m => {
+        csvContent += `${m.month} ${m.year},${m.income},${m.expenses},${m.balance}\n`
+      })
+      csvContent += '\n'
+    }
+
+    // 4. Partner Comparison
+    if (comparativeAnalytics && comparativeAnalytics.partnerComparison) {
+      csvContent += '--- Partner Comparison ---\n'
+      csvContent += 'Partner,Spent,Transactions,Percentage\n'
+      comparativeAnalytics.partnerComparison.forEach(p => {
+        csvContent += `"${p.partner}",${p.totalSpent},${p.transactionCount},${p.percentage.toFixed(2)}%\n`
+      })
+    }
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `analytics_export_${format(new Date(), 'yyyy-MM-dd')}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  /**
+   * Generate JSON export
+   */
+  const generateJSON = () => {
+    const data = {
+      meta: {
+        date: new Date().toISOString(),
+        range: dateRange,
+        filter: viewFilter
+      },
+      summary: {
+        income: analytics.totalIncome,
+        expenses: analytics.totalExpenses,
+        balance: analytics.balance,
+        averageDaily: analytics.averageDailySpending
+      },
+      categories: analytics.categoryBreakdown,
+      monthly: analytics.monthlyComparison,
+      partners: comparativeAnalytics?.partnerComparison || [],
+      loans: loanAnalytics || null
+    }
+
+    const jsonContent = JSON.stringify(data, null, 2)
+    const blob = new Blob([jsonContent], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `analytics_export_${format(new Date(), 'yyyy-MM-dd')}.json`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  /**
+   * Generate Excel export
+   */
+  const generateExcel = () => {
+    const wb = utils.book_new()
+    const fileName = `analytics_export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
+
+    // 1. Summary Sheet
+    const summaryData = [
+      ['Metric', 'Value'],
+      ['Period', dateRange],
+      ['Filter', viewFilter],
+      [t('analytics.totalIncome'), analytics.totalIncome],
+      [t('analytics.totalExpenses'), analytics.totalExpenses],
+      [t('analytics.netBalance'), analytics.balance],
+      [t('analytics.avgDailySpending'), analytics.averageDailySpending]
+    ]
+    const summaryWs = utils.aoa_to_sheet(summaryData)
+    utils.book_append_sheet(wb, summaryWs, 'Summary')
+
+    // 2. Categories Sheet
+    if (analytics.categoryBreakdown && analytics.categoryBreakdown.length > 0) {
+      const categoryData = analytics.categoryBreakdown.map(cat => ({
+        Category: t(`categories.${cat.category}`) || cat.category,
+        Amount: cat.amount,
+        Percentage: `${cat.percentage.toFixed(2)}%`
+      }))
+      const categoryWs = utils.json_to_sheet(categoryData)
+      utils.book_append_sheet(wb, categoryWs, 'Categories')
+    }
+
+    // 3. Monthly Sheet
+    if (analytics.monthlyComparison && analytics.monthlyComparison.length > 0) {
+      const monthlyData = analytics.monthlyComparison.map(m => ({
+        Month: `${m.month} ${m.year}`,
+        Income: m.income,
+        Expenses: m.expenses,
+        Balance: m.balance
+      }))
+      const monthlyWs = utils.json_to_sheet(monthlyData)
+      utils.book_append_sheet(wb, monthlyWs, 'Monthly')
+    }
+
+    // 4. Partners Sheet
+    if (comparativeAnalytics && comparativeAnalytics.partnerComparison) {
+      const partnerData = comparativeAnalytics.partnerComparison.map(p => ({
+        Partner: p.partner,
+        Spent: p.totalSpent,
+        Transactions: p.transactionCount,
+        Percentage: `${p.percentage.toFixed(2)}%`
+      }))
+      const partnerWs = utils.json_to_sheet(partnerData)
+      utils.book_append_sheet(wb, partnerWs, 'Partners')
+    }
+
+    writeFile(wb, fileName)
+  }
+
+  /**
+   * Handle Export based on selected format
+   */
+  const handleExport = () => {
+    if (!analytics) return
+
+    switch (exportFormat) {
+      case 'json':
+        generateJSON()
+        break
+      case 'xlsx':
+        generateExcel()
+        break
+      case 'csv':
+      default:
+        generateCSV()
+        break
+    }
+  }
+
   if (loading) {
     return (
       <div className="page-loading">
@@ -423,6 +579,29 @@ function Analytics() {
 
         {/* Filters */}
         <div className="analytics-filters">
+          {/* Export Format Selector */}
+          <Dropdown
+            options={[
+              { value: 'csv', label: 'CSV' },
+              { value: 'json', label: 'JSON' },
+              { value: 'xlsx', label: 'Excel' }
+            ]}
+            value={exportFormat}
+            onChange={(value) => setExportFormat(value)}
+            className="analytics-filter export-format-dropdown"
+          />
+
+          <button
+            className="btn btn-outline"
+            onClick={handleExport}
+            disabled={!analytics}
+            title={t('common.export')}
+            style={{ height: '42px' }}
+          >
+            <FiDownload size={18} />
+            <span className="desktop-only">{t('common.export') || 'Export'}</span>
+          </button>
+
           {/* View Filter */}
           <Dropdown
             icon={<FiFilter size={18} />}
