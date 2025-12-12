@@ -7,6 +7,8 @@ import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
+import SearchInput from '../components/SearchInput'
+import DatePicker from '../components/DatePicker'
 
 // import useSwipeGesture from '../hooks/useSwipeGesture'
 // import useFocusTrap from '../hooks/useFocusTrap'
@@ -20,18 +22,26 @@ import Skeleton from '../components/Skeleton'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import './Expenses.css'
 
-/**
- * Expenses Page Component
- * Manage expense transactions
- */
 function Expenses() {
   const { t } = useTranslation()
-  const [expenses, setExpenses] = useState([])
+  // All expenses from API
+  const [allExpenses, setAllExpenses] = useState([])
+  // Expenses after search filter
+  const [filteredExpenses, setFilteredExpenses] = useState([])
+  // Expenses for current page
+  const [displayedExpenses, setDisplayedExpenses] = useState([])
+
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, expense: null })
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+  // Date filter state
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   // Pagination
   const [page, setPage] = useState(1)
@@ -52,7 +62,7 @@ function Expenses() {
   const { performAction: performUndoableAction, undo, canUndo } = useUndo()
 
   /**
-   * Load expenses on mount
+   * Load ALL expenses on mount
    */
   useEffect(() => {
     loadExpenses()
@@ -66,34 +76,81 @@ function Expenses() {
         return params
       }, { replace: true })
     }
-  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // Load once on mount
 
   /**
-   * Fetch expenses from API
+   * Handle Search & Pagination Effect
+   * Runs whenever allExpenses, searchQuery, or page changes
+   */
+  useEffect(() => {
+    // 1. Filter
+    let result = allExpenses
+
+    // Text Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(expense =>
+        (expense.description && expense.description.toLowerCase().includes(query)) ||
+        (expense.category && expense.category.toLowerCase().includes(query)) ||
+        (expense.notes && expense.notes.toLowerCase().includes(query)) ||
+        (expense.tags && expense.tags.some(tag => tag.toLowerCase().includes(query))) ||
+        (expense.amount && expense.amount.toString().includes(query))
+      )
+    }
+
+    // Date Filter
+    if (startDate) {
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      result = result.filter(expense => new Date(expense.date) >= start)
+    }
+
+    if (endDate) {
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      result = result.filter(expense => new Date(expense.date) <= end)
+    }
+
+    setTotalItems(result.length)
+    setTotalPages(Math.ceil(result.length / PAGE_SIZE))
+
+    // 2. Paginate
+    const startIndex = (page - 1) * PAGE_SIZE
+    const paginated = result.slice(startIndex, startIndex + PAGE_SIZE)
+    setDisplayedExpenses(paginated)
+
+  }, [allExpenses, searchQuery, page, startDate, endDate])
+
+  /**
+   * Handle search input
+   */
+  const handleSearch = (query) => {
+    setSearchQuery(query)
+    setPage(1) // Reset to first page
+  }
+
+  /**
+   * Fetch ALL expenses from API
    */
   const loadExpenses = async (background = false) => {
     try {
       if (!background) {
         setLoading(true)
       }
+      // Fetch ALL expenses (no pagination params)
       const data = await transactionService.getAll({
-        type: 'expense',
-        page: page,
-        pageSize: PAGE_SIZE
+        type: 'expense'
       })
 
-      if (data.items) {
-        setExpenses(data.items)
-        setTotalPages(data.totalPages)
-        setTotalItems(data.totalCount)
-      } else {
-        // Fallback for non-paged response
-        setExpenses(data)
-        setTotalPages(1)
-        setTotalItems(data.length)
-      }
+      // Handle response (array or paged object fallback)
+      const items = Array.isArray(data) ? data : (data.items || [])
+
+      setAllExpenses(items)
+      // Filter/Pagination will run via useEffect
+
     } catch (error) {
       console.error('Error loading expenses:', error)
+      showError(t('expenses.loadError', 'Failed to load expenses'))
     } finally {
       if (!background) {
         setLoading(false)
@@ -372,6 +429,55 @@ function Expenses() {
         )}
       </div>
 
+      {/* Search and Filter Bar */}
+      <div className="search-filter-container">
+        <div className="search-wrapper flex-grow">
+          <label className="filter-label">{t('common.search', 'Search')}</label>
+          <SearchInput
+            onSearch={handleSearch}
+            placeholder={t('expenses.searchPlaceholder', 'Search expenses...')}
+          />
+        </div>
+
+        <div className="date-filters">
+          <DatePicker
+            label={t('common.from', 'From')}
+            selected={startDate}
+            onChange={(date) => {
+              setStartDate(date ? date.toISOString() : '')
+              setPage(1)
+            }}
+            placeholder={t('common.startDate', 'Start Date')}
+            className="date-picker-custom"
+          />
+
+          <DatePicker
+            label={t('common.to', 'To')}
+            selected={endDate}
+            onChange={(date) => {
+              setEndDate(date ? date.toISOString() : '')
+              setPage(1)
+            }}
+            placeholder={t('common.endDate', 'End Date')}
+            className="date-picker-custom"
+          />
+
+          {(startDate || endDate) && (
+            <button
+              onClick={() => {
+                setStartDate('')
+                setEndDate('')
+                setPage(1)
+              }}
+              className="btn-icon-clear"
+              title={t('common.clearDates', 'Clear dates')}
+            >
+              <FiTrash2 />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Expense Form Modal (Portal) */}
       <Modal
         isOpen={showForm}
@@ -419,7 +525,7 @@ function Expenses() {
       )}
 
       {/* Expenses List */}
-      {expenses.length === 0 ? (
+      {allExpenses.length === 0 && !loading ? (
         <div className="card empty-state">
           <p>{t('expenses.noExpenses')}</p>
           <button
@@ -430,9 +536,13 @@ function Expenses() {
             {t('expenses.addExpense')}
           </button>
         </div>
+      ) : displayedExpenses.length === 0 && !loading ? (
+        <div className="card empty-state">
+          <p>{t('common.noResults', 'No expenses found matching your search.')}</p>
+        </div>
       ) : (
         <div className="expenses-grid">
-          {expenses.map((expense) => (
+          {displayedExpenses.map((expense) => (
             <div key={expense.id} className="expense-card card">
               <div className="expense-header">
                 <div className="expense-category">

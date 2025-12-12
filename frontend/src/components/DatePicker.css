@@ -1,0 +1,185 @@
+/* Glassmorphism Date Picker Styles */
+.date-picker-container {
+    position: relative;
+    width: 100%;
+}
+
+.date-picker-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.date-picker-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.date-picker-input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.date-picker-input:hover {
+    border-color: rgba(142, 68, 173, 0.3);
+}
+
+.date-picker-input.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.15);
+}
+
+.date-picker-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--primary);
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+.date-picker-clear {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+.date-picker-clear:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+}
+
+/* Calendar Popup */
+.calendar-popup {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 1000;
+    background: var(--bg-secondary);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    width: 280px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.calendar-nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.calendar-nav-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--primary);
+}
+
+.current-month {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+}
+
+.calendar-day-name {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    font-weight: 500;
+    padding: 8px 0;
+}
+
+.calendar-day {
+    font-size: 0.9rem;
+    padding: 8px 0;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.calendar-day:hover:not(.disabled) {
+    background: rgba(142, 68, 173, 0.1);
+    color: var(--primary);
+}
+
+.calendar-day.selected {
+    background: var(--primary);
+    color: white;
+}
+
+.calendar-day.today {
+    border: 1px solid var(--primary);
+    color: var(--primary);
+}
+
+.calendar-day.today.selected {
+    color: white;
+}
+
+.calendar-day.other-month {
+    color: var(--text-light);
+    opacity: 0.5;
+}
+
+.calendar-day.disabled {
+    color: var(--text-light);
+    cursor: not-allowed;
+    opacity: 0.3;
+}
+
+/* Dark Theme Adjustments */
+[data-theme='dark'] .date-picker-input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme='dark'] .calendar-popup {
+    background: var(--bg-tertiary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .calendar-day:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}

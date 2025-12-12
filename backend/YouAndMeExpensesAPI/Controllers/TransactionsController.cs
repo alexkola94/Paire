@@ -50,7 +50,8 @@ namespace YouAndMeExpensesAPI.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
             [FromQuery] int? page = null,
-            [FromQuery] int? pageSize = null)
+            [FromQuery] int? pageSize = null,
+            [FromQuery] string? search = null)
         {
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return error;
@@ -65,6 +66,18 @@ namespace YouAndMeExpensesAPI.Controllers
                 // Build query with filters
                 var query = _dbContext.Transactions
                     .Where(t => allUserIds.Contains(t.UserId));
+
+                // Filter by search term if provided
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchTerm = $"%{search.Trim()}%";
+                    query = query.Where(t => 
+                        EF.Functions.ILike(t.Description, searchTerm) || 
+                        EF.Functions.ILike(t.Category, searchTerm) || 
+                        EF.Functions.ILike(t.Notes, searchTerm) || 
+                        (t.Tags != null && t.Tags.Any(tag => EF.Functions.ILike(tag, searchTerm)))
+                    );
+                }
 
                 // Filter by transaction type if provided
                 if (!string.IsNullOrEmpty(type))

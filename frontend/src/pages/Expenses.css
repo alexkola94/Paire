@@ -68,6 +68,62 @@
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
+  /* Animation */
+  animation: fadeInUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) backwards;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered animation delays for the first 10 items */
+.expense-card:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.expense-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.expense-card:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.expense-card:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.expense-card:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+.expense-card:nth-child(6) {
+  animation-delay: 0.3s;
+}
+
+.expense-card:nth-child(7) {
+  animation-delay: 0.35s;
+}
+
+.expense-card:nth-child(8) {
+  animation-delay: 0.4s;
+}
+
+.expense-card:nth-child(9) {
+  animation-delay: 0.45s;
+}
+
+.expense-card:nth-child(10) {
+  animation-delay: 0.5s;
 }
 
 .expense-card:hover {
@@ -348,8 +404,104 @@
   padding: 8px 16px;
 }
 
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
+
+/* ================================
+   Search and Filters
+   ================================ */
+/* ================================
+   Search and Filters
+   ================================ */
+.search-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.search-wrapper {
+  width: 100%;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.date-filters {
+  display: flex;
+  flex-direction: row;
+  /* Side-by-side on mobile */
+  align-items: flex-end;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.date-picker-custom {
+  flex: 1;
+  /* Equal width */
+}
+
+/* Clear button adjustment */
+.btn-icon-clear {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-icon-clear:hover {
+  background: var(--error-light);
+  color: var(--error);
+}
+
+/* Mobile Optimizations */
+@media (max-width: 767px) {
+
+  /* Hide labels to save space */
+  .filter-label,
+  .date-picker-container .date-picker-label {
+    display: none;
+  }
+
+  /* Compact spacing */
+  .date-picker-input {
+    padding: 10px 10px 10px 36px;
+    /* Reduced padding */
+    font-size: 0.85rem;
+  }
+
+  .date-picker-icon {
+    left: 10px;
+    font-size: 1rem;
+  }
+}
+
+/* Tablet and Desktop */
+@media (min-width: 768px) {
+  .search-filter-container {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: var(--spacing-md);
+  }
+
+  .search-wrapper {
+    flex: 2;
+  }
+
+  .date-filters {
+    width: auto;
+    flex: 1;
+    min-width: 320px;
+  }
 }

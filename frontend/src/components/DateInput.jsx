@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiCalendar } from 'react-icons/fi'
 import { isToday, isYesterday, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns'
+import DatePicker from './DatePicker'
 import './DateInput.css'
 
 /**
@@ -138,22 +139,18 @@ function DateInput({
       )}
 
       <div className="date-input-container">
-        <div className="date-icon">
-          <FiCalendar size={20} />
-        </div>
-        <input
-          ref={dateInputRef}
-          type="date"
-          id={id}
-          name={name}
-          value={value || getToday()}
-          onChange={onChange}
-          required={required}
-          disabled={disabled}
-          className="date-input"
-          aria-label={label || t('transaction.date')}
-          aria-required={required}
+
+        <DatePicker
+          selected={value}
+          onChange={(date) => {
+            const dateString = date ? date.toISOString().split('T')[0] : ''
+            handleQuickDate(dateString)
+          }}
+          placeholder={label || t('transaction.date')}
+          className="date-input-custom"
         />
+        {/* Hidden input for form submission/accessibility if needed by parent forms relying on native events bubbling - though React synthetic events don't bubble the same way for custom components. 
+            The adapter in onChange handles the controlled state update. */}
       </div>
 
       {/* Quick Date Buttons */}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiRepeat } from 'react-icons/fi'
+import DatePicker from './DatePicker'
 import './RecurringTransaction.css'
 
 /**
@@ -74,13 +75,11 @@ function RecurringTransaction({
             <label htmlFor="recurrenceEndDate">
               {t('transaction.recurring.endDate')}
             </label>
-            <input
-              type="date"
-              id="recurrenceEndDate"
-              name="recurrenceEndDate"
-              value={recurrenceEndDate}
-              onChange={(e) => onEndDateChange && onEndDateChange(e.target.value)}
-              className="recurring-date-input"
+            <DatePicker
+              selected={recurrenceEndDate}
+              onChange={(date) => onEndDateChange && onEndDateChange(date ? date.toISOString().split('T')[0] : '')}
+              placeholder={t('transaction.recurring.endDate')}
+              className="recurring-date-picker"
             />
             <small className="form-hint">
               {t('transaction.recurring.endDateHint')}

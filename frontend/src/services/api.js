@@ -147,6 +147,7 @@ export const transactionService = {
     if (filters.endDate) params.append('endDate', filters.endDate)
     if (filters.page) params.append('page', filters.page)
     if (filters.pageSize) params.append('pageSize', filters.pageSize)
+    if (filters.search) params.append('search', filters.search)
 
     return await apiRequest(`/api/transactions?${params}`)
   },
