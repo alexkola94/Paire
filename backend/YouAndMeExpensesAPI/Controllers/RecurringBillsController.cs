@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -14,11 +15,16 @@ namespace YouAndMeExpensesAPI.Controllers
     public class RecurringBillsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
+        private readonly IBudgetService _budgetService;
         private readonly ILogger<RecurringBillsController> _logger;
 
-        public RecurringBillsController(AppDbContext dbContext, ILogger<RecurringBillsController> logger)
+        public RecurringBillsController(
+            AppDbContext dbContext,
+            IBudgetService budgetService,
+            ILogger<RecurringBillsController> logger)
         {
             _dbContext = dbContext;
+            _budgetService = budgetService;
             _logger = logger;
         }
 
@@ -340,6 +346,9 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <summary>
         /// Mark a bill as paid for the current period
         /// </summary>
+        /// <summary>
+        /// Mark a bill as paid for the current period and create an expense transaction
+        /// </summary>
         [HttpPost("{id}/mark-paid")]
         public async Task<IActionResult> MarkBillPaid(Guid id)
         {
@@ -356,6 +365,26 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Recurring bill {id} not found" });
                 }
 
+                // 1. Create Expense Transaction
+                var newTransaction = new Transaction
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId.ToString(),
+                    Amount = bill.Amount,
+                    Type = "expense",
+                    Category = bill.Category,
+                    Description = bill.Name,
+                    Date = DateTime.UtcNow,
+                    PaidBy = "User", // Default to User
+                    Notes = $"[RecurringBill:{bill.Id}]", // Tag for linking
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsBankSynced = false
+                };
+                
+                _dbContext.Transactions.Add(newTransaction);
+
+                // 2. Update Bill Next Due Date
                 // Calculate next due date based on frequency
                 bill.NextDueDate = CalculateNextDueDate(bill.Frequency, bill.DueDay, bill.NextDueDate);
                 
@@ -373,6 +402,13 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 await _dbContext.SaveChangesAsync();
 
+                // Update budget spent amount
+                await _budgetService.UpdateSpentAmountAsync(
+                    userId.ToString(),
+                    newTransaction.Category,
+                    newTransaction.Amount,
+                    newTransaction.Date);
+
                 return Ok(bill);
             }
             catch (Exception ex)
@@ -380,6 +416,120 @@ namespace YouAndMeExpensesAPI.Controllers
                 _logger.LogError(ex, "Error marking bill {Id} as paid", id);
                 return StatusCode(500, new { message = "Error marking bill as paid", error = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Unmark a bill as paid (Revert) and remove the associated expense transaction
+        /// </summary>
+        [HttpPost("{id}/unmark-paid")]
+        public async Task<IActionResult> UnmarkBillPaid(Guid id)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var bill = await _dbContext.RecurringBills
+                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId.ToString());
+
+                if (bill == null)
+                {
+                    return NotFound(new { message = $"Recurring bill {id} not found" });
+                }
+
+                // 1. Revert Due Date
+                bill.NextDueDate = CalculatePreviousDueDate(bill.Frequency, bill.DueDay, bill.NextDueDate);
+                
+                // Ensure NextDueDate is UTC
+                 if (bill.NextDueDate.Kind == DateTimeKind.Unspecified)
+                {
+                    bill.NextDueDate = DateTime.SpecifyKind(bill.NextDueDate, DateTimeKind.Utc);
+                }
+                else if (bill.NextDueDate.Kind == DateTimeKind.Local)
+                {
+                    bill.NextDueDate = bill.NextDueDate.ToUniversalTime();
+                }
+
+                bill.UpdatedAt = DateTime.UtcNow;
+
+                // 2. Find and Delete Latest Associated Transaction
+                var tag = $"[RecurringBill:{bill.Id}]";
+                var recentTransaction = await _dbContext.Transactions
+                    .Where(t => t.UserId == userId.ToString() && t.Notes != null && t.Notes.Contains(tag))
+                    .OrderByDescending(t => t.Date) // Get the latest one
+                    .FirstOrDefaultAsync();
+
+                if (recentTransaction != null)
+                {
+                    _dbContext.Transactions.Remove(recentTransaction);
+                }
+
+                await _dbContext.SaveChangesAsync();
+
+                if (recentTransaction != null)
+                {
+                     // Update budget spent amount (subtract un-paid transaction)
+                     await _budgetService.UpdateSpentAmountAsync(
+                        userId.ToString(),
+                        recentTransaction.Category,
+                        -recentTransaction.Amount,
+                        recentTransaction.Date);
+                }
+
+                return Ok(bill);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unmarking bill {Id}", id);
+                return StatusCode(500, new { message = "Error unmarking bill", error = ex.Message });
+            }
+        }
+
+        private DateTime CalculatePreviousDueDate(string frequency, int dueDay, DateTime currentDueDate)
+        {
+            // Ensure baseDate is UTC
+            if (currentDueDate.Kind != DateTimeKind.Utc)
+            {
+                currentDueDate = currentDueDate.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(currentDueDate, DateTimeKind.Utc)
+                    : currentDueDate.ToUniversalTime();
+            }
+
+            DateTime result;
+
+            switch (frequency.ToLower())
+            {
+                case "weekly":
+                    result = currentDueDate.AddDays(-7);
+                    break;
+
+                case "monthly":
+                    var prevMonth = currentDueDate.AddMonths(-1);
+                    var daysInMonth = DateTime.DaysInMonth(prevMonth.Year, prevMonth.Month);
+                    var actualDay = Math.Min(dueDay, daysInMonth);
+                    result = new DateTime(prevMonth.Year, prevMonth.Month, actualDay, 0, 0, 0, DateTimeKind.Utc);
+                    break;
+
+                case "quarterly":
+                    var prevQuarter = currentDueDate.AddMonths(-3);
+                    var daysInQuarter = DateTime.DaysInMonth(prevQuarter.Year, prevQuarter.Month);
+                    var quarterDay = Math.Min(dueDay, daysInQuarter);
+                    result = new DateTime(prevQuarter.Year, prevQuarter.Month, quarterDay, 0, 0, 0, DateTimeKind.Utc);
+                    break;
+
+                case "yearly":
+                    var prevYear = currentDueDate.AddYears(-1);
+                    // Handle leap year if date was Feb 29 and prev year isn't leap
+                    // Logic: DueDay is originally DayOfYear. Reconstruct from year start.
+                    result = new DateTime(prevYear.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(dueDay - 1);
+                    break;
+
+                default:
+                     // Fallback to monthly
+                    return CalculatePreviousDueDate("monthly", dueDay, currentDueDate);
+            }
+
+            return result;
         }
 
         /// <summary>

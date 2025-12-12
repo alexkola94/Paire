@@ -801,3 +801,56 @@
     font-size: 1.5rem;
   }
 }
+/* Slicker Account Styles */
+.account-item {
+  border: none;
+  background: var(--bg-tertiary, #f8f9fa);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  align-items: center;
+}
+
+.account-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.account-name-sub {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.account-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.meta-badge {
+    background: rgba(0,0,0,0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.meta-text {
+    font-size: 0.75rem;
+    color: var(--text-tertiary, #999);
+    display: flex;
+    align-items: center;
+}
+

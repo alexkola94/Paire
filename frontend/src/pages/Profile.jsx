@@ -7,6 +7,7 @@ import { getBackendUrl } from '../utils/getBackendUrl'
 import TwoFactorSetup from '../components/TwoFactorSetup'
 import LogoLoader from '../components/LogoLoader'
 import './Profile.css'
+import PlaidConnect from '../components/PlaidConnect'
 
 /**
  * Profile Page Component
@@ -597,7 +598,7 @@ function Profile() {
         }}
       />
 
-      {/* Open Banking Integration - Commented out
+      {/* Open Banking Integration */}
       <div className="card">
         <div className="card-header">
           <h2>
@@ -608,7 +609,6 @@ function Profile() {
 
         <BankConnections />
       </div>
-      */}
 
       {/* Danger Zone - Clear All Data */}
       <div className="card danger-zone">
@@ -739,50 +739,32 @@ function Profile() {
 function BankConnections() {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
-  const [banks, setBanks] = useState([])
   const [accounts, setAccounts] = useState([])
-  const [selectedBank, setSelectedBank] = useState('')
-  const [country, setCountry] = useState('FI')
   const [connectionMessage, setConnectionMessage] = useState({ type: '', text: '' })
+
+  /**
+   * Get bank icon styling based on name
+   */
+  const getBankStyle = (name) => {
+    const colors = [
+      'linear-gradient(135deg, #FF6B6B 0%, #EE5D5D 100%)', // Red
+      'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)', // Blue
+      'linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)', // Green
+      'linear-gradient(135deg, #FA709A 0%, #FEE140 100%)', // Orange/Pink
+      'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)', // Purple
+    ];
+    let hash = 0;
+    const str = name || 'Bank';
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return { background: colors[index] };
+  };
 
   useEffect(() => {
     loadAccounts()
-    loadBanks()
-  }, [country]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  /**
-   * Listen for messages from bank callback popup
-   */
-  useEffect(() => {
-    const handleMessage = (event) => {
-      // Verify message is from same origin
-      if (event.origin !== window.location.origin) {
-        return
-      }
-
-      if (event.data.type === 'BANK_CONNECTION_SUCCESS') {
-        // Connection successful - reload accounts
-        setLoading(false)
-        setConnectionMessage({
-          type: 'success',
-          text: t('profile.openBanking.connectionSuccess')
-        })
-        loadAccounts()
-      } else if (event.data.type === 'BANK_CONNECTION_ERROR') {
-        // Connection failed
-        setLoading(false)
-        setConnectionMessage({
-          type: 'error',
-          text: event.data.error || t('profile.openBanking.connectionError')
-        })
-      }
-    }
-
-    window.addEventListener('message', handleMessage)
-    return () => {
-      window.removeEventListener('message', handleMessage)
-    }
-  }, [t])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Auto-dismiss success/info messages after 5 seconds
@@ -801,8 +783,6 @@ function BankConnections() {
    */
   const loadAccounts = async () => {
     try {
-      // Assuming import is handled at top level or we use dynamic import if circle dep issues
-      // But simplifying here: Profile.jsx relies on imports added at top
       const data = await import('../services/openBanking').then(m => m.openBankingService.getAccounts())
       setAccounts(data)
     } catch (error) {
@@ -810,153 +790,9 @@ function BankConnections() {
     }
   }
 
-  /**
-   * Load available banks for selected country
-   */
-  const loadBanks = async () => {
-    try {
-      const data = await import('../services/openBanking').then(m => m.openBankingService.getAspsps(country))
-      setBanks(data)
-    } catch (error) {
-      console.error('Failed to load banks', error)
-    }
-  }
-
-  /**
-   * Handle bank connection with popup window
-   * Opens authorization in a popup and monitors for completion
-   */
-  const handleConnect = async () => {
-    if (!selectedBank) return
-
-    try {
-      setLoading(true)
-      setConnectionMessage({ type: '', text: '' })
-
-      const service = await import('../services/openBanking').then(m => m.openBankingService)
-      const authUrl = await service.startAuthorization(selectedBank, country)
-
-
-
-      // Open popup window with appropriate size
-      const popupWidth = 600
-      const popupHeight = 700
-      const left = (window.screen.width - popupWidth) / 2
-      const top = (window.screen.height - popupHeight) / 2
-
-      const popup = window.open(
-        authUrl,
-        'BankAuthorization',
-        `width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
-      )
-
-      if (!popup) {
-        throw new Error(t('profile.openBanking.popupBlocked'))
-      }
-
-      // Store interval IDs for cleanup
-      let checkPopupInterval = null
-      let backendPollInterval = null
-      let timeoutId = null
-
-      // Helper function to cleanup all intervals and close popup
-      const cleanup = () => {
-        if (checkPopupInterval) clearInterval(checkPopupInterval)
-        if (backendPollInterval) clearInterval(backendPollInterval)
-        if (timeoutId) clearTimeout(timeoutId)
-        if (popup && !popup.closed) {
-          popup.close()
-        }
-      }
-
-      // Helper function to handle successful connection
-      const handleSuccess = async () => {
-        cleanup()
-        setLoading(false)
-        setConnectionMessage({
-          type: 'success',
-          text: t('profile.openBanking.connectionSuccess')
-        })
-        // Reload accounts after short delay to allow backend processing
-        setTimeout(() => {
-          loadAccounts()
-        }, 1000)
-      }
-
-      // Monitor popup for callback completion
-      checkPopupInterval = setInterval(() => {
-        try {
-          // Check if popup was closed by user
-          if (popup.closed) {
-            cleanup()
-            setLoading(false)
-            // Don't show message if we already got a success/error message from postMessage
-            if (!connectionMessage.text) {
-              setConnectionMessage({
-                type: 'info',
-                text: t('profile.openBanking.windowClosed')
-              })
-              // Reload accounts in case authorization completed before popup closed
-              setTimeout(() => {
-                loadAccounts()
-              }, 2000)
-            }
-            return
-          }
-
-          // Check if popup has redirected to callback page
-          // Note: We can only check location if popup is on same origin
-          try {
-            const popupUrl = popup.location.href
-            if (popupUrl.includes('/bank-callback')) {
-              // Popup is on callback page - it will send postMessage when done
-              // Just wait for the message, no need to do anything here
-            }
-          } catch (e) {
-            // Cross-origin error - popup has navigated to bank's domain
-            // This is expected, continue polling
-            // The callback page will send postMessage when it completes
-          }
-        } catch (error) {
-          console.error('Error checking popup status:', error)
-        }
-      }, 500) // Check every 500ms
-
-      // Fallback: Also poll backend to check if connection was established
-      // This handles cases where popup redirects to cross-origin and we can't detect it
-      backendPollInterval = setInterval(async () => {
-        try {
-          const currentAccounts = await import('../services/openBanking')
-            .then(m => m.openBankingService.getAccounts())
-
-          // If we got new accounts, authorization likely completed
-          if (currentAccounts.length > accounts.length) {
-            handleSuccess()
-            setAccounts(currentAccounts)
-          }
-        } catch (error) {
-          // Ignore polling errors
-        }
-      }, 2000) // Poll backend every 2 seconds
-
-      // Cleanup intervals after 10 minutes (timeout)
-      timeoutId = setTimeout(() => {
-        cleanup()
-        setLoading(false)
-        setConnectionMessage({
-          type: 'error',
-          text: t('profile.openBanking.timeout')
-        })
-      }, 600000) // 10 minutes timeout
-
-    } catch (error) {
-      console.error('Error connecting bank:', error)
-      setLoading(false)
-      setConnectionMessage({
-        type: 'error',
-        text: error.message || t('profile.openBanking.connectionError')
-      })
-    }
+  const onLinkSuccess = () => {
+    setConnectionMessage({ type: 'success', text: t('profile.openBanking.connectionSuccess', 'Bank connected successfully!') })
+    setTimeout(() => loadAccounts(), 1000)
   }
 
   /**
@@ -1056,123 +892,63 @@ function BankConnections() {
         <div className="connected-accounts">
           <h3>{t('profile.openBanking.connectedAccounts')}</h3>
           <div className="account-list">
-            {accounts.map(acc => (
-              <div key={acc.id} className="account-item">
-                <div className="account-icon">🏦</div>
-                <div className="account-details">
-                  <div className="account-header">
-                    <strong className="account-bank-name">{acc.bankName || t('profile.openBanking.unknownBank', 'Unknown Bank')}</strong>
-                    <button
-                      onClick={() => handleDisconnectAccount(acc.id, acc.accountName || acc.iban)}
-                      className="btn-icon btn-disconnect-account"
-                      title={t('profile.openBanking.disconnectAccount', 'Disconnect this account')}
-                      aria-label={t('profile.openBanking.disconnectAccount', 'Disconnect this account')}
-                    >
-                      <FiPower size={18} />
-                    </button>
+            {accounts.map(acc => {
+              const bankName = acc.bankName || t('profile.openBanking.unknownBank', 'Unknown Bank');
+              const initial = bankName.charAt(0).toUpperCase();
+
+              return (
+                <div key={acc.id} className="account-item">
+                  <div className="account-icon-wrapper" style={getBankStyle(bankName)}>
+                    <span className="account-initial">{initial}</span>
                   </div>
-
-                  {acc.accountName && (
-                    <div className="account-name">
-                      <FiCreditCard size={14} />
-                      <span>{acc.accountName}</span>
+                  <div className="account-details">
+                    <div className="account-header">
+                      <div>
+                        <strong className="account-bank-name">{bankName}</strong>
+                        {acc.accountName && <div className="account-name-sub">{acc.accountName}</div>}
+                      </div>
+                      <button
+                        onClick={() => handleDisconnectAccount(acc.id, acc.accountName || acc.iban)}
+                        className="btn-icon btn-disconnect-account"
+                        title={t('profile.openBanking.disconnectAccount', 'Disconnect this account')}
+                        aria-label={t('profile.openBanking.disconnectAccount', 'Disconnect this account')}
+                      >
+                        <FiPower size={18} />
+                      </button>
                     </div>
-                  )}
 
-                  {acc.iban && (
-                    <div className="account-iban">
-                      <span className="iban-label">{t('profile.openBanking.iban', 'IBAN')}:</span>
-                      <span className="iban-value">{acc.iban}</span>
+                    <div className="account-meta">
+                      {acc.accountType && (
+                        <span className="meta-badge">{acc.accountType}</span>
+                      )}
+                      {acc.lastBalanceUpdate && (
+                        <span className="meta-text"><FiCalendar size={10} style={{ marginRight: 4 }} />{formatDate(acc.lastBalanceUpdate)}</span>
+                      )}
                     </div>
-                  )}
-
-                  {acc.accountType && (
-                    <div className="account-type">
-                      <span className="type-label">{t('profile.openBanking.accountType', 'Type')}:</span>
-                      <span className="type-value">{acc.accountType}</span>
-                    </div>
-                  )}
-
-                  {acc.lastBalanceUpdate && (
-                    <div className="account-last-update">
-                      <FiCalendar size={12} />
-                      <span>{t('profile.openBanking.lastUpdated', 'Last updated')}: {formatDate(acc.lastBalanceUpdate)}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="account-balance">
-                  <div className="balance-amount">
-                    {formatCurrency(acc.currentBalance, acc.currency)}
                   </div>
-                  {acc.currency && (
-                    <div className="balance-currency">{acc.currency}</div>
-                  )}
+                  <div className="account-balance">
+                    <div className="balance-amount">
+                      {formatCurrency(acc.currentBalance, acc.currency)}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
-          <button onClick={handleDisconnect} className="btn btn-danger btn-sm" style={{ marginTop: '1rem' }}>
-            <FiTrash2 size={16} />
-            {t('profile.openBanking.disconnectAll')}
-          </button>
+
+          <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <PlaidConnect onLinkSuccess={onLinkSuccess} />
+            <button onClick={handleDisconnect} className="btn btn-danger btn-sm">
+              <FiTrash2 size={16} />
+              {t('profile.openBanking.disconnectAll')}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="connect-new">
           <p>{t('profile.openBanking.connectDescription')}</p>
-          <div className="bank-selector" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <select
-              value={country}
-              onChange={e => setCountry(e.target.value)}
-              className="form-select"
-              style={{ width: 'auto' }}
-            >
-              <option value="FI">Finland (FI)</option>
-              <option value="SE">Sweden (SE)</option>
-              <option value="NO">Norway (NO)</option>
-              <option value="DK">Denmark (DK)</option>
-              <option value="GR">Greece (GR)</option>
-              <option value="DE">Germany (DE)</option>
-              <option value="ES">Spain (ES)</option>
-              <option value="IT">Italy (IT)</option>
-              <option value="FR">France (FR)</option>
-              <option value="EE">Estonia (EE)</option>
-              <option value="LV">Latvia (LV)</option>
-              <option value="LT">Lithuania (LT)</option>
-              <option value="BE">Belgium (BE)</option>
-              <option value="NL">Netherlands (NL)</option>
-              <option value="AT">Austria (AT)</option>
-              <option value="BG">Bulgaria (BG)</option>
-              <option value="HR">Croatia (HR)</option>
-              <option value="CY">Cyprus (CY)</option>
-              <option value="CZ">Czech Republic (CZ)</option>
-              <option value="HU">Hungary (HU)</option>
-              <option value="IE">Ireland (IE)</option>
-              <option value="PL">Poland (PL)</option>
-              <option value="PT">Portugal (PT)</option>
-              <option value="RO">Romania (RO)</option>
-              <option value="SK">Slovakia (SK)</option>
-              <option value="SI">Slovenia (SI)</option>
-            </select>
-
-            <select
-              value={selectedBank}
-              onChange={e => setSelectedBank(e.target.value)}
-              className="form-select"
-              style={{ flex: 1 }}
-            >
-              <option value="">{t('profile.openBanking.selectBank')}</option>
-              {banks.map(bank => (
-                <option key={bank.name} value={bank.name}>{bank.title || bank.name}</option>
-              ))}
-            </select>
-
-            <button
-              onClick={handleConnect}
-              disabled={!selectedBank || loading}
-              className="btn btn-primary"
-            >
-              {loading ? t('profile.openBanking.connecting') : t('profile.openBanking.connect')}
-            </button>
+          <div style={{ marginTop: '1rem' }}>
+            <PlaidConnect onLinkSuccess={onLinkSuccess} />
           </div>
         </div>
       )}

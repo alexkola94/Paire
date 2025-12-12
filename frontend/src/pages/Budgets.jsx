@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { CATEGORIES } from '../constants/categories'
 import { useTranslation } from 'react-i18next'
 import { FiTarget, FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiAlertCircle, FiCheckCircle } from 'react-icons/fi'
 import { budgetService, transactionService } from '../services/api'
@@ -30,10 +31,9 @@ function Budgets() {
     period: 'monthly'
   })
 
-  const categories = [
-    'food', 'transportation', 'housing', 'utilities', 'entertainment',
-    'healthcare', 'shopping', 'education', 'other'
-  ]
+
+
+  const categories = CATEGORIES.EXPENSE
 
   /**
    * Load budgets and expenses on mount

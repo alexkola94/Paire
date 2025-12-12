@@ -245,7 +245,12 @@
     "loan": "Loan Payment",
     "internet": "Internet",
     "phone": "Phone",
-    "gym": "Gym/Fitness"
+    "gym": "Gym/Fitness",
+    "groceries": "Groceries",
+    "household": "Household",
+    "personal": "Personal Care",
+    "electronics": "Electronics",
+    "clothing": "Clothing"
   },
   "profile": {
     "title": "Profile",
@@ -539,6 +544,9 @@
     "inactive": "inactive",
     "overdueBills": "Overdue Bills",
     "dueSoon": "Due Soon",
+    "dueThisMonth": "Due This Month",
+    "paidThisMonth": "Paid This Month",
+    "futureBills": "Upcoming & Future",
     "allBills": "All Bills",
     "dueOn": "Due on",
     "today": "Today",
@@ -738,7 +746,9 @@
     "next": "Next",
     "page": "Page",
     "of": "of",
-    "loadMore": "Load More"
+    "loadMore": "Load More",
+    "showMore": "Show More",
+    "showLess": "Show Less"
   },
   "validation": {
     "required": "{{field}} is required",

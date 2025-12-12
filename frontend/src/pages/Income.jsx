@@ -304,7 +304,7 @@ function Income() {
             <div key={income.id} className="income-card card">
               <div className="income-header">
                 <div className="income-category">
-                  {t(`categories.${income.category}`)}
+                  {t(`categories.${(income.category || '').toLowerCase()}`)}
                 </div>
                 <div className="income-amount">
                   +{formatCurrency(income.amount)}
@@ -319,7 +319,11 @@ function Income() {
 
               <div className="income-date">
                 {format(new Date(income.date), 'MMMM dd, yyyy')}
-                {income.user_profiles && (
+                {income.paidBy === 'Bank' || income.isBankSynced ? (
+                  <span className="added-by">
+                    {' • ' + t('dashboard.bankConnection', 'Bank Connection')}
+                  </span>
+                ) : income.user_profiles && (
                   <span className="added-by">
                     {' • ' + t('dashboard.addedBy') + ' '}
                     {income.user_profiles.display_name}

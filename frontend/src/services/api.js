@@ -571,6 +571,12 @@ export const recurringBillService = {
     })
   },
 
+  async unmarkPaid(id) {
+    return await apiRequest(`/api/recurringbills/${id}/unmark-paid`, {
+      method: 'POST'
+    })
+  },
+
   async getUpcoming(days = 30) {
     return await apiRequest(`/api/recurringbills/upcoming?days=${days}`)
   },

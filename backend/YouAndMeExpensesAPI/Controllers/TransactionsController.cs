@@ -18,17 +18,20 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly AppDbContext _dbContext;
         private readonly ISupabaseService _supabaseService; // For storage only
         private readonly IAchievementService _achievementService;
+        private readonly IBudgetService _budgetService;
         private readonly ILogger<TransactionsController> _logger;
 
         public TransactionsController(
             AppDbContext dbContext,
             ISupabaseService supabaseService,
             IAchievementService achievementService,
+            IBudgetService budgetService,
             ILogger<TransactionsController> logger)
         {
             _dbContext = dbContext;
             _supabaseService = supabaseService;
             _achievementService = achievementService;
+            _budgetService = budgetService;
             _logger = logger;
         }
 
@@ -296,10 +299,21 @@ namespace YouAndMeExpensesAPI.Controllers
                     await _achievementService.CheckTransactionAchievementsAsync(userId.ToString());
                     await _achievementService.CheckMilestoneAchievementsAsync(userId.ToString());
                 }
+
                 catch (Exception ex)
                 {
                     // Log but don't fail the transaction creation if achievement check fails
                     _logger.LogWarning(ex, "Error checking achievements after transaction creation");
+                }
+
+                // Update budget spent amount
+                if (transaction.Type.ToLower() == "expense")
+                {
+                    await _budgetService.UpdateSpentAmountAsync(
+                        userId.ToString(), 
+                        transaction.Category, 
+                        transaction.Amount, 
+                        transaction.Date);
                 }
                 
                 return CreatedAtAction(
@@ -361,6 +375,11 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
 
                 // Update properties
+                var oldCategory = existingTransaction.Category;
+                var oldAmount = existingTransaction.Amount;
+                var oldDate = existingTransaction.Date;
+                var oldType = existingTransaction.Type;
+
                 existingTransaction.Type = transaction.Type;
                 existingTransaction.Amount = transaction.Amount;
                 existingTransaction.Category = transaction.Category;
@@ -389,7 +408,30 @@ namespace YouAndMeExpensesAPI.Controllers
                 
                 existingTransaction.UpdatedAt = DateTime.UtcNow;
 
+                existingTransaction.UpdatedAt = DateTime.UtcNow;
+
                 await _dbContext.SaveChangesAsync();
+
+                // Update budget spent amount (revert old, add new)
+                if (oldType.ToLower() == "expense")
+                {
+                    // Revert old
+                     await _budgetService.UpdateSpentAmountAsync(
+                        userId.ToString(), 
+                        oldCategory, 
+                        -oldAmount, 
+                        oldDate);
+                }
+
+                if (existingTransaction.Type.ToLower() == "expense")
+                {
+                    // Add new
+                    await _budgetService.UpdateSpentAmountAsync(
+                        userId.ToString(), 
+                        existingTransaction.Category, 
+                        existingTransaction.Amount, 
+                        existingTransaction.Date);
+                }
                 
                 return Ok(existingTransaction);
             }
@@ -429,6 +471,16 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 _dbContext.Transactions.Remove(transaction);
                 await _dbContext.SaveChangesAsync();
+
+                // Update budget spent amount (subtract erased transaction)
+                if (transaction.Type.ToLower() == "expense")
+                {
+                    await _budgetService.UpdateSpentAmountAsync(
+                        userId.ToString(), 
+                        transaction.Category, 
+                        -transaction.Amount, 
+                        transaction.Date);
+                }
 
                 return NoContent();
             }

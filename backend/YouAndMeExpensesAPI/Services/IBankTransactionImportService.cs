@@ -38,17 +38,6 @@ namespace YouAndMeExpensesAPI.Services
             DateTime? toDate = null,
             CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Maps a bank transaction to app transaction format
-        /// </summary>
-        /// <param name="bankTransaction">Bank transaction from Enable Banking</param>
-        /// <param name="userId">User ID</param>
-        /// <param name="accountId">Bank account ID</param>
-        /// <returns>App transaction</returns>
-        Transaction MapBankTransactionToAppTransaction(
-            BankTransaction bankTransaction,
-            string userId,
-            string accountId);
     }
 
     /// <summary>

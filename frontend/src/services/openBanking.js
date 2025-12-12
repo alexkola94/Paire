@@ -14,48 +14,54 @@ const getHeaders = () => {
 
 export const openBankingService = {
     /**
-     * Get list of available banks (ASPSPs) for a country
-     * @param {string} country - Two-letter ISo country code (default: FI)
+     * Create a Link Token for initializing Plaid Link
+     * @returns {string} The link_token
      */
-    getAspsps: async (country = 'FI') => {
+    createLinkToken: async () => {
         try {
-            const response = await fetch(`${getBackendUrl()}/api/open-banking/aspsps?country=${country}`, {
+            const response = await fetch(`${getBackendUrl()}/api/open-banking/link-token`, {
+                method: 'POST',
                 headers: getHeaders()
             })
 
-            if (!response.ok) throw new Error('Failed to fetch banks')
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.error || 'Failed to create link token')
+            }
 
             const data = await response.json()
-            return data.aspsps || []
+            return data.link_token
         } catch (error) {
-            console.error('Error getting banks:', error)
+            console.error('Error creating link token:', error)
             throw error
         }
     },
 
     /**
-     * Start authorization flow for a specific bank
-     * @param {string} bankName 
-     * @param {string} country 
-     * @returns {string} Authorization URL to redirect to
+     * Exchange public token for access token
+     * @param {string} publicToken 
+     * @param {object} metadata - Metadata from Plaid Link (institution name, etc.)
      */
-    startAuthorization: async (bankName, country) => {
+    exchangePublicToken: async (publicToken, metadata) => {
         try {
-            const response = await fetch(`${getBackendUrl()}/api/open-banking/login`, {
+            const response = await fetch(`${getBackendUrl()}/api/open-banking/exchange-token`, {
                 method: 'POST',
                 headers: getHeaders(),
-                body: JSON.stringify({ bankName, country })
+                body: JSON.stringify({
+                    publicToken,
+                    institutionId: metadata?.institution?.institution_id,
+                    institutionName: metadata?.institution?.name
+                })
             })
 
             if (!response.ok) {
                 const error = await response.json()
-                throw new Error(error.error || 'Failed to start authorization')
+                throw new Error(error.error || 'Failed to connect bank')
             }
 
-            const data = await response.json()
-            return data.authorizationUrl
+            return await response.json()
         } catch (error) {
-            console.error('Error starting authorization:', error)
+            console.error('Error exchanging token:', error)
             throw error
         }
     },
@@ -90,34 +96,10 @@ export const openBankingService = {
             })
 
             if (!response.ok) {
-                let errorMessage = 'Failed to disconnect'
-                try {
-                    const contentType = response.headers.get('content-type')
-                    if (contentType && contentType.includes('application/json')) {
-                        const error = await response.json()
-                        errorMessage = error.error || error.message || errorMessage
-                    } else {
-                        const text = await response.text()
-                        errorMessage = text || errorMessage
-                    }
-                } catch (parseError) {
-                    errorMessage = response.statusText || errorMessage
-                }
-                
-                if (response.status === 401) {
-                    errorMessage = 'Unauthorized. Please log in again.'
-                }
-                
-                throw new Error(errorMessage)
+                const error = await response.json()
+                throw new Error(error.error || 'Failed to disconnect')
             }
-            
-            // Try to parse JSON if there's content
-            const contentType = response.headers.get('content-type')
-            if (contentType && contentType.includes('application/json')) {
-                const data = await response.json()
-                return data
-            }
-            
+
             return true
         } catch (error) {
             console.error('Error disconnecting:', error)
@@ -137,37 +119,10 @@ export const openBankingService = {
             })
 
             if (!response.ok) {
-                let errorMessage = 'Failed to disconnect account'
-                try {
-                    const contentType = response.headers.get('content-type')
-                    if (contentType && contentType.includes('application/json')) {
-                        const error = await response.json()
-                        errorMessage = error.error || error.message || errorMessage
-                    } else {
-                        const text = await response.text()
-                        errorMessage = text || errorMessage
-                    }
-                } catch (parseError) {
-                    // If we can't parse the error, use status text
-                    errorMessage = response.statusText || errorMessage
-                }
-                
-                if (response.status === 401) {
-                    errorMessage = 'Unauthorized. Please log in again.'
-                } else if (response.status === 404) {
-                    errorMessage = 'Account not found'
-                }
-                
-                throw new Error(errorMessage)
+                const error = await response.json()
+                throw new Error(error.error || 'Failed to disconnect account')
             }
-            
-            // Try to parse JSON if there's content, otherwise just return true
-            const contentType = response.headers.get('content-type')
-            if (contentType && contentType.includes('application/json')) {
-                const data = await response.json()
-                return data
-            }
-            
+
             return true
         } catch (error) {
             console.error('Error disconnecting account:', error)

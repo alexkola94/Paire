@@ -436,7 +436,7 @@ function Expenses() {
             <div key={expense.id} className="expense-card card">
               <div className="expense-header">
                 <div className="expense-category">
-                  {t(`categories.${expense.category}`)}
+                  {t(`categories.${(expense.category || '').toLowerCase()}`)}
                 </div>
                 <div className="expense-amount">
                   {formatCurrency(expense.amount)}
@@ -451,7 +451,11 @@ function Expenses() {
 
               <div className="expense-date">
                 {format(new Date(expense.date), 'MMMM dd, yyyy')}
-                {expense.user_profiles && (
+                {expense.paidBy === 'Bank' || expense.isBankSynced ? (
+                  <span className="added-by">
+                    {' • ' + t('dashboard.bankConnection', 'Bank Connection')}
+                  </span>
+                ) : expense.user_profiles && (
                   <span className="added-by">
                     {' • ' + t('dashboard.addedBy') + ' '}
                     {expense.user_profiles.display_name}

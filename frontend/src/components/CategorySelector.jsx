@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CATEGORIES } from '../constants/categories'
 import {
   FiShoppingBag, FiTruck, FiHome, FiZap,
   FiFilm, FiHeart, FiBook, FiDollarSign,
@@ -148,12 +150,19 @@ function CategorySelector({
     return `rgba(${r}, ${g}, ${b}, ${opacity})`
   }
 
+
+
+  // State to handle show more/less
+  const [isExpanded, setIsExpanded] = useState(false)
+  const INITIAL_VISIBLE_COUNT = 12
+
   // Default categories if none provided
-  const defaultExpenseCategories = ['food', 'transport', 'utilities', 'entertainment', 'healthcare', 'shopping', 'education', 'other']
-  const defaultIncomeCategories = ['salary', 'freelance', 'investment', 'gift', 'other']
   const finalCategories = categories && categories.length > 0
     ? categories
-    : (type === 'expense' ? defaultExpenseCategories : defaultIncomeCategories)
+    : (type === 'income' ? CATEGORIES.INCOME : CATEGORIES.EXPENSE)
+
+  const visibleCategories = isExpanded ? finalCategories : finalCategories.slice(0, INITIAL_VISIBLE_COUNT)
+  const hasMore = finalCategories.length > INITIAL_VISIBLE_COUNT
 
   return (
     <div className="category-selector-wrapper">
@@ -169,7 +178,7 @@ function CategorySelector({
         aria-label={label || t('transaction.category')}
         aria-required={required}
       >
-        {finalCategories.map(category => {
+        {visibleCategories.map(category => {
           const isSelected = value === category
           const categoryColor = getColor(category)
 
@@ -239,6 +248,28 @@ function CategorySelector({
             </button>
           )
         })}
+
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="category-card show-more-btn"
+            style={{
+              '--category-color': '#666',
+              '--category-color-icon-bg': '#f0f0f0',
+              borderStyle: 'dashed',
+              borderWidth: '1px',
+              borderColor: '#ccc'
+            }}
+          >
+            <div className="category-icon" style={{ color: '#666', background: '#f5f5f5' }}>
+              {isExpanded ? <FiActivity style={{ transform: 'rotate(45deg)' }} size={20} /> : <FiMoreHorizontal size={20} />}
+            </div>
+            <span className="category-name">
+              {isExpanded ? t('common.showLess', 'Show Less') : t('common.showMore', 'Show More')}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Hidden input for form validation */}

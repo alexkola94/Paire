@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
+import { CATEGORIES } from '../constants/categories'
 import { useTranslation } from 'react-i18next'
 import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
   FiGrid, FiList, FiChevronLeft, FiChevronRight
 } from 'react-icons/fi'
-import { subMonths, subYears, subWeeks, addMonths, addYears, addWeeks, isValid } from 'date-fns'
+import { subMonths, subYears, subWeeks, addMonths, addYears, addWeeks, isValid, startOfMonth, endOfMonth, isSameMonth, isAfter, isBefore } from 'date-fns'
 import { recurringBillService, loanService, loanPaymentService } from '../services/api'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -56,18 +57,14 @@ function RecurringBills() {
   // Pagination State
   const [page, setPage] = useState(1)
 
-  // Bill categories
-  const categories = [
-    { value: 'utilities', label: t('recurringBills.categories.utilities'), icon: '⚡' },
-    { value: 'subscription', label: t('recurringBills.categories.subscription'), icon: '📺' },
-    { value: 'insurance', label: t('recurringBills.categories.insurance'), icon: '🛡️' },
-    { value: 'rent', label: t('recurringBills.categories.rent'), icon: '🏠' },
-    { value: 'loan', label: t('recurringBills.categories.loan'), icon: '💳' },
-    { value: 'internet', label: t('recurringBills.categories.internet'), icon: '🌐' },
-    { value: 'phone', label: t('recurringBills.categories.phone'), icon: '📱' },
-    { value: 'gym', label: t('recurringBills.categories.gym'), icon: '🏋️' },
-    { value: 'other', label: t('recurringBills.categories.other'), icon: '📋' }
-  ]
+
+
+  // Bill categories (using master list)
+  const categories = CATEGORIES.EXPENSE.map(cat => ({
+    value: cat,
+    label: t(`categories.${cat}`) || t(`recurringBills.categories.${cat}`) || cat.charAt(0).toUpperCase() + cat.slice(1),
+    icon: '📋' // Default icon, will be overridden by getCategoryIcon helper if needed or we can enhance this map later
+  }))
 
   const frequencies = [
     { value: 'weekly', label: t('recurringBills.frequencies.weekly') },
@@ -318,50 +315,8 @@ function RecurringBills() {
     try {
       setProcessingBillId(bill.id)
 
-      // 1. Revert Due Date with robust handling using date-fns
-      const currentDueDate = new Date(bill.nextDueDate || bill.next_due_date)
-
-      if (!isValid(currentDueDate)) {
-        throw new Error("Invalid current due date")
-      }
-
-      let previousDueDate;
-
-      if (bill.frequency === 'monthly') {
-        previousDueDate = subMonths(currentDueDate, 1)
-      } else if (bill.frequency === 'yearly') {
-        previousDueDate = subYears(currentDueDate, 1)
-      } else if (bill.frequency === 'weekly') {
-        previousDueDate = subWeeks(currentDueDate, 1)
-      } else if (bill.frequency === 'quarterly') {
-        previousDueDate = subMonths(currentDueDate, 3)
-      } else {
-        // Default fallback
-        previousDueDate = subMonths(currentDueDate, 1)
-      }
-
-      if (!isValid(previousDueDate)) {
-        throw new Error("Calculated invalid date")
-      }
-
-      console.log('Unmarking bill:', bill.name)
-      console.log('Current Due Date:', currentDueDate.toISOString())
-      console.log('New Due Date (Calculated):', previousDueDate.toISOString())
-
-      // Construct full update object to prevent backend from seeing "MinValue" for missing date fields
-      // and crashing if it tries to manipulate them.
-      const updatePayload = {
-        ...bill,
-        nextDueDate: previousDueDate.toISOString()
-      }
-
-      // Remove readonly/navigation fields that might cause issues if sent back
-      delete updatePayload.user_profiles
-      delete updatePayload.loan
-      delete updatePayload.id
-      delete updatePayload.userId
-
-      await recurringBillService.update(bill.id, updatePayload)
+      // 1. Revert Bill Status via API (Handles Date Revert + Expense Deletion)
+      await recurringBillService.unmarkPaid(bill.id)
 
       // 2. Revert Loan Payment (if applicable)
       const loanRefMatch = bill.notes && bill.notes.match(/\[LOAN_REF:([^\]]+)\]/)
@@ -385,9 +340,9 @@ function RecurringBills() {
 
       await loadData()
       setUnmarkModal({ isOpen: false, bill: null })
-      await loadData()
-      setUnmarkModal({ isOpen: false, bill: null })
-      alert(t('recurringBills.revertSuccess') || 'Bill payment reverted successfully')
+      // Show success animation or toast instead of alert
+      setShowSuccessAnimation(true)
+      // alert(t('recurringBills.revertSuccess') || 'Bill payment reverted successfully')
     } catch (error) {
       console.error('Error unmarking bill:', error)
       alert(t('recurringBills.errorUnmarking') || 'Failed to revert bill status.')
@@ -489,10 +444,45 @@ function RecurringBills() {
 
   // Separate active and inactive bills (handle both camelCase and snake_case)
   const activeBills = bills.filter(b => (b.isActive ?? b.is_active) !== false)
-  const overdueBills = activeBills.filter(b => isOverdue(b.nextDueDate || b.next_due_date))
-  const upcomingBills = activeBills.filter(b => isDueSoon(b.nextDueDate || b.next_due_date) && !isOverdue(b.nextDueDate || b.next_due_date))
-  const laterBills = activeBills.filter(b => !isDueSoon(b.nextDueDate || b.next_due_date) && !isOverdue(b.nextDueDate || b.next_due_date))
 
+  const today = new Date()
+  const currentMonthStart = startOfMonth(today)
+  const currentMonthEnd = endOfMonth(today)
+
+  // 1. Overdue: Due date is strictly before today (and not paid)
+  const overdueBills = activeBills.filter(b => isOverdue(b.nextDueDate || b.next_due_date))
+
+  // 2. To Pay This Month: Due date is within current month (Today to EndOfMonth)
+  // Exclude overdue (already handled)
+  const dueThisMonthBills = activeBills.filter(b => {
+    const dueDate = new Date(b.nextDueDate || b.next_due_date)
+    return isSameMonth(dueDate, today) && !isOverdue(b.nextDueDate || b.next_due_date)
+  })
+
+  // 3. Paid This Month: 
+  // Heuristic: Monthly bills where NextDueDate is in the future (Next Month)
+  // This implies the bill for 'Current Month' has been processed.
+  const paidThisMonthBills = activeBills.filter(b => {
+    const dueDate = new Date(b.nextDueDate || b.next_due_date)
+    // Only apply to Monthly/Weekly. Yearly is too sparse.
+    if (b.frequency !== 'monthly' && b.frequency !== 'weekly') return false
+
+    // If due date is after this month, it means this month is cleared
+    // But we also want to verify it represents a "recent" payment, not just a future bill.
+    // For now, "Next Month" is the best proxy for "Paid This Month".
+    return isAfter(dueDate, currentMonthEnd) && !isAfter(dueDate, addMonths(currentMonthEnd, 1))
+  })
+
+  // 4. Upcoming / Future: Everything else (Active but not in above categories)
+  const excludeIds = new Set([
+    ...overdueBills.map(b => b.id),
+    ...dueThisMonthBills.map(b => b.id),
+    ...paidThisMonthBills.map(b => b.id)
+  ])
+  const futureBills = activeBills.filter(b => !excludeIds.has(b.id))
+
+  // Update "laterBills" usage for pagination if needed, or just use futureBills
+  const laterBills = futureBills
   // Reset pagination when list changes
   useEffect(() => {
     setPage(1)
@@ -670,14 +660,14 @@ function RecurringBills() {
           </div>
         )}
 
-        {/* Upcoming Bills (Due Soon) */}
-        {upcomingBills.length > 0 && (
+        {/* 2. Due This Month (To Pay) */}
+        {dueThisMonthBills.length > 0 && (
           <div className="bills-section upcoming-section">
             <h2 className="section-title">
-              <FiClock /> {t('recurringBills.dueSoon')} ({upcomingBills.length})
+              <FiClock /> {t('recurringBills.dueThisMonth') || "Due This Month"} ({dueThisMonthBills.length})
             </h2>
             <div className="bills-grid">
-              {upcomingBills.map(bill => (
+              {dueThisMonthBills.map(bill => (
                 <BillCard
                   key={bill.id}
                   bill={bill}
@@ -698,11 +688,39 @@ function RecurringBills() {
           </div>
         )}
 
-        {/* Later Bills */}
-        {laterBills.length > 0 && (
+        {/* 3. Paid This Month (Done) */}
+        {paidThisMonthBills.length > 0 && (
+          <div className="bills-section paid-section">
+            <h2 className="section-title" style={{ color: 'var(--success-color)' }}>
+              <FiCheck /> {t('recurringBills.paidThisMonth') || "Paid This Month"} ({paidThisMonthBills.length})
+            </h2>
+            <div className="bills-grid" style={{ opacity: 0.8 }}>
+              {paidThisMonthBills.map(bill => (
+                <BillCard
+                  key={bill.id}
+                  bill={bill}
+                  onEdit={handleEdit}
+                  onDelete={openDeleteModal}
+                  onMarkPaid={handleMarkPaid}
+                  onUnmark={handleUnmarkPaid}
+                  isProcessing={processingBillId === bill.id}
+                  getCategoryIcon={getCategoryIcon}
+                  formatDueDate={formatDueDate}
+                  getDaysUntil={getDaysUntil}
+                  t={t}
+                  status="paid"
+                  formatCurrency={formatCurrency}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 4. Upcoming / Future Bills */}
+        {futureBills.length > 0 && (
           <div className="bills-section">
             <h2 className="section-title">
-              <FiCalendar /> {t('recurringBills.allBills')} ({laterBills.length})
+              <FiCalendar /> {t('recurringBills.futureBills') || "Upcoming & Future"} ({futureBills.length})
             </h2>
             <div className="bills-grid">
               {displayedLaterBills.map(bill => (

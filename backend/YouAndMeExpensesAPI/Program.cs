@@ -9,10 +9,11 @@ using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 using System;
 using System.IO;
+using Going.Plaid;
 
 // Disable reload on change to avoid inotify limits on Render.com
 // This MUST be set before CreateBuilder is called
-Environment.SetEnvironmentVariable("DOTNET_hostBuilder:reloadConfigOnChange", "false");
+System.Environment.SetEnvironmentVariable("DOTNET_hostBuilder:reloadConfigOnChange", "false");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -296,18 +297,46 @@ builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 // Register Achievement Service
 builder.Services.AddScoped<IAchievementService, AchievementService>();
 
+// Register Budget Service
+builder.Services.AddScoped<IBudgetService, BudgetService>();
+
 // =====================================================
 // Configure Enable Banking Open Banking Service
 // =====================================================
 
-// Configure Enable Banking settings
-builder.Services.Configure<EnableBankingSettings>(builder.Configuration.GetSection("EnableBanking"));
+// Configure Enable Banking settings (Deprecated)
+// builder.Services.Configure<EnableBankingSettings>(builder.Configuration.GetSection("EnableBanking"));
 
 // Register HTTP client factory for Enable Banking API calls
 builder.Services.AddHttpClient();
 
-// Register Enable Banking service
-builder.Services.AddScoped<IEnableBankingService, EnableBankingService>();
+// Register Enable Banking service (Deprecated)
+// builder.Services.AddScoped<IEnableBankingService, EnableBankingService>();
+
+// Register Plaid
+builder.Services.Configure<PlaidSettings>(builder.Configuration.GetSection("Plaid"));
+// Manual registration to ensure Environment mapping is correct without relying on PLaidOptions binding magic immediately
+builder.Services.AddSingleton<PlaidClient>(sp =>
+{
+    var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlaidSettings>>().Value;
+    var env = settings.Environment?.ToLower() switch
+    {
+        "production" => Going.Plaid.Environment.Production,
+        "development" => Going.Plaid.Environment.Development,
+        _ => Going.Plaid.Environment.Sandbox
+    };
+
+    return new PlaidClient(
+        Microsoft.Extensions.Options.Options.Create(new PlaidOptions
+        {
+            ClientId = settings.ClientId,
+            Secret = settings.Secret,
+            Environment = env,
+        }),
+        sp.GetRequiredService<IHttpClientFactory>()
+    );
+});
+builder.Services.AddScoped<IPlaidService, PlaidService>();
 
 // Register Bank Transaction Import Service
 builder.Services.AddScoped<IBankTransactionImportService, BankTransactionImportService>();

@@ -39,6 +39,14 @@ namespace YouAndMeExpensesAPI.Models
         public string[] Scopes { get; set; } = new[] { "accounts", "details", "transactions" };
     }
 
+    public class PlaidSettings
+    {
+        public string ClientId { get; set; } = string.Empty;
+        public string Secret { get; set; } = string.Empty;
+        public string Environment { get; set; } = "Sandbox";
+        public string RedirectUri { get; set; } = string.Empty;
+    }
+
     /// <summary>
     /// ASPSP (Account Servicing Payment Service Provider) - i.e., Bank
     /// </summary>
