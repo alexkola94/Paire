@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle, FiPower, FiCalendar } from 'react-icons/fi'
+import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle, FiPower, FiCalendar, FiDatabase } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
 import { getBackendUrl } from '../utils/getBackendUrl'
@@ -610,16 +610,16 @@ function Profile() {
         <BankConnections />
       </div>
 
-      {/* Danger Zone - Clear All Data */}
-      <div className="card danger-zone">
+      {/* Data Management - Clear All Data */}
+      <div className="card data-management">
         <div className="card-header">
           <h2>
-            <FiAlertTriangle size={24} />
-            {t('profile.clearData.dangerZone')}
+            <FiDatabase size={24} />
+            {t('profile.clearData.title', 'Data Management')}
           </h2>
         </div>
 
-        <div className="danger-zone-content">
+        <div className="data-management-content">
           {clearDataRequest && clearDataRequest.status === 'pending' ? (
             <div className="pending-request-info">
               <FiAlertTriangle size={24} className="warning-icon" />
@@ -638,30 +638,19 @@ function Profile() {
               </div>
             </div>
           ) : (
-            <>
-              <div className="danger-warning">
-                <FiAlertTriangle />
-                <div>
-                  <h3>{t('profile.clearData.warning')}</h3>
-                  <p>{t('profile.clearData.warningDescription')}</p>
-                  <ul>
-                    <li>{t('profile.clearData.deleteTransactions')}</li>
-                    <li>{t('profile.clearData.deleteLoans')}</li>
-                    <li>{t('profile.clearData.deleteBudgets')}</li>
-                    <li>{t('profile.clearData.deleteGoals')}</li>
-                    <li>{t('profile.clearData.deletePartnership')}</li>
-                  </ul>
-                </div>
-              </div>
+            <div className="data-actions">
+              <p className="section-description">
+                {t('profile.clearData.description', 'Manage your account data and settings.')}
+              </p>
 
               <button
                 onClick={() => setShowClearDataModal(true)}
-                className="btn btn-danger"
+                className="btn btn-outline-danger"
               >
                 <FiTrash2 size={18} />
                 {t('profile.clearData.buttonText')}
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>

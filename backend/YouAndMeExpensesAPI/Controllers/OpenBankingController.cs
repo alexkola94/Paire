@@ -176,14 +176,94 @@ namespace YouAndMeExpensesAPI.Controllers
                     // Ideally call Plaid to remove Item here
                 }
 
+                // Get all accounts for this user
                 var accounts = await _context.Set<StoredBankAccount>().Where(a => a.UserId == userId).ToListAsync();
+                var accountIds = accounts.Select(a => a.AccountId).ToList();
+
+                // Delete all transactions associated with these accounts
+                if (accountIds.Any())
+                {
+                    var transactionsToDelete = await _context.Transactions
+                        .Where(t => t.UserId == userId && accountIds.Contains(t.BankAccountId))
+                        .ToListAsync();
+                    
+                    if (transactionsToDelete.Any())
+                    {
+                        _context.Transactions.RemoveRange(transactionsToDelete);
+                    }
+                }
+
+                // Delete accounts
                 _context.Set<StoredBankAccount>().RemoveRange(accounts);
+                
+                // Delete connections
+                if (connections.Any())
+                {
+                    _context.Set<BankConnection>().RemoveRange(connections);
+                }
 
                 await _context.SaveChangesAsync();
                 return Ok(new { success = true });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error disconnecting all accounts");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpDelete("accounts/{accountId}")]
+        [Authorize]
+        public async Task<IActionResult> DisconnectAccount(Guid accountId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                
+                // Find the account
+                var account = await _context.Set<StoredBankAccount>()
+                    .FirstOrDefaultAsync(a => a.Id == accountId && a.UserId == userId);
+
+                if (account == null)
+                {
+                    return NotFound(new { error = "Account not found" });
+                }
+
+                // Delete transactions associated with this account (using Plaid AccountId string)
+                var transactionsToDelete = await _context.Transactions
+                    .Where(t => t.UserId == userId && t.BankAccountId == account.AccountId)
+                    .ToListAsync();
+
+                if (transactionsToDelete.Any())
+                {
+                    _context.Transactions.RemoveRange(transactionsToDelete);
+                }
+
+                // Remove the account
+                _context.Set<StoredBankAccount>().Remove(account);
+
+                // Check if connection has any other accounts
+                var otherAccountsForConnection = await _context.Set<StoredBankAccount>()
+                    .AnyAsync(a => a.BankConnectionId == account.BankConnectionId && a.Id != accountId);
+
+                if (!otherAccountsForConnection)
+                {
+                    // If no other accounts, delete the connection too
+                    var connection = await _context.Set<BankConnection>()
+                        .FirstOrDefaultAsync(c => c.Id == account.BankConnectionId);
+                    
+                    if (connection != null)
+                    {
+                        _context.Set<BankConnection>().Remove(connection);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error disconnecting account {AccountId}", accountId);
                 return StatusCode(500, new { error = ex.Message });
             }
         }
