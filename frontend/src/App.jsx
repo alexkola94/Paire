@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect, useRef, Suspense, lazy } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { lazyWithRetry } from './utils/lazyWithRetry'
 import { authService } from './services/auth'
 import { sessionManager } from './services/sessionManager'
 import { isTokenExpired } from './utils/tokenUtils'
@@ -10,29 +11,29 @@ import { ToastProvider } from './components/Toast'
 
 // Lazy load pages for code splitting and faster initial load
 // Only load components when they're actually needed
-const Login = lazy(() => import('./pages/Login'))
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
-const EmailConfirmation = lazy(() => import('./pages/EmailConfirmation'))
-const ResetPassword = lazy(() => import('./pages/ResetPassword'))
-const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const Expenses = lazy(() => import('./pages/Expenses'))
-const Income = lazy(() => import('./pages/Income'))
-const AllTransactions = lazy(() => import('./pages/AllTransactions'))
-const Loans = lazy(() => import('./pages/Loans'))
-const Profile = lazy(() => import('./pages/Profile'))
-const Analytics = lazy(() => import('./pages/Analytics'))
-const Partnership = lazy(() => import('./pages/Partnership'))
-const Budgets = lazy(() => import('./pages/Budgets'))
-const ReminderSettings = lazy(() => import('./pages/ReminderSettings'))
-const SavingsGoals = lazy(() => import('./pages/SavingsGoals'))
-const RecurringBills = lazy(() => import('./pages/RecurringBills'))
-const ShoppingLists = lazy(() => import('./pages/ShoppingLists'))
-const EconomicNews = lazy(() => import('./pages/EconomicNews'))
-const BankCallback = lazy(() => import('./pages/BankCallback'))
-const Achievements = lazy(() => import('./pages/Achievements'))
-const CurrencyCalculator = lazy(() => import('./pages/CurrencyCalculator'))
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const Login = lazyWithRetry(() => import('./pages/Login'))
+const ForgotPassword = lazyWithRetry(() => import('./pages/ForgotPassword'))
+const EmailConfirmation = lazyWithRetry(() => import('./pages/EmailConfirmation'))
+const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'))
+const AcceptInvitation = lazyWithRetry(() => import('./pages/AcceptInvitation'))
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'))
+const Expenses = lazyWithRetry(() => import('./pages/Expenses'))
+const Income = lazyWithRetry(() => import('./pages/Income'))
+const AllTransactions = lazyWithRetry(() => import('./pages/AllTransactions'))
+const Loans = lazyWithRetry(() => import('./pages/Loans'))
+const Profile = lazyWithRetry(() => import('./pages/Profile'))
+const Analytics = lazyWithRetry(() => import('./pages/Analytics'))
+const Partnership = lazyWithRetry(() => import('./pages/Partnership'))
+const Budgets = lazyWithRetry(() => import('./pages/Budgets'))
+const ReminderSettings = lazyWithRetry(() => import('./pages/ReminderSettings'))
+const SavingsGoals = lazyWithRetry(() => import('./pages/SavingsGoals'))
+const RecurringBills = lazyWithRetry(() => import('./pages/RecurringBills'))
+const ShoppingLists = lazyWithRetry(() => import('./pages/ShoppingLists'))
+const EconomicNews = lazyWithRetry(() => import('./pages/EconomicNews'))
+const BankCallback = lazyWithRetry(() => import('./pages/BankCallback'))
+const Achievements = lazyWithRetry(() => import('./pages/Achievements'))
+const CurrencyCalculator = lazyWithRetry(() => import('./pages/CurrencyCalculator'))
+const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
 
 
 // Layout - Keep synchronous as it's always needed
