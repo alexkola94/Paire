@@ -319,25 +319,42 @@ builder.Services.Configure<PlaidSettings>(builder.Configuration.GetSection("Plai
 // Add fallback for Environment Variables (Render.com often uses SNAKE_CASE)
 builder.Services.PostConfigure<PlaidSettings>(settings =>
 {
+    // 1. Try PLAID_CLIENT_ID (Best Practice Snake Case)
     if (string.IsNullOrEmpty(settings.ClientId))
     {
-        settings.ClientId = Environment.GetEnvironmentVariable("PLAID_CLIENT_ID") ?? settings.ClientId;
+        settings.ClientId = Environment.GetEnvironmentVariable("PLAID_CLIENT_ID");
+    }
+    // 2. Try ClientId (User's current Render config)
+    if (string.IsNullOrEmpty(settings.ClientId))
+    {
+         settings.ClientId = Environment.GetEnvironmentVariable("ClientId");
     }
     
+    // 1. Try PLAID_SECRET
     if (string.IsNullOrEmpty(settings.Secret))
     {
-        settings.Secret = Environment.GetEnvironmentVariable("PLAID_SECRET") ?? settings.Secret;
+        settings.Secret = Environment.GetEnvironmentVariable("PLAID_SECRET");
+    }
+    // 2. Try Secret (User's current Render config)
+    if (string.IsNullOrEmpty(settings.Secret))
+    {
+        settings.Secret = Environment.GetEnvironmentVariable("Secret");
     }
     
-    // Check for environment variable override
-    var envVar = Environment.GetEnvironmentVariable("PLAID_ENV") ?? Environment.GetEnvironmentVariable("PLAID_ENVIRONMENT");
+    // Environment override
+    var envVar = Environment.GetEnvironmentVariable("PLAID_ENV") 
+                 ?? Environment.GetEnvironmentVariable("PLAID_ENVIRONMENT")
+                 ?? Environment.GetEnvironmentVariable("Environment"); // User's config
+                 
     if (!string.IsNullOrEmpty(envVar))
     {
         settings.Environment = envVar;
     }
     
-    // Check for RedirectUri variable
-    var redirectUri = Environment.GetEnvironmentVariable("PLAID_REDIRECT_URI");
+    // RedirectUri override
+    var redirectUri = Environment.GetEnvironmentVariable("PLAID_REDIRECT_URI")
+                      ?? Environment.GetEnvironmentVariable("RedirectUri"); // User's config
+                      
     if (!string.IsNullOrEmpty(redirectUri))
     {
         settings.RedirectUri = redirectUri;
