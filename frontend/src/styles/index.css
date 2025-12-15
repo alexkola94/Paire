@@ -50,6 +50,7 @@
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-xl: 32px;
+  --radius-full: 50%;
 
   /* Spacing */
   --spacing-xs: 4px;

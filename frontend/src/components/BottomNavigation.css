@@ -140,8 +140,10 @@
 
 /* FAB Menu Styles */
 .fab-menu {
-    position: absolute;
-    bottom: 70px;
+    position: fixed;
+    /* Portal move: Fixed to viewport */
+    bottom: calc(85px + env(safe-area-inset-bottom));
+    /* Sit above navbar */
     left: 50%;
     transform: translateX(-50%) scale(0);
     display: flex;

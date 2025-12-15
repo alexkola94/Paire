@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import ReactDOM from 'react-dom'
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday } from 'date-fns'
 import { FiCalendar, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
@@ -13,6 +14,7 @@ const DatePicker = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const [currentMonth, setCurrentMonth] = useState(new Date())
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 })
     const containerRef = useRef(null)
     const { t } = useTranslation()
 
@@ -23,19 +25,28 @@ const DatePicker = ({
         }
     }, [selected])
 
-    // Close when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
-                setIsOpen(false)
+    // Update position when opening
+    useLayoutEffect(() => {
+        if (isOpen && containerRef.current) {
+            const updatePosition = () => {
+                const rect = containerRef.current.getBoundingClientRect()
+                setCoords({
+                    top: rect.bottom + window.scrollY + 8, // Gap
+                    left: rect.left + window.scrollX,
+                    width: rect.width
+                })
+            }
+
+            updatePosition()
+            window.addEventListener('resize', updatePosition)
+            window.addEventListener('scroll', updatePosition, true) // Capture scroll to update
+
+            return () => {
+                window.removeEventListener('resize', updatePosition)
+                window.removeEventListener('scroll', updatePosition, true)
             }
         }
-
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-        }
-    }, [])
+    }, [isOpen])
 
     const handleDateClick = (date) => {
         onChange(date)
@@ -88,11 +99,6 @@ const DatePicker = ({
         const endDate = endOfWeek(monthEnd)
 
         const dateFormat = "d"
-        const rows = []
-        let days = []
-        let day = startDate
-        let formattedDate = ""
-
         const dayRange = eachDayOfInterval({
             start: startDate,
             end: endDate
@@ -148,11 +154,23 @@ const DatePicker = ({
                 )}
             </div>
 
-            {isOpen && (
-                <div className="calendar-popup">
-                    {renderHeader()}
-                    {renderCells()}
-                </div>
+            {isOpen && ReactDOM.createPortal(
+                <>
+                    <div className="date-picker-backdrop" onClick={() => setIsOpen(false)} />
+                    <div
+                        className="calendar-popup"
+                        style={{
+                            // Desktop uses calculated coords, Mobile overrides via CSS
+                            '--desktop-top': `${coords.top}px`,
+                            '--desktop-left': `${coords.left}px`
+                        }}
+                        onClick={e => e.stopPropagation()} // Prevent closing when clicking inside
+                    >
+                        {renderHeader()}
+                        {renderCells()}
+                    </div>
+                </>,
+                document.body
             )}
         </div>
     )

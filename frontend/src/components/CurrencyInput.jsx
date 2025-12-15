@@ -44,8 +44,10 @@ function CurrencyInput({
    */
   const parseCurrency = (str) => {
     if (!str) return ''
+    // Replace commas with dots to support both formats
+    const normalized = str.replace(/,/g, '.')
     // Remove all non-digit characters except decimal point
-    const cleaned = str.replace(/[^\d.]/g, '')
+    const cleaned = normalized.replace(/[^\d.]/g, '')
     // Handle multiple decimal points
     const parts = cleaned.split('.')
     if (parts.length > 2) {

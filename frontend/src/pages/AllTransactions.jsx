@@ -18,6 +18,8 @@ import TransactionForm from '../components/TransactionForm' // Correct import
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal' // Add Modal
 import SuccessAnimation from '../components/SuccessAnimation'
+import SearchInput from '../components/SearchInput'
+import DatePicker from '../components/DatePicker'
 import './AllTransactions.css'
 
 /**
@@ -28,8 +30,16 @@ import './AllTransactions.css'
 function AllTransactions() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+
+  // Data State
   const [loading, setLoading] = useState(true)
-  const [transactions, setTransactions] = useState([])
+  const [allTransactions, setAllTransactions] = useState([]) // Store all fetched transactions
+  const [displayedTransactions, setDisplayedTransactions] = useState([]) // Transactions for current page
+
+  // Filter State
+  const [searchQuery, setSearchQuery] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   // Edit/Delete State
   const [showForm, setShowForm] = useState(false)
@@ -46,36 +56,87 @@ function AllTransactions() {
 
   /**
    * Fetch all transactions (both income and expenses)
-   * Memoized with useCallback to prevent unnecessary re-renders
+   * Fetches EVERYTHING once, then filters locally
    */
   const loadTransactions = useCallback(async (background = false) => {
     try {
       if (!background) setLoading(true)
-      // Fetch all transactions without type filter to get both income and expenses
-      const data = await transactionService.getAll({
-        page: page,
-        pageSize: PAGE_SIZE
-      })
 
-      if (data.items) {
-        setTransactions(data.items)
-        setTotalPages(data.totalPages)
-        setTotalItems(data.totalCount)
-      } else {
-        // Fallback for non-paged response (should not happen with updated backend)
-        setTransactions(data)
-        setTotalPages(1)
-        setTotalItems(data.length)
-      }
+      // Fetch ALL transactions (no pagination params handled by backend implies all, or we request large size)
+      // Assuming existing API supports getting all if no page param, or we follow Expenses.jsx pattern
+      // Expenses.jsx source: transactionService.getAll({ type: 'expense' }) -> returns all
+
+      // We want BOTH types, so we pass empty object or specific flag if needed. 
+      // Based on original code: transactionService.getAll({ page, pageSize }) 
+      // We will now call it without page/pageSize to get all.
+
+      const data = await transactionService.getAll({})
+
+      // Handle response (array or paged object fallback)
+      const items = Array.isArray(data) ? data : (data.items || [])
+
+      setAllTransactions(items)
+      // Filter/Pagination will run via useEffect
+
     } catch (error) {
       console.error('❌ Error loading transactions:', error)
     } finally {
       if (!background) setLoading(false)
     }
-  }, [page]) // Re-run when page changes
+  }, [])
 
   /**
-   * Load transactions on component mount and page change
+   * Handle Search & Pagination Effect
+   * Runs whenever allTransactions, searchQuery, dates, or page changes
+   */
+  useEffect(() => {
+    // 1. Filter
+    let result = allTransactions
+
+    // Text Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(transaction =>
+        (transaction.description && transaction.description.toLowerCase().includes(query)) ||
+        (transaction.category && transaction.category.toLowerCase().includes(query)) ||
+        (transaction.amount && transaction.amount.toString().includes(query)) ||
+        (transaction.type && t(`common.${transaction.type}`).toLowerCase().includes(query))
+      )
+    }
+
+    // Date Filter
+    if (startDate) {
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      result = result.filter(transaction => new Date(transaction.date) >= start)
+    }
+
+    if (endDate) {
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      result = result.filter(transaction => new Date(transaction.date) <= end)
+    }
+
+    setTotalItems(result.length)
+    setTotalPages(Math.ceil(result.length / PAGE_SIZE) || 1)
+
+    // 2. Paginate
+    const startIndex = (page - 1) * PAGE_SIZE
+    const paginated = result.slice(startIndex, startIndex + PAGE_SIZE)
+    setDisplayedTransactions(paginated)
+
+  }, [allTransactions, searchQuery, page, startDate, endDate, t])
+
+  /**
+   * Handle search input
+   */
+  const handleSearch = (query) => {
+    setSearchQuery(query)
+    setPage(1) // Reset to first page
+  }
+
+  /**
+   * Load transactions on component mount
    */
   useEffect(() => {
     loadTransactions()
@@ -113,7 +174,6 @@ function AllTransactions() {
       setFormLoading(true)
 
       // Delete attachment if exists (need to fetch details first if not in list, but usually ok)
-      // Ideally we should check transaction.attachment_path, but let's skip for now or assume simple delete
       await transactionService.delete(transactionId)
 
       await loadTransactions(true)
@@ -199,15 +259,66 @@ function AllTransactions() {
         </div>
       </div>
 
+      {/* Search and Filter Bar */}
+      <div className="search-filter-container" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div className="search-wrapper" style={{ flexGrow: 1 }}>
+          <SearchInput
+            onSearch={handleSearch}
+            placeholder={t('common.search', 'Search...')}
+          />
+        </div>
+
+        <div className="date-filters" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <DatePicker
+            selected={startDate}
+            onChange={(date) => {
+              setStartDate(date ? date.toISOString() : '')
+              setPage(1)
+            }}
+            placeholder={t('common.startDate', 'Start Date')}
+            className="date-picker-custom"
+          />
+
+          <DatePicker
+            selected={endDate}
+            onChange={(date) => {
+              setEndDate(date ? date.toISOString() : '')
+              setPage(1)
+            }}
+            placeholder={t('common.endDate', 'End Date')}
+            className="date-picker-custom"
+          />
+
+          {(startDate || endDate) && (
+            <button
+              onClick={() => {
+                setStartDate('')
+                setEndDate('')
+                setPage(1)
+              }}
+              className="btn-icon-clear"
+              title={t('common.clearDates', 'Clear dates')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+            >
+              <FiTrash2 />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Transactions List */}
-      {transactions.length === 0 ? (
+      {allTransactions.length === 0 && !loading ? (
         <div className="card empty-state">
           <p>{t('allTransactions.noTransactions')}</p>
+        </div>
+      ) : displayedTransactions.length === 0 && !loading ? (
+        <div className="card empty-state">
+          <p>{t('common.noResults', 'No transactions found matching your search.')}</p>
         </div>
       ) : (
         <div className="card transactions-container">
           <div className="transactions-list">
-            {transactions.map((transaction) => (
+            {displayedTransactions.map((transaction) => (
               <TransactionItem
                 key={transaction.id}
                 transaction={transaction}

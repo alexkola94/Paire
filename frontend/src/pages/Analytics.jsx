@@ -272,7 +272,7 @@ function Analytics() {
         setComparativeAnalytics(null)
       }
     } catch (error) {
-      console.error('Error loading analytics:', error)
+      // Silent error handling for analytics loading
     } finally {
       setLoading(false)
     }

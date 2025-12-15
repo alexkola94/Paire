@@ -70,12 +70,15 @@
     color: var(--text-secondary);
 }
 
-/* Calendar Popup */
+/* Calendar Popup (Portal) */
 .calendar-popup {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    z-index: 1000;
+    position: fixed;
+    /* Portal is in body */
+    /* Desktop defaults (calculated props) */
+    top: var(--desktop-top, auto);
+    left: var(--desktop-left, auto);
+    z-index: 1100;
+
     background: var(--bg-secondary);
     border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: var(--shadow-lg);
@@ -83,6 +86,19 @@
     padding: 16px;
     width: 280px;
     animation: fadeIn 0.2s ease-out;
+}
+
+/* Backdrop for clicking outside (Portal) */
+.date-picker-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1099;
+    /* Below popup, above page */
+    background: transparent;
+    /* Or rgba(0,0,0,0.1) if dimming desired */
 }
 
 .calendar-header {
@@ -182,4 +198,24 @@
 
 [data-theme='dark'] .calendar-day:hover:not(.disabled) {
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile Responsive - Center Modal */
+@media (max-width: 768px) {
+    .calendar-popup {
+        /* Force center on mobile, ignore desktop positioning */
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 320px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--glass-border);
+    }
+
+    /* Optional: Add dimming on mobile to focus attention */
+    .date-picker-backdrop {
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+    }
 }

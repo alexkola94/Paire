@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import {
     FiHome,
     FiTrendingDown,
@@ -6,7 +7,7 @@ import {
     FiUser,
     FiPlus
 } from 'react-icons/fi'
-import { memo, useState } from 'react'
+import { memo, useState, useEffect } from 'react'
 import './BottomNavigation.css'
 import { useTranslation } from 'react-i18next'
 
@@ -33,40 +34,51 @@ const BottomNavigation = () => {
 
                 {/* Floating Action Button (FAB) replacement for middle item */}
                 <div className="nav-item fab-container">
-                    <div className={`fab-menu ${showFabMenu ? 'open' : ''}`}>
-                        <NavLink
-                            to="/income?action=add"
-                            className="fab-menu-item income"
-                            onClick={() => setShowFabMenu(false)}
-                        >
-                            <FiTrendingUp size={20} />
-                            <span>{t('income.addIncome')}</span>
-                        </NavLink>
-                        <NavLink
-                            to="/expenses?action=add"
-                            className="fab-menu-item expense"
-                            onClick={() => setShowFabMenu(false)}
-                        >
-                            <FiTrendingDown size={20} />
-                            <span>{t('expenses.addExpense')}</span>
-                        </NavLink>
-                    </div>
+                    {/* FAB Menu - Rendered in Portal to sit above backdrop */}
+                    {createPortal(
+                        <div className={`fab-menu ${showFabMenu ? 'open' : ''}`}>
+                            <NavLink
+                                to="/income?action=add"
+                                className="fab-menu-item income"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <FiTrendingUp size={20} />
+                                <span>{t('income.addIncome')}</span>
+                            </NavLink>
+                            <NavLink
+                                to="/expenses?action=add"
+                                className="fab-menu-item expense"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <FiTrendingDown size={20} />
+                                <span>{t('expenses.addExpense')}</span>
+                            </NavLink>
+                        </div>,
+                        document.body
+                    )}
 
                     <button
                         className={`fab-button ${showFabMenu ? 'active' : ''}`}
-                        onClick={() => setShowFabMenu(!showFabMenu)}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setShowFabMenu(!showFabMenu)
+                        }}
                         aria-label="Quick Add"
                         aria-expanded={showFabMenu}
                     >
                         <FiPlus size={28} />
                     </button>
 
-                    {/* Backdrop to close menu when clicking outside */}
-                    {showFabMenu && (
+                    {/* Backdrop to close menu when clicking outside - Rendered in Portal */}
+                    {showFabMenu && createPortal(
                         <div
                             className="fab-backdrop"
-                            onClick={() => setShowFabMenu(false)}
-                        />
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setShowFabMenu(false)
+                            }}
+                        />,
+                        document.body
                     )}
                 </div>
 
