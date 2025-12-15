@@ -322,29 +322,29 @@ builder.Services.PostConfigure<PlaidSettings>(settings =>
     // 1. Try PLAID_CLIENT_ID (Best Practice Snake Case)
     if (string.IsNullOrEmpty(settings.ClientId))
     {
-        settings.ClientId = Environment.GetEnvironmentVariable("PLAID_CLIENT_ID");
+        settings.ClientId = System.Environment.GetEnvironmentVariable("PLAID_CLIENT_ID");
     }
     // 2. Try ClientId (User's current Render config)
     if (string.IsNullOrEmpty(settings.ClientId))
     {
-         settings.ClientId = Environment.GetEnvironmentVariable("ClientId");
+         settings.ClientId = System.Environment.GetEnvironmentVariable("ClientId");
     }
     
     // 1. Try PLAID_SECRET
     if (string.IsNullOrEmpty(settings.Secret))
     {
-        settings.Secret = Environment.GetEnvironmentVariable("PLAID_SECRET");
+        settings.Secret = System.Environment.GetEnvironmentVariable("PLAID_SECRET");
     }
     // 2. Try Secret (User's current Render config)
     if (string.IsNullOrEmpty(settings.Secret))
     {
-        settings.Secret = Environment.GetEnvironmentVariable("Secret");
+        settings.Secret = System.Environment.GetEnvironmentVariable("Secret");
     }
     
     // Environment override
-    var envVar = Environment.GetEnvironmentVariable("PLAID_ENV") 
-                 ?? Environment.GetEnvironmentVariable("PLAID_ENVIRONMENT")
-                 ?? Environment.GetEnvironmentVariable("Environment"); // User's config
+    var envVar = System.Environment.GetEnvironmentVariable("PLAID_ENV") 
+                 ?? System.Environment.GetEnvironmentVariable("PLAID_ENVIRONMENT")
+                 ?? System.Environment.GetEnvironmentVariable("Environment"); // User's config
                  
     if (!string.IsNullOrEmpty(envVar))
     {
@@ -352,8 +352,8 @@ builder.Services.PostConfigure<PlaidSettings>(settings =>
     }
     
     // RedirectUri override
-    var redirectUri = Environment.GetEnvironmentVariable("PLAID_REDIRECT_URI")
-                      ?? Environment.GetEnvironmentVariable("RedirectUri"); // User's config
+    var redirectUri = System.Environment.GetEnvironmentVariable("PLAID_REDIRECT_URI")
+                      ?? System.Environment.GetEnvironmentVariable("RedirectUri"); // User's config
                       
     if (!string.IsNullOrEmpty(redirectUri))
     {
@@ -363,7 +363,22 @@ builder.Services.PostConfigure<PlaidSettings>(settings =>
 // Manual registration to ensure Environment mapping is correct without relying on PLaidOptions binding magic immediately
 builder.Services.AddSingleton<PlaidClient>(sp =>
 {
+    var logger = sp.GetRequiredService<ILogger<Program>>();
     var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlaidSettings>>().Value;
+    
+    // DEBUG LOGGING
+    logger.LogInformation("--- PLAID CONFIGURATION DIAGNOSTICS ---");
+    logger.LogInformation($"Settings ClientId Present: {!string.IsNullOrEmpty(settings.ClientId)}");
+    logger.LogInformation($"Settings Secret Present: {!string.IsNullOrEmpty(settings.Secret)}");
+    logger.LogInformation($"Settings Environment: {settings.Environment}");
+    
+    // Check Env Vars directly
+    var envClientId = System.Environment.GetEnvironmentVariable("ClientId");
+    var envPlaidClientId = System.Environment.GetEnvironmentVariable("PLAID_CLIENT_ID");
+    logger.LogInformation($"Env 'ClientId': {(!string.IsNullOrEmpty(envClientId) ? "Found" : "Missing")}");
+    logger.LogInformation($"Env 'PLAID_CLIENT_ID': {(!string.IsNullOrEmpty(envPlaidClientId) ? "Found" : "Missing")}");
+    logger.LogInformation("---------------------------------------");
+
     var env = settings.Environment?.ToLower() switch
     {
         "production" => Going.Plaid.Environment.Production,
