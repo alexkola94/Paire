@@ -321,7 +321,7 @@ function Income() {
                 {format(new Date(income.date), 'MMMM dd, yyyy')}
                 {income.paidBy === 'Bank' || income.isBankSynced ? (
                   <span className="added-by">
-                    {' • ' + t('dashboard.bankConnection', 'Bank Connection')}
+                    {' • ' + t('dashboard.bankConnection', 'Imported from Bank')}
                   </span>
                 ) : income.user_profiles && (
                   <span className="added-by">

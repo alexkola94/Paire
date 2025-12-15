@@ -563,7 +563,7 @@ function Expenses() {
                 {format(new Date(expense.date), 'MMMM dd, yyyy')}
                 {expense.paidBy === 'Bank' || expense.isBankSynced ? (
                   <span className="added-by">
-                    {' • ' + t('dashboard.bankConnection', 'Bank Connection')}
+                    {' • ' + t('dashboard.bankConnection', 'Imported from Bank')}
                   </span>
                 ) : expense.user_profiles && (
                   <span className="added-by">

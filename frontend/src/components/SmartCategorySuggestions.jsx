@@ -19,7 +19,7 @@ function SmartCategorySuggestions({
   useEffect(() => {
     // Show suggestions if we have them and no category is selected
     setIsVisible(
-      suggestedCategories.length > 0 && 
+      suggestedCategories.length > 0 &&
       !currentCategory &&
       suggestedCategories.length > 0
     )
@@ -67,7 +67,7 @@ function SmartCategorySuggestions({
             onClick={() => handleSelect(category)}
             className="smart-category-item"
           >
-            {t(`categories.${category}`)}
+            {t(`categories.${(category || '').toLowerCase()}`)}
           </button>
         ))}
       </div>

@@ -169,73 +169,95 @@ namespace YouAndMeExpensesAPI.Services
                     foreach (var page in document.GetPages())
                     {
                         var text = page.Text;
-                        // Split by lines based on typical PDF coordinate sorting or raw text (PdfPig returns text in order)
-                        // A simple line split 'might' work if the PDF is simple text.
-                        // Better approach: Regex over the entire page text or line by line
-                        
                         var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
                         foreach (var line in lines)
                         {
-                            // Heuristic: Look for lines that contain a Date and a Money Amount
-                            // Date formats: dd/MM/yyyy, dd-MM-yyyy, d/M/yy
-                            // Amount formats: 1.000,00 or 1,000.00 or -12,50
+                            _logger.LogInformation("Processing PDF line of length {Length}", line.Length);
+                            // The PDF text extraction often concatenates multiple transactions into a single line.
+                            // We use a regex to find all occurrences of the transaction pattern:
+                            // StartDate (dd/MM) + Description + Amount (Greek format) + EndDate (dd/MM/yy)
                             
-                            // 1. Extract Date
-                            var dateMatch = Regex.Match(line, @"\b(\d{1,2}[/\.-]\d{1,2}[/\.-]\d{2,4})\b");
-                            if (!dateMatch.Success) continue;
-
-                            if (!TryStandardDateParse(dateMatch.Value, out DateTime date)) continue;
-
-                            // 2. Extract Amount(s)
-                            // Look for numbers with at least one decimal separator (comma or dot) and 2 digits likely at the end?
-                            // This is tricky. Let's look for things that look like amounts.
+                            // Regex Breakdown:
+                            // 1. (\d{1,2}/\d{1,2})       -> Start Date (Group 1)
+                            // 2. (.*?)                   -> Description (Group 2, lazy match)
+                            // 3. (949|99|96)?            -> Bank Code (Group 3, Optional, Restricted to known codes to avoid false positives like 200 becoming 20+0)
+                            // 4. (-?(?:0|[1-9]\d{0,2}(?:\.\d{3})*),\d{2}) -> Amount (Group 4, Strict Greek format)
+                            // 5. (\d{1,2}/\d{1,2}/(?:20\d{2}|\d{2})) -> End Date (Group 5)
                             
-                            var amountMatches = Regex.Matches(line, @"-?[\d\.,]+\d{2}");
-                            if (amountMatches.Count == 0) continue;
-
-                            // Assume the last number is the amount (balance is often last, transaction amount is second to last... 
-                            // but often PDFs have [Date] [Description] [Amount] [Balance])
-                            // Let's try to parse the last match as the amount.
+                            string pattern = @"(\d{1,2}/\d{1,2})(.*?)(949|99|96)?(-?(?:0|[1-9]\d{0,2}(?:\.\d{3})*),\d{2})(\d{1,2}/\d{1,2}/(?:20\d{2}|\d{2}))";
                             
-                            decimal amount = 0;
-                            string description = "";
-                            bool foundAmount = false;
+                            var matches = Regex.Matches(line, pattern);
+                            _logger.LogInformation("Found {Count} transactions in this line", matches.Count);
 
-                            // We iterate backwards. If we find a valid amount, we assume it's the transaction amount.
-                            for (int i = amountMatches.Count - 1; i >= 0; i--)
+                            foreach (Match match in matches)
                             {
-                                var val = amountMatches[i].Value;
-                                // Clean it common garbage
-                                if (TryStandardAmountParse(val, out decimal amt))
+                                try 
                                 {
-                                    amount = amt;
-                                    // Make sure it's not a year (like 2023) or a small integer index
-                                    if (Math.Abs(amt) > 2020 && Math.Abs(amt) < 2030 && !val.Contains(',') && !val.Contains('.')) continue; // likely a year
+                                    string startDateStr = match.Groups[1].Value;
+                                    string descStr = match.Groups[2].Value;
+                                    string bankCode = match.Groups[3].Value;
+                                    string amountStr = match.Groups[4].Value;
+                                    string endDateStr = match.Groups[5].Value;
+
+                                    // Parse End Date first
+                                    if (!TryStandardDateParse(endDateStr, out DateTime endDate))
+                                    {
+                                         _logger.LogWarning("Could not parse end date: {Date}", endDateStr);
+                                         continue;
+                                    }
                                     
-                                    foundAmount = true;
-                                    break;
+                                    // Parse Start Date
+                                    if (!TryStandardDateParse(startDateStr + "/" + endDate.Year, out DateTime date)) 
+                                    {
+                                        date = endDate;
+                                    }
+                                    
+                                    date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+
+                                    // Parse Amount
+                                    if (!TryStandardAmountParse(amountStr, out decimal amount))
+                                    {
+                                         _logger.LogWarning("Could not parse amount: {Amount}", amountStr);
+                                         continue;
+                                    }
+                                    
+                                    // Recombination Check:
+                                    // If we matched a code (e.g. 96) but the amount is 0 (e.g. 0,00),
+                                    // it implies we split a number like 960,00 into 96 and 0,00.
+                                    // In this case, ignore the code separation and treat "960,00" as the amount.
+                                    if (amount == 0 && !string.IsNullOrEmpty(bankCode))
+                                    {
+                                        string combinedStr = bankCode + amountStr;
+                                        if (TryStandardAmountParse(combinedStr, out decimal combinedAmount))
+                                        {
+                                            amount = combinedAmount;
+                                            // The code is now part of the amount, so it's not "bank code" anymore.
+                                        }
+                                    }
+
+                                    // Clean Description
+                                    string description = descStr.Trim();
+                                    description = Regex.Replace(description, @"\s+", " ").Trim();
+                                    if (string.IsNullOrEmpty(description)) description = "Imported PDF Transaction";
+
+                                    _logger.LogInformation("Parsed: {Date} | {Amount} | {Desc}", date.ToShortDateString(), amount, description);
+
+                                    transactions.Add(new ImportedTransactionDTO
+                                    {
+                                        TransactionId = GenerateId(date, amount, description),
+                                        Date = date,
+                                        Amount = amount,
+                                        Description = description,
+                                        Category = "Uncategorized",
+                                        Currency = "EUR"
+                                    });
+                                }
+                                catch (Exception ex)
+                                {
+                                     _logger.LogError(ex, "Error parsing match: {Match}", match.Value);
                                 }
                             }
-
-                            if (!foundAmount) continue;
-
-                            // 3. Extract Description
-                            // Remove date and amount from line to get description
-                            description = line.Replace(dateMatch.Value, "").Replace(amount.ToString("N2", new CultureInfo("el-GR")), "").Replace(amount.ToString(), "").Trim();
-                            // Cleanup extra spaces or odd chars
-                            description = Regex.Replace(description, @"\s+", " ").Trim();
-                            if (string.IsNullOrEmpty(description)) description = "Imported PDF Transaction";
-
-                            transactions.Add(new ImportedTransactionDTO
-                            {
-                                TransactionId = GenerateId(date, amount, description),
-                                Date = date,
-                                Amount = amount,
-                                Description = description,
-                                Category = "Uncategorized",
-                                Currency = "EUR"
-                            });
                         }
                     }
                 }
@@ -243,7 +265,7 @@ namespace YouAndMeExpensesAPI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "PDF Parsing error");
-                throw new Exception("Could not parse PDF. Only text-based PDFs are supported (scanned images are not).");
+                throw new Exception("Could not parse PDF. Only text-based PDFs are supported.");
             }
 
             return transactions;
@@ -251,10 +273,18 @@ namespace YouAndMeExpensesAPI.Services
 
         private bool TryStandardDateParse(string val, out DateTime date)
         {
-             if (DateTime.TryParse(val, CultureInfo.InvariantCulture, DateTimeStyles.None, out date)) return true;
+             if (DateTime.TryParse(val, CultureInfo.InvariantCulture, DateTimeStyles.None, out date)) 
+             {
+                 if (date.Year < 2000) date = date.AddYears(2000); // 2025 -> 2025. 0025 -> 2025.
+                 return true;
+             }
              if (DateTime.TryParseExact(val, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out date)) return true;
              if (DateTime.TryParseExact(val, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out date)) return true;
-             if (DateTime.TryParseExact(val, "d/M/yy", CultureInfo.InvariantCulture, DateTimeStyles.None, out date)) return true;
+             if (DateTime.TryParseExact(val, "d/M/yy", CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+             {
+                 if (date.Year < 2000) date = date.AddYears(2000);
+                 return true;
+             }
              return false;
         }
 

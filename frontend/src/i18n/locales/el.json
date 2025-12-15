@@ -61,7 +61,8 @@
     "recentTransactions": "Πρόσφατες Συναλλαγές",
     "monthlyOverview": "Μηνιαία Επισκόπηση",
     "noTransactions": "Δεν υπάρχουν συναλλαγές ακόμα",
-    "addedBy": "Προστέθηκε από"
+    "addedBy": "Προστέθηκε από",
+    "bankConnection": "Εισαγωγή από Τράπεζα"
   },
   "allTransactions": {
     "title": "Όλες οι Συναλλαγές",

@@ -241,7 +241,7 @@ namespace YouAndMeExpensesAPI.Services
                 Amount = absAmount,
                 Category = categoryName,
                 Description = dto.Description ?? "Imported Transaction",
-                Date = dto.Date,
+                Date = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc),
                 BankTransactionId = dto.TransactionId,
                 // BankAccountId = null, // CSV imports might not be linked to a stored "Bank Account" entity yet, or we could pass it in.
                 IsBankSynced = true,

@@ -351,7 +351,7 @@ function Budgets() {
               <div key={budget.id} className={`budget-card card ${isOverBudget ? 'over-budget' : ''}`}>
                 <div className="budget-header">
                   <div className="budget-category">
-                    <h3>{t(`categories.${budget.category}`)}</h3>
+                    <h3>{t(`categories.${(budget.category || '').toLowerCase()}`)}</h3>
                     <span className="budget-period">{t(`budgets.${budget.period}`)}</span>
                   </div>
                   <div className="budget-actions">

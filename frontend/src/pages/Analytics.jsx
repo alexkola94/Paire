@@ -311,7 +311,7 @@ function Analytics() {
     )
 
     return {
-      labels: categories.map(c => t(`categories.${c.category}`) || c.category),
+      labels: categories.map(c => t(`categories.${(c.category || '').toLowerCase()}`) || c.category),
       datasets: [{
         data: categories.map(c => c.amount),
         backgroundColor: colors,
@@ -410,7 +410,7 @@ function Analytics() {
       csvContent += '--- Category Breakdown ---\n'
       csvContent += 'Category,Amount,Percentage\n'
       analytics.categoryBreakdown.forEach(cat => {
-        const categoryName = t(`categories.${cat.category}`) || cat.category
+        const categoryName = t(`categories.${(cat.category || '').toLowerCase()}`) || cat.category
         csvContent += `"${categoryName}",${cat.amount},${cat.percentage.toFixed(2)}%\n`
       })
       csvContent += '\n'
@@ -502,7 +502,7 @@ function Analytics() {
     // 2. Categories Sheet
     if (analytics.categoryBreakdown && analytics.categoryBreakdown.length > 0) {
       const categoryData = analytics.categoryBreakdown.map(cat => ({
-        Category: t(`categories.${cat.category}`) || cat.category,
+        Category: t(`categories.${(cat.category || '').toLowerCase()}`) || cat.category,
         Amount: cat.amount,
         Percentage: `${cat.percentage.toFixed(2)}%`
       }))
@@ -705,7 +705,7 @@ function Analytics() {
                         }}
                       />
                       <span className="category-name">
-                        {t(`categories.${cat.category}`) || cat.category}
+                        {t(`categories.${(cat.category || '').toLowerCase()}`) || cat.category}
                       </span>
                     </div>
                     <span className="category-amount">

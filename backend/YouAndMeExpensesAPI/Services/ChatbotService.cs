@@ -41,8 +41,8 @@ namespace YouAndMeExpensesAPI.Services
                 "spent.*on (\\w+)", "spending.*on (\\w+)", 
                 "how much.*(groceries|food|transport|entertainment|bills|shopping|dining|health|utilities)",
                 "expenses.*for (\\w+)", 
-                "(?!(?:total|daily|monthly|average|top|biggest|highest|most|largest|major|predict|future|seasonal|my|your|show|give|tell|what|is|are|can|please|list|graph|chart|trend|me|the|a|an|all|to|in|of|on|at|by|for|with))(\\b\\w{2,}\\b).*spending", 
-                "(?!(?:total|daily|monthly|average|top|biggest|highest|most|largest|major|predict|future|seasonal|my|your|show|give|tell|what|is|are|can|please|list|graph|chart|trend|me|the|a|an|all|to|in|of|on|at|by|for|with))(\\b\\w{2,}\\b).*expenses"
+                "(?!(?:total|daily|monthly|average|top|biggest|highest|most|largest|major|predict|future|seasonal|my|your|show|give|tell|what|is|are|can|please|list|graph|chart|trend|me|the|a|an|all|to|in|of|on|at|by|for|with|category|categories))(\\b\\w{2,}\\b).*spending", 
+                "(?!(?:total|daily|monthly|average|top|biggest|highest|most|largest|major|predict|future|seasonal|my|your|show|give|tell|what|is|are|can|please|list|graph|chart|trend|me|the|a|an|all|to|in|of|on|at|by|for|with|category|categories))(\\b\\w{2,}\\b).*expenses"
             },
             ["monthly_spending"] = new() { 
                 "spent.*month", "spending.*month", "monthly.*spending",
@@ -76,7 +76,9 @@ namespace YouAndMeExpensesAPI.Services
             // Comparison queries
             ["compare_months"] = new() { 
                 "compare.*month", "last month.*this month", "month.*comparison",
-                "versus.*last month", "vs.*previous month", "month.*over.*month"
+                "versus.*last month", "vs.*previous month", "month.*over.*month",
+                "what.*changed", "biggest.*change", "most.*changed", "spending.*change",
+                "change.*in.*spending"
             },
             ["compare_partners"] = new() { 
                 "who.*spent.*more", "compare.*spending", "partner.*comparison",
@@ -128,7 +130,9 @@ namespace YouAndMeExpensesAPI.Services
             },
             ["top_categories"] = new() { 
                 "top.*categories", "which.*category", "spent.*most.*on",
-                "main.*categories", "primary.*expenses"
+                "main.*categories", "primary.*expenses", "categories.*list",
+                "show.*all.*categories", "show.*me.*spending.*by.*category",
+                "spending.*breakdown", "category.*breakdown"
             },
             
             // Goals
@@ -248,8 +252,8 @@ namespace YouAndMeExpensesAPI.Services
                 "ξόδεψα.*για (\\w+)", "έξοδα.*για (\\w+)", 
                 "πόσο.*(φαγητό|τροφές|μεταφορικά|ψυχαγωγία|λογαριασμοί|ψώνια|εστιατόριο|υγεία|κοινόχρηστα)",
                 "δαπάνες.*για (\\w+)", 
-                "(?!(?:συνολικά|ημερήσια|μηνιαία|μέσος|κύρια|μεγαλύτερα|ψηλότερα|περισσότερα|σημαντικά|πρόβλεψη|μελλοντικές|εποχιακά|δείξε|πες|δώσε|μου|μας|τι|είναι|μπορώ|παρακαλώ|λίστα|γράφημα|εγώ|εσύ|αυτός|αυτή|το|τα|όλα|για|σε|με|από))(\\b\\w{2,}\\b).*έξοδα", 
-                "(?!(?:συνολικά|ημερήσια|μηνιαία|μέσος|κύρια|μεγαλύτερα|ψηλότερα|περισσότερα|σημαντικά|πρόβλεψη|μελλοντικές|εποχιακά|δείξε|πες|δώσε|μου|μας|τι|είναι|μπορώ|παρακαλώ|λίστα|γράφημα|εγώ|εσύ|αυτός|αυτή|το|τα|όλα|για|σε|με|από))(\\b\\w{2,}\\b).*δαπάνες"
+                "(?!(?:συνολικά|ημερήσια|μηνιαία|μέσος|κύρια|μεγαλύτερα|ψηλότερα|περισσότερα|σημαντικά|πρόβλεψη|μελλοντικές|εποχιακά|δείξε|πες|δώσε|μου|μας|τι|είναι|μπορώ|παρακαλώ|λίστα|γράφημα|εγώ|εσύ|αυτός|αυτή|το|τα|όλα|για|σε|με|από|κατηγορία|κατηγορίες))(\\b\\w{2,}\\b).*έξοδα", 
+                "(?!(?:συνολικά|ημερήσια|μηνιαία|μέσος|κύρια|μεγαλύτερα|ψηλότερα|περισσότερα|σημαντικά|πρόβλεψη|μελλοντικές|εποχιακά|δείξε|πες|δώσε|μου|μας|τι|είναι|μπορώ|παρακαλώ|λίστα|γράφημα|εγώ|εσύ|αυτός|αυτή|το|τα|όλα|για|σε|με|από|κατηγορία|κατηγορίες))(\\b\\w{2,}\\b).*δαπάνες"
             },
             ["monthly_spending"] = new() { 
                 "ξόδεψα.*μήνα", "έξοδα.*μήνα", "μηνιαία.*έξοδα",
@@ -283,7 +287,9 @@ namespace YouAndMeExpensesAPI.Services
             // Comparison queries (Greek)
             ["compare_months"] = new() { 
                 "σύγκρινε.*μήνα", "προηγούμενος.*μήνας.*αυτό.*μήνα", "σύγκριση.*μήνα",
-                "έναντι.*προηγούμενος.*μήνας", "vs.*προηγούμενος.*μήνας", "μήνας.*πάνω.*μήνας"
+                "έναντι.*προηγούμενος.*μήνας", "vs.*προηγούμενος.*μήνας", "μήνας.*πάνω.*μήνας",
+                "τι.*άλλαξε", "μεγαλύτερη.*αλλαγή", "πιο.*άλλαξε", "αλλαγή.*έξοδα",
+                "διαφορά.*έξοδα"
             },
             ["compare_partners"] = new() { 
                 "ποιος.*ξόδεψε.*περισσότερο", "σύγκρισε.*έξοδα", "σύγκριση.*συνεργάτες",

@@ -308,35 +308,36 @@ const BankStatementImport = ({ onImportSuccess }) => {
           padding: 1rem;
         }
         .drop-zone {
-          border: 2px dashed #e0e0e0;
+          border: 2px dashed var(--text-light);
           border-radius: 12px;
           padding: 2rem;
           text-align: center;
           cursor: pointer;
           transition: all 0.2s;
-          background: #f8f9fa;
+          background: var(--bg-secondary);
         }
         .drop-zone:hover, .drop-zone.drag-over {
-          border-color: #4CAF50;
-          background: #f0fdf4;
+          border-color: var(--success);
+          background: var(--bg-secondary);
+          opacity: 0.9;
         }
         .drop-zone.has-file {
           border-style: solid;
-          border-color: #4CAF50;
-          background: #fff;
+          border-color: var(--success);
+          background: var(--bg-secondary);
         }
         .upload-icon {
-          color: #9e9e9e;
+          color: var(--text-light);
           margin-bottom: 1rem;
         }
         .upload-text {
           font-weight: 500;
-          color: #333;
+          color: var(--text-primary);
           margin-bottom: 0.5rem;
         }
         .upload-subtext {
           font-size: 0.85rem;
-          color: #666;
+          color: var(--text-secondary);
         }
         .file-preview {
           display: flex;
@@ -345,7 +346,7 @@ const BankStatementImport = ({ onImportSuccess }) => {
           gap: 1rem;
         }
         .file-icon {
-          color: #4CAF50;
+          color: var(--success);
         }
         .file-info {
           display: flex;
@@ -354,21 +355,21 @@ const BankStatementImport = ({ onImportSuccess }) => {
         }
         .file-name {
           font-weight: 500;
-          color: #333;
+          color: var(--text-primary);
         }
         .file-size {
           font-size: 0.8rem;
-          color: #666;
+          color: var(--text-secondary);
         }
         .remove-file-btn {
           background: none;
           border: none;
-          color: #999;
+          color: var(--text-light);
           cursor: pointer;
           padding: 4px;
         }
         .remove-file-btn:hover {
-          color: #f44336;
+          color: var(--error);
         }
         .import-btn {
           width: 100%;
@@ -384,14 +385,14 @@ const BankStatementImport = ({ onImportSuccess }) => {
           border-radius: 8px;
         }
         .import-result.success {
-          background-color: #e8f5e9;
-          border: 1px solid #c8e6c9;
-          color: #2e7d32;
+          background-color: rgba(46, 204, 113, 0.15);
+          border: 1px solid var(--success);
+          color: var(--success-dark);
         }
         .import-result.error {
-          background-color: #ffebee;
-          border: 1px solid #ffcdd2;
-          color: #c62828;
+          background-color: rgba(231, 76, 60, 0.15);
+          border: 1px solid var(--error);
+          color: var(--error);
         }
         .result-content {
           display: flex;
@@ -403,20 +404,21 @@ const BankStatementImport = ({ onImportSuccess }) => {
           padding: 0;
           margin: 0.5rem 0 0 0;
           font-size: 0.9rem;
+          color: var(--text-primary);
         }
         .import-instructions {
           margin-top: 2rem;
           padding-top: 1rem;
-          border-top: 1px solid #eee;
+          border-top: 1px solid var(--bg-tertiary);
         }
         .import-instructions h4 {
           font-size: 1rem;
           margin-bottom: 0.8rem;
-          color: #444;
+          color: var(--text-primary);
         }
         .import-instructions ol {
           padding-left: 1.2rem;
-          color: #666;
+          color: var(--text-secondary);
           font-size: 0.9rem;
         }
         .import-instructions li {
@@ -425,14 +427,14 @@ const BankStatementImport = ({ onImportSuccess }) => {
 
         .import-history-section {
           margin-top: 1.5rem;
-          border-top: 1px solid #eee;
+          border-top: 1px solid var(--bg-tertiary);
           padding-top: 1rem;
         }
         
         details summary {
           cursor: pointer;
           font-weight: 500;
-          color: #444;
+          color: var(--text-primary);
           display: flex;
           align-items: center;
           gap: 8px;
@@ -440,11 +442,11 @@ const BankStatementImport = ({ onImportSuccess }) => {
         }
         
         details summary:hover {
-          color: #2e7d32;
+          color: var(--success);
         }
 
         .history-icon {
-          color: #666;
+          color: var(--text-secondary);
         }
 
         .history-list {
@@ -458,10 +460,10 @@ const BankStatementImport = ({ onImportSuccess }) => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: #f9f9f9;
+          background: var(--bg-tertiary);
           padding: 0.8rem;
           border-radius: 8px;
-          border: 1px solid #eee;
+          border: 1px solid var(--glass-border);
         }
 
         .history-info {
@@ -472,18 +474,18 @@ const BankStatementImport = ({ onImportSuccess }) => {
 
         .history-date {
           font-size: 0.75rem;
-          color: #888;
+          color: var(--text-light);
         }
 
         .history-filename {
           font-weight: 500;
-          color: #333;
+          color: var(--text-primary);
           font-size: 0.9rem;
         }
 
         .history-stats {
           font-size: 0.8rem;
-          color: #555;
+          color: var(--text-secondary);
         }
 
         .revert-btn {
@@ -491,9 +493,9 @@ const BankStatementImport = ({ onImportSuccess }) => {
           align-items: center;
           gap: 6px;
           padding: 6px 12px;
-          background: #fff;
-          border: 1px solid #ffcdd2;
-          color: #c62828;
+          background: var(--bg-secondary);
+          border: 1px solid var(--error-dark);
+          color: var(--error);
           border-radius: 6px;
           cursor: pointer;
           font-size: 0.85rem;
@@ -501,8 +503,9 @@ const BankStatementImport = ({ onImportSuccess }) => {
         }
 
         .revert-btn:hover {
-          background: #ffebee;
-          border-color: #ef9a9a;
+          background: var(--error);
+          color: white;
+          border-color: var(--error);
         }
       `}</style>
         </div>

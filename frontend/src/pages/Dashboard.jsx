@@ -553,7 +553,7 @@ const TransactionItem = memo(({ transaction, formatCurrency, t }) => {
           {formattedDate}
           {transaction.paidBy === 'Bank' || transaction.isBankSynced ? (
             <span className="added-by">
-              {' • ' + t('dashboard.bankConnection', 'Bank Connection')}
+              {' • ' + t('dashboard.bankConnection', 'Imported from Bank')}
             </span>
           ) : transaction.user_profiles && (
             <span className="added-by">

@@ -61,7 +61,8 @@
     "recentTransactions": "Recent Transactions",
     "monthlyOverview": "Monthly Overview",
     "noTransactions": "No transactions yet",
-    "addedBy": "Added by"
+    "addedBy": "Added by",
+    "bankConnection": "Imported from Bank"
   },
   "allTransactions": {
     "title": "All Transactions",

@@ -20,7 +20,7 @@ function QuickFill({
     return null
   }
 
-  const displayedTransactions = isExpanded 
+  const displayedTransactions = isExpanded
     ? recentTransactions.slice(0, maxItems * 2)
     : recentTransactions.slice(0, maxItems)
 
@@ -37,7 +37,7 @@ function QuickFill({
 
   return (
     <div className="quick-fill">
-      <div 
+      <div
         className="quick-fill-header"
         onClick={() => setIsExpanded(!isExpanded)}
         role="button"
@@ -77,10 +77,10 @@ function QuickFill({
                   </div>
                   <div className="quick-fill-meta">
                     <span className="quick-fill-category">
-                      {t(`categories.${transaction.category}`)}
+                      {t(`categories.${(transaction.category || '').toLowerCase()}`)}
                     </span>
                     <span className="quick-fill-date">
-                      {transaction.date 
+                      {transaction.date
                         ? format(new Date(transaction.date), 'MMM dd')
                         : ''
                       }
