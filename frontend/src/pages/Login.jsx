@@ -468,6 +468,12 @@ function Login() {
                 {isSignUp ? t('auth.login') : t('auth.signup')}
               </button>
             </div>
+
+            <div className="login-footer-links" style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.85rem' }}>
+              <Link to="/privacy" className="text-secondary" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
+                {t('legal.privacyPolicy')}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

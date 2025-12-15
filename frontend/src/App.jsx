@@ -32,10 +32,12 @@ const EconomicNews = lazy(() => import('./pages/EconomicNews'))
 const BankCallback = lazy(() => import('./pages/BankCallback'))
 const Achievements = lazy(() => import('./pages/Achievements'))
 const CurrencyCalculator = lazy(() => import('./pages/CurrencyCalculator'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 
 
 // Layout - Keep synchronous as it's always needed
 import Layout from './components/Layout'
+import CookieConsent from './components/CookieConsent'
 
 /**
  * GitHub Pages Redirect Handler Component
@@ -171,6 +173,7 @@ function App() {
           <Router basename={import.meta.env.MODE === 'production' ? '/Paire' : ''}>
             {/* Handle GitHub Pages redirects */}
             <RedirectHandler />
+            <CookieConsent />
 
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
@@ -198,6 +201,10 @@ function App() {
                 <Route
                   path="/bank-callback"
                   element={<BankCallback />}
+                />
+                <Route
+                  path="/privacy"
+                  element={<PrivacyPolicy />}
                 />
 
                 {/* Protected routes - Require authentication */}

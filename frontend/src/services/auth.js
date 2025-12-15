@@ -396,6 +396,13 @@ export const authService = {
    */
   isAuthenticated() {
     return !!getToken()
+  },
+
+  /**
+   * Get the current auth token
+   */
+  getToken() {
+    return getToken()
   }
 }
 

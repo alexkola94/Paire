@@ -74,6 +74,13 @@ namespace YouAndMeExpensesAPI.Models
         [Column("is_bank_synced")]
         public bool IsBankSynced { get; set; } // Flag to indicate this came from bank sync
 
+        // Import History Link
+        [Column("import_history_id")]
+        public Guid? ImportHistoryId { get; set; }
+
+        [ForeignKey("ImportHistoryId")]
+        public ImportHistory? ImportHistory { get; set; }
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 

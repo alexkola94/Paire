@@ -11,7 +11,7 @@ import './Chatbot.css'
 /**
  * Typewriter effect component
  */
-const TypewriterText = ({ text, onComplete }) => {
+const TypewriterText = ({ text = '', onComplete }) => {
   const [displayedText, setDisplayedText] = useState('')
   const [currentIndex, setCurrentIndex] = useState(0)
 

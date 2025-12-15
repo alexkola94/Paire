@@ -9,8 +9,6 @@ using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 using System;
 using System.IO;
-using Going.Plaid;
-
 // Disable reload on change to avoid inotify limits on Render.com
 // This MUST be set before CreateBuilder is called
 System.Environment.SetEnvironmentVariable("DOTNET_hostBuilder:reloadConfigOnChange", "false");
@@ -300,103 +298,12 @@ builder.Services.AddScoped<IAchievementService, AchievementService>();
 // Register Budget Service
 builder.Services.AddScoped<IBudgetService, BudgetService>();
 
-// =====================================================
-// Configure Enable Banking Open Banking Service
-// =====================================================
+// Register Bank Transaction Import Service
+builder.Services.AddScoped<IBankTransactionImportService, BankTransactionImportService>();
 
-// Configure Enable Banking settings (Deprecated)
-// builder.Services.Configure<EnableBankingSettings>(builder.Configuration.GetSection("EnableBanking"));
+// Register CSV Import Service
+builder.Services.AddScoped<IBankStatementImportService, BankStatementImportService>();
 
-// Register HTTP client factory for Enable Banking API calls
-builder.Services.AddHttpClient();
-
-// Register Enable Banking service (Deprecated)
-// builder.Services.AddScoped<IEnableBankingService, EnableBankingService>();
-
-// Register Plaid
-builder.Services.Configure<PlaidSettings>(builder.Configuration.GetSection("Plaid"));
-
-// Add fallback for Environment Variables (Render.com often uses SNAKE_CASE)
-builder.Services.PostConfigure<PlaidSettings>(settings =>
-{
-    // 1. Try PLAID_CLIENT_ID (Best Practice Snake Case)
-    if (string.IsNullOrEmpty(settings.ClientId))
-    {
-        settings.ClientId = System.Environment.GetEnvironmentVariable("PLAID_CLIENT_ID");
-    }
-    // 2. Try ClientId (User's current Render config)
-    if (string.IsNullOrEmpty(settings.ClientId))
-    {
-         settings.ClientId = System.Environment.GetEnvironmentVariable("ClientId");
-    }
-    
-    // 1. Try PLAID_SECRET
-    if (string.IsNullOrEmpty(settings.Secret))
-    {
-        settings.Secret = System.Environment.GetEnvironmentVariable("PLAID_SECRET");
-    }
-    // 2. Try Secret (User's current Render config)
-    if (string.IsNullOrEmpty(settings.Secret))
-    {
-        settings.Secret = System.Environment.GetEnvironmentVariable("Secret");
-    }
-    
-    // Environment override
-    var envVar = System.Environment.GetEnvironmentVariable("PLAID_ENV") 
-                 ?? System.Environment.GetEnvironmentVariable("PLAID_ENVIRONMENT")
-                 ?? System.Environment.GetEnvironmentVariable("Environment"); // User's config
-                 
-    if (!string.IsNullOrEmpty(envVar))
-    {
-        settings.Environment = envVar;
-    }
-    
-    // RedirectUri override
-    var redirectUri = System.Environment.GetEnvironmentVariable("PLAID_REDIRECT_URI")
-                      ?? System.Environment.GetEnvironmentVariable("RedirectUri"); // User's config
-                      
-    if (!string.IsNullOrEmpty(redirectUri))
-    {
-        settings.RedirectUri = redirectUri;
-    }
-});
-// Manual registration to ensure Environment mapping is correct without relying on PLaidOptions binding magic immediately
-builder.Services.AddSingleton<PlaidClient>(sp =>
-{
-    var logger = sp.GetRequiredService<ILogger<Program>>();
-    var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlaidSettings>>().Value;
-    
-    // DEBUG LOGGING
-    logger.LogInformation("--- PLAID CONFIGURATION DIAGNOSTICS ---");
-    logger.LogInformation($"Settings ClientId Present: {!string.IsNullOrEmpty(settings.ClientId)}");
-    logger.LogInformation($"Settings Secret Present: {!string.IsNullOrEmpty(settings.Secret)}");
-    logger.LogInformation($"Settings Environment: {settings.Environment}");
-    
-    // Check Env Vars directly
-    var envClientId = System.Environment.GetEnvironmentVariable("ClientId");
-    var envPlaidClientId = System.Environment.GetEnvironmentVariable("PLAID_CLIENT_ID");
-    logger.LogInformation($"Env 'ClientId': {(!string.IsNullOrEmpty(envClientId) ? "Found" : "Missing")}");
-    logger.LogInformation($"Env 'PLAID_CLIENT_ID': {(!string.IsNullOrEmpty(envPlaidClientId) ? "Found" : "Missing")}");
-    logger.LogInformation("---------------------------------------");
-
-    var env = settings.Environment?.ToLower() switch
-    {
-        "production" => Going.Plaid.Environment.Production,
-        "development" => Going.Plaid.Environment.Development,
-        _ => Going.Plaid.Environment.Sandbox
-    };
-
-    return new PlaidClient(
-        Microsoft.Extensions.Options.Options.Create(new PlaidOptions
-        {
-            ClientId = settings.ClientId,
-            Secret = settings.Secret,
-            Environment = env,
-        }),
-        sp.GetRequiredService<IHttpClientFactory>()
-    );
-});
-builder.Services.AddScoped<IPlaidService, PlaidService>();
 
 // Register Bank Transaction Import Service
 builder.Services.AddScoped<IBankTransactionImportService, BankTransactionImportService>();

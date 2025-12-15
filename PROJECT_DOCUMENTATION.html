@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paire - Project Documentation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', user-scalable, system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            margin-top: 1.5em;
+        }
+        h1 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            font-size: 2.5em;
+        }
+        h2 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-top: 2em;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #e9ecef;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #333;
+        }
+        .mermaid {
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            text-align: center;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        .meta {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+        footer {
+            margin-top: 50px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #999;
+        }
+        @media print {
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+            a {
+                text-decoration: none;
+                color: #333;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Paire - Project Documentation</h1>
+    <div class="meta">
+        <strong>Version:</strong> 2.0.0<br>
+        <strong>Date:</strong> December 15, 2025
+    </div>
+
+    <h2>1. Executive Summary</h2>
+    <p><strong>Paire</strong> is a comprehensive expense tracking and financial management platform designed specifically for couples. It enables users to track expenses, income, loans, and budgets, both individually and jointly. Distinguishing features include robust partnership sharing capabilities, an AI-powered financial chatbot, real-time economic data integration, and secure bank connectivity via Plaid.</p>
+    <p>The application leverages a modern technology stack with a React/Vite frontend and a .NET 8 API backend, utilizing Supabase (PostgreSQL) for reliable data persistence and authentication.</p>
+
+    <h2>2. Technical Architecture</h2>
+
+    <h3>2.1 Technology Stack</h3>
+
+    <h4>Frontend</h4>
+    <ul>
+        <li><strong>Framework:</strong> React 18.2</li>
+        <li><strong>Build Tool:</strong> Vite</li>
+        <li><strong>Routing:</strong> React Router v6</li>
+        <li><strong>State Management:</strong> React Context API</li>
+        <li><strong>Styling:</strong> CSS3 (Custom responsive design)</li>
+        <li><strong>Internationalization:</strong> react-i18next (English, Greek, Spanish, French)</li>
+        <li><strong>HTTP Client:</strong> Axios (Custom wrapper)</li>
+    </ul>
+
+    <h4>Backend</h4>
+    <ul>
+        <li><strong>Framework:</strong> ASP.NET Core Web API (.NET 8.0)</li>
+        <li><strong>Language:</strong> C#</li>
+        <li><strong>ORM:</strong> Entity Framework Core</li>
+        <li><strong>Authentication:</strong> JWT (Json Web Tokens) with Supabase Auth integration</li>
+        <li><strong>API Documentation:</strong> Swagger/OpenAPI</li>
+    </ul>
+
+    <h4>Database & Infrastructure</h4>
+    <ul>
+        <li><strong>Database:</strong> PostgreSQL (via Supabase)</li>
+        <li><strong>Auth Provider:</strong> Supabase Auth</li>
+        <li><strong>Storage:</strong> Supabase Storage (for receipts/avatars)</li>
+        <li><strong>Hosting:</strong> Render.com (Backend), GitHub Pages (Frontend)</li>
+    </ul>
+
+    <h3>2.2 System Architecture Diagram</h3>
+    <div class="mermaid">
+(Visual representation of architecture)
+
+    User[Web/Mobile User] -->|HTTPS| CDN[GitHub Pages / CDN]
+    User -->|API Requests| API[Dotnet 8 API (Render)]
+    
+    Backend Services:
+    - AuthService
+    - TransService
+    - PlaidService
+    - AIService
+    
+    Data:
+    - Supabase PostgreSQL
+    
+    External APIs:
+    - PlaidAPI
+    - OpenAI API
+    </div>
+
+    <h2>3. Key Feature Modules</h2>
+
+    <h3>3.1 Financial Management</h3>
+    <ul>
+        <li><strong>Transactions:</strong> Comprehensive logging of Income and Expenses with categorization, dates, and optional file attachments.</li>
+        <li><strong>Budgets:</strong> Category-specific monthly limits with visual progress bars and alerts when nearing limits.</li>
+        <li><strong>Loans:</strong> Dedicated tracking for money lent/borrowed, including installment plans and payment history.</li>
+    </ul>
+
+    <h3>3.2 Partnership & Collaboration</h3>
+    <ul>
+        <li><strong>Dual View:</strong> Users can toggle between "Personal", "Partner", and "Combined" views for all financial data.</li>
+        <li><strong>Invitations:</strong> Secure code-based invitation system to link partner accounts.</li>
+        <li><strong>Privacy:</strong> Strict Row Level Security (RLS) ensures data is only accessible to the account owner and their linked partner.</li>
+    </ul>
+
+    <h3>3.3 Advanced Integrations</h3>
+    <ul>
+        <li><strong>Bank Sync (Plaid):</strong> Securely link bank accounts to import transactions automatically. <br><em>Status:</em> Production-ready (Integration verified).</li>
+        <li><strong>AI Chatbot:</strong> Natural language interface for financial queries (e.g., "How much did we spend on food last month?").</li>
+        <li><strong>Economic Data:</strong> Real-time integration with Eurostat/Greek economic APIs for CPI, inflation, and GDP tracking.</li>
+    </ul>
+
+    <h3>3.4 Security</h3>
+    <ul>
+        <li><strong>MFA:</strong> Multi-Factor Authentication support.</li>
+        <li><strong>Session Management:</strong> Secure JWT handling with refresh tokens and device tracking.</li>
+        <li><strong>Encryption:</strong> All data encrypted at rest (PostgreSQL) and in transit (TLS 1.2+).</li>
+    </ul>
+
+    <h2>4. Data Model (Database Schema)</h2>
+    <p>The database is normalized and runs on PostgreSQL. Key entities include:</p>
+    <ul>
+        <li><code>AspNetUsers</code> / <code>user_profiles</code>: Stores user identity, preferences, and linkage to Supabase Auth.</li>
+        <li><code>partnerships</code>: Maps relationships between two users.</li>
+        <li><code>transactions</code>: Core ledger table for income/expense records. Linked to <code>user_id</code> and optional <code>category_id</code>.</li>
+        <li><code>budgets</code>: Monthly storage of budget limits per category/user.</li>
+        <li><code>loans</code>: Stores principal, interest rate, and terms for personal loans.</li>
+        <li><code>loan_payments</code>: Ledger of repayments against specific loans.</li>
+        <li><code>recurring_bills</code>: Configurations for automated recurring expense generation.</li>
+        <li><code>bank_connections</code> / <code>bank_accounts</code>: Stores encrypted tokens and metadata for linked Plaid accounts.</li>
+    </ul>
+
+    <h2>5. API Reference Summary</h2>
+    <p>The backend exposes over 75 RESTful endpoints. Key controllers include:</p>
+    <ul>
+        <li><code>AuthController</code>: Registration, Login, 2FA, Password Management.</li>
+        <li><code>TransactionsController</code>: CRUD operations for financial records.</li>
+        <li><code>BudgetsController</code>: Budget setting and status tracking.</li>
+        <li><code>OpenBankingController</code>: Plaid Link token generation and public token exchange.</li>
+        <li><code>ProfileController</code>: User profile management and avatar upload.</li>
+        <li><code>PartnershipController</code>: Managing invitation codes and partner linkage.</li>
+    </ul>
+    <p><em>Full API documentation is available via the Swagger UI endpoint (<code>/swagger</code>) when running in Development mode.</em></p>
+
+    <h2>6. Deployment & Configuration</h2>
+
+    <h3>6.1 Requirements</h3>
+    <ul>
+        <li><strong>Runtime:</strong> .NET 8 SDK, Node.js 18+</li>
+        <li><strong>Infrastructure:</strong> PostgreSQL Database, Redis (Optional for caching)</li>
+    </ul>
+
+    <h3>6.2 Environment Variables</h3>
+    <p><strong>Backend (.env / AppSettings):</strong></p>
+    <ul>
+        <li><code>Supabase:Url</code>, <code>Supabase:Key</code></li>
+        <li><code>Plaid:ClientId</code>, <code>Plaid:Secret</code></li>
+        <li><code>OpenAI:ApiKey</code></li>
+        <li><code>EmailSettings:SmtpServer</code> ...</li>
+    </ul>
+
+    <p><strong>Frontend (.env):</strong></p>
+    <ul>
+        <li><code>VITE_BACKEND_API_URL</code></li>
+        <li><code>VITE_SUPABASE_URL</code></li>
+    </ul>
+
+    <h2>7. Compliance & Standards</h2>
+    <ul>
+        <li><strong>GDPR:</strong> Includes "Right to be Forgotten" (Account Deletion) and Data Export features.</li>
+        <li><strong>PSD2:</strong> Plaid integration supports Open Banking standards.</li>
+        <li><strong>Accessibility:</strong> UI designed with high-contrast text and ARIA labels.</li>
+        <li><strong>Privacy Policy:</strong> Dedicated privacy policy page (<code>/privacy</code>) detailing data collection, usage, and user rights.</li>
+        <li><strong>Cookie Consent:</strong> Cookie consent banner implemented to comply with ePrivacy Directive and GDPR, allowing users to accept or decline non-essential cookies.</li>
+    </ul>
+
+    <footer>
+        Generated by Antigravity AI Assistant
+    </footer>
+
+</body>
+</html>

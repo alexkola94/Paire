@@ -72,9 +72,9 @@ namespace YouAndMeExpensesAPI.Controllers
                 {
                     var searchTerm = $"%{search.Trim()}%";
                     query = query.Where(t => 
-                        EF.Functions.ILike(t.Description, searchTerm) || 
-                        EF.Functions.ILike(t.Category, searchTerm) || 
-                        EF.Functions.ILike(t.Notes, searchTerm) || 
+                        EF.Functions.ILike(t.Description ?? "", searchTerm) || 
+                        EF.Functions.ILike(t.Category ?? "", searchTerm) || 
+                        EF.Functions.ILike(t.Notes ?? "", searchTerm) || 
                         (t.Tags != null && t.Tags.Any(tag => EF.Functions.ILike(tag, searchTerm)))
                     );
                 }
@@ -546,6 +546,42 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 _logger.LogError(ex, "Error uploading receipt for user {UserId}", userId);
                 return StatusCode(500, new { message = "Error uploading receipt", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Imports transactions from a bank statement (CSV/Excel)
+        /// </summary>
+        /// <param name="file">Statement file</param>
+        /// <returns>Import result stats</returns>
+        [HttpPost("import")]
+        public async Task<ActionResult> ImportTransactions(
+            IFormFile file,
+            [FromServices] IBankStatementImportService importService)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return Unauthorized(new { error = "User not authenticated" });
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file provided" });
+            }
+
+            try
+            {
+                var result = await importService.ImportStatementAsync(userId.ToString(), file);
+                
+                if (result.ErrorMessages.Any() && result.TotalImported == 0)
+                {
+                    return BadRequest(new { message = "Import failed", result });
+                }
+
+                return Ok(new { message = "Import completed", result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing statement for user {UserId}", userId);
+                return StatusCode(500, new { message = "Error importing statement", error = ex.Message });
             }
         }
     }

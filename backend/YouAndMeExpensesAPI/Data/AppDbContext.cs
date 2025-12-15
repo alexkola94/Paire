@@ -33,6 +33,7 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<Achievement> Achievements { get; set; }
         public DbSet<UserAchievement> UserAchievements { get; set; }
+        public DbSet<ImportHistory> ImportHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -514,6 +515,34 @@ namespace YouAndMeExpensesAPI.Data
                     .HasForeignKey(e => e.AchievementId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+
+            // ============================================
+            // IMPORT HISTORY TABLE
+            // ============================================
+            modelBuilder.Entity<ImportHistory>(entity =>
+            {
+                entity.ToTable("import_history");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(255);
+                entity.Property(e => e.ImportDate).HasColumnName("import_date");
+                entity.Property(e => e.TransactionCount).HasColumnName("transaction_count");
+                entity.Property(e => e.TotalAmount).HasColumnName("total_amount").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(50);
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.ImportDate);
+            });
+
+            // Configure Transaction -> ImportHistory relationship
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.ImportHistory)
+                .WithMany(h => h.Transactions)
+                .HasForeignKey(t => t.ImportHistoryId)
+                .OnDelete(DeleteBehavior.SetNull); // If history is deleted (reverted), we might want to cascade or handle manually. Revert logic should probably be manual delete of transaction.
+                // Actually for "Revert" we want to delete transactions. But safe default for DB is SetNull or Restrict.
+                // We'll handle deletion in the controller.
         }
     }
 }

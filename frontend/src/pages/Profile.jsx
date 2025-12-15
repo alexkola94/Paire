@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle, FiPower, FiCalendar, FiDatabase } from 'react-icons/fi'
+import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle, FiDatabase } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
 import { getBackendUrl } from '../utils/getBackendUrl'
 import TwoFactorSetup from '../components/TwoFactorSetup'
 import LogoLoader from '../components/LogoLoader'
 import './Profile.css'
-import PlaidConnect from '../components/PlaidConnect'
-import ConfirmationModal from '../components/ConfirmationModal'
+
+import BankStatementImport from '../components/BankStatementImport'
 
 /**
  * Profile Page Component
@@ -599,16 +600,38 @@ function Profile() {
         }}
       />
 
-      {/* Open Banking Integration */}
+
       <div className="card">
         <div className="card-header">
           <h2>
             <FiGlobe size={24} />
-            {t('profile.openBanking.title', 'Bank Connections')}
+            {t('profile.importStatements', 'Import Bank Statements')}
           </h2>
         </div>
 
-        <BankConnections />
+        <BankStatementImport
+          onImportSuccess={(result) => {
+            console.log('Import completed', result);
+            // Optionally trigger a refresh of transactions if there were a context or global state
+          }}
+        />
+      </div>
+
+
+      {/* Legal Information */}
+      <div className="card">
+        <div className="card-header">
+          <h2>
+            <FiLock size={24} />
+            Legal Information
+          </h2>
+        </div>
+        <div className="legal-links" style={{ padding: '1rem' }}>
+          <Link to="/privacy" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
+            <FiLock size={18} style={{ marginRight: '8px' }} />
+            {t('legal.privacyPolicy')}
+          </Link>
+        </div>
       </div>
 
       {/* Data Management - Clear All Data */}
@@ -726,262 +749,9 @@ function Profile() {
   )
 }
 
-function BankConnections() {
-  const { t } = useTranslation()
-  const [accounts, setAccounts] = useState([])
-  const [connectionMessage, setConnectionMessage] = useState({ type: '', text: '' })
-  const [disconnectModal, setDisconnectModal] = useState({ isOpen: false, type: null, id: null, name: null })
-  const [disconnectLoading, setDisconnectLoading] = useState(false)
+// End of Profile component
 
-  /**
-   * Get bank icon styling based on name
-   */
-  const getBankStyle = (name) => {
-    const colors = [
-      'linear-gradient(135deg, #FF6B6B 0%, #EE5D5D 100%)', // Red
-      'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)', // Blue
-      'linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)', // Green
-      'linear-gradient(135deg, #FA709A 0%, #FEE140 100%)', // Orange/Pink
-      'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)', // Purple
-    ];
-    let hash = 0;
-    const str = name || 'Bank';
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % colors.length;
-    return { background: colors[index] };
-  };
 
-  useEffect(() => {
-    loadAccounts()
-  }, [])
-
-  /**
-   * Auto-dismiss success/info messages after 5 seconds
-   */
-  useEffect(() => {
-    if (connectionMessage.type === 'success' || connectionMessage.type === 'info') {
-      const timer = setTimeout(() => {
-        setConnectionMessage({ type: '', text: '' })
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [connectionMessage])
-
-  /**
-   * Load connected bank accounts
-   */
-  const loadAccounts = async () => {
-    try {
-      const data = await import('../services/openBanking').then(m => m.openBankingService.getAccounts())
-      setAccounts(data)
-    } catch (error) {
-      console.error('Failed to load accounts', error)
-    }
-  }
-
-  const onLinkSuccess = () => {
-    setConnectionMessage({ type: 'success', text: t('profile.openBanking.connectionSuccess', 'Bank connected successfully!') })
-    setTimeout(() => loadAccounts(), 1000)
-  }
-
-  /**
-   * Handle disconnecting all bank accounts
-   */
-  /**
-   * Handle disconnecting all bank accounts
-   */
-  const handleDisconnect = () => {
-    setDisconnectModal({
-      isOpen: true,
-      type: 'all',
-      id: null,
-      name: null
-    })
-  }
-
-  /**
-   * Handle disconnecting a single account
-   */
-  /**
-   * Handle disconnecting a single account
-   */
-  const handleDisconnectAccount = (accountId, accountName) => {
-    setDisconnectModal({
-      isOpen: true,
-      type: 'single',
-      id: accountId,
-      name: accountName
-    })
-  }
-
-  /**
-   * Execute the disconnection after confirmation
-   */
-  const executeDisconnect = async () => {
-    try {
-      setDisconnectLoading(true)
-      const service = await import('../services/openBanking').then(m => m.openBankingService)
-
-      if (disconnectModal.type === 'all') {
-        await service.disconnect()
-        setAccounts([])
-        setConnectionMessage({
-          type: 'success',
-          text: t('profile.openBanking.disconnectSuccess')
-        })
-      } else if (disconnectModal.type === 'single') {
-        await service.disconnectAccount(disconnectModal.id)
-        await loadAccounts()
-        setConnectionMessage({
-          type: 'success',
-          text: t('profile.openBanking.disconnectAccountSuccess')
-        })
-      }
-      setDisconnectModal({ isOpen: false, type: null, id: null, name: null })
-    } catch (error) {
-      console.error('Disconnect error:', error)
-      let errorMessage = error.message || t('profile.openBanking.disconnectError')
-
-      if (error.message && error.message.includes('Unauthorized')) {
-        errorMessage = t('profile.openBanking.unauthorized') || 'Please log in again to disconnect accounts'
-      }
-
-      setConnectionMessage({
-        type: 'error',
-        text: errorMessage
-      })
-    } finally {
-      setDisconnectLoading(false)
-    }
-  }
-
-  /**
-   * Format currency amount
-   */
-  const formatCurrency = (amount, currency) => {
-    if (amount == null) return t('profile.openBanking.balanceNotAvailable', 'N/A')
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency || 'EUR',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(amount)
-    } catch {
-      return `${amount} ${currency || 'EUR'}`
-    }
-  }
-
-  /**
-   * Format date
-   */
-  const formatDate = (date) => {
-    if (!date) return t('profile.openBanking.never', 'Never')
-    try {
-      return new Date(date).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
-    } catch {
-      return date
-    }
-  }
-
-  return (
-    <div className="bank-connections">
-      {/* Connection Status Message */}
-      {connectionMessage.text && (
-        <div className={`alert alert-${connectionMessage.type}`} style={{ marginBottom: '1rem' }}>
-          {connectionMessage.text}
-        </div>
-      )}
-
-      {accounts.length > 0 ? (
-        <div className="connected-accounts">
-          <h3>{t('profile.openBanking.connectedAccounts')}</h3>
-          <div className="account-list">
-            {accounts.map(acc => {
-              const bankName = acc.bankName || t('profile.openBanking.unknownBank', 'Unknown Bank');
-              const initial = bankName.charAt(0).toUpperCase();
-
-              return (
-                <div key={acc.id} className="account-item">
-                  <div className="account-icon-wrapper" style={getBankStyle(bankName)}>
-                    <span className="account-initial">{initial}</span>
-                  </div>
-                  <div className="account-details">
-                    <div className="account-header">
-                      <div>
-                        <strong className="account-bank-name">{bankName}</strong>
-                        {acc.accountName && <div className="account-name-sub">{acc.accountName}</div>}
-                      </div>
-                      <button
-                        onClick={() => handleDisconnectAccount(acc.id, acc.accountName || acc.iban)}
-                        className="btn-icon btn-disconnect-account"
-                        title={t('profile.openBanking.disconnectAccount', 'Disconnect this account')}
-                        aria-label={t('profile.openBanking.disconnectAccount', 'Disconnect this account')}
-                      >
-                        <FiPower size={18} />
-                      </button>
-                    </div>
-
-                    <div className="account-meta">
-                      {acc.accountType && (
-                        <span className="meta-badge">{acc.accountType}</span>
-                      )}
-                      {acc.lastBalanceUpdate && (
-                        <span className="meta-text"><FiCalendar size={10} style={{ marginRight: 4 }} />{formatDate(acc.lastBalanceUpdate)}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="account-balance">
-                    <div className="balance-amount">
-                      {formatCurrency(acc.currentBalance, acc.currency)}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <PlaidConnect onLinkSuccess={onLinkSuccess} />
-            <button onClick={handleDisconnect} className="btn btn-danger btn-sm">
-              <FiTrash2 size={16} />
-              {t('profile.openBanking.disconnectAll')}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="connect-new">
-          <p>{t('profile.openBanking.connectDescription')}</p>
-          <div style={{ marginTop: '1rem' }}>
-            <PlaidConnect onLinkSuccess={onLinkSuccess} />
-          </div>
-        </div>
-      )}
-      {/* Disconnect Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={disconnectModal.isOpen}
-        onClose={() => !disconnectLoading && setDisconnectModal({ ...disconnectModal, isOpen: false })}
-        onConfirm={executeDisconnect}
-        title={disconnectModal.type === 'all'
-          ? t('profile.openBanking.disconnectAllTitle', 'Disconnect All Banks')
-          : t('profile.openBanking.disconnectAccountTitle', 'Disconnect Bank Account')
-        }
-        message={disconnectModal.type === 'all'
-          ? t('profile.openBanking.disconnectConfirm')
-          : t('profile.openBanking.disconnectAccountConfirm', { account: disconnectModal.name || 'this account' })
-        }
-        variant="danger"
-        confirmText={t('profile.openBanking.disconnect', 'Disconnect')}
-        loading={disconnectLoading}
-      />
-    </div>
-  )
-}
 
 export default Profile
+

@@ -38,6 +38,14 @@ namespace YouAndMeExpensesAPI.Services
             DateTime? toDate = null,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Process a list of generic ImportedTransactionDTOs from CSV/Excel
+        /// </summary>
+        Task<BankTransactionImportResult> ProcessImportedTransactionsAsync(
+            string userId, 
+            List<ImportedTransactionDTO> transactions,
+            CancellationToken cancellationToken,
+            ImportHistory? importHistory = null);
     }
 
     /// <summary>

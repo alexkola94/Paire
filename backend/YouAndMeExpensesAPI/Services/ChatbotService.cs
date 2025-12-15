@@ -18,18 +18,31 @@ namespace YouAndMeExpensesAPI.Services
         private readonly ICurrencyService _currencyService;
         private readonly ILogger<ChatbotService> _logger;
 
+        // Valid currency codes (ISO 4217) to prevent false positives like "HOW", "DID"
+        private static readonly HashSet<string> _validCurrencies = new()
+        {
+            "USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "SEK", "NZD", 
+            "MXN", "SGD", "HKD", "NOK", "KRW", "TRY", "RUB", "INR", "BRL", "ZAR",
+            "DKK", "PLN", "THB", "IDR", "HUF", "CZK", "ILS", "CLP", "PHP", "AED",
+            "COP", "SAR", "MYR", "RON", "VND", "ARS", "IQD", "KWD", "NIO", "PEN",
+            "UAH", "EGP", "TWD", "DZD", "MAD", "JOD", "BHD", "OMR", "QAR", "LKR"
+        };
+
         // Pattern definitions for query recognition (enhanced with more patterns)
         private readonly Dictionary<string, List<string>> _queryPatterns = new()
         {
             // Spending queries
             ["total_spending"] = new() { 
                 "how much.*spent", "total.*spending", "what.*spent", "spending.*total",
-                "expenses.*total", "money.*spent", "spent.*so far", "expenditure"
+                "expenses.*total", "money.*spent", "spent.*so far", "expenditure",
+                "how much.*spend", "what.*spend", "did.*spend"
             },
             ["category_spending"] = new() { 
                 "spent.*on (\\w+)", "spending.*on (\\w+)", 
                 "how much.*(groceries|food|transport|entertainment|bills|shopping|dining|health|utilities)",
-                "expenses.*for (\\w+)", "(\\w+).*spending", "(\\w+).*expenses"
+                "expenses.*for (\\w+)", 
+                "(?!(?:total|daily|monthly|average|top|biggest|highest|most|largest|major|predict|future|seasonal|my|your|show|give|tell|what|is|are|can|please|list|graph|chart|trend|me|the|a|an|all|to|in|of|on|at|by|for|with))(\\b\\w{2,}\\b).*spending", 
+                "(?!(?:total|daily|monthly|average|top|biggest|highest|most|largest|major|predict|future|seasonal|my|your|show|give|tell|what|is|are|can|please|list|graph|chart|trend|me|the|a|an|all|to|in|of|on|at|by|for|with))(\\b\\w{2,}\\b).*expenses"
             },
             ["monthly_spending"] = new() { 
                 "spent.*month", "spending.*month", "monthly.*spending",
@@ -217,9 +230,8 @@ namespace YouAndMeExpensesAPI.Services
             
             // Currency Conversion
             ["currency_conversion"] = new() { 
-                "convert", "exchange.*rate", "how.*much.*in", "currency", 
+                "convert", "exchange.*rate", "how.*much.*is.*in", "currency", 
                 "(\\d+).*([a-zA-Z]{3}).*to.*([a-zA-Z]{3})",
-                "([a-zA-Z]{3}).*in.*([a-zA-Z]{3})",
                 "price.*of.*([a-zA-Z]{3})"
             }
         };
@@ -235,7 +247,9 @@ namespace YouAndMeExpensesAPI.Services
             ["category_spending"] = new() { 
                 "ξόδεψα.*για (\\w+)", "έξοδα.*για (\\w+)", 
                 "πόσο.*(φαγητό|τροφές|μεταφορικά|ψυχαγωγία|λογαριασμοί|ψώνια|εστιατόριο|υγεία|κοινόχρηστα)",
-                "δαπάνες.*για (\\w+)", "(\\w+).*έξοδα", "(\\w+).*δαπάνες"
+                "δαπάνες.*για (\\w+)", 
+                "(?!(?:συνολικά|ημερήσια|μηνιαία|μέσος|κύρια|μεγαλύτερα|ψηλότερα|περισσότερα|σημαντικά|πρόβλεψη|μελλοντικές|εποχιακά|δείξε|πες|δώσε|μου|μας|τι|είναι|μπορώ|παρακαλώ|λίστα|γράφημα|εγώ|εσύ|αυτός|αυτή|το|τα|όλα|για|σε|με|από))(\\b\\w{2,}\\b).*έξοδα", 
+                "(?!(?:συνολικά|ημερήσια|μηνιαία|μέσος|κύρια|μεγαλύτερα|ψηλότερα|περισσότερα|σημαντικά|πρόβλεψη|μελλοντικές|εποχιακά|δείξε|πες|δώσε|μου|μας|τι|είναι|μπορώ|παρακαλώ|λίστα|γράφημα|εγώ|εσύ|αυτός|αυτή|το|τα|όλα|για|σε|με|από))(\\b\\w{2,}\\b).*δαπάνες"
             },
             ["monthly_spending"] = new() { 
                 "ξόδεψα.*μήνα", "έξοδα.*μήνα", "μηνιαία.*έξοδα",
@@ -457,7 +471,7 @@ namespace YouAndMeExpensesAPI.Services
                     "financial_health_score" => await GetFinancialHealthScoreAsync(userId, language),
                     "subscription_analysis" => await GetSubscriptionAnalysisAsync(userId, language),
                     "bill_negotiation" => GetBillNegotiationTipsAsync(language),
-                    "currency_conversion" => await GetCurrencyConversionAsync(normalizedQuery, language),
+                    "currency_conversion" => await GetCurrencyConversionAsync(normalizedQuery, language) ?? GetUnknownResponse(normalizedQuery, history, language),
                     // Features Enabled for Expansion
                     "investment_advice" => GetInvestmentBasicsAsync(),
                     "seasonal_spending" => await GetSeasonalSpendingAsync(userId),
@@ -5682,17 +5696,26 @@ I use natural language and advanced calculations to help you make smart financia
 
                 // Regex for currencies (3 letter codes)
                 var currencyMatches = Regex.Matches(query.ToUpperInvariant(), @"\b([A-Z]{3})\b");
-                
-                if (currencyMatches.Count >= 2)
+                var validMatches = new List<string>();
+
+                foreach (Match match in currencyMatches)
                 {
-                    fromCurrency = currencyMatches[0].Value;
-                    toCurrency = currencyMatches[1].Value;
+                    if (_validCurrencies.Contains(match.Value))
+                    {
+                        validMatches.Add(match.Value);
+                    }
                 }
-                else if (currencyMatches.Count == 1)
+                
+                if (validMatches.Count >= 2)
+                {
+                    fromCurrency = validMatches[0];
+                    toCurrency = validMatches[1];
+                }
+                else if (validMatches.Count == 1)
                 {
                     // Likely "price of BTC" or "USD to EUR" where one matched
                     // If we have "price of BTC", base currency is usually USD or EUR depending on setting, defaulting to USD
-                    var currency = currencyMatches[0].Value;
+                    var currency = validMatches[0];
                     if (query.ToLowerInvariant().Contains("price") || query.ToLowerInvariant().Contains("τιμή"))
                     {
                         fromCurrency = currency;
@@ -5707,17 +5730,10 @@ I use natural language and advanced calculations to help you make smart financia
                     }
                 }
 
-                // If couldn't extract currencies, try to infer from common names if regex failed?
-                // For now, assume user provides codes. If not, return guidance.
+                // If couldn't extract valid currencies, return null to allow fallback to other intents
                 if (string.IsNullOrEmpty(fromCurrency) || string.IsNullOrEmpty(toCurrency))
                 {
-                    return new ChatbotResponse
-                    {
-                        Message = language == "el" 
-                            ? "Παρακαλώ προσδιορίστε τα νομίσματα για τη μετατροπή (π.χ., '100 USD σε EUR')."
-                            : "Please specify the currencies for conversion (e.g., '100 USD to EUR').",
-                        Type = "text"
-                    };
+                    return null;
                 }
 
                 // Call Currency Service

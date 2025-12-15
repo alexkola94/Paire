@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
-using Going.Plaid.Entity; // For Plaid Transaction types
+
 
 namespace YouAndMeExpensesAPI.Services
 {
@@ -9,10 +9,14 @@ namespace YouAndMeExpensesAPI.Services
     /// Service for importing bank transactions into the app's transaction system
     /// Automatically maps bank transactions to expenses/income and detects duplicates
     /// </summary>
+    /// <summary>
+    /// Service for importing bank transactions into the app's transaction system
+    /// Automatically maps bank transactions to expenses/income and detects duplicates.
+    /// Now generic and supports imports from CSVs/Excel via DTOs.
+    /// </summary>
     public class BankTransactionImportService : IBankTransactionImportService
     {
         private readonly AppDbContext _context;
-        private readonly IPlaidService _plaidService;
         private readonly ILogger<BankTransactionImportService> _logger;
 
         // Category mapping from bank categories to app categories
@@ -94,7 +98,7 @@ namespace YouAndMeExpensesAPI.Services
             { "salary", "Salary" },
             { "payroll", "Salary" },
             { "income", "Income" },
-            { "interest", "Investment" }, // Map interest to Investment or Other Income
+            { "interest", "Investment" }, 
             { "dividend", "Investment" },
             { "transfer", "Transfer" },
             { "credit", "Income" },
@@ -109,151 +113,24 @@ namespace YouAndMeExpensesAPI.Services
 
         public BankTransactionImportService(
             AppDbContext context,
-            IPlaidService plaidService,
             ILogger<BankTransactionImportService> logger)
         {
             _context = context;
-            _plaidService = plaidService;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Imports bank transactions for all connected accounts of a user
-        /// </summary>
         public async Task<BankTransactionImportResult> ImportTransactionsAsync(
             string userId,
             DateTime? fromDate = null,
             DateTime? toDate = null,
             CancellationToken cancellationToken = default)
         {
-            var result = new BankTransactionImportResult();
-
-            try
-            {
-                // Get active bank connections
-                var bankConnections = await _context.Set<BankConnection>()
-                    .Where(bc => bc.UserId == userId && bc.IsActive)
-                    .ToListAsync(cancellationToken);
-
-                if (!bankConnections.Any())
-                {
-                    _logger.LogWarning($"No active bank connection found for user {userId}");
-                    result.ErrorMessages.Add("No active bank connection found");
-                    return result;
-                }
-
-                if (!fromDate.HasValue) fromDate = DateTime.UtcNow.AddDays(-30);
-                if (!toDate.HasValue) toDate = DateTime.UtcNow;
-
-                foreach(var connection in bankConnections)
-                {
-                    // Plaid Access Token is on the connection
-                    // We can import for all accounts in this connection at once if we use Plaid's GetTransactions (it returns for all accounts in Item)
-                    // But our method structure iterates accounts.
-                    // We can optimize/refactor or just fetch per account (Plaid GetTransactions allows filtering by account_ids, 
-                    // but usually you fetch all for item and filter in memory).
-                    
-                    // fetch all for this connection
-                    try
-                    {
-                        var (plaidTransactions, plaidAccounts) = await _plaidService.GetTransactionsAsync(connection.AccessToken, fromDate.Value, toDate.Value);
-                        
-                        // Process per account
-                        // First get stored accounts for this connection
-                         var accounts = await _context.Set<StoredBankAccount>()
-                            .Where(a => a.UserId == userId && a.BankConnectionId == connection.Id)
-                            .ToListAsync(cancellationToken);
-
-                        foreach(var account in accounts)
-                        {
-                            var accountTransactions = plaidTransactions.Where(t => t.AccountId == account.AccountId).ToList();
-                            
-                            // Check if first sync (before processing new ones)
-                            bool isFirstSync = !await _context.Transactions.AnyAsync(t => t.BankAccountId == account.AccountId, cancellationToken);
-
-                            // Process transactions
-                            var accountResult = await ProcessTransactionsAsync(userId, account.AccountId, accountTransactions, cancellationToken);
-                             
-                             result.TotalImported += accountResult.TotalImported;
-                             result.DuplicatesSkipped += accountResult.DuplicatesSkipped;
-                             result.Errors += accountResult.Errors;
-                             result.ErrorMessages.AddRange(accountResult.ErrorMessages);
-
-                             // Update Account Balance
-                             var plaidAccount = plaidAccounts.FirstOrDefault(a => a.AccountId == account.AccountId);
-                             if (plaidAccount != null && plaidAccount.Balances.Current.HasValue)
-                             {
-                                 account.CurrentBalance = plaidAccount.Balances.Current.Value;
-                                 account.Currency = plaidAccount.Balances.IsoCurrencyCode ?? account.Currency;
-                                 account.LastBalanceUpdate = DateTime.UtcNow;
-
-                                 // Opening Balance Logic for First Sync
-                                 if (isFirstSync && accountTransactions.Any())
-                                 {
-                                     // Calculate Net Change from the imported transactions
-                                     // Plaid: +ve = expense, -ve = income
-                                     // Net Change to Balance = Sum(Income) - Sum(Expense)
-                                     // Income = -Amount (if negative), Expense = Amount (if positive)
-                                     // Change = (-Amount) - Amount = -Amount
-                                     // So Net Change = Sum(-Amount)
-                                     
-                                     decimal netChange = accountTransactions.Sum(t => -(t.Amount ?? 0));
-                                     decimal openingBalanceAmount = account.CurrentBalance.Value - netChange;
-                                     
-                                     // Find the date for opening balance (before the first transaction)
-                                     var firstTxDate = accountTransactions.Min(t => t.Date?.ToDateTime(TimeOnly.MinValue) ?? DateTime.UtcNow);
-                                     var openingDate = firstTxDate.AddSeconds(-1);
-                                     if (openingDate.Kind != DateTimeKind.Utc) openingDate = openingDate.ToUniversalTime();
-
-                                     var openingTx = new YouAndMeExpensesAPI.Models.Transaction
-                                     {
-                                         Id = Guid.NewGuid(),
-                                         UserId = userId,
-                                         Type = openingBalanceAmount >= 0 ? "income" : "expense",
-                                         Amount = Math.Abs(openingBalanceAmount),
-                                         Category = "Income", // Or "Opening Balance" if available
-                                         Description = "Opening Balance",
-                                         Date = openingDate,
-                                         BankAccountId = account.AccountId,
-                                         IsBankSynced = true,
-                                         Notes = "Auto-generated Opening Balance",
-                                         CreatedAt = DateTime.UtcNow,
-                                         UpdatedAt = DateTime.UtcNow
-                                     };
-                                     _context.Transactions.Add(openingTx);
-                                     result.TotalImported++; // Count this as imported
-                                 }
-                             }
-                        }
-
-                        // Update last sync
-                        connection.LastSyncAt = DateTime.UtcNow;
-                        connection.UpdatedAt = DateTime.UtcNow;
-                    }
-                    catch(Exception ex)
-                    {
-                         _logger.LogError(ex, $"Error fetching transactions from Plaid for connection {connection.Id}");
-                         result.Errors++;
-                         result.ErrorMessages.Add($"Plaid Sync Error: {ex.Message}");
-                    }
-                }
-                
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error importing transactions for user {userId}");
-                result.Errors++;
-                result.ErrorMessages.Add($"Import failed: {ex.Message}");
-                return result;
-            }
+            // NOT IMPLEMENTED: Since we removed Plaid, we don't have a way to auto-fetch transactions for all accounts anymore
+            // This method is kept to satisfy the interface, or it could be deprecated/removed.
+            // For now, we'll return an empty result or throw.
+            return new BankTransactionImportResult();
         }
 
-        // Implementation to support interface method (imports for single account)
-        // Note: For Plaid, fetching single account typically means fetching Item (connection) transactions and filtering.
-        // This method wraps that logic.
         public async Task<BankTransactionImportResult> ImportTransactionsForAccountAsync(
              string userId,
              string accountId,
@@ -261,107 +138,100 @@ namespace YouAndMeExpensesAPI.Services
              DateTime? toDate = null,
              CancellationToken cancellationToken = default)
         {
-             // This logic is redundant if we use ImportTransactionsAsync, but implementing for interface completeness
-             // Find connection for this account
-             var account = await _context.Set<StoredBankAccount>().FirstOrDefaultAsync(a => a.AccountId == accountId && a.UserId == userId);
-             if(account == null) return new BankTransactionImportResult { ErrorMessages = { "Account not found" } };
-
-             var connection = await _context.Set<BankConnection>().FirstOrDefaultAsync(c => c.Id == account.BankConnectionId);
-             if(connection == null) return new BankTransactionImportResult { ErrorMessages = { "Connection not found" } };
-
-             if (!fromDate.HasValue) fromDate = DateTime.UtcNow.AddDays(-30);
-             if (!toDate.HasValue) toDate = DateTime.UtcNow;
-
-             try
-             {
-                 var (plaidTransactions, _) = await _plaidService.GetTransactionsAsync(connection.AccessToken, fromDate.Value, toDate.Value);
-                 var accountTransactions = plaidTransactions.Where(t => t.AccountId == accountId).ToList();
-                 return await ProcessTransactionsAsync(userId, accountId, accountTransactions, cancellationToken);
-             }
-             catch(Exception ex)
-             {
-                  return new BankTransactionImportResult { Errors = 1, ErrorMessages = { ex.Message } };
-             }
+             // Not implemented for similar reasons as above.
+             return new BankTransactionImportResult();
         }
-
-
-        private async Task<BankTransactionImportResult> ProcessTransactionsAsync(
-            string userId, 
-            string accountId, 
-            List<Going.Plaid.Entity.Transaction> transactions,
-            CancellationToken cancellationToken)
+        
+        // <summary>
+        // Process a list of generic ImportedTransactionDTOs from CSV/Excel
+        // </summary>
+        public async Task<BankTransactionImportResult> ProcessImportedTransactionsAsync(
+            string userId,
+            List<ImportedTransactionDTO> transactions,
+            CancellationToken cancellationToken,
+            ImportHistory? importHistory = null)
         {
             var result = new BankTransactionImportResult();
-            
-            foreach (var pt in transactions)
-            {
-                try
-                {
-                    var txDate = pt.Date?.ToDateTime(TimeOnly.MinValue) ?? DateTime.UtcNow; // Safe nullable conversion
+            if (!transactions.Any()) return result;
 
-                    // Duplicate Check
-                    var isDuplicate = await IsDuplicateTransactionAsync(userId, pt.TransactionId, pt.Amount ?? 0, txDate, cancellationToken);
-                    if (isDuplicate) 
+            if (importHistory != null)
+            {
+                await _context.ImportHistories.AddAsync(importHistory, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            var newTransactions = new List<Transaction>();
+            var latestDate = DateTime.MinValue;
+
+            // Get existing transaction IDs to avoid duplicates
+            // We'll check against existing BankTransactionIds where they are not null
+            // For imported CSVs, we are generating deterministic IDs based on content
+            var incomingIds = transactions.Select(t => t.TransactionId).ToList();
+            
+            var existingIds = await _context.Transactions
+                .Where(t => t.UserId == userId && t.BankTransactionId != null && incomingIds.Contains(t.BankTransactionId))
+                .Select(t => t.BankTransactionId!)
+                .ToListAsync(cancellationToken);
+
+            var existingIdsSet = new HashSet<string>(existingIds);
+
+            foreach (var dto in transactions)
+            {
+                if (existingIdsSet.Contains(dto.TransactionId))
+                {
+                    result.DuplicatesSkipped++;
+                    continue;
+                }
+
+                try 
+                {
+                    var transaction = MapDtoToAppTransaction(dto, userId);
+                    
+                    if (importHistory != null)
                     {
-                        result.DuplicatesSkipped++;
-                        continue;
+                        transaction.ImportHistoryId = importHistory.Id;
                     }
 
-                    // Map
-                    var appTransaction = MapPlaidTransactionToAppTransaction(pt, userId, accountId);
-                    
-                    if (appTransaction.Date.Kind != DateTimeKind.Utc)
-                        appTransaction.Date = appTransaction.Date.ToUniversalTime();
+                    newTransactions.Add(transaction);
 
-                    _context.Transactions.Add(appTransaction);
-                    result.TotalImported++;
+                    if (transaction.Date > latestDate)
+                    {
+                        latestDate = transaction.Date;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing plad transaction");
+                    _logger.LogError(ex, "Error mapping transaction {Id}", dto.TransactionId);
                     result.Errors++;
+                    result.ErrorMessages.Add($"Error processing transaction {dto.Description}: {ex.Message}");
                 }
             }
 
+            if (newTransactions.Any())
+            {
+                await _context.Transactions.AddRangeAsync(newTransactions, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+                
+                result.TotalImported = newTransactions.Count;
+                result.LastTransactionDate = latestDate > DateTime.MinValue ? latestDate : null;
+            }
+            
             return result;
         }
-
-        private YouAndMeExpensesAPI.Models.Transaction MapPlaidTransactionToAppTransaction(
-            Going.Plaid.Entity.Transaction pt,
-            string userId,
-            string accountId)
+        private YouAndMeExpensesAPI.Models.Transaction MapDtoToAppTransaction(
+            ImportedTransactionDTO dto,
+            string userId)
         {
-            // Plaid convention: positive amount = expense, negative = income
-            // App convention: determined by 'Type' string. Amount stores absolute usually?
-            // Existing logic: Type='expense'|'income'. Amount is stored as positive decimal.
+            // Assume dto.Amount is signed: negative for expense, positive for income (or handled by caller)
+            // Convention from most CSVs: -10.00 is expense, +10.00 is income.
+            // App internal: Amount is absolute, Type is "expense" or "income".
             
-            var amount = pt.Amount ?? 0;
-            var type = amount >= 0 ? "expense" : "income";
+            var amount = dto.Amount;
+            var type = amount < 0 ? "expense" : "income"; // Negative = Money leaving = Expense
             var absAmount = Math.Abs(amount);
 
             // Category mapping
-            // Plaid provides Category (list of strings) and PersonalFinanceCategory (object)
-            string categoryName = "Other";
-
-            // 1. Try PersonalFinanceCategory (v2) - most accurate
-            if (pt.PersonalFinanceCategory != null && !string.IsNullOrEmpty(pt.PersonalFinanceCategory.Primary))
-            {
-                 var mapped = MapCategory(pt.PersonalFinanceCategory.Primary, pt.Name);
-                 if (mapped != "Other") categoryName = mapped;
-            }
-
-            // 2. Fallback to legacy Category list if still "Other"
-            if (categoryName == "Other" && pt.Category != null && pt.Category.Any())
-            {
-                // Try to map from the specific category
-                foreach(var cat in pt.Category)
-                {
-                     var mapped = MapCategory(cat, pt.Name);
-                     if(mapped != "Other") { categoryName = mapped; break; }
-                }
-                // Fallback to first if still other
-                if(categoryName == "Other") categoryName = MapCategory(pt.Category.Last(), pt.Name);
-            }
+            string categoryName = MapCategory(dto.Category, dto.Description);
 
             return new YouAndMeExpensesAPI.Models.Transaction
             {
@@ -370,15 +240,16 @@ namespace YouAndMeExpensesAPI.Services
                 Type = type,
                 Amount = absAmount,
                 Category = categoryName,
-                Description = pt.Name ?? "Plaid Transaction",
-                Date = pt.Date?.ToDateTime(TimeOnly.MinValue) ?? DateTime.UtcNow,
-                BankTransactionId = pt.TransactionId,
-                BankAccountId = accountId,
+                Description = dto.Description ?? "Imported Transaction",
+                Date = dto.Date,
+                BankTransactionId = dto.TransactionId,
+                // BankAccountId = null, // CSV imports might not be linked to a stored "Bank Account" entity yet, or we could pass it in.
                 IsBankSynced = true,
-                PaidBy = "Bank", // Explicitly tag as paid by Bank for frontend logic
-                Notes = "Imported from Plaid",
+                PaidBy = "Bank", 
+                Notes = "Imported via Statement",
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+
             };
         }
 
@@ -389,12 +260,17 @@ namespace YouAndMeExpensesAPI.Services
             DateTime transactionDate,
             CancellationToken cancellationToken = default)
         {
-            // Check by ID
-            var existsById = await _context.Transactions
-                .AnyAsync(t => t.UserId == userId && t.BankTransactionId == bankTransactionId, cancellationToken);
-            if (existsById) return true;
+            // Check by ID first
+            if (!string.IsNullOrEmpty(bankTransactionId))
+            {
+                var existsById = await _context.Transactions
+                    .AnyAsync(t => t.UserId == userId && t.BankTransactionId == bankTransactionId, cancellationToken);
+                if (existsById) return true;
+            }
 
-            return false; // For now relies on ID. 
+            // Fuzzy check for CSVs that might not have stable IDs? 
+            // For now, rely on caller providing a deterministic ID (e.g. hash of date+amount+desc)
+            return false; 
         }
 
         private string MapCategory(string? bankCategory, string? description)
@@ -412,7 +288,7 @@ namespace YouAndMeExpensesAPI.Services
                 var lower = description.ToLowerInvariant();
                 foreach (var mapping in _categoryMapping)
                 {
-                     if (lower.Contains(mapping.Key)) return mapping.Value;
+                    if (lower.Contains(mapping.Key)) return mapping.Value;
                 }
             }
             return "Other";
