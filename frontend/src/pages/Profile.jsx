@@ -8,6 +8,7 @@ import TwoFactorSetup from '../components/TwoFactorSetup'
 import LogoLoader from '../components/LogoLoader'
 import './Profile.css'
 import PlaidConnect from '../components/PlaidConnect'
+import ConfirmationModal from '../components/ConfirmationModal'
 
 /**
  * Profile Page Component
@@ -729,6 +730,8 @@ function BankConnections() {
   const { t } = useTranslation()
   const [accounts, setAccounts] = useState([])
   const [connectionMessage, setConnectionMessage] = useState({ type: '', text: '' })
+  const [disconnectModal, setDisconnectModal] = useState({ isOpen: false, type: null, id: null, name: null })
+  const [disconnectLoading, setDisconnectLoading] = useState(false)
 
   /**
    * Get bank icon styling based on name
@@ -786,43 +789,61 @@ function BankConnections() {
   /**
    * Handle disconnecting all bank accounts
    */
-  const handleDisconnect = async () => {
-    if (!window.confirm(t('profile.openBanking.disconnectConfirm'))) return
-    try {
-      const service = await import('../services/openBanking').then(m => m.openBankingService)
-      await service.disconnect()
-      setAccounts([])
-      setConnectionMessage({
-        type: 'success',
-        text: t('profile.openBanking.disconnectSuccess')
-      })
-    } catch (error) {
-      setConnectionMessage({
-        type: 'error',
-        text: t('profile.openBanking.disconnectError')
-      })
-    }
+  /**
+   * Handle disconnecting all bank accounts
+   */
+  const handleDisconnect = () => {
+    setDisconnectModal({
+      isOpen: true,
+      type: 'all',
+      id: null,
+      name: null
+    })
   }
 
   /**
    * Handle disconnecting a single account
    */
-  const handleDisconnectAccount = async (accountId, accountName) => {
-    if (!window.confirm(t('profile.openBanking.disconnectAccountConfirm', { account: accountName || 'this account' }))) return
-    try {
-      const service = await import('../services/openBanking').then(m => m.openBankingService)
-      await service.disconnectAccount(accountId)
-      // Reload accounts to reflect the change
-      await loadAccounts()
-      setConnectionMessage({
-        type: 'success',
-        text: t('profile.openBanking.disconnectAccountSuccess')
-      })
-    } catch (error) {
-      console.error('Disconnect account error:', error)
-      let errorMessage = error.message || t('profile.openBanking.disconnectAccountError')
+  /**
+   * Handle disconnecting a single account
+   */
+  const handleDisconnectAccount = (accountId, accountName) => {
+    setDisconnectModal({
+      isOpen: true,
+      type: 'single',
+      id: accountId,
+      name: accountName
+    })
+  }
 
-      // Handle specific error cases
+  /**
+   * Execute the disconnection after confirmation
+   */
+  const executeDisconnect = async () => {
+    try {
+      setDisconnectLoading(true)
+      const service = await import('../services/openBanking').then(m => m.openBankingService)
+
+      if (disconnectModal.type === 'all') {
+        await service.disconnect()
+        setAccounts([])
+        setConnectionMessage({
+          type: 'success',
+          text: t('profile.openBanking.disconnectSuccess')
+        })
+      } else if (disconnectModal.type === 'single') {
+        await service.disconnectAccount(disconnectModal.id)
+        await loadAccounts()
+        setConnectionMessage({
+          type: 'success',
+          text: t('profile.openBanking.disconnectAccountSuccess')
+        })
+      }
+      setDisconnectModal({ isOpen: false, type: null, id: null, name: null })
+    } catch (error) {
+      console.error('Disconnect error:', error)
+      let errorMessage = error.message || t('profile.openBanking.disconnectError')
+
       if (error.message && error.message.includes('Unauthorized')) {
         errorMessage = t('profile.openBanking.unauthorized') || 'Please log in again to disconnect accounts'
       }
@@ -831,6 +852,8 @@ function BankConnections() {
         type: 'error',
         text: errorMessage
       })
+    } finally {
+      setDisconnectLoading(false)
     }
   }
 
@@ -940,6 +963,23 @@ function BankConnections() {
           </div>
         </div>
       )}
+      {/* Disconnect Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={disconnectModal.isOpen}
+        onClose={() => !disconnectLoading && setDisconnectModal({ ...disconnectModal, isOpen: false })}
+        onConfirm={executeDisconnect}
+        title={disconnectModal.type === 'all'
+          ? t('profile.openBanking.disconnectAllTitle', 'Disconnect All Banks')
+          : t('profile.openBanking.disconnectAccountTitle', 'Disconnect Bank Account')
+        }
+        message={disconnectModal.type === 'all'
+          ? t('profile.openBanking.disconnectConfirm')
+          : t('profile.openBanking.disconnectAccountConfirm', { account: disconnectModal.name || 'this account' })
+        }
+        variant="danger"
+        confirmText={t('profile.openBanking.disconnect', 'Disconnect')}
+        loading={disconnectLoading}
+      />
     </div>
   )
 }
