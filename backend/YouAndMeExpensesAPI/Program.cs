@@ -315,6 +315,34 @@ builder.Services.AddHttpClient();
 
 // Register Plaid
 builder.Services.Configure<PlaidSettings>(builder.Configuration.GetSection("Plaid"));
+
+// Add fallback for Environment Variables (Render.com often uses SNAKE_CASE)
+builder.Services.PostConfigure<PlaidSettings>(settings =>
+{
+    if (string.IsNullOrEmpty(settings.ClientId))
+    {
+        settings.ClientId = Environment.GetEnvironmentVariable("PLAID_CLIENT_ID") ?? settings.ClientId;
+    }
+    
+    if (string.IsNullOrEmpty(settings.Secret))
+    {
+        settings.Secret = Environment.GetEnvironmentVariable("PLAID_SECRET") ?? settings.Secret;
+    }
+    
+    // Check for environment variable override
+    var envVar = Environment.GetEnvironmentVariable("PLAID_ENV") ?? Environment.GetEnvironmentVariable("PLAID_ENVIRONMENT");
+    if (!string.IsNullOrEmpty(envVar))
+    {
+        settings.Environment = envVar;
+    }
+    
+    // Check for RedirectUri variable
+    var redirectUri = Environment.GetEnvironmentVariable("PLAID_REDIRECT_URI");
+    if (!string.IsNullOrEmpty(redirectUri))
+    {
+        settings.RedirectUri = redirectUri;
+    }
+});
 // Manual registration to ensure Environment mapping is correct without relying on PLaidOptions binding magic immediately
 builder.Services.AddSingleton<PlaidClient>(sp =>
 {
