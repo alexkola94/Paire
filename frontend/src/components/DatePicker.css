@@ -87,6 +87,11 @@
     padding: 16px;
     width: 280px;
     animation: fadeIn 0.2s ease-out;
+
+    /* Create independent stacking context to avoid being clipped by body overflow:hidden */
+    isolation: isolate;
+    /* Ensure it's a containing block */
+    contain: layout;
 }
 
 /* Backdrop for clicking outside (Portal) */
@@ -96,10 +101,14 @@
     left: 0;
     right: 0;
     bottom: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 10099;
     /* Below popup, above Modal (9999) */
     background: transparent;
     /* Or rgba(0,0,0,0.1) if dimming desired */
+    /* Ensure backdrop is always visible */
+    isolation: isolate;
 }
 
 .calendar-header {
@@ -205,18 +214,24 @@
 @media (max-width: 768px) {
     .calendar-popup {
         /* Force center on mobile, ignore desktop positioning */
-        top: 50% !important;
-        left: 50% !important;
+        top: 50vh !important;
+        left: 50vw !important;
         transform: translate(-50%, -50%);
         width: 90%;
         max-width: 320px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         border: 1px solid var(--glass-border);
+        /* Ensure calendar is not clipped by parent overflow:hidden */
+        overflow: visible;
+        /* Use will-change for better mobile rendering */
+        will-change: transform;
     }
 
     /* Optional: Add dimming on mobile to focus attention */
     .date-picker-backdrop {
         background: rgba(0, 0, 0, 0.4);
         backdrop-filter: blur(2px);
+        /* Ensure backdrop is not clipped */
+        overflow: visible;
     }
 }
