@@ -439,19 +439,14 @@ app.MapGet("/diagnostics/email", async (ILogger<Program> logger, Microsoft.Exten
     
     try
     {
-        Log($"🔍 Starting SMTP Connectivity Test for {settings.SmtpServer}...");
-        
-        if (string.IsNullOrEmpty(settings.SmtpServer))
-        {
-             Log("❌ No SMTP Server configured in EmailSettings.");
-             return Results.Ok(new { status = "Failed", results, logs });
-        }
+        var resendApiHost = "api.resend.com";
+        Log($"🔍 Starting Connectivity Test for {resendApiHost} (HTTP Mode)...");
 
         // 1. DNS Resolution
-        Log($"1️⃣ Testing DNS Resolution for {settings.SmtpServer}...");
+        Log($"1️⃣ Testing DNS Resolution for {resendApiHost}...");
         try
         {
-            var addresses = await System.Net.Dns.GetHostAddressesAsync(settings.SmtpServer);
+            var addresses = await System.Net.Dns.GetHostAddressesAsync(resendApiHost);
             foreach (var addr in addresses)
             {
                 Log($"   Found IP: {addr} ({addr.AddressFamily})");
@@ -464,36 +459,23 @@ app.MapGet("/diagnostics/email", async (ILogger<Program> logger, Microsoft.Exten
             results["DNS"] = "❌ Failed";
         }
 
-        // 2. TCP Connection Test to Standard SMTP Ports
-        var ports = new[] { 25, 465, 587, 2525 };
-        Log($"2️⃣ Testing TCP Connect to {settings.SmtpServer} on ports {string.Join(", ", ports)}...");
-        
-        foreach (var port in ports)
+        // 2. HTTP Connectivity Test to Resend API (Since we switched to HTTP)
+        Log($"2️⃣ Testing HTTPS Connect to {resendApiHost}...");
+        try
         {
-            try
-            {
-                using var tcp = new System.Net.Sockets.TcpClient();
-                // Shorter timeout for port scanning
-                var connectTask = tcp.ConnectAsync(settings.SmtpServer, port);
-                var completedTask = await Task.WhenAny(connectTask, Task.Delay(3000));
-
-                if (completedTask == connectTask)
-                {
-                    await connectTask; // Propagate exceptions
-                    Log($"   ✅ Port {port}: Success");
-                    results[$"TCP-{port}"] = "✅ Success";
-                }
-                else
-                {
-                    Log($"   ❌ Port {port}: Timed Out");
-                    results[$"TCP-{port}"] = "❌ Timed Out";
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"   ❌ Port {port}: Failed ({ex.Message})");
-                results[$"TCP-{port}"] = "❌ Failed";
-            }
+            using var client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(5);
+            
+            // Just test if we can reach the server (Resend root returns 404 or similar, but proves connectivity)
+            var response = await client.GetAsync("https://api.resend.com");
+            
+            Log($"   ✅ HTTPS Connection Successful (Status: {response.StatusCode})");
+            results["HTTPS-API"] = "✅ Success";
+        }
+        catch (Exception ex)
+        {
+            Log($"   ❌ HTTPS Connection Failed: {ex.Message}");
+            results["HTTPS-API"] = "❌ Failed";
         }
 
         return Results.Ok(new
