@@ -157,20 +157,20 @@
   transition: all 0.3s ease;
 }
 
-/* Force theme toggle to be visible on mobile */
-.header-icon-btn.theme-toggle-btn {
+/* Force theme toggle to be visible on mobile - MOVED TO MENU */
+/* .header-icon-btn.theme-toggle-btn {
   display: flex !important;
-}
+} */
 
 .header-icon-btn:hover {
   background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
 }
 
-/* Economic News Button - Pulsing Animation */
+/* Economic News Button - Pulsing Animation REMOVED by request */
 .news-button {
   position: relative;
-  animation: pulse 3.5s ease-in-out infinite;
+  /* animation: pulse 3.5s ease-in-out infinite; */
 }
 
 /* Pulsing animation for live indicator effect - heartbeat style */
@@ -191,9 +191,9 @@
   transition: all 0.3s ease;
 }
 
-/* Maintain hover effect while pulsing - slightly faster pulse on hover */
+/* Maintain hover effect */
 .news-button:hover {
-  animation: pulse 2.5s ease-in-out infinite;
+  /* animation: pulse 2.5s ease-in-out infinite; */
   background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
 }
@@ -218,7 +218,8 @@
   transition: all 0.3s ease;
 }
 
-.user-menu-btn:hover {
+.user-menu-btn:hover,
+.user-menu-btn.active {
   background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
 }
@@ -231,7 +232,7 @@
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  min-width: 200px;
+  min-width: 220px;
   overflow: hidden;
   z-index: 1000;
   animation: slideDown 0.2s ease;
@@ -240,12 +241,12 @@
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-10px);
+    transform: translateY(-10px);
   }
 
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 }
 

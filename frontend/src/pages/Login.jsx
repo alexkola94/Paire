@@ -33,7 +33,8 @@ function Login() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    emailNotificationsEnabled: false
   })
 
   // Remember Me state
@@ -115,7 +116,12 @@ function Login() {
     try {
       if (isSignUp) {
         // Sign up new user
-        await authService.signUp(formData.email, formData.password)
+        await authService.signUp(
+          formData.email,
+          formData.password,
+          '', // displayName
+          formData.emailNotificationsEnabled
+        )
         // setSuccess('Account created successfully! Please check your email to verify.')
         setSuccess('Account created successfully!')
 
@@ -269,7 +275,7 @@ function Login() {
     setIsSignUp(!isSignUp)
     setError('')
     setSuccess('')
-    setFormData({ email: '', password: '', confirmPassword: '' })
+    setFormData({ email: '', password: '', confirmPassword: '', emailNotificationsEnabled: false })
   }
 
   // Show 2FA verification screen if required
@@ -385,32 +391,50 @@ function Login() {
 
               {/* Confirm Password (Sign Up only) */}
               {isSignUp && (
-                <div className="form-group">
-                  <label htmlFor="confirmPassword">
-                    <FiLock size={18} />
-                    {t('auth.confirmPassword')}
-                  </label>
-                  <div className="password-input-wrapper">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="••••••••"
-                      required
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                    </button>
+                <>
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">
+                      <FiLock size={18} />
+                      {t('auth.confirmPassword')}
+                    </label>
+                    <div className="password-input-wrapper">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="••••••••"
+                        required
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                      </button>
+                    </div>
                   </div>
-                </div>
+
+                  <div className="form-group checkbox-group">
+                    <label className="checkbox-label" htmlFor="emailNotificationsEnabled">
+                      <input
+                        type="checkbox"
+                        id="emailNotificationsEnabled"
+                        name="emailNotificationsEnabled"
+                        checked={formData.emailNotificationsEnabled}
+                        onChange={(e) => setFormData({ ...formData, emailNotificationsEnabled: e.target.checked })}
+                      />
+                      <span className="checkbox-custom"></span>
+                      <span className="checkbox-text">
+                        {t('auth.enableEmailNotifications') || 'Receive email notifications'}
+                      </span>
+                    </label>
+                  </div>
+                </>
               )}
 
               {/* Remember Me Checkbox */}

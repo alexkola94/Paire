@@ -20,6 +20,8 @@ namespace YouAndMeExpensesAPI.Models
         public string ConfirmPassword { get; set; } = string.Empty;
 
         public string? DisplayName { get; set; }
+        
+        public bool EmailNotificationsEnabled { get; set; } = true;
     }
 
     /// <summary>

@@ -16,20 +16,20 @@ namespace YouAndMeExpensesAPI.Controllers
     public class TransactionsController : BaseApiController
     {
         private readonly AppDbContext _dbContext;
-        private readonly ISupabaseService _supabaseService; // For storage only
+        private readonly IStorageService _storageService;
         private readonly IAchievementService _achievementService;
         private readonly IBudgetService _budgetService;
         private readonly ILogger<TransactionsController> _logger;
 
         public TransactionsController(
-            AppDbContext dbContext,
-            ISupabaseService supabaseService,
+             AppDbContext dbContext,
+            IStorageService storageService,
             IAchievementService achievementService,
             IBudgetService budgetService,
             ILogger<TransactionsController> logger)
         {
             _dbContext = dbContext;
-            _supabaseService = supabaseService;
+            _storageService = storageService;
             _achievementService = achievementService;
             _budgetService = budgetService;
             _logger = logger;
@@ -403,6 +403,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     ? transaction.Date 
                     : transaction.Date.ToUniversalTime();
                 
+                existingTransaction.AttachmentUrl = transaction.AttachmentUrl;
+                existingTransaction.AttachmentPath = transaction.AttachmentPath;
+
                 existingTransaction.PaidBy = transaction.PaidBy;
                 existingTransaction.IsRecurring = transaction.IsRecurring;
                 existingTransaction.RecurrencePattern = transaction.RecurrencePattern;
@@ -537,10 +540,15 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                using var stream = file.OpenReadStream();
-                var receiptUrl = await _supabaseService.UploadReceiptAsync(stream, file.FileName, userId.ToString());
+                // Generate unique filename: receipt_userId_timestamp.ext
+                // extension locally available from validation block above
+                var fileName = $"receipt_{userId}_{DateTime.UtcNow.Ticks}{extension}";
+
+                // Upload to "receipts" bucket
+                var receiptUrl = await _storageService.UploadFileAsync(file, fileName, "receipts");
                 
-                return Ok(new { url = receiptUrl });
+                // Return both URL and path (filename)
+                return Ok(new { url = receiptUrl, path = fileName });
             }
             catch (Exception ex)
             {
@@ -550,7 +558,132 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Imports transactions from a bank statement (CSV/Excel)
+        /// Gets all transactions that have a receipt attached
+        /// </summary>
+        [HttpGet("receipts")]
+        public async Task<IActionResult> GetTransactionsWithReceipts(
+            [FromQuery] string? category = null,
+            [FromQuery] string? search = null)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId.ToString() };
+                allUserIds.AddRange(partnerIds);
+
+                var query = _dbContext.Transactions
+                    .Where(t => allUserIds.Contains(t.UserId) && !string.IsNullOrEmpty(t.AttachmentUrl));
+
+                if (!string.IsNullOrWhiteSpace(category) && category != "All")
+                {
+                    query = query.Where(t => EF.Functions.ILike(t.Category, category));
+                }
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchTerm = $"%{search.Trim()}%";
+                    query = query.Where(t => 
+                        EF.Functions.ILike(t.Description ?? "", searchTerm) || 
+                        EF.Functions.ILike(t.Category ?? "", searchTerm) || 
+                        EF.Functions.ILike(t.Notes ?? "", searchTerm)
+                    );
+                }
+
+                var transactions = await query.OrderByDescending(t => t.Date).ToListAsync();
+
+                // Get user profiles
+                var userIds = transactions.Select(t => t.UserId).Distinct().ToList();
+                var userProfiles = await _dbContext.UserProfiles
+                    .Where(up => userIds.Contains(up.Id.ToString()))
+                    .ToListAsync();
+
+                var profileDict = userProfiles.ToDictionary(
+                    p => p.Id.ToString(),
+                    p => new
+                    {
+                        id = p.Id,
+                        email = p.Email,
+                        display_name = p.DisplayName,
+                        avatar_url = p.AvatarUrl
+                    }
+                );
+
+                var enrichedTransactions = transactions.Select(t => new
+                {
+                    id = t.Id,
+                    userId = t.UserId,
+                    type = t.Type,
+                    amount = t.Amount,
+                    category = t.Category,
+                    description = t.Description,
+                    date = t.Date,
+                    attachmentUrl = t.AttachmentUrl,
+                    attachmentPath = t.AttachmentPath,
+                    user_profiles = profileDict.ContainsKey(t.UserId) ? profileDict[t.UserId] : null
+                }).ToList();
+
+                return Ok(enrichedTransactions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting receipts for user {UserId}", userId);
+                return StatusCode(500, new { message = "Error getting receipts", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Deletes a receipt attachment from a transaction
+        /// </summary>
+        [HttpDelete("{id}/receipt")]
+        public async Task<IActionResult> DeleteReceipt(Guid id)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var transaction = await _dbContext.Transactions.FindAsync(id);
+                if (transaction == null) return NotFound(new { message = "Transaction not found" });
+
+                // Check permissions (own or partner)
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                if (transaction.UserId != userId.ToString() && !partnerIds.Contains(transaction.UserId))
+                {
+                    return Forbid();
+                }
+
+                if (string.IsNullOrEmpty(transaction.AttachmentPath) && string.IsNullOrEmpty(transaction.AttachmentUrl))
+                {
+                    return BadRequest(new { message = "Transaction has no receipt to delete" });
+                }
+
+                // Delete from Supabase if path exists
+                if (!string.IsNullOrEmpty(transaction.AttachmentPath))
+                {
+                    await _storageService.DeleteFileAsync(transaction.AttachmentPath, "receipts");
+                }
+                // Fallback: if only URL exists, try to derive path? 
+                // Currently usually stored together. If path missing, we can't reliably delete from storage unless we parse URL.
+                // Assuming path is stored.
+
+                // Clear fields
+                transaction.AttachmentUrl = null;
+                transaction.AttachmentPath = null;
+                transaction.UpdatedAt = DateTime.UtcNow;
+
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new { message = "Receipt deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting receipt for transaction {TransactionId}", id);
+                return StatusCode(500, new { message = "Error deleting receipt", error = ex.Message });
+            }
+        }
         /// </summary>
         /// <param name="file">Statement file</param>
         /// <returns>Import result stats</returns>

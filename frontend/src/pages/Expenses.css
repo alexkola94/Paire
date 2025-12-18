@@ -197,7 +197,7 @@
    Attachment Link
    ================================ */
 
-.attachment-link {
+.attachment-link-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -205,14 +205,67 @@
   font-size: 0.875rem;
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--secondary);
+  border: none;
   border-radius: var(--radius-sm);
   transition: var(--transition);
   margin-bottom: var(--spacing-md);
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.attachment-link:hover {
+.attachment-link-btn:hover {
   background: var(--primary-light);
   color: white;
+}
+
+/* Viewer Modal (Reused from Receipts) */
+.image-viewer-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s;
+}
+
+.image-viewer-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.image-viewer-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 4px;
+}
+
+.close-viewer {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.download-btn {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* ================================

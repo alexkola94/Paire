@@ -6,7 +6,10 @@ import {
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
   FiGrid, FiList, FiChevronLeft, FiChevronRight
 } from 'react-icons/fi'
-import { addMonths, addYears, addWeeks, startOfMonth, endOfMonth, isSameMonth, isAfter } from 'date-fns'
+import {
+  addMonths, addYears, addWeeks, startOfMonth, endOfMonth, isSameMonth,
+  isAfter, isBefore, startOfDay, endOfDay, eachDayOfInterval, getDay
+} from 'date-fns'
 import { recurringBillService, loanService, loanPaymentService } from '../services/api'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -53,11 +56,11 @@ function RecurringBills() {
   const [processingBillId, setProcessingBillId] = useState(null)
   // Unmark confirmation modal state
   const [unmarkModal, setUnmarkModal] = useState({ isOpen: false, bill: null })
+  // Animation state
+  const [animatingBill, setAnimatingBill] = useState({ id: null, type: null }) // type: 'marking-paid' | 'reverting'
 
   // Pagination State
   const [page, setPage] = useState(1)
-
-
 
   // Bill categories (using master list)
   const categories = CATEGORIES.EXPENSE.map(cat => ({
@@ -116,7 +119,11 @@ function RecurringBills() {
    * Check if bill is overdue
    */
   const isOverdue = (dueDate) => {
-    return getDaysUntil(dueDate) < 0
+    // Only overdue if it's strictly before today's start of day
+    // (If it's due today, it's not overdue yet)
+    const todayStart = startOfDay(new Date())
+    const due = new Date(dueDate)
+    return isBefore(due, todayStart)
   }
 
   /**
@@ -207,92 +214,99 @@ function RecurringBills() {
    * Handle mark bill as paid with Optimistic UI
    */
   const handleMarkPaid = async (billId, billAmount, notes) => {
-    if (processingBillId) return // Prevent double clicks
+    if (processingBillId || animatingBill.id) return // Prevent double clicks
 
-    // 1. Optimistic Update
-    const billToUpdate = bills.find(b => b.id === billId)
-    if (!billToUpdate) return
+    // 1. Trigger Animation
+    setAnimatingBill({ id: billId, type: 'marking-paid' })
 
-    // Store previous state for rollback
-    const previousBills = [...bills]
-    const previousSummary = summary ? { ...summary } : null
-
-    // Calculate next due date locally
-    const currentDueDate = new Date(billToUpdate.nextDueDate || billToUpdate.next_due_date)
-    let nextDueDate = new Date(currentDueDate)
-
-    if (billToUpdate.frequency === 'monthly') {
-      nextDueDate = addMonths(currentDueDate, 1)
-    } else if (billToUpdate.frequency === 'yearly') {
-      nextDueDate = addYears(currentDueDate, 1)
-    } else if (billToUpdate.frequency === 'weekly') {
-      nextDueDate = addWeeks(currentDueDate, 1)
-    } else if (billToUpdate.frequency === 'quarterly') {
-      nextDueDate = addMonths(currentDueDate, 3)
-    }
-
-    // Update local state immediately
-    const updatedBill = {
-      ...billToUpdate,
-      nextDueDate: nextDueDate.toISOString(),
-      next_due_date: nextDueDate.toISOString() // Handle both casing
-    }
-
-    setBills(prevBills => prevBills.map(b => b.id === billId ? updatedBill : b))
-
-    // Optimistically update summary (approximate)
-    if (summary) {
-      setSummary(prev => ({
-        ...prev,
-        overdueBills: isOverdue(currentDueDate) ? Math.max(0, prev.overdueBills - 1) : prev.overdueBills,
-        upcomingBills: isDueSoon(currentDueDate) ? Math.max(0, prev.upcomingBills - 1) : prev.upcomingBills
-        // Note: strictly we should also increment correct category, but this is enough for "instant feel"
-      }))
-    }
-
-    try {
-      setProcessingBillId(billId)
-
-      // Check for loan reference in notes
-      const loanRefMatch = notes && notes.match(/\[LOAN_REF:([^\]]+)\]/)
-
-      if (loanRefMatch && loanRefMatch[1]) {
-        const loanId = loanRefMatch[1]
-
-        // Create loan payment
-        const paymentData = {
-          loanId: loanId,
-          amount: parseFloat(billAmount),
-          principalAmount: parseFloat(billAmount),
-          interestAmount: 0,
-          paymentDate: new Date().toISOString().split('T')[0],
-          notes: `Auto-payment from Recurring Bill`
-        }
-
-        try {
-          // This we can't fully optimistic update without complex logic, so we await
-          await loanPaymentService.create(paymentData)
-        } catch (paymentError) {
-          console.error('Error creating loan payment:', paymentError)
-          // Non-blocking error for the main action
-        }
+    // Wait for animation to finish (approx 400ms matches CSS)
+    setTimeout(async () => {
+      // 2. Optimistic Update Logic
+      const billToUpdate = bills.find(b => b.id === billId)
+      if (!billToUpdate) {
+        setAnimatingBill({ id: null, type: null })
+        return
       }
 
-      await recurringBillService.markPaid(billId)
+      // Store previous state for rollback
+      const previousBills = [...bills]
+      const previousSummary = summary ? { ...summary } : null
 
-      // Trigger background refresh to ensure data consistency
-      await loadData(true)
-    } catch (error) {
-      console.error('Error marking bill as paid:', error)
+      // Calculate next due date locally
+      const currentDueDate = new Date(billToUpdate.nextDueDate || billToUpdate.next_due_date)
+      let nextDueDate = new Date(currentDueDate)
 
-      // Rollback on error
-      setBills(previousBills)
-      if (previousSummary) setSummary(previousSummary)
+      if (billToUpdate.frequency === 'monthly') {
+        nextDueDate = addMonths(currentDueDate, 1)
+      } else if (billToUpdate.frequency === 'yearly') {
+        nextDueDate = addYears(currentDueDate, 1)
+      } else if (billToUpdate.frequency === 'weekly') {
+        nextDueDate = addWeeks(currentDueDate, 1)
+      } else if (billToUpdate.frequency === 'quarterly') {
+        nextDueDate = addMonths(currentDueDate, 3)
+      }
 
-      alert(t('recurringBills.errorMarkingPaid'))
-    } finally {
-      setProcessingBillId(null)
-    }
+      // Update local state immediately
+      const updatedBill = {
+        ...billToUpdate,
+        nextDueDate: nextDueDate.toISOString(),
+        next_due_date: nextDueDate.toISOString() // Handle both casing
+      }
+
+      setBills(prevBills => prevBills.map(b => b.id === billId ? updatedBill : b))
+      setAnimatingBill({ id: null, type: null }) // Clear animation state
+
+      // Optimistically update summary (approximate)
+      if (summary) {
+        setSummary(prev => ({
+          ...prev,
+          overdueBills: isOverdue(currentDueDate) ? Math.max(0, prev.overdueBills - 1) : prev.overdueBills,
+          upcomingBills: isDueSoon(currentDueDate) ? Math.max(0, prev.upcomingBills - 1) : prev.upcomingBills
+        }))
+      }
+
+      try {
+        setProcessingBillId(billId)
+
+        // Check for loan reference in notes
+        const loanRefMatch = notes && notes.match(/\[LOAN_REF:([^\]]+)\]/)
+
+        if (loanRefMatch && loanRefMatch[1]) {
+          const loanId = loanRefMatch[1]
+
+          // Create loan payment
+          const paymentData = {
+            loanId: loanId,
+            amount: parseFloat(billAmount),
+            principalAmount: parseFloat(billAmount),
+            interestAmount: 0,
+            paymentDate: new Date().toISOString().split('T')[0],
+            notes: `Auto-payment from Recurring Bill`
+          }
+
+          try {
+            await loanPaymentService.create(paymentData)
+          } catch (paymentError) {
+            console.error('Error creating loan payment:', paymentError)
+          }
+        }
+
+        await recurringBillService.markPaid(billId)
+
+        // Trigger background refresh to ensure data consistency
+        await loadData(true)
+      } catch (error) {
+        console.error('Error marking bill as paid:', error)
+
+        // Rollback on error
+        setBills(previousBills)
+        if (previousSummary) setSummary(previousSummary)
+
+        alert(t('recurringBills.errorMarkingPaid'))
+      } finally {
+        setProcessingBillId(null)
+      }
+    }, 400) // Match CSS transition time
   }
 
   /**
@@ -312,43 +326,71 @@ function RecurringBills() {
     const { bill } = unmarkModal
     if (!bill) return
 
-    try {
-      setProcessingBillId(bill.id)
+    // Close modal immediately
+    setUnmarkModal({ isOpen: false, bill: null })
 
-      // 1. Revert Bill Status via API (Handles Date Revert + Expense Deletion)
-      await recurringBillService.unmarkPaid(bill.id)
+    // 1. Trigger Animation
+    setAnimatingBill({ id: bill.id, type: 'reverting' })
 
-      // 2. Revert Loan Payment (if applicable)
-      const loanRefMatch = bill.notes && bill.notes.match(/\[LOAN_REF:([^\]]+)\]/)
-      if (loanRefMatch && loanRefMatch[1]) {
-        const loanId = loanRefMatch[1]
+    setTimeout(async () => {
+      try {
+        setProcessingBillId(bill.id)
 
-        const payments = await loanPaymentService.getByLoan(loanId)
+        // Optimistic Revert Logic
+        // We need to move the date back.
+        // NOTE: Exact revert logic is complex if we don't know the EXACT previous date,
+        // but for "Undo Mark Paid", jumping back one interval is usually correct.
+        const currentNextDue = new Date(bill.nextDueDate || bill.next_due_date)
+        let prevDueDate = new Date(currentNextDue)
 
-        const today = new Date().toISOString().split('T')[0]
-        const paymentToDelete = payments.find(p => {
-          const paymentDate = p.paymentDate.split('T')[0]
-          const amountMatch = Math.abs(parseFloat(p.amount) - parseFloat(bill.amount)) < 0.01
-          const isAutoPayment = p.notes && p.notes.includes('Auto-payment')
-          return paymentDate === today && amountMatch && isAutoPayment
-        })
+        if (bill.frequency === 'monthly') prevDueDate = addMonths(currentNextDue, -1)
+        else if (bill.frequency === 'weekly') prevDueDate = addWeeks(currentNextDue, -1)
+        else if (bill.frequency === 'yearly') prevDueDate = addYears(currentNextDue, -1)
+        else if (bill.frequency === 'quarterly') prevDueDate = addMonths(currentNextDue, -3)
 
-        if (paymentToDelete) {
-          await loanPaymentService.delete(paymentToDelete.id)
+        const revertedBill = {
+          ...bill,
+          nextDueDate: prevDueDate.toISOString(),
+          next_due_date: prevDueDate.toISOString()
         }
-      }
 
-      await loadData()
-      setUnmarkModal({ isOpen: false, bill: null })
-      // Show success animation or toast instead of alert
-      setShowSuccessAnimation(true)
-      // alert(t('recurringBills.revertSuccess') || 'Bill payment reverted successfully')
-    } catch (error) {
-      console.error('Error unmarking bill:', error)
-      alert(t('recurringBills.errorUnmarking') || 'Failed to revert bill status.')
-    } finally {
-      setProcessingBillId(null)
-    }
+        setBills(prevBills => prevBills.map(b => b.id === bill.id ? revertedBill : b))
+        setAnimatingBill({ id: null, type: null })
+
+        // 2. Revert Bill Status via API (Handles Date Revert + Expense Deletion)
+        await recurringBillService.unmarkPaid(bill.id)
+
+        // 3. Revert Loan Payment (if applicable)
+        const loanRefMatch = bill.notes && bill.notes.match(/\[LOAN_REF:([^\]]+)\]/)
+        if (loanRefMatch && loanRefMatch[1]) {
+          const loanId = loanRefMatch[1]
+
+          const payments = await loanPaymentService.getByLoan(loanId)
+
+          const today = new Date().toISOString().split('T')[0]
+          const paymentToDelete = payments.find(p => {
+            const paymentDate = p.paymentDate.split('T')[0]
+            const amountMatch = Math.abs(parseFloat(p.amount) - parseFloat(bill.amount)) < 0.01
+            const isAutoPayment = p.notes && p.notes.includes('Auto-payment')
+            return paymentDate === today && amountMatch && isAutoPayment
+          })
+
+          if (paymentToDelete) {
+            await loanPaymentService.delete(paymentToDelete.id)
+          }
+        }
+
+        await loadData(true) // Background refresh
+        // No success animation
+      } catch (error) {
+        console.error('Error unmarking bill:', error)
+        alert(t('recurringBills.errorUnmarking') || 'Failed to revert bill status.')
+        // In a real app we would rollback optimistic update here too
+        await loadData(true)
+      } finally {
+        setProcessingBillId(null)
+      }
+    }, 400)
   }
 
   /**
@@ -447,6 +489,88 @@ function RecurringBills() {
 
   const today = new Date()
   const currentMonthEnd = endOfMonth(today)
+
+  // --- NEW CALCULATION LOGIC ---
+
+  /**
+   * Calculate total of unpaid bills for the current month (including overdue)
+   */
+  const calculateCurrentMonthUnpaid = () => {
+    // 1. Overdue bills are always unpaid "obligations" for now
+    const overdueTotal = activeBills
+      .filter(b => isOverdue(b.nextDueDate || b.next_due_date))
+      .reduce((sum, b) => sum + parseFloat(b.amount), 0)
+
+    // 2. Bills due effectively "this month" (start of today until end of month)
+    const dueThisMonthTotal = activeBills
+      .filter(b => {
+        const dueDate = new Date(b.nextDueDate || b.next_due_date)
+        // Must be in current month AND not overdue (future in current month)
+        // We use isSameMonth to bound it to this month
+        return isSameMonth(dueDate, today) && !isOverdue(b.nextDueDate || b.next_due_date)
+      })
+      .reduce((sum, b) => sum + parseFloat(b.amount), 0)
+
+    return overdueTotal + dueThisMonthTotal
+  }
+
+  /**
+   * Calculate projected total for NEXT month
+   */
+  const calculateNextMonthTotal = () => {
+    const nextMonthDate = addMonths(today, 1)
+    const startOfNext = startOfMonth(nextMonthDate)
+    const endOfNext = endOfMonth(nextMonthDate)
+
+    let total = 0
+
+    activeBills.forEach(bill => {
+      const amount = parseFloat(bill.amount)
+      const freq = (bill.frequency || 'monthly').toLowerCase()
+      const dueDay = parseInt(bill.dueDay || bill.due_day || 1)
+      const nextDueDate = new Date(bill.nextDueDate || bill.next_due_date)
+
+      // Strategy: Project occurrences from the CURRENT nextDueDate
+      // and sum valid ones that fall into [startOfNext, endOfNext]
+
+      let pointer = new Date(nextDueDate)
+      // Safety break to prevent infinite loops if something is wrong
+      let itemsChecked = 0
+
+      // If pointer is ALREADY after end of next month, this bill has no contribution
+      if (isAfter(pointer, endOfNext)) return
+
+      // While pointer is before or within next month...
+      while ((isBefore(pointer, endOfNext) || isSameMonth(pointer, endOfNext)) && itemsChecked < 52) {
+        itemsChecked++
+
+        // If pointer is WITHIN next month, add amount
+        if (isSameMonth(pointer, nextMonthDate)) {
+          total += amount
+        }
+
+        // Advance pointer
+        if (freq === 'weekly') {
+          pointer = addWeeks(pointer, 1)
+        } else if (freq === 'monthly') {
+          pointer = addMonths(pointer, 1)
+        } else if (freq === 'quarterly') {
+          pointer = addMonths(pointer, 3)
+        } else if (freq === 'yearly') {
+          pointer = addYears(pointer, 1)
+        } else {
+          pointer = addMonths(pointer, 1) // default
+        }
+      }
+    })
+
+    return total
+  }
+
+  const currentMonthUnpaidAmount = calculateCurrentMonthUnpaid()
+  const nextMonthProjectedAmount = calculateNextMonthTotal()
+
+  // --- END CALCULATION LOGIC ---
 
   // 1. Overdue: Due date is strictly before today (and not paid)
   const overdueBills = activeBills.filter(b => isOverdue(b.nextDueDate || b.next_due_date))
@@ -591,10 +715,25 @@ function RecurringBills() {
               <span style={{ fontSize: '24px', fontWeight: 'bold' }}>€</span>
             </div>
             <div className="summary-content">
-              <h3>{t('recurringBills.monthlyTotal')}</h3>
-              <p className="summary-value">{formatCurrency(summary.totalMonthlyAmount)}</p>
+              <h3>{t('recurringBills.remainingThisMonth') || "Remaining (Unpaid)"}</h3>
+              <p className="summary-value" style={{ color: 'var(--warning-color)' }}>
+                {formatCurrency(currentMonthUnpaidAmount)}
+              </p>
               <p className="summary-detail">
-                {formatCurrency(summary.totalYearlyAmount)} {t('recurringBills.perYear')}
+                {t('recurringBills.monthlyTotal')}: {formatCurrency(summary.totalMonthlyAmount)}
+              </p>
+            </div>
+          </div>
+
+          <div className="summary-card">
+            <div className="summary-icon upcoming" style={{ background: 'var(--info-color-light)', color: 'var(--info-color)' }}>
+              <FiCalendar />
+            </div>
+            <div className="summary-content">
+              <h3>{t('recurringBills.nextMonthTotal') || "Next Month (Est.)"}</h3>
+              <p className="summary-value">{formatCurrency(nextMonthProjectedAmount)}</p>
+              <p className="summary-detail">
+                {t('recurringBills.forecast') || "Projected"}
               </p>
             </div>
           </div>
@@ -653,6 +792,7 @@ function RecurringBills() {
                   t={t}
                   status="overdue"
                   formatCurrency={formatCurrency}
+                  animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                 />
               ))}
             </div>
@@ -681,6 +821,7 @@ function RecurringBills() {
                   t={t}
                   status="upcoming"
                   formatCurrency={formatCurrency}
+                  animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                 />
               ))}
             </div>
@@ -709,6 +850,7 @@ function RecurringBills() {
                   t={t}
                   status="paid"
                   formatCurrency={formatCurrency}
+                  animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                 />
               ))}
             </div>
@@ -737,6 +879,7 @@ function RecurringBills() {
                   t={t}
                   status="later"
                   formatCurrency={formatCurrency}
+                  animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                 />
               ))}
             </div>
@@ -997,7 +1140,7 @@ function RecurringBills() {
 /**
  * Bill Card Component
  */
-function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, isProcessing, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency }) {
+function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, isProcessing, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency, animationClass }) {
   /* Swipe Gesture Integration */
   const { handleTouchStart, handleTouchMove, handleTouchEnd, getSwipeProps } = useSwipeGesture({
     onSwipeLeft: () => onDelete(bill.id),
@@ -1017,7 +1160,7 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, isProcessing, 
 
   return (
     <div
-      className={`bill-card ${status} ${swipeProps.className || ''}`}
+      className={`bill-card ${status} ${animationClass || ''} ${swipeProps.className || ''}`}
       style={swipeProps.style}
       onTouchStart={(e) => handleTouchStart(bill.id, e)}
       onTouchMove={(e) => handleTouchMove(bill.id, e)}

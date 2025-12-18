@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -15,15 +16,18 @@ namespace YouAndMeExpensesAPI.Controllers
     {
         private readonly AppDbContext _dbContext;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IStorageService _storageService;
         private readonly ILogger<ProfileController> _logger;
 
         public ProfileController(
             AppDbContext dbContext, 
             UserManager<ApplicationUser> userManager,
+            IStorageService storageService,
             ILogger<ProfileController> logger)
         {
             _dbContext = dbContext;
             _userManager = userManager;
+            _storageService = storageService;
             _logger = logger;
         }
 
@@ -231,6 +235,65 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 _logger.LogError(ex, "Error updating profile {Id}", id);
                 return StatusCode(500, new { message = "Error updating profile", error = ex.Message });
+            }
+        }
+        /// <summary>
+        /// Uploads a user avatar image
+        /// </summary>
+        [HttpPost("avatar")]
+        public async Task<IActionResult> UploadAvatar(IFormFile file)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file uploaded" });
+            }
+
+            // Validate file type
+            if (!file.ContentType.StartsWith("image/"))
+            {
+                return BadRequest(new { message = "File must be an image" });
+            }
+
+            // Validate file size (e.g. max 5MB)
+            if (file.Length > 5 * 1024 * 1024)
+            {
+                return BadRequest(new { message = "File size usually exceeds 5MB limit" });
+            }
+
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId.ToString());
+                if (user == null) return NotFound(new { message = "User not found" });
+
+                // Generate unique filename: avatar_userId_timestamp.ext
+                var extension = Path.GetExtension(file.FileName);
+                var fileName = $"avatar_{userId}_{DateTime.UtcNow.Ticks}{extension}";
+                
+                // Upload to "media" bucket
+                var avatarUrl = await _storageService.UploadFileAsync(file, fileName, "media");
+
+                // Update user profile
+                var profile = await _dbContext.UserProfiles.FirstOrDefaultAsync(p => p.Id == userId);
+                if (profile != null)
+                {
+                    profile.AvatarUrl = avatarUrl;
+                    profile.UpdatedAt = DateTime.UtcNow;
+                }
+
+                user.AvatarUrl = avatarUrl;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new { avatar_url = avatarUrl });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading avatar for user {UserId}", userId);
+                return StatusCode(500, new { message = "Error uploading avatar", error = ex.Message });
             }
         }
     }

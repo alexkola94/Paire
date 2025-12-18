@@ -5675,7 +5675,7 @@ I use natural language and advanced calculations to help you make smart financia
         /// <summary>
         /// Process currency conversion query
         /// </summary>
-        private async Task<ChatbotResponse> GetCurrencyConversionAsync(string query, string language = "en")
+        private async Task<ChatbotResponse?> GetCurrencyConversionAsync(string query, string language = "en")
         {
             try
             {

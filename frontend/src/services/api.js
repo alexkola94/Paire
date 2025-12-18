@@ -85,7 +85,8 @@ const apiRequest = async (url, options = {}) => {
   }
 
   // Add Content-Type for POST/PUT requests with body
-  if (options.body && !headers['Content-Type']) {
+  // Skip if body is FormData (browser sets Content-Type with boundary)
+  if (options.body && !headers['Content-Type'] && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json'
   }
 
@@ -150,6 +151,20 @@ export const transactionService = {
     if (filters.search) params.append('search', filters.search)
 
     return await apiRequest(`/api/transactions?${params}`)
+  },
+
+  async getReceipts(filters = {}) {
+    // Determine the query string myself to ensure correct parameter handling
+    const params = new URLSearchParams()
+    if (filters.category) params.append('category', filters.category)
+    if (filters.search) params.append('search', filters.search)
+    return await apiRequest(`/api/transactions/receipts?${params}`)
+  },
+
+  async deleteReceipt(transactionId) {
+    return await apiRequest(`/api/transactions/${transactionId}/receipt`, {
+      method: 'DELETE'
+    })
   },
 
   async getById(id) {
@@ -233,9 +248,20 @@ export const loanService = {
 // ========================================
 
 export const storageService = {
-  async uploadFile() {
-    // TODO: Implement file upload to your backend
-    throw new Error('File upload not implemented yet')
+  async uploadFile(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    // Check file type to determine endpoint?
+    // Currently, this service is only used for receipts in TransactionForm.
+    const response = await apiRequest('/api/transactions/receipt', {
+      method: 'POST',
+      body: formData,
+      headers: {} // Don't set Content-Type
+    })
+
+    // Backend returns { url, path }
+    return response
   },
 
   async deleteFile() {
@@ -278,9 +304,18 @@ export const profileService = {
     })
   },
 
-  async uploadAvatar() {
-    // TODO: Implement avatar upload
-    throw new Error('Avatar upload not implemented yet')
+  async uploadAvatar(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await apiRequest('/api/profile/avatar', {
+      method: 'POST',
+      body: formData,
+      // Don't set Content-Type header manually, let browser set it with boundary for FormData
+      headers: {}
+    })
+
+    return response.avatar_url
   }
 }
 

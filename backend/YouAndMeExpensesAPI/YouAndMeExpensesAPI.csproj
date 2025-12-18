@@ -27,6 +27,7 @@
     <PackageReference Include="Otp.NET" Version="1.4.1" />
     <PackageReference Include="PdfPig" Version="0.1.12" />
     <PackageReference Include="QRCoder" Version="1.7.0" />
+    <PackageReference Include="Supabase" Version="1.1.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
   </ItemGroup>

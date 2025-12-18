@@ -13,10 +13,18 @@
 
 .recurring-bills-page .header-content {
   display: flex;
+  flex-direction: column;
+  /* Mobile first: Stacked */
   justify-content: space-between;
-  align-items: center;
+  align-items: stretch;
+  /* Mobile first: Full width */
   flex-wrap: wrap;
   gap: var(--spacing-md);
+}
+
+.recurring-bills-page .header-content button {
+  width: 100%;
+  /* Mobile first: Full width button */
 }
 
 .recurring-bills-page .page-header h1 {
@@ -33,15 +41,21 @@
 .summary-grid {
   display: grid;
   grid-template-columns: 1fr;
+  /* Mobile first: 1 column */
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
 }
 
 .summary-card {
   display: flex;
+  flex-direction: column;
+  /* Mobile first: Vertical stack */
+  text-align: center;
+  /* Mobile: Center text */
   align-items: center;
   gap: var(--spacing-lg);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md);
+  /* Mobile: Smaller padding */
   background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -95,7 +109,8 @@
 }
 
 .summary-value {
-  font-size: 2rem;
+  font-size: 1.75rem;
+  /* Mobile: Slightly smaller */
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
@@ -145,6 +160,7 @@
 .bills-grid {
   display: grid;
   grid-template-columns: 1fr;
+  /* Mobile first: 1 column */
   gap: var(--spacing-lg);
 }
 
@@ -197,6 +213,8 @@
 /* Bill Header */
 .bill-header {
   display: flex;
+  flex-wrap: wrap;
+  /* Mobile: Allow wrapping */
   align-items: flex-start;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
@@ -227,7 +245,6 @@
   margin: 0 0 var(--spacing-xs) 0;
   font-size: 1.25rem;
   color: var(--text-primary);
-  /* white-space: nowrap; */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -251,13 +268,21 @@
 .bill-actions {
   display: flex;
   gap: var(--spacing-xs);
+  width: 100%;
+  /* Mobile: Full width actions */
+  justify-content: flex-end;
+  /* Mobile: Right aligned */
 }
 
 /* Bill Amount */
 .bill-amount {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  /* Mobile: Vertical */
+  align-items: flex-start;
+  /* Mobile: Align left */
   justify-content: space-between;
+  /* Reset for desktop later */
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-md);
@@ -284,6 +309,8 @@
 /* Bill Due Date */
 .bill-due-date {
   display: flex;
+  flex-wrap: wrap;
+  /* Mobile: Wrap */
   align-items: center;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
@@ -298,8 +325,12 @@
   color: var(--primary);
 }
 
-.days-until {
-  margin-left: auto;
+.days-until,
+.days-overdue {
+  margin-top: var(--spacing-xs);
+  /* Mobile: spacing */
+  margin-left: 0;
+  /* Mobile: Reset auto margin */
   padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--info-dark);
   color: white;
@@ -309,13 +340,7 @@
 }
 
 .days-overdue {
-  margin-left: auto;
-  padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--error-dark);
-  color: white;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.75rem;
   animation: pulse 2s infinite;
 }
 
@@ -393,8 +418,6 @@
   color: var(--text-secondary);
 }
 
-
-
 /* ================================
    Form Styles
    ================================ */
@@ -403,37 +426,23 @@
   padding: var(--spacing-xl);
 }
 
-/* Ensure form has proper spacing */
 .modal-content {
   display: flex;
   flex-direction: column;
 }
 
 .form-group {
-  margin-bottom: var(--spacing-lg);
-}
-
-/* Desktop: Better spacing */
-@media (min-width: 1024px) {
-  .form-group {
-    margin-bottom: var(--spacing-xl);
-  }
-
-  .form-row {
-    gap: var(--spacing-xl);
-  }
-
-  .modal-content form {
-    padding: var(--spacing-xl);
-  }
+  margin-bottom: var(--spacing-md);
+  /* Mobile: spacing */
 }
 
 .form-group label {
   display: block;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  /* Mobile font size */
 }
 
 .form-group input,
@@ -462,7 +471,8 @@
 
 .form-group textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 100px;
+  /* Mobile min-height */
 }
 
 .form-group small {
@@ -476,6 +486,8 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  /* Mobile padding */
 }
 
 .checkbox-group label {
@@ -484,11 +496,16 @@
   gap: var(--spacing-sm);
   margin-bottom: 0;
   cursor: pointer;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-md);
+  /* Mobile padding */
   border-radius: var(--radius-sm);
   transition: var(--transition);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  font-size: 0.9375rem;
+  /* Mobile font */
+  min-height: 48px;
+  /* Mobile touch target */
 }
 
 .checkbox-group label:hover {
@@ -496,10 +513,12 @@
 }
 
 .checkbox-group input[type="checkbox"] {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
+  width: 28px;
+  /* Mobile size */
+  height: 28px;
+  /* Mobile size */
+  min-width: 28px;
+  min-height: 28px;
   cursor: pointer;
   margin: 0;
   flex-shrink: 0;
@@ -511,20 +530,29 @@
 .form-row {
   display: grid;
   grid-template-columns: 1fr;
+  /* Mobile first */
   gap: var(--spacing-md);
 }
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-xl);
-  padding-top: var(--spacing-lg);
+  flex-direction: column-reverse;
+  /* Mobile first: Stack buttons */
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
   border-top: 1px solid var(--bg-tertiary);
 }
 
+.form-actions button {
+  width: 100%;
+  /* Mobile: Full width */
+  padding: 12px 16px;
+  min-height: 48px;
+}
+
 /* ================================
-   Button Styles
+   Button Styles & Utilities
    ================================ */
 
 .btn-sm {
@@ -568,10 +596,6 @@
   background: var(--error-dark);
 }
 
-/* ================================
-   Loading State
-   ================================ */
-
 .loading {
   display: flex;
   align-items: center;
@@ -580,10 +604,6 @@
   font-size: 1.25rem;
   color: var(--text-secondary);
 }
-
-/* ================================
-   Animations
-   ================================ */
 
 @keyframes fadeIn {
   from {
@@ -596,151 +616,142 @@
 }
 
 /* ================================
-   Responsive Design - Tablet
+   Responsive Design - Tablet (min-width: 768px)
    ================================ */
 
 @media (min-width: 768px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .bills-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .form-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* ================================
-   Responsive Design - Desktop
-   ================================ */
-
-@media (min-width: 1024px) {
-  .summary-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .bills-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-
-}
-
-@media (min-width: 1280px) {
-  .bills-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* ================================
-   Responsive Design - Mobile
-   ================================ */
-
-@media (max-width: 767px) {
   .recurring-bills-page .header-content {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
   }
 
   .recurring-bills-page .header-content button {
-    width: 100%;
+    width: auto;
   }
 
-
-
-  .form-group {
-    margin-bottom: var(--spacing-md);
-  }
-
-  .form-group label {
-    font-size: 0.9375rem;
-    margin-bottom: var(--spacing-xs);
-  }
-
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    padding: 14px 18px;
-    font-size: 1rem;
-    min-height: 48px;
-  }
-
-  .form-group textarea {
-    min-height: 100px;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
-  }
-
-  .form-actions {
-    flex-direction: column-reverse;
-    gap: var(--spacing-sm);
-    margin-top: var(--spacing-lg);
-    padding-top: var(--spacing-md);
-  }
-
-  .form-actions button {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 1rem;
-    min-height: 48px;
-  }
-
-  .checkbox-group {
-    padding: var(--spacing-sm) 0;
-  }
-
-  .checkbox-group label {
-    font-size: 0.9375rem;
-    padding: var(--spacing-md);
-    min-height: 48px;
-    gap: var(--spacing-md);
-  }
-
-  .checkbox-group input[type="checkbox"] {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    flex-shrink: 0;
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .summary-card {
-    flex-direction: column;
-    text-align: center;
-    padding: var(--spacing-md);
+    flex-direction: row;
+    padding: var(--spacing-xl);
+    text-align: left;
+    align-items: center;
   }
 
   .summary-value {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
-  .bill-header {
-    flex-wrap: wrap;
+  .bills-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .bill-actions {
-    width: 100%;
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-actions {
+    flex-direction: row;
     justify-content: flex-end;
   }
 
-  .bill-amount {
-    flex-direction: column;
-    align-items: flex-start;
+  .form-actions button {
+    width: auto;
   }
 
-  .bill-due-date {
-    flex-wrap: wrap;
+  .bill-header {
+    flex-wrap: nowrap;
+  }
+
+  .bill-actions {
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  .bill-amount {
+    flex-direction: row;
+    align-items: center;
   }
 
   .days-until,
   .days-overdue {
-    margin-left: 0;
-    margin-top: var(--spacing-xs);
+    margin-left: auto;
+    margin-top: 0;
   }
+}
+
+/* ================================
+   Responsive Design - Desktop (min-width: 1024px)
+   ================================ */
+
+@media (min-width: 1024px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bills-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .form-row {
+    gap: var(--spacing-xl);
+  }
+
+  .modal-content form {
+    padding: var(--spacing-xl);
+  }
+}
+
+/* ================================
+   Responsive Design - Large Desktop (min-width: 1280px)
+   ================================ */
+@media (min-width: 1280px) {
+  .summary-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .bills-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ================================
+   Animations
+   ================================ */
+
+@keyframes slideOutRight {
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+    height: 0;
+    margin-bottom: 0;
+    padding: 0;
+  }
+}
+
+@keyframes slideOutLeft {
+  to {
+    opacity: 0;
+    transform: translateX(-100%) scale(0.9);
+    height: 0;
+    margin-bottom: 0;
+    padding: 0;
+  }
+}
+
+.bill-card.marking-paid {
+  animation: slideOutRight 0.4s ease-in forwards;
+  pointer-events: none;
+  /* Prevent clicks while animating */
+}
+
+.bill-card.reverting {
+  animation: slideOutLeft 0.4s ease-in forwards;
+  pointer-events: none;
 }

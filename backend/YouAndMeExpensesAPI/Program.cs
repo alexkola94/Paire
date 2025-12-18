@@ -313,7 +313,12 @@ builder.Services.AddScoped<IBankStatementImportService, BankStatementImportServi
 
 
 // Register Bank Transaction Import Service
+// Register Bank Transaction Import Service
 builder.Services.AddScoped<IBankTransactionImportService, BankTransactionImportService>();
+
+// Register Storage Service (Supabase)
+builder.Services.AddScoped<IStorageService, SupabaseStorageService>();
+
 
 // =====================================================
 // Register Greece Economic Data Service

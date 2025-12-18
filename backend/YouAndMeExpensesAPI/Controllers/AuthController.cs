@@ -86,7 +86,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     UserName = request.Email,
                     Email = request.Email,
                     DisplayName = request.DisplayName ?? request.Email.Split('@')[0],
-                    EmailNotificationsEnabled = true,
+                    EmailNotificationsEnabled = request.EmailNotificationsEnabled,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -136,6 +136,35 @@ namespace YouAndMeExpensesAPI.Controllers
                 {
                     _logger.LogError(profileEx, "Error creating user profile for {Email}, but continuing with registration", user.Email);
                     // Continue even if profile creation fails - user can still log in
+                }
+
+                // Create default reminder preferences
+                try
+                {
+                    _logger.LogInformation("Creating default reminder preferences for {Email}", user.Email);
+                    var preferences = new ReminderPreferences
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = Guid.Parse(user.Id),
+                        EmailEnabled = request.EmailNotificationsEnabled,
+                        BillRemindersEnabled = true,
+                        BillReminderDays = 3,
+                        LoanRemindersEnabled = true,
+                        LoanReminderDays = 7,
+                        BudgetAlertsEnabled = true,
+                        BudgetAlertThreshold = 90,
+                        SavingsMilestonesEnabled = true,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    _context.ReminderPreferences.Add(preferences);
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception prefEx)
+                {
+                    _logger.LogError(prefEx, "Error creating reminder preferences for {Email}, but continuing with registration", user.Email);
+                    // Continue even if preference creation fails
                 }
 
                 // Generate email confirmation token BEFORE starting background task

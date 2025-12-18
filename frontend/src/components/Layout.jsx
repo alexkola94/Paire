@@ -24,7 +24,9 @@ import {
   FiSun,
   FiMoon,
   FiUser,
-  FiType
+  FiType,
+  FiCpu,
+  FiImage
 } from 'react-icons/fi'
 
 
@@ -68,9 +70,11 @@ function Layout() {
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false)
   const moreMenuRef = useRef(null)
+  const userMenuRef = useRef(null)
 
   // Primary navigation items (always visible on desktop)
   const mainNavItems = [
@@ -88,6 +92,7 @@ function Layout() {
     { path: '/analytics', icon: FiBarChart2, label: t('navigation.analytics') },
     { path: '/partnership', icon: FiUsers, label: t('navigation.partnership') },
     { path: '/savings-goals', icon: FiPieChart, label: t('navigation.savingsGoals') },
+    { path: '/receipts', icon: FiImage, label: t('navigation.receipts', 'Receipts') },
     { path: '/achievements', icon: FiAward, label: t('navigation.achievements') },
   ]
 
@@ -114,11 +119,14 @@ function Layout() {
     setMobileMenuOpen(false)
   }, [])
 
-  // Close more menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
         setMoreMenuOpen(false)
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false)
       }
     }
 
@@ -128,6 +136,10 @@ function Layout() {
 
   const toggleMoreMenu = useCallback(() => {
     setMoreMenuOpen(prev => !prev)
+  }, [])
+
+  const toggleUserMenu = useCallback(() => {
+    setUserMenuOpen(prev => !prev)
   }, [])
 
   const handleMoreNavigation = useCallback((path) => {
@@ -144,6 +156,7 @@ function Layout() {
   const handleProfileNavigation = useCallback(() => {
     navigate('/profile')
     closeMobileMenu()
+    setUserMenuOpen(false)
   }, [navigate, closeMobileMenu])
 
   return (
@@ -180,31 +193,8 @@ function Layout() {
 
           {/* Header actions - right side */}
           <div className="header-actions">
-            {/* Theme Toggle - desktop only */}
-            <span
-              className="header-icon-btn theme-toggle-btn"
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
-              title={theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
-              role="button"
-              tabIndex={0}
-            >
-              {theme === 'dark' ? <FiSun size={22} /> : <FiMoon size={22} />}
-            </span>
 
-            {/* Accessibility Settings */}
-            <span
-              className="header-icon-btn"
-              onClick={() => setIsAccessibilityOpen(true)}
-              aria-label={t('common.accessibility') || 'Accessibility'}
-              title={t('common.accessibility') || 'Accessibility'}
-              role="button"
-              tabIndex={0}
-            >
-              <FiType size={22} />
-            </span>
-
-            {/* Economic News - desktop only */}
+            {/* Economic News - desktop only (Quick Tools) */}
             <span
               className="header-icon-btn news-button desktop-only"
               onClick={() => handleNavigation('/economic-news')}
@@ -216,7 +206,7 @@ function Layout() {
               <FiFileText size={22} />
             </span>
 
-            {/* Currency Calculator - desktop only */}
+            {/* Currency Calculator - desktop only (Quick Tools) - New Icon */}
             <span
               className="header-icon-btn desktop-only"
               onClick={() => handleNavigation('/currency-calculator')}
@@ -225,7 +215,7 @@ function Layout() {
               role="button"
               tabIndex={0}
             >
-              <EuroIcon size={22} />
+              <FiCpu size={22} />
             </span>
 
             {/* Notifications bell - desktop only */}
@@ -240,29 +230,53 @@ function Layout() {
               <FiBell size={22} />
             </span>
 
-            {/* Profile button - desktop only */}
-            <span
-              className="header-icon-btn desktop-only"
-              onClick={handleProfileNavigation}
-              aria-label={t('navigation.profile')}
-              title={t('navigation.profile')}
-              role="button"
-              tabIndex={0}
-            >
-              <FiUser size={22} />
-            </span>
+            {/* User Dropdown - Desktop Only */}
+            <div className="user-menu desktop-only" ref={userMenuRef}>
+              <span
+                className={`user-menu-btn ${userMenuOpen ? 'active' : ''}`}
+                onClick={toggleUserMenu}
+                aria-label={t('navigation.profile')}
+                title={t('navigation.profile')}
+                role="button"
+                tabIndex={0}
+              >
+                <FiUser size={22} />
+              </span>
 
-            {/* Logout button - desktop only */}
-            <span
-              className="header-icon-btn desktop-only"
-              onClick={handleLogout}
-              aria-label={t('auth.logout')}
-              title={t('auth.logout')}
-              role="button"
-              tabIndex={0}
-            >
-              <FiLogOut size={22} />
-            </span>
+              {userMenuOpen && (
+                <div className="user-menu-dropdown">
+                  <button className="menu-item" onClick={handleProfileNavigation}>
+                    <FiUser size={18} />
+                    <span>{t('navigation.profile')}</span>
+                  </button>
+
+                  <div className="menu-divider"></div>
+
+                  <button className="menu-item" onClick={() => {
+                    toggleTheme()
+                    // Close menu not strictly required but cleaner
+                  }}>
+                    {theme === 'dark' ? <FiSun size={18} /> : <FiMoon size={18} />}
+                    <span>{theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}</span>
+                  </button>
+
+                  <button className="menu-item" onClick={() => {
+                    setIsAccessibilityOpen(true)
+                    setUserMenuOpen(false)
+                  }}>
+                    <FiType size={18} />
+                    <span>{t('common.accessibility') || 'Accessibility'}</span>
+                  </button>
+
+                  <div className="menu-divider"></div>
+
+                  <button className="menu-item logout" onClick={handleLogout}>
+                    <FiLogOut size={18} />
+                    <span>{t('auth.logout')}</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Mobile menu toggle */}
             <span
@@ -377,7 +391,7 @@ function Layout() {
               }
               onClick={closeMobileMenu}
             >
-              <EuroIcon style={{ width: '20px', height: '20px' }} className="nav-icon" />
+              <FiCpu style={{ width: '20px', height: '20px' }} className="nav-icon" />
               <span className="nav-label">{t('navigation.currencyCalculator')}</span>
             </NavLink>
           </li>
@@ -406,6 +420,26 @@ function Layout() {
             </NavLink>
           </li>
 
+          {/* Mobile Theme Toggle */}
+          <li className="mobile-only">
+            <button
+              className="nav-link"
+              onClick={() => {
+                toggleTheme()
+                // Don't close menu, user might want to toggle back
+              }}
+            >
+              {theme === 'dark' ? (
+                <FiSun style={{ width: '20px', height: '20px' }} className="nav-icon" />
+              ) : (
+                <FiMoon style={{ width: '20px', height: '20px' }} className="nav-icon" />
+              )}
+              <span className="nav-label">
+                {theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
+              </span>
+            </button>
+          </li>
+
           <li className="mobile-only">
             <button
               className="nav-link"
@@ -431,9 +465,6 @@ function Layout() {
           </li>
         </ul>
       </nav>
-
-
-
       {/* Main Content */}
       <main className="layout-main">
         <PageTransition>

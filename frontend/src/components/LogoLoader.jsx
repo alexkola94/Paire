@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { createPortal } from 'react-dom'
 import './LogoLoader.css'
 
 /**
@@ -34,10 +35,9 @@ const LogoLoader = ({
     ? 'logo-loader-container logo-loader-container--fullscreen'
     : 'logo-loader-container'
 
-  return (
+  const loaderContent = (
     <div className={`${containerClass} ${className}`} role="status" aria-live="polite">
       <div className={`logo-loader ${sizeClass}`}>
-        {/* Logo with smooth animations */}
         <div className="logo-loader__wrapper">
           <img
             src={`${import.meta.env.BASE_URL}paire-logo.svg`}
@@ -46,17 +46,21 @@ const LogoLoader = ({
             width="80"
             height="80"
           />
-          {/* Animated ring around logo */}
           <div className="logo-loader__ring"></div>
         </div>
 
-        {/* Optional loading text */}
         {text !== false && (
           <p className="logo-loader__text">{loadingText}</p>
         )}
       </div>
     </div>
   )
+
+  if (fullScreen) {
+    return createPortal(loaderContent, document.body)
+  }
+
+  return loaderContent
 }
 
 export default LogoLoader

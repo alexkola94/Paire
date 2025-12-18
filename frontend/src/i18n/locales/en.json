@@ -3,6 +3,16 @@
     "title": "Paire",
     "tagline": "Finances, aligned."
   },
+  "receipts": {
+    "title": "Receipts Gallery",
+    "subtitle": "View and manage your transaction receipts",
+    "loadError": "Failed to load receipts",
+    "deleteSuccess": "Receipt deleted successfully",
+    "deleteError": "Failed to delete receipt",
+    "deleteTitle": "Delete Receipt",
+    "deleteMessage": "Are you sure you want to delete this receipt? The transaction will remain.",
+    "noReceipts": "No receipts found."
+  },
   "auth": {
     "login": "Login",
     "signup": "Sign Up",
@@ -32,7 +42,8 @@
     "forgotPasswordSuccessMessage": "If an account with that email exists, we've sent you a password reset link.",
     "emailSentTo": "Email sent to",
     "backToLogin": "Back to Login",
-    "invalidEmail": "Please enter a valid email address"
+    "invalidEmail": "Please enter a valid email address",
+    "enableEmailNotifications": "I want to receive email notifications"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -545,6 +556,9 @@
     "inactive": "inactive",
     "overdueBills": "Overdue Bills",
     "dueSoon": "Due Soon",
+    "remainingThisMonth": "Remaining This Month",
+    "nextMonthTotal": "Next Month Total",
+    "forecast": "Forecast",
     "dueThisMonth": "Due This Month",
     "paidThisMonth": "Paid This Month",
     "futureBills": "Upcoming & Future",
@@ -739,6 +753,8 @@
     "import": "Import",
     "select": "Select...",
     "viewAll": "View All",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
     "close": "Close",
     "processing": "Processing...",
     "optional": "Optional",

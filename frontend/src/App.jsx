@@ -27,6 +27,7 @@ const Partnership = lazyWithRetry(() => import('./pages/Partnership'))
 const Budgets = lazyWithRetry(() => import('./pages/Budgets'))
 const ReminderSettings = lazyWithRetry(() => import('./pages/ReminderSettings'))
 const SavingsGoals = lazyWithRetry(() => import('./pages/SavingsGoals'))
+const Receipts = lazyWithRetry(() => import('./pages/Receipts'))
 const RecurringBills = lazyWithRetry(() => import('./pages/RecurringBills'))
 const ShoppingLists = lazyWithRetry(() => import('./pages/ShoppingLists'))
 const EconomicNews = lazyWithRetry(() => import('./pages/EconomicNews'))
@@ -240,6 +241,7 @@ function App() {
                   <Route path="analytics" element={<Analytics />} />
                   <Route path="budgets" element={<Budgets />} />
                   <Route path="savings-goals" element={<SavingsGoals />} />
+                  <Route path="receipts" element={<Receipts />} />
                   <Route path="recurring-bills" element={<RecurringBills />} />
                   <Route path="shopping-lists" element={<ShoppingLists />} />
                   <Route path="economic-news" element={<EconomicNews />} />

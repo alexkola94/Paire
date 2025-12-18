@@ -176,7 +176,7 @@ export const authService = {
   /**
    * Sign up with email and password
    */
-  async signUp(email, password, displayName = '') {
+  async signUp(email, password, displayName = '', emailNotificationsEnabled = false) {
     try {
       const backendUrl = getBackendUrl().replace(/\/+$/, '');
       const fullUrl = `${backendUrl}/api/auth/register`;
@@ -189,7 +189,8 @@ export const authService = {
           email,
           password,
           confirmPassword: password,
-          displayName
+          displayName,
+          emailNotificationsEnabled
         })
       })
 

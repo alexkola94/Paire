@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiZoomIn, FiDownload } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
@@ -36,6 +36,7 @@ function Expenses() {
   const [editingExpense, setEditingExpense] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, expense: null })
+  const [viewModal, setViewModal] = useState(null) // For viewing full receipt
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
@@ -574,15 +575,14 @@ function Expenses() {
               </div>
 
               {expense.attachment_url && (
-                <a
-                  href={expense.attachment_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="attachment-link"
+                <button
+                  type="button"
+                  onClick={() => setViewModal(expense)}
+                  className="attachment-link-btn"
                 >
                   <FiFileText size={16} />
-                  {t('transaction.viewAttachment')}
-                </a>
+                  {t('transaction.viewAttachment', 'View Receipt')}
+                </button>
               )}
 
               <div className="expense-actions">
@@ -644,6 +644,22 @@ function Expenses() {
         loading={formLoading}
         variant="danger"
       />
+      {/* Image Viewer Modal */}
+      {viewModal && (
+        <div className="image-viewer-modal" onClick={() => setViewModal(null)} role="dialog" aria-modal="true">
+          <div className="image-viewer-content" onClick={e => e.stopPropagation()}>
+            {viewModal.attachment_url && viewModal.attachment_url.toLowerCase().endsWith('.pdf') ? (
+              <iframe src={viewModal.attachment_url} title="Receipt PDF" width="100%" height="500px"></iframe>
+            ) : (
+              <img src={viewModal.attachment_url} alt="Full Receipt" />
+            )}
+            <button className="close-viewer" onClick={() => setViewModal(null)} aria-label={t('common.close')}>×</button>
+            <a href={viewModal.attachment_url} download target="_blank" rel="noopener noreferrer" className="download-btn btn btn-primary">
+              <FiDownload /> {t('common.download', 'Download')} {viewModal.user_profiles ? (t('dashboard.addedBy') + ' ' + viewModal.user_profiles.display_name) : ''}
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
