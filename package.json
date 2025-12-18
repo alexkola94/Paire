@@ -1,0 +1,14 @@
+{
+    "name": "paire-root",
+    "private": true,
+    "engines": {
+        "node": ">=18"
+    },
+    "workspaces": [
+        "frontend"
+    ],
+    "scripts": {
+        "build": "npm run build --workspace=paire-frontend",
+        "dev": "npm run dev --workspace=paire-frontend"
+    }
+}
