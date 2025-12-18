@@ -243,12 +243,12 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
 
                 // Check if email is confirmed
-               // if (!user.EmailConfirmed)
-               // {
-               //     return Unauthorized(new { 
-               //             error = "Email not confirmed. Please check your email and confirm your account." 
-               //         });
-               // }
+                if (!user.EmailConfirmed)
+                {
+                    return Unauthorized(new { 
+                            error = "Email not confirmed. Please check your email and confirm your account." 
+                        });
+                }
 
                 var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
 

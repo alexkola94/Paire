@@ -140,9 +140,9 @@ namespace YouAndMeExpensesAPI.Services
             catch (TaskCanceledException ex)
             {
                 _logger.LogError(ex, "❌ SMTP connection timeout when sending email to {ToEmail}. " +
-                    "Check: 1) SMTP server is correct (smtp.gmail.com), 2) Port is correct ({SmtpPort}), " +
-                    "3) Firewall allows outbound connections, 4) Gmail App Password is correct",
-                    emailMessage.ToEmail, _emailSettings.SmtpPort);
+                    "Check: 1) SMTP server is correct ({SmtpServer}), 2) Port is correct ({SmtpPort}), " +
+                    "3) Firewall allows outbound connections, 4) Credentials are correct",
+                    emailMessage.ToEmail, _emailSettings.SmtpServer, _emailSettings.SmtpPort);
                 return false;
             }
             catch (System.Net.Sockets.SocketException ex)
@@ -155,7 +155,7 @@ namespace YouAndMeExpensesAPI.Services
             catch (MailKit.Security.AuthenticationException ex)
             {
                 _logger.LogError(ex, "❌ SMTP authentication failed. Check: 1) Username is correct, " +
-                    "2) Password is a Gmail App Password (not regular password), 3) 2FA is enabled on Gmail account");
+                    "2) Password/API Key is correct, 3) Sender identity is verified in your provider dashboard");
                 return false;
             }
             catch (Exception ex)

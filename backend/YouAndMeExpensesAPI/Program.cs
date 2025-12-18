@@ -417,7 +417,7 @@ app.MapGet("/health", () => Results.Ok(new
 .WithOpenApi();
 
 // Diagnostic Endpoint (Minimal API) - Added directly here to bypass any controller routing issues
-app.MapGet("/diagnostics/email", async (ILogger<Program> logger) =>
+app.MapGet("/diagnostics/email", async (ILogger<Program> logger, Microsoft.Extensions.Options.IOptions<EmailSettings> emailSettings) =>
 {
     var results = new Dictionary<string, string>();
     var logs = new List<string>();
@@ -428,15 +428,23 @@ app.MapGet("/diagnostics/email", async (ILogger<Program> logger) =>
         logs.Add($"[{DateTime.UtcNow:HH:mm:ss}] {message}");
     }
 
+    var settings = emailSettings.Value;
+    
     try
     {
-        Log("🔍 Starting SMTP Connectivity Test (Minimal API)...");
+        Log($"🔍 Starting SMTP Connectivity Test for {settings.SmtpServer}...");
         
+        if (string.IsNullOrEmpty(settings.SmtpServer))
+        {
+             Log("❌ No SMTP Server configured in EmailSettings.");
+             return Results.Ok(new { status = "Failed", results, logs });
+        }
+
         // 1. DNS Resolution
-        Log("1️⃣ Testing DNS Resolution for smtp.gmail.com...");
+        Log($"1️⃣ Testing DNS Resolution for {settings.SmtpServer}...");
         try
         {
-            var addresses = await System.Net.Dns.GetHostAddressesAsync("smtp.gmail.com");
+            var addresses = await System.Net.Dns.GetHostAddressesAsync(settings.SmtpServer);
             foreach (var addr in addresses)
             {
                 Log($"   Found IP: {addr} ({addr.AddressFamily})");
@@ -449,56 +457,30 @@ app.MapGet("/diagnostics/email", async (ILogger<Program> logger) =>
             results["DNS"] = "❌ Failed";
         }
 
-        // 2. TCP Connection Test to 587
-        Log("2️⃣ Testing TCP Connect to smtp.gmail.com:587 (STARTTLS)...");
+        // 2. TCP Connection Test to Configured Port
+        Log($"2️⃣ Testing TCP Connect to {settings.SmtpServer}:{settings.SmtpPort}...");
         try
         {
             using var tcp = new System.Net.Sockets.TcpClient();
-            var connectTask = tcp.ConnectAsync("smtp.gmail.com", 587);
+            var connectTask = tcp.ConnectAsync(settings.SmtpServer, settings.SmtpPort);
             var completedTask = await Task.WhenAny(connectTask, Task.Delay(5000));
             
             if (completedTask == connectTask)
             {
                 await connectTask; // Propagate exceptions
-                Log("✅ TCP Connection Established on Port 587");
-                results["TCP-587"] = "✅ Success";
+                Log($"✅ TCP Connection Established on Port {settings.SmtpPort}");
+                results[$"TCP-{settings.SmtpPort}"] = "✅ Success";
             }
             else
             {
-                Log("❌ TCP Connection Timed Out on Port 587 after 5s");
-                results["TCP-587"] = "❌ Timed Out";
+                Log($"❌ TCP Connection Timed Out on Port {settings.SmtpPort} after 5s");
+                results[$"TCP-{settings.SmtpPort}"] = "❌ Timed Out";
             }
         }
         catch (Exception ex)
         {
-            Log($"❌ TCP Connection Failed on Port 587: {ex.Message}");
-            results["TCP-587"] = "❌ Failed";
-        }
-
-        // 3. TCP Connection Test to 465
-        Log("3️⃣ Testing TCP Connect to smtp.gmail.com:465 (SSL)...");
-        try
-        {
-            using var tcp = new System.Net.Sockets.TcpClient();
-            var connectTask = tcp.ConnectAsync("smtp.gmail.com", 465);
-            var completedTask = await Task.WhenAny(connectTask, Task.Delay(5000));
-            
-            if (completedTask == connectTask)
-            {
-                await connectTask; // Propagate exceptions
-                Log("✅ TCP Connection Established on Port 465");
-                results["TCP-465"] = "✅ Success";
-            }
-            else
-            {
-                Log("❌ TCP Connection Timed Out on Port 465 after 5s");
-                results["TCP-465"] = "❌ Timed Out";
-            }
-        }
-        catch (Exception ex)
-        {
-            Log($"❌ TCP Connection Failed on Port 465: {ex.Message}");
-            results["TCP-465"] = "❌ Failed";
+            Log($"❌ TCP Connection Failed on Port {settings.SmtpPort}: {ex.Message}");
+            results[$"TCP-{settings.SmtpPort}"] = "❌ Failed";
         }
 
         return Results.Ok(new
