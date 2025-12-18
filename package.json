@@ -1,6 +1,7 @@
 {
     "name": "paire-root",
     "private": true,
+    "description": "Paire Root Configuration - Monorepo Structure",
     "engines": {
         "node": ">=18"
     },
