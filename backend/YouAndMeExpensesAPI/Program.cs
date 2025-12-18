@@ -277,7 +277,12 @@ builder.Services.AddScoped<ISupabaseService, EntityFrameworkDataService>();
 // =====================================================
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddScoped<IEmailService, EmailService>();
+// Use HttpClient for EmailService (switching from SMTP to Resend API)
+builder.Services.AddHttpClient<IEmailService, EmailService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.resend.com");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 // =====================================================
 // Configure Reminder Services

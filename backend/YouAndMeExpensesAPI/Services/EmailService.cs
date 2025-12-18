@@ -1,26 +1,25 @@
-using MailKit.Net.Smtp;
-using MailKit.Security;
 using Microsoft.Extensions.Options;
-using MimeKit;
-using System.Net;
-using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
 using YouAndMeExpensesAPI.Models;
 
 namespace YouAndMeExpensesAPI.Services
 {
     /// <summary>
-    /// Email service implementation using MailKit
-    /// Handles all email sending functionality with Gmail SMTP
+    /// Email service implementation using Resend HTTP API
+    /// Switches from SMTP to HTTP to avoid port blocking issues
     /// </summary>
     public class EmailService : IEmailService
     {
         private readonly EmailSettings _emailSettings;
         private readonly ILogger<EmailService> _logger;
+        private readonly HttpClient _httpClient;
 
-        public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger)
+        public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger, HttpClient httpClient)
         {
             _emailSettings = emailSettings.Value;
             _logger = logger;
+            _httpClient = httpClient;
             
             // Validate email settings on startup
             ValidateEmailSettings();
@@ -33,137 +32,66 @@ namespace YouAndMeExpensesAPI.Services
         {
             var missingSettings = new List<string>();
             
-            if (string.IsNullOrWhiteSpace(_emailSettings.SmtpServer))
-                missingSettings.Add("SmtpServer");
-            
-            if (_emailSettings.SmtpPort <= 0)
-                missingSettings.Add("SmtpPort");
-            
+            // For API we mostly need the Key (Password) and From Address
             if (string.IsNullOrWhiteSpace(_emailSettings.SenderEmail))
                 missingSettings.Add("SenderEmail");
             
-            if (string.IsNullOrWhiteSpace(_emailSettings.Username))
-                missingSettings.Add("Username");
-            
             if (string.IsNullOrWhiteSpace(_emailSettings.Password))
-                missingSettings.Add("Password");
+                missingSettings.Add("Password (API Key)");
             
             if (missingSettings.Any())
             {
                 _logger.LogWarning("⚠️ Email settings are incomplete. Missing: {MissingSettings}. " +
-                    "Emails will not be sent. Configure these in Render.com environment variables: " +
-                    "EmailSettings__SmtpServer, EmailSettings__SmtpPort, EmailSettings__SenderEmail, " +
-                    "EmailSettings__Username, EmailSettings__Password",
+                    "Configure these in Render.com environment variables.",
                     string.Join(", ", missingSettings));
             }
             else
             {
-                _logger.LogInformation("✅ Email settings configured: Server={SmtpServer}, Port={SmtpPort}, From={SenderEmail}",
-                    _emailSettings.SmtpServer, _emailSettings.SmtpPort, _emailSettings.SenderEmail);
+                _logger.LogInformation("✅ Email Service Configured (Resend API mode). From: {SenderEmail}", _emailSettings.SenderEmail);
             }
         }
 
         /// <summary>
-        /// Sends a single email via Gmail SMTP
+        /// Sends a single email via Resend Web API
         /// </summary>
         public async Task<bool> SendEmailAsync(EmailMessage emailMessage)
         {
             try
             {
-                // Create email message
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(_emailSettings.SenderName, _emailSettings.SenderEmail));
-                message.To.Add(new MailboxAddress(emailMessage.ToName, emailMessage.ToEmail));
-                message.Subject = emailMessage.Subject;
-
-                // Create body
-                var bodyBuilder = new BodyBuilder();
-                if (emailMessage.IsHtml)
+                var requestBody = new
                 {
-                    bodyBuilder.HtmlBody = emailMessage.Body;
+                    from = $"{_emailSettings.SenderName} <{_emailSettings.SenderEmail}>",
+                    to = new[] { emailMessage.ToEmail },
+                    subject = emailMessage.Subject,
+                    html = emailMessage.IsHtml ? emailMessage.Body : null,
+                    text = !emailMessage.IsHtml ? emailMessage.Body : null
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // Set Authorization Header (Bearer Token)
+                _httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _emailSettings.Password);
+
+                var response = await _httpClient.PostAsync("/emails", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseData = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation($"✅ Email sent successfully to {emailMessage.ToEmail}. Response: {responseData}");
+                    return true;
                 }
                 else
                 {
-                    bodyBuilder.TextBody = emailMessage.Body;
+                    var errorData = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"❌ Failed to send email to {emailMessage.ToEmail}. Status: {response.StatusCode}. Error: {errorData}");
+                    return false;
                 }
-
-                // Add attachments if any
-                if (emailMessage.Attachments != null && emailMessage.Attachments.Any())
-                {
-                    foreach (var attachment in emailMessage.Attachments)
-                    {
-                        if (File.Exists(attachment))
-                        {
-                            bodyBuilder.Attachments.Add(attachment);
-                        }
-                    }
-                }
-
-                message.Body = bodyBuilder.ToMessageBody();
-
-                // Send email via SMTP with timeout
-                using (var client = new SmtpClient())
-                {
-                    // Disable certificate revocation check to prevent hangs in restricted environments
-                    // This is the most common cause of timeouts in containers
-                    client.CheckCertificateRevocation = false;
-
-                    // Set timeout to prevent hanging (60 seconds)
-                    client.Timeout = 60000;
-                    
-                    // Connect to Gmail SMTP server with timeout
-                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
-                    {
-                        // Determine correct socket options based on port
-                        // Port 465: Implicit SSL (SslOnConnect)
-                        // Port 587: Explicit SSL (StartTls)
-                        var socketOptions = _emailSettings.SmtpPort == 465 
-                            ? SecureSocketOptions.SslOnConnect 
-                            : SecureSocketOptions.Auto;
-
-                        _logger.LogInformation($"Connecting to SMTP {_emailSettings.SmtpServer}:{_emailSettings.SmtpPort} with options {socketOptions}...");
-
-                        await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, socketOptions, cts.Token);
-
-                        // Authenticate
-                        await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password, cts.Token);
-
-                        // Send email
-                        await client.SendAsync(message, cts.Token);
-
-                        // Disconnect
-                        await client.DisconnectAsync(true, cts.Token);
-                    }
-
-                    _logger.LogInformation($"Email sent successfully to {emailMessage.ToEmail}");
-                    return true;
-                }
-            }
-            catch (TaskCanceledException ex)
-            {
-                _logger.LogError(ex, "❌ SMTP connection timeout when sending email to {ToEmail}. " +
-                    "Check: 1) SMTP server is correct ({SmtpServer}), 2) Port is correct ({SmtpPort}), " +
-                    "3) Firewall allows outbound connections, 4) Credentials are correct",
-                    emailMessage.ToEmail, _emailSettings.SmtpServer, _emailSettings.SmtpPort);
-                return false;
-            }
-            catch (System.Net.Sockets.SocketException ex)
-            {
-                _logger.LogError(ex, "❌ SMTP connection failed to {SmtpServer}:{SmtpPort}. " +
-                    "Check: 1) Server address is correct, 2) Port is correct, 3) Network connectivity",
-                    _emailSettings.SmtpServer, _emailSettings.SmtpPort);
-                return false;
-            }
-            catch (MailKit.Security.AuthenticationException ex)
-            {
-                _logger.LogError(ex, "❌ SMTP authentication failed. Check: 1) Username is correct, " +
-                    "2) Password/API Key is correct, 3) Sender identity is verified in your provider dashboard");
-                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Failed to send email to {ToEmail}. Error: {ErrorType} - {ErrorMessage}",
-                    emailMessage.ToEmail, ex.GetType().Name, ex.Message);
+                _logger.LogError(ex, "❌ Exception when sending email to {ToEmail}", emailMessage.ToEmail);
                 return false;
             }
         }
@@ -174,25 +102,20 @@ namespace YouAndMeExpensesAPI.Services
         public async Task<int> SendBulkEmailAsync(List<EmailMessage> emailMessages)
         {
             int successCount = 0;
-
             foreach (var emailMessage in emailMessages)
             {
-                bool success = await SendEmailAsync(emailMessage);
-                if (success)
+                if (await SendEmailAsync(emailMessage))
                 {
                     successCount++;
                 }
-
-                // Small delay to avoid rate limiting
+                // Small delay to be polite to the API
                 await Task.Delay(100);
             }
-
-            _logger.LogInformation($"Sent {successCount} out of {emailMessages.Count} emails successfully");
             return successCount;
         }
 
         /// <summary>
-        /// Sends a test email to verify SMTP configuration
+        /// Sends a test email to verify Configuration
         /// </summary>
         public async Task<bool> SendTestEmailAsync(string toEmail)
         {
@@ -200,7 +123,7 @@ namespace YouAndMeExpensesAPI.Services
             {
                 ToEmail = toEmail,
                 ToName = "Test User",
-                Subject = "Test Email from Paire",
+                Subject = "Test Email from Paire (Resend API)",
                 Body = GetTestEmailTemplate(),
                 IsHtml = true
             };
@@ -208,47 +131,22 @@ namespace YouAndMeExpensesAPI.Services
             return await SendEmailAsync(emailMessage);
         }
 
-        /// <summary>
-        /// HTML template for test emails with modern design
-        /// </summary>
         private string GetTestEmailTemplate()
         {
-            var frontendUrl = "http://localhost:3000"; // Default for test emails
+            var frontendUrl = "http://localhost:3000"; 
             var message = @"
                 <p>Hi there!</p>
-                <p>This is a test email to confirm that your <strong>Paire</strong> email reminder system is working correctly.</p>
-                <p>You will now receive:</p>
-                <ul style='margin: 15px 0; padding-left: 25px;'>
-                    <li style='margin: 8px 0;'>📅 Bill payment reminders</li>
-                    <li style='margin: 8px 0;'>💰 Loan payment notifications</li>
-                    <li style='margin: 8px 0;'>📊 Budget alerts</li>
-                    <li style='margin: 8px 0;'>🎯 Savings goal updates</li>
-                </ul>
-                <p>Stay on top of your finances effortlessly!</p>";
+                <p>This is a test email sent via the <strong>Resend Web API</strong>.</p>
+                <p>If you are reading this, your SMTP port blocking issues are resolved permanently!</p>";
             
-            return EmailService.CreateReminderEmailTemplate(
-                "✅ Email Configuration Successful!",
-                message,
-                frontendUrl
-            );
+            return CreateReminderEmailTemplate("✅ API Email Working!", message, frontendUrl);
         }
 
-        /// <summary>
-        /// Creates a beautiful HTML email template for reminders with modern, clean design
-        /// </summary>
         public static string CreateReminderEmailTemplate(string title, string message, string frontendUrl = "", string actionUrl = "")
         {
-            // Default frontend URL if not provided
-            if (string.IsNullOrEmpty(frontendUrl))
-            {
-                frontendUrl = "http://localhost:3000";
-            }
-            
-            // Extract first URL if multiple are provided (comma-separated)
-            if (frontendUrl.Contains(';'))
-            {
-                frontendUrl = frontendUrl.Split(';')[0].Trim();
-            }
+             // Use same template logic as before
+            if (string.IsNullOrEmpty(frontendUrl)) frontendUrl = "http://localhost:3000";
+            if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
             
             var loginUrl = $"{frontendUrl}/login";
             
@@ -260,131 +158,11 @@ namespace YouAndMeExpensesAPI.Services
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6; 
-            color: #2d3748; 
-            background-color: #f7fafc;
-            margin: 0; 
-            padding: 20px;
-        }}
-        .email-wrapper {{
-            max-width: 600px; 
-            margin: 0 auto; 
-            background-color: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-        }}
-        .header {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; 
-            padding: 40px 30px; 
-            text-align: center;
-        }}
-        .header h1 {{
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0;
-            letter-spacing: -0.5px;
-        }}
-        .content {{ 
-            background: #ffffff; 
-            padding: 40px 30px;
-        }}
-        .alert-box {{ 
-            background: linear-gradient(135deg, #fff5e6 0%, #ffeaa7 100%);
-            border-left: 4px solid #fdcb6e;
-            padding: 20px; 
-            margin: 25px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }}
-        .alert-box h3 {{
-            color: #d63031;
-            font-size: 18px;
-            margin-bottom: 12px;
-            font-weight: 600;
-        }}
-        .alert-box p {{
-            margin: 8px 0;
-            color: #2d3748;
-        }}
-        .alert-box strong {{
-            color: #1a202c;
-            font-weight: 600;
-        }}
-        .button-container {{
-            text-align: center;
-            margin: 30px 0;
-        }}
-        .button {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            padding: 14px 32px; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            display: inline-block;
-            font-weight: 600;
-            font-size: 15px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
-        }}
-        .button:hover {{
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
-        }}
-        .button-secondary {{
-            background: #e2e8f0;
-            color: #2d3748;
-            margin-left: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }}
-        .button-secondary:hover {{
-            background: #cbd5e0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }}
-        .message-content {{
-            color: #4a5568;
-            font-size: 15px;
-            line-height: 1.7;
-        }}
-        .message-content p {{
-            margin: 12px 0;
-        }}
-        .footer {{ 
-            text-align: center; 
-            color: #718096; 
-            font-size: 13px; 
-            padding: 30px;
-            background: #f7fafc;
-            border-top: 1px solid #e2e8f0;
-        }}
-        .footer p {{
-            margin: 6px 0;
-        }}
-        .footer small {{
-            color: #a0aec0;
-            font-size: 12px;
-        }}
-        @media only screen and (max-width: 600px) {{
-            body {{ padding: 10px; }}
-            .content {{ padding: 30px 20px; }}
-            .header {{ padding: 30px 20px; }}
-            .header h1 {{ font-size: 20px; }}
-            .button-container {{
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-            }}
-            .button {{
-                width: 100%;
-                margin: 0;
-            }}
-            .button-secondary {{
-                margin-left: 0;
-            }}
-        }}
+        body {{ font-family: sans-serif; line-height: 1.6; color: #333; background-color: #f7fafc; padding: 20px; }}
+        .email-wrapper {{ max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }}
+        .content {{ padding: 30px; }}
+        .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; }}
     </style>
 </head>
 <body>
@@ -393,18 +171,10 @@ namespace YouAndMeExpensesAPI.Services
             <h1>{title}</h1>
         </div>
         <div class=""content"">
-            <div class=""message-content"">
-                {message}
+            {message}
+            <div style=""text-align: center; margin-top: 30px;"">
+                <a href='{loginUrl}' class='button'>Open App</a>
             </div>
-            <div class=""button-container"">
-                {(string.IsNullOrEmpty(actionUrl) ? "" : $"<a href='{actionUrl}' class='button'>View Details</a>")}
-                <a href='{loginUrl}' class='button button-secondary'>Login to App</a>
-            </div>
-        </div>
-        <div class=""footer"">
-            <p><strong>Paire</strong></p>
-            <p>Your Personal Finance Manager</p>
-            <p><small>You're receiving this because you have email reminders enabled.</small></p>
         </div>
     </div>
 </body>
@@ -412,4 +182,3 @@ namespace YouAndMeExpensesAPI.Services
         }
     }
 }
-
