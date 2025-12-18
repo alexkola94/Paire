@@ -18,7 +18,7 @@ import { format, subDays } from 'date-fns'
 import LogoLoader from '../components/LogoLoader'
 import Dropdown from '../components/Dropdown'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
-import { utils, writeFile } from 'xlsx'
+import ExcelJS from 'exceljs'
 import './Analytics.css'
 
 // Register Chart.js components
@@ -482,59 +482,93 @@ function Analytics() {
   /**
    * Generate Excel export
    */
-  const generateExcel = () => {
-    const wb = utils.book_new()
+  const generateExcel = async () => {
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'Paire App'
+    workbook.created = new Date()
+
     const fileName = `analytics_export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
 
     // 1. Summary Sheet
-    const summaryData = [
-      ['Metric', 'Value'],
+    const summarySheet = workbook.addWorksheet('Summary')
+    summarySheet.columns = [
+      { header: 'Metric', key: 'metric', width: 30 },
+      { header: 'Value', key: 'value', width: 20 }
+    ]
+    summarySheet.addRows([
       ['Period', dateRange],
       ['Filter', viewFilter],
       [t('analytics.totalIncome'), analytics.totalIncome],
       [t('analytics.totalExpenses'), analytics.totalExpenses],
       [t('analytics.netBalance'), analytics.balance],
       [t('analytics.avgDailySpending'), analytics.averageDailySpending]
-    ]
-    const summaryWs = utils.aoa_to_sheet(summaryData)
-    utils.book_append_sheet(wb, summaryWs, 'Summary')
+    ])
 
     // 2. Categories Sheet
     if (analytics.categoryBreakdown && analytics.categoryBreakdown.length > 0) {
-      const categoryData = analytics.categoryBreakdown.map(cat => ({
-        Category: t(`categories.${(cat.category || '').toLowerCase()}`) || cat.category,
-        Amount: cat.amount,
-        Percentage: `${cat.percentage.toFixed(2)}%`
-      }))
-      const categoryWs = utils.json_to_sheet(categoryData)
-      utils.book_append_sheet(wb, categoryWs, 'Categories')
+      const categorySheet = workbook.addWorksheet('Categories')
+      categorySheet.columns = [
+        { header: 'Category', key: 'category', width: 30 },
+        { header: 'Amount', key: 'amount', width: 15 },
+        { header: 'Percentage', key: 'percentage', width: 15 }
+      ]
+      analytics.categoryBreakdown.forEach(cat => {
+        categorySheet.addRow({
+          category: t(`categories.${(cat.category || '').toLowerCase()}`) || cat.category,
+          amount: cat.amount,
+          percentage: `${cat.percentage.toFixed(2)}%`
+        })
+      })
     }
 
     // 3. Monthly Sheet
     if (analytics.monthlyComparison && analytics.monthlyComparison.length > 0) {
-      const monthlyData = analytics.monthlyComparison.map(m => ({
-        Month: `${m.month} ${m.year}`,
-        Income: m.income,
-        Expenses: m.expenses,
-        Balance: m.balance
-      }))
-      const monthlyWs = utils.json_to_sheet(monthlyData)
-      utils.book_append_sheet(wb, monthlyWs, 'Monthly')
+      const monthlySheet = workbook.addWorksheet('Monthly')
+      monthlySheet.columns = [
+        { header: 'Month', key: 'month', width: 20 },
+        { header: 'Income', key: 'income', width: 15 },
+        { header: 'Expenses', key: 'expenses', width: 15 },
+        { header: 'Balance', key: 'balance', width: 15 }
+      ]
+      analytics.monthlyComparison.forEach(m => {
+        monthlySheet.addRow({
+          month: `${m.month} ${m.year}`,
+          income: m.income,
+          expenses: m.expenses,
+          balance: m.balance
+        })
+      })
     }
 
     // 4. Partners Sheet
     if (comparativeAnalytics && comparativeAnalytics.partnerComparison) {
-      const partnerData = comparativeAnalytics.partnerComparison.map(p => ({
-        Partner: p.partner,
-        Spent: p.totalSpent,
-        Transactions: p.transactionCount,
-        Percentage: `${p.percentage.toFixed(2)}%`
-      }))
-      const partnerWs = utils.json_to_sheet(partnerData)
-      utils.book_append_sheet(wb, partnerWs, 'Partners')
+      const partnerSheet = workbook.addWorksheet('Partners')
+      partnerSheet.columns = [
+        { header: 'Partner', key: 'partner', width: 20 },
+        { header: 'Spent', key: 'spent', width: 15 },
+        { header: 'Transactions', key: 'transactions', width: 15 },
+        { header: 'Percentage', key: 'percentage', width: 15 }
+      ]
+      comparativeAnalytics.partnerComparison.forEach(p => {
+        partnerSheet.addRow({
+          partner: p.partner,
+          spent: p.totalSpent,
+          transactions: p.transactionCount,
+          percentage: `${p.percentage.toFixed(2)}%`
+        })
+      })
     }
 
-    writeFile(wb, fileName)
+    // Write to buffer and download
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   /**
