@@ -19,41 +19,46 @@ export const getBackendUrl = () => {
     // Remove trailing slash to avoid double slashes when concatenating URLs
     return normalizeUrl(import.meta.env.VITE_BACKEND_API_URL);
   }
-  
+
   // CRITICAL: Force check window.location at call time, not module load time
   if (typeof window === 'undefined' || !window.location) {
     return 'http://localhost:5038';
   }
-  
+
   // Get fresh values from window.location
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
-  
+
   // Check if hostname is an IP address (contains dots and numbers, not localhost)
-  const isIPAddress = hostname && 
-                      hostname !== 'localhost' && 
-                      hostname !== '127.0.0.1' &&
-                      /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
-  
+  const isIPAddress = hostname &&
+    hostname !== 'localhost' &&
+    hostname !== '127.0.0.1' &&
+    /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
+
   if (isIPAddress) {
     // Construct URL with IP
     return `${protocol}//${hostname}:5038`;
   }
-  
+
+  // Production domain check - Use Render backend
+  if (hostname && (hostname === 'www.thepaire.org' || hostname === 'thepaire.org')) {
+    return 'https://paire-api.onrender.com';
+  }
+
   // Check if it's a domain name (not localhost)
   if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('localhost')) {
     return `${protocol}//${hostname}:5038`;
   }
-  
+
   // Default to localhost ONLY if we're actually on localhost
   const defaultUrl = 'http://localhost:5038';
-  
+
   // SAFETY CHECK: If we're on an IP but returning localhost, something is very wrong
   if (hostname && /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
     // Force return IP-based URL
     return `${protocol}//${hostname}:5038`;
   }
-  
+
   return defaultUrl;
 };
 
