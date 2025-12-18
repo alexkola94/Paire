@@ -459,30 +459,36 @@ app.MapGet("/diagnostics/email", async (ILogger<Program> logger, Microsoft.Exten
             results["DNS"] = "❌ Failed";
         }
 
-        // 2. TCP Connection Test to Configured Port
-        Log($"2️⃣ Testing TCP Connect to {settings.SmtpServer}:{settings.SmtpPort}...");
-        try
+        // 2. TCP Connection Test to Standard SMTP Ports
+        var ports = new[] { 25, 465, 587, 2525 };
+        Log($"2️⃣ Testing TCP Connect to {settings.SmtpServer} on ports {string.Join(", ", ports)}...");
+        
+        foreach (var port in ports)
         {
-            using var tcp = new System.Net.Sockets.TcpClient();
-            var connectTask = tcp.ConnectAsync(settings.SmtpServer, settings.SmtpPort);
-            var completedTask = await Task.WhenAny(connectTask, Task.Delay(5000));
-            
-            if (completedTask == connectTask)
+            try
             {
-                await connectTask; // Propagate exceptions
-                Log($"✅ TCP Connection Established on Port {settings.SmtpPort}");
-                results[$"TCP-{settings.SmtpPort}"] = "✅ Success";
+                using var tcp = new System.Net.Sockets.TcpClient();
+                // Shorter timeout for port scanning
+                var connectTask = tcp.ConnectAsync(settings.SmtpServer, port);
+                var completedTask = await Task.WhenAny(connectTask, Task.Delay(3000));
+
+                if (completedTask == connectTask)
+                {
+                    await connectTask; // Propagate exceptions
+                    Log($"   ✅ Port {port}: Success");
+                    results[$"TCP-{port}"] = "✅ Success";
+                }
+                else
+                {
+                    Log($"   ❌ Port {port}: Timed Out");
+                    results[$"TCP-{port}"] = "❌ Timed Out";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Log($"❌ TCP Connection Timed Out on Port {settings.SmtpPort} after 5s");
-                results[$"TCP-{settings.SmtpPort}"] = "❌ Timed Out";
+                Log($"   ❌ Port {port}: Failed ({ex.Message})");
+                results[$"TCP-{port}"] = "❌ Failed";
             }
-        }
-        catch (Exception ex)
-        {
-            Log($"❌ TCP Connection Failed on Port {settings.SmtpPort}: {ex.Message}");
-            results[$"TCP-{settings.SmtpPort}"] = "❌ Failed";
         }
 
         return Results.Ok(new
