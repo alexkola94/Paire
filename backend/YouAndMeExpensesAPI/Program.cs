@@ -78,7 +78,9 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000", // Alternative
                 "http://localhost:3001", // Alternative
                 "http://localhost:3002",  // Alternative
-                "http://192.168.14.18:3000"  // Your local IP
+                "http://192.168.14.18:3000",  // Your local IP
+                "https://www.thepaire.org",
+                "https://thepaire.org"
             }
             : corsOriginsString.Split(',', StringSplitOptions.RemoveEmptyEntries)
                                .Select(o => o.Trim())
