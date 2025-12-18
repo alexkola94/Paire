@@ -119,7 +119,9 @@ namespace YouAndMeExpensesAPI.Services
                         // Port 587: Explicit SSL (StartTls)
                         var socketOptions = _emailSettings.SmtpPort == 465 
                             ? SecureSocketOptions.SslOnConnect 
-                            : SecureSocketOptions.StartTls;
+                            : SecureSocketOptions.Auto;
+
+                        _logger.LogInformation($"Connecting to SMTP {_emailSettings.SmtpServer}:{_emailSettings.SmtpPort} with options {socketOptions}...");
 
                         await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, socketOptions, cts.Token);
 
