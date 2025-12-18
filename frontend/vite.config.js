@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => ({
   ],
   // Base path for GitHub Pages deployment
   // Use '/' for development, '/Paire/' for production
-  base: mode === 'production' ? '/Paire/' : '/',
+  base: '/',
   server: {
     port: 3000,
     host: true, // Listen on all network interfaces (0.0.0.0)
