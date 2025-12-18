@@ -120,7 +120,7 @@ function App() {
 
       // Redirect to login if not already there
       const currentPath = window.location.pathname
-      const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
+      const basename = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL
       const loginPath = `${basename}/login`
 
       if (currentPath !== loginPath && !currentPath.endsWith('/login')) {
@@ -171,7 +171,7 @@ function App() {
     <ThemeProvider>
       <AccessibilityProvider>
         <ToastProvider>
-          <Router basename={import.meta.env.MODE === 'production' ? '/Paire' : ''}>
+          <Router basename={import.meta.env.BASE_URL}>
             {/* Handle GitHub Pages redirects */}
             <RedirectHandler />
             <CookieConsent />
