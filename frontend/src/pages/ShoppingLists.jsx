@@ -34,6 +34,7 @@ function ShoppingLists() {
   const [deleteItemModal, setDeleteItemModal] = useState({ isOpen: false, itemId: null })
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
+  const [formLoading, setFormLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [togglingItems, setTogglingItems] = useState(new Set()) // Track items being toggled to prevent double-tap
@@ -182,37 +183,57 @@ function ShoppingLists() {
   const handleListSubmit = async (e) => {
     e.preventDefault()
     try {
-      // Close form immediately and show loader
-      setShowListForm(false)
-      setShowLoadingProgress(true)
+      setFormLoading(true)
 
+      let savedList = null
       if (editingList) {
-        await shoppingListService.update(editingList.id, {
+        savedList = await shoppingListService.update(editingList.id, {
           name: listFormData.name,
           category: listFormData.category || null,
           notes: listFormData.notes || null
         })
+        // Local Update
+        setLists(prev => prev.map(l => l.id === editingList.id ? { ...l, ...savedList } : l))
       } else {
-        await shoppingListService.create({
+        savedList = await shoppingListService.create({
           name: listFormData.name,
           category: listFormData.category || null,
           notes: listFormData.notes || null
         })
+        // Local Update
+        // Note: snake_case might be returned, mapped in loadLists.
+        // I should map it here or reload. 
+        // For simplicity, I'll rely on loadLists(true) which is fast enough, 
+        // OR map it manually. loadLists does mapping.
+        // If I want instant feedback, I should map it manually.
+        const mapped = {
+          id: savedList.id,
+          name: savedList.name,
+          category: savedList.category,
+          isCompleted: savedList.is_completed ?? savedList.isCompleted ?? false,
+          estimatedTotal: savedList.estimated_total ?? savedList.estimatedTotal ?? 0,
+          actualTotal: savedList.actual_total ?? savedList.actualTotal ?? 0,
+          notes: savedList.notes,
+          completedDate: savedList.completed_date ?? savedList.completedDate,
+          createdAt: savedList.created_at ?? savedList.createdAt,
+          userProfiles: savedList.user_profiles ?? savedList.userProfiles
+        }
+        setLists(prev => [mapped, ...prev])
       }
 
-      // Background refresh
-      await loadLists(true)
-
-      // Success
-      setShowLoadingProgress(false)
+      // Success animation
       setShowSuccessAnimation(true)
-
       resetListForm()
+
+      // Background refresh
+      loadLists(true)
+
     } catch (error) {
       console.error('Error saving list:', error)
-      setShowLoadingProgress(false)
       setShowListForm(true) // Re-open
       alert(t('shoppingLists.errorSaving'))
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -221,9 +242,7 @@ function ShoppingLists() {
     if (!selectedList) return
 
     try {
-      // Close form immediately and show loader
-      setShowItemForm(false)
-      setShowLoadingProgress(true)
+      setFormLoading(true)
 
       const itemData = {
         name: itemFormData.name,
@@ -240,23 +259,19 @@ function ShoppingLists() {
         await shoppingListService.addItem(selectedList.list.id, itemData)
       }
 
-      // We need to refresh the list details. Since loadListDetails manages its own state
-      // efficiently (only updates what changed), we can call it.
-      // But we need to make sure we don't trigger full page loading if possible.
-      // loadListDetails doesn't have a background param but it doesn't set global 'loading' state
-      // that hides the whole page, so it's safe-ish.
-      await loadListDetails(selectedList.list.id)
-
       // Success
-      setShowLoadingProgress(false)
       setShowSuccessAnimation(true)
-
       resetItemForm()
+
+      // Refresh without blocking
+      loadListDetails(selectedList.list.id)
+
     } catch (error) {
       console.error('Error saving item:', error)
-      setShowLoadingProgress(false)
       setShowItemForm(true) // Re-open
       alert(t('shoppingLists.errorSavingItem'))
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -472,7 +487,13 @@ function ShoppingLists() {
 
     try {
       await shoppingListService.delete(listId)
-      await loadLists()
+
+      // Local Update
+      setLists(prev => prev.filter(l => l.id !== listId))
+
+      // Background Refresh
+      loadLists(true)
+
       if (selectedList?.list.id === listId) {
         setSelectedList(null)
       }
@@ -506,7 +527,18 @@ function ShoppingLists() {
 
     try {
       await shoppingListService.deleteItem(selectedList.list.id, itemId)
-      await loadListDetails(selectedList.list.id)
+
+      // Local Update
+      // setSelectedList is complex, better to rely on loadListDetails but non-blocking?
+      // Or optimize locally.
+      setSelectedList(prev => ({
+        ...prev,
+        items: prev.items.filter(i => i.id !== itemId),
+        itemCount: Math.max(0, (prev.itemCount || 0) - 1)
+      }))
+
+      loadListDetails(selectedList.list.id)
+
       closeDeleteItemModal()
     } catch (error) {
       console.error('Error deleting item:', error)

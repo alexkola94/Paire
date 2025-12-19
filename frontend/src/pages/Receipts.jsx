@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiTrash2, FiSearch, FiZoomIn, FiDownload } from 'react-icons/fi'
-import { transactionService } from '../services/api'
+import { FiTrash2, FiSearch, FiZoomIn, FiDownload, FiX } from 'react-icons/fi'
+import { transactionService, recurringBillService } from '../services/api'
 import { ALL_CATEGORIES } from '../constants/categories'
 import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -33,11 +33,59 @@ function Receipts() {
     const loadReceipts = async () => {
         try {
             setLoading(true)
-            const data = await transactionService.getReceipts({
-                category: selectedCategory === 'All' ? null : selectedCategory,
-                search: searchQuery
-            })
-            setReceipts(data)
+            const [transactions, recurringBills] = await Promise.all([
+                transactionService.getReceipts({
+                    category: selectedCategory === 'All' ? null : selectedCategory,
+                    search: searchQuery
+                }),
+                recurringBillService.getAll()
+            ])
+
+            // Map transactions
+            const txReceipts = transactions.map(t => ({
+                ...t,
+                type: 'transaction',
+                uniqueId: `tx-${t.id}`
+            }))
+
+            // Map recurring bill attachments
+            let billAttachments = []
+            if (recurringBills && Array.isArray(recurringBills)) {
+                recurringBills.forEach(bill => {
+                    if (bill.attachments && bill.attachments.length > 0) {
+                        // Filter by category/search if needed (client-side for now as API fetches all)
+                        if (selectedCategory !== 'All' && bill.category !== selectedCategory) return
+
+                        const matchesSearch = !searchQuery ||
+                            (bill.name && bill.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                            (bill.notes && bill.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+
+                        if (!matchesSearch) return
+
+                        bill.attachments.forEach(att => {
+                            billAttachments.push({
+                                id: att.id,
+                                type: 'recurring',
+                                billId: bill.id,
+                                uniqueId: `rec-${att.id}`,
+                                attachmentUrl: att.fileUrl,
+                                amount: bill.amount,
+                                category: bill.category,
+                                description: `${bill.name} - ${att.fileName}`,
+                                date: att.uploadedAt || bill.createdAt,
+                                user_profiles: bill.user_profiles
+                            })
+                        })
+                    }
+                })
+            }
+
+            // Merge and sort by date descending
+            const allReceipts = [...txReceipts, ...billAttachments].sort((a, b) =>
+                new Date(b.date) - new Date(a.date)
+            )
+
+            setReceipts(allReceipts)
         } catch (error) {
             console.error('Error loading receipts:', error)
             showError(t('receipts.loadError', 'Failed to load receipts'))
@@ -51,9 +99,14 @@ function Receipts() {
         if (!receipt) return
 
         try {
-            await transactionService.deleteReceipt(receipt.id)
+            if (receipt.type === 'recurring') {
+                await recurringBillService.deleteAttachment(receipt.billId, receipt.id)
+            } else {
+                await transactionService.deleteReceipt(receipt.id)
+            }
+
             showSuccess(t('receipts.deleteSuccess', 'Receipt deleted successfully'))
-            setReceipts(prev => prev.filter(r => r.id !== receipt.id))
+            setReceipts(prev => prev.filter(r => r.uniqueId !== receipt.uniqueId))
             closeDeleteModal()
         } catch (error) {
             console.error('Error deleting receipt:', error)
@@ -194,19 +247,27 @@ function Receipts() {
                 variant="danger"
             />
 
-            {/* Image Viewer Modal */}
             {viewModal && (
                 <div className="image-viewer-modal" onClick={() => setViewModal(null)} role="dialog" aria-modal="true">
-                    <div className="image-viewer-content" onClick={e => e.stopPropagation()}>
-                        {viewModal.attachmentUrl && viewModal.attachmentUrl.toLowerCase().endsWith('.pdf') ? (
-                            <iframe src={viewModal.attachmentUrl} title="Receipt PDF" width="100%" height="500px"></iframe>
-                        ) : (
-                            <img src={viewModal.attachmentUrl} alt="Full Receipt" />
-                        )}
-                        <button className="close-viewer" onClick={() => setViewModal(null)} aria-label={t('common.close')}>×</button>
-                        <a href={viewModal.attachmentUrl} download target="_blank" rel="noopener noreferrer" className="download-btn btn btn-primary">
-                            <FiDownload /> {t('common.download', 'Download')} {viewModal.user_profiles ? (t('dashboard.addedBy') + ' ' + viewModal.user_profiles.display_name) : ''}
-                        </a>
+                    <div className="modal-card" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3 className="modal-title">{t('receipts.viewReceipt', 'View Receipt')}</h3>
+                            <button className="btn-close" onClick={() => setViewModal(null)} aria-label={t('common.close')}>
+                                <FiX size={24} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            {viewModal.attachmentUrl && viewModal.attachmentUrl.toLowerCase().endsWith('.pdf') ? (
+                                <iframe src={viewModal.attachmentUrl} title="Receipt PDF"></iframe>
+                            ) : (
+                                <img src={viewModal.attachmentUrl} alt="Full Receipt" />
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <a href={viewModal.attachmentUrl} download target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                                <FiDownload style={{ marginRight: '8px' }} /> {t('common.download', 'Download')}
+                            </a>
+                        </div>
                     </div>
                 </div>
             )}

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { CATEGORIES } from '../constants/categories'
 import { useTranslation } from 'react-i18next'
 import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
-  FiGrid, FiList, FiChevronLeft, FiChevronRight
+  FiGrid, FiList, FiChevronLeft, FiChevronRight, FiPaperclip, FiDownload, FiX, FiFileText
 } from 'react-icons/fi'
 import {
   addMonths, addYears, addWeeks, startOfMonth, endOfMonth, isSameMonth,
@@ -28,19 +28,41 @@ import './RecurringBills.css'
  * Recurring Bills Page Component
  * Manage recurring bills and subscriptions with calendar view
  */
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+
 function RecurringBills() {
   const { t } = useTranslation()
   const formatCurrency = useCurrencyFormatter()
-  const [loading, setLoading] = useState(true)
-  const [bills, setBills] = useState([])
-  const [loans, setLoans] = useState([])
-  const [summary, setSummary] = useState(null)
+  const queryClient = useQueryClient()
+
+  // Queries
+  const { data: bills = [], isLoading: billsLoading } = useQuery({
+    queryKey: ['recurringBills'],
+    queryFn: recurringBillService.getAll
+  })
+
+  // Loans stored in a separate query if needed, or fetched together. 
+  // Assuming separate for now as per original code.
+  const { data: loans = [] } = useQuery({
+    queryKey: ['loans'],
+    queryFn: loanService.getAll
+  })
+
+  const { data: summary } = useQuery({
+    queryKey: ['recurringBillsSummary'],
+    queryFn: recurringBillService.getSummary
+  })
+
+  // Combined Loading State
+  const loading = billsLoading
+
+  // UI State
   const [showForm, setShowForm] = useState(false)
   const [editingBill, setEditingBill] = useState(null)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, billId: null })
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
-  const [viewMode, setViewMode] = useState('list') // 'list' or 'calendar'
+  const [viewMode, setViewMode] = useState('list')
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -54,59 +76,58 @@ function RecurringBills() {
     loanId: ''
   })
   const [processingBillId, setProcessingBillId] = useState(null)
-  // Unmark confirmation modal state
+  const [formLoading, setFormLoading] = useState(false)
   const [unmarkModal, setUnmarkModal] = useState({ isOpen: false, bill: null })
-  // Animation state
-  const [animatingBill, setAnimatingBill] = useState({ id: null, type: null }) // type: 'marking-paid' | 'reverting'
+  const [attachmentsModal, setAttachmentsModal] = useState({ isOpen: false, bill: null })
+  const [pendingAttachments, setPendingAttachments] = useState([])
+  const [animatingBill, setAnimatingBill] = useState({ id: null, type: null })
 
   // Pagination State
   const [page, setPage] = useState(1)
 
-  // Bill categories (using master list)
-  const categories = CATEGORIES.EXPENSE.map(cat => ({
-    value: cat,
-    label: t(`categories.${cat}`) || t(`recurringBills.categories.${cat}`) || cat.charAt(0).toUpperCase() + cat.slice(1),
-    icon: '📋' // Default icon, will be overridden by getCategoryIcon helper if needed or we can enhance this map later
-  }))
-
-  const frequencies = [
-    { value: 'weekly', label: t('recurringBills.frequencies.weekly') },
-    { value: 'monthly', label: t('recurringBills.frequencies.monthly') },
-    { value: 'quarterly', label: t('recurringBills.frequencies.quarterly') },
-    { value: 'yearly', label: t('recurringBills.frequencies.yearly') }
-  ]
-
-  /**
-   * Load bills, loans and summary on mount
-   */
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  /**
-   * Fetch bills, loans and summary data
-   */
-  const loadData = async (background = false) => {
-    try {
-      if (!background) setLoading(true)
-      const [billsData, summaryData, loansData] = await Promise.all([
-        recurringBillService.getAll(),
-        recurringBillService.getSummary(),
-        loanService.getAll()
-      ])
-      setBills(billsData || [])
-      setLoans(loansData || [])
-      setSummary(summaryData || null)
-    } catch (error) {
-      console.error('Error loading recurring bills data:', error)
-    } finally {
-      if (!background) setLoading(false)
+  // Mutations
+  const createBillMutation = useMutation({
+    mutationFn: recurringBillService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
+      queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
     }
-  }
+  })
 
-  /**
-   * Get days until due date
-   */
+  const updateBillMutation = useMutation({
+    mutationFn: ({ id, data }) => recurringBillService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
+      queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
+    }
+  })
+
+  const deleteBillMutation = useMutation({
+    mutationFn: recurringBillService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
+      queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
+    }
+  })
+
+  const markPaidMutation = useMutation({
+    mutationFn: recurringBillService.markPaid,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
+      queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
+    }
+  })
+
+  const unmarkPaidMutation = useMutation({
+    mutationFn: recurringBillService.unmarkPaid,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
+      queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
+    }
+  })
+
+
+  /* --- HELPERS --- */
   const getDaysUntil = (dueDate) => {
     const today = new Date()
     const due = new Date(dueDate)
@@ -115,20 +136,12 @@ function RecurringBills() {
     return diffDays
   }
 
-  /**
-   * Check if bill is overdue
-   */
   const isOverdue = (dueDate) => {
-    // Only overdue if it's strictly before today's start of day
-    // (If it's due today, it's not overdue yet)
     const todayStart = startOfDay(new Date())
     const due = new Date(dueDate)
     return isBefore(due, todayStart)
   }
 
-  /**
-   * Check if bill is due soon (within 7 days)
-   */
   const isDueSoon = (dueDate) => {
     const days = getDaysUntil(dueDate)
     return days >= 0 && days <= 7
@@ -156,217 +169,144 @@ function RecurringBills() {
   /**
    * Handle form submission (create/update)
    */
+  /* --- MUTATED HANDLERS --- */
+
+  // Bill categories (using master list)
+  const categories = CATEGORIES.EXPENSE.map(cat => ({
+    value: cat,
+    label: t(`categories.${cat}`) || t(`recurringBills.categories.${cat}`) || cat.charAt(0).toUpperCase() + cat.slice(1),
+    icon: '📋'
+  }))
+
+  const frequencies = [
+    { value: 'weekly', label: t('recurringBills.frequencies.weekly') },
+    { value: 'monthly', label: t('recurringBills.frequencies.monthly') },
+    { value: 'quarterly', label: t('recurringBills.frequencies.quarterly') },
+    { value: 'yearly', label: t('recurringBills.frequencies.yearly') }
+  ]
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     try {
-      // Close form immediately and show full screen loader
-      setShowForm(false)
-      setShowLoadingProgress(true)
+      setFormLoading(true)
 
       let notes = formData.notes || ''
-
-      // Clean up any existing LOAN_REF tag first
       notes = notes.replace(/\[LOAN_REF:[^\]]+\]\s*/g, '').trim()
 
-      // Append new loan reference if a loan is selected
       if (formData.category === 'loan' && formData.loanId) {
         notes = `${notes} [LOAN_REF:${formData.loanId}]`.trim()
       }
 
       const billData = {
         ...formData,
-        notes, // Use updated notes
+        notes,
         amount: parseFloat(formData.amount),
         dueDay: parseInt(formData.dueDay),
         reminderDays: parseInt(formData.reminderDays)
       }
-
-      // Remove loanId from payload as it's not in the schema (it's in notes)
       delete billData.loanId
 
       if (editingBill) {
-        await recurringBillService.update(editingBill.id, billData)
+        await updateBillMutation.mutateAsync({ id: editingBill.id, data: billData })
       } else {
-        await recurringBillService.create(billData)
+        const savedBill = await createBillMutation.mutateAsync(billData)
+
+        // Handle Pending Attachments (Only for new bills for now, similar to before)
+        if (pendingAttachments.length > 0 && savedBill) {
+          const billId = savedBill.id || savedBill.Id
+          if (billId) {
+            for (const file of pendingAttachments) {
+              try {
+                await recurringBillService.uploadAttachment(billId, file)
+              } catch (e) { console.error(e) }
+            }
+          }
+        }
       }
 
-      // Refresh list in background
-      await loadData(true)
-
-      // Show success animation
-      setShowLoadingProgress(false)
       setShowSuccessAnimation(true)
-
       resetForm()
     } catch (error) {
       console.error('Error saving bill:', error)
-      setShowLoadingProgress(false)
-      setShowForm(true) // Re-open form on error
+      setShowForm(true)
       alert(t('recurringBills.errorSaving'))
+    } finally {
+      setFormLoading(false)
     }
   }
 
   /**
    * Handle mark bill as paid
    */
-  /**
-   * Handle mark bill as paid with Optimistic UI
-   */
+  /* --- MARK PAID / UNMARK PAID --- */
+
   const handleMarkPaid = async (billId, billAmount, notes) => {
-    if (processingBillId || animatingBill.id) return // Prevent double clicks
+    if (processingBillId || animatingBill.id) return
 
     // 1. Trigger Animation
     setAnimatingBill({ id: billId, type: 'marking-paid' })
 
-    // Wait for animation to finish (approx 400ms matches CSS)
+    const bill = bills.find(b => b.id === billId)
+    // Keep local references for loan logic if needed
+    const loanRefMatch = notes && notes.match(/\[LOAN_REF:([^\]]+)\]/)
+
+    // Wait for animation
     setTimeout(async () => {
-      // 2. Optimistic Update Logic
-      const billToUpdate = bills.find(b => b.id === billId)
-      if (!billToUpdate) {
-        setAnimatingBill({ id: null, type: null })
-        return
-      }
-
-      // Store previous state for rollback
-      const previousBills = [...bills]
-      const previousSummary = summary ? { ...summary } : null
-
-      // Calculate next due date locally
-      const currentDueDate = new Date(billToUpdate.nextDueDate || billToUpdate.next_due_date)
-      let nextDueDate = new Date(currentDueDate)
-
-      if (billToUpdate.frequency === 'monthly') {
-        nextDueDate = addMonths(currentDueDate, 1)
-      } else if (billToUpdate.frequency === 'yearly') {
-        nextDueDate = addYears(currentDueDate, 1)
-      } else if (billToUpdate.frequency === 'weekly') {
-        nextDueDate = addWeeks(currentDueDate, 1)
-      } else if (billToUpdate.frequency === 'quarterly') {
-        nextDueDate = addMonths(currentDueDate, 3)
-      }
-
-      // Update local state immediately
-      const updatedBill = {
-        ...billToUpdate,
-        nextDueDate: nextDueDate.toISOString(),
-        next_due_date: nextDueDate.toISOString() // Handle both casing
-      }
-
-      setBills(prevBills => prevBills.map(b => b.id === billId ? updatedBill : b))
-      setAnimatingBill({ id: null, type: null }) // Clear animation state
-
-      // Optimistically update summary (approximate)
-      if (summary) {
-        setSummary(prev => ({
-          ...prev,
-          overdueBills: isOverdue(currentDueDate) ? Math.max(0, prev.overdueBills - 1) : prev.overdueBills,
-          upcomingBills: isDueSoon(currentDueDate) ? Math.max(0, prev.upcomingBills - 1) : prev.upcomingBills
-        }))
-      }
-
       try {
         setProcessingBillId(billId)
+        // Mark Paid Mutation
+        await markPaidMutation.mutateAsync(billId)
 
-        // Check for loan reference in notes
-        const loanRefMatch = notes && notes.match(/\[LOAN_REF:([^\]]+)\]/)
-
+        // Additional Logic: Loan Payment Creation (Manual for now as it was before)
         if (loanRefMatch && loanRefMatch[1]) {
           const loanId = loanRefMatch[1]
-
-          // Create loan payment
-          const paymentData = {
-            loanId: loanId,
-            amount: parseFloat(billAmount),
-            principalAmount: parseFloat(billAmount),
-            interestAmount: 0,
-            paymentDate: new Date().toISOString().split('T')[0],
-            notes: `Auto-payment from Recurring Bill`
-          }
-
           try {
-            await loanPaymentService.create(paymentData)
-          } catch (paymentError) {
-            console.error('Error creating loan payment:', paymentError)
-          }
+            await loanPaymentService.create({
+              loanId: loanId,
+              amount: parseFloat(billAmount),
+              principalAmount: parseFloat(billAmount),
+              interestAmount: 0,
+              paymentDate: new Date().toISOString().split('T')[0],
+              notes: `Auto-payment from Recurring Bill`
+            })
+            // Invalidate loans to refresh balance
+            queryClient.invalidateQueries({ queryKey: ['loans'] })
+          } catch (e) { console.error(e) }
         }
 
-        await recurringBillService.markPaid(billId)
-
-        // Trigger background refresh to ensure data consistency
-        await loadData(true)
       } catch (error) {
         console.error('Error marking bill as paid:', error)
-
-        // Rollback on error
-        setBills(previousBills)
-        if (previousSummary) setSummary(previousSummary)
-
         alert(t('recurringBills.errorMarkingPaid'))
       } finally {
         setProcessingBillId(null)
+        setAnimatingBill({ id: null, type: null })
       }
-    }, 400) // Match CSS transition time
+    }, 400)
   }
 
-  /**
-   * Handle unmark bill as paid (Revert)
-   */
-  /**
-   * Open unmark confirmation modal
-   */
   const handleUnmarkPaid = (bill) => {
     setUnmarkModal({ isOpen: true, bill })
   }
 
-  /**
-   * Execute unmark action (Revert)
-   */
   const confirmUnmark = async () => {
     const { bill } = unmarkModal
     if (!bill) return
 
-    // Close modal immediately
     setUnmarkModal({ isOpen: false, bill: null })
-
-    // 1. Trigger Animation
     setAnimatingBill({ id: bill.id, type: 'reverting' })
 
     setTimeout(async () => {
       try {
         setProcessingBillId(bill.id)
+        await unmarkPaidMutation.mutateAsync(bill.id)
 
-        // Optimistic Revert Logic
-        // We need to move the date back.
-        // NOTE: Exact revert logic is complex if we don't know the EXACT previous date,
-        // but for "Undo Mark Paid", jumping back one interval is usually correct.
-        const currentNextDue = new Date(bill.nextDueDate || bill.next_due_date)
-        let prevDueDate = new Date(currentNextDue)
-
-        if (bill.frequency === 'monthly') prevDueDate = addMonths(currentNextDue, -1)
-        else if (bill.frequency === 'weekly') prevDueDate = addWeeks(currentNextDue, -1)
-        else if (bill.frequency === 'yearly') prevDueDate = addYears(currentNextDue, -1)
-        else if (bill.frequency === 'quarterly') prevDueDate = addMonths(currentNextDue, -3)
-
-        const revertedBill = {
-          ...bill,
-          nextDueDate: prevDueDate.toISOString(),
-          next_due_date: prevDueDate.toISOString()
-        }
-
-        setBills(prevBills => prevBills.map(b => b.id === bill.id ? revertedBill : b))
-        setAnimatingBill({ id: null, type: null })
-
-        // 2. Revert Bill Status via API (Handles Date Revert + Expense Deletion)
-        await recurringBillService.unmarkPaid(bill.id)
-
-        // 3. Revert Loan Payment (if applicable)
+        // Loan Revert Logic
         const loanRefMatch = bill.notes && bill.notes.match(/\[LOAN_REF:([^\]]+)\]/)
         if (loanRefMatch && loanRefMatch[1]) {
           const loanId = loanRefMatch[1]
-
           const payments = await loanPaymentService.getByLoan(loanId)
-
+          // Find payment logic... (same as before)
           const today = new Date().toISOString().split('T')[0]
           const paymentToDelete = payments.find(p => {
             const paymentDate = p.paymentDate.split('T')[0]
@@ -374,21 +314,18 @@ function RecurringBills() {
             const isAutoPayment = p.notes && p.notes.includes('Auto-payment')
             return paymentDate === today && amountMatch && isAutoPayment
           })
-
           if (paymentToDelete) {
             await loanPaymentService.delete(paymentToDelete.id)
+            queryClient.invalidateQueries({ queryKey: ['loans'] })
           }
         }
 
-        await loadData(true) // Background refresh
-        // No success animation
       } catch (error) {
         console.error('Error unmarking bill:', error)
-        alert(t('recurringBills.errorUnmarking') || 'Failed to revert bill status.')
-        // In a real app we would rollback optimistic update here too
-        await loadData(true)
+        alert(t('recurringBills.errorUnmarking'))
       } finally {
         setProcessingBillId(null)
+        setAnimatingBill({ id: null, type: null })
       }
     }, 400)
   }
@@ -444,12 +381,71 @@ function RecurringBills() {
     if (!billId) return
 
     try {
-      await recurringBillService.delete(billId)
-      await loadData()
+      setFormLoading(true)
+      await deleteBillMutation.mutateAsync(billId)
+
       closeDeleteModal()
     } catch (error) {
       console.error('Error deleting bill:', error)
       alert(t('recurringBills.errorDeleting'))
+    } finally {
+      setFormLoading(false)
+    }
+  }
+
+  /* --- Attachment Handlers --- */
+
+  const handleAttachments = (bill) => {
+    setAttachmentsModal({ isOpen: true, bill })
+  }
+
+  const handleUploadAttachment = async (file) => {
+    const { bill } = attachmentsModal
+    if (!bill || !file) return
+
+    try {
+      // 1. Upload
+      const uploaded = await recurringBillService.uploadAttachment(bill.id, file)
+
+      // 2. Update Local State (Modal Bill)
+      // Needs to handle if bill.attachments is undefined/null initially
+      const currentAttachments = bill.attachments || []
+      const updatedAttachments = [...currentAttachments, uploaded]
+
+      const updatedBill = { ...bill, attachments: updatedAttachments }
+
+      setAttachmentsModal(prev => ({ ...prev, bill: updatedBill }))
+
+      // 3. Update Global List State
+      setBills(prevBills => prevBills.map(b => b.id === bill.id ? updatedBill : b))
+
+    } catch (error) {
+      console.error('Error uploading attachment:', error)
+      alert(t('recurringBills.errorUploading') || 'Failed to upload attachment')
+    }
+  }
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    const { bill } = attachmentsModal
+    if (!bill) return
+
+    if (!window.confirm(t('common.confirmDelete') || "Are you sure?")) return
+
+    try {
+      await recurringBillService.deleteAttachment(bill.id, attachmentId)
+
+      // Update Local State
+      const updatedAttachments = bill.attachments.filter(a => a.id !== attachmentId)
+      const updatedBill = { ...bill, attachments: updatedAttachments }
+
+      setAttachmentsModal(prev => ({ ...prev, bill: updatedBill }))
+
+      // Update Global List State
+      setBills(prevBills => prevBills.map(b => b.id === bill.id ? updatedBill : b))
+
+    } catch (error) {
+      console.error('Error deleting attachment:', error)
+      alert(t('recurringBills.errorDeletingAttachment') || 'Failed to delete attachment')
     }
   }
 
@@ -459,6 +455,7 @@ function RecurringBills() {
   const resetForm = () => {
     setShowForm(false)
     setEditingBill(null)
+    setPendingAttachments([])
     setFormData({
       name: '',
       amount: '',
@@ -471,6 +468,16 @@ function RecurringBills() {
       notes: '',
       loanId: ''
     })
+  }
+
+  const handlePendingFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setPendingAttachments(prev => [...prev, ...Array.from(e.target.files)])
+    }
+  }
+
+  const removePendingAttachment = (index) => {
+    setPendingAttachments(prev => prev.filter((_, i) => i !== index))
   }
 
   /**
@@ -785,6 +792,7 @@ function RecurringBills() {
                   onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
                   onUnmark={handleUnmarkPaid}
+                  onAttachments={handleAttachments}
                   isProcessing={processingBillId === bill.id}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
@@ -814,6 +822,7 @@ function RecurringBills() {
                   onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
                   onUnmark={handleUnmarkPaid}
+                  onAttachments={handleAttachments}
                   isProcessing={processingBillId === bill.id}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
@@ -843,6 +852,7 @@ function RecurringBills() {
                   onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
                   onUnmark={handleUnmarkPaid}
+                  onAttachments={handleAttachments}
                   isProcessing={processingBillId === bill.id}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
@@ -872,6 +882,7 @@ function RecurringBills() {
                   onDelete={openDeleteModal}
                   onMarkPaid={handleMarkPaid}
                   onUnmark={handleUnmarkPaid}
+                  onAttachments={handleAttachments}
                   isProcessing={processingBillId === bill.id}
                   getCategoryIcon={getCategoryIcon}
                   formatDueDate={formatDueDate}
@@ -1089,12 +1100,56 @@ function RecurringBills() {
               />
             </div>
 
+            {/* File Upload Section for New Bill */}
+            <FormSection title={t('recurringBills.attachments') || "Attachments"}>
+              <div style={{ padding: '0 0.5rem' }}>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handlePendingFileChange}
+                  style={{ display: 'none' }}
+                  id="form-attachment-upload"
+                />
+                <label htmlFor="form-attachment-upload" className="btn btn-secondary" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px', cursor: 'pointer', marginBottom: '1rem' }}>
+                  <FiPlus /> {t('common.addAttachment') || "Add Attachment"}
+                </label>
+
+                {/* List pending files */}
+                {pendingAttachments.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {pendingAttachments.map((file, idx) => (
+                      <div key={idx} className="glass-card" style={{ padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                          {file.name}
+                        </span>
+                        <button type="button" onClick={() => removePendingAttachment(idx)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer' }}>
+                          <FiX />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* For editing, show info about existing files */}
+                {editingBill && editingBill.attachments && editingBill.attachments.length > 0 && (
+                  <div style={{ marginTop: '1rem', padding: '8px', background: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '0.85rem' }}>
+                    <FiAlertCircle style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                    {editingBill.attachments.length} existing attachments. Manage them from the bill card view.
+                  </div>
+                )}
+              </div>
+            </FormSection>
+
             <div className="form-actions">
               <button type="button" className="btn btn-secondary" onClick={resetForm}>
                 {t('common.cancel')}
               </button>
-              <button type="submit" className="btn btn-primary">
-                {editingBill ? t('common.update') : t('common.create')}
+              <button type="submit" className="btn btn-primary" disabled={formLoading}>
+                {formLoading ? (
+                  <><div className="spinner-small" style={{ marginRight: '8px' }}></div> {t('common.saving') || "Saving..."}</>
+                ) : (
+                  editingBill ? t('common.update') : t('common.create')
+                )}
               </button>
             </div>
           </form>
@@ -1114,6 +1169,7 @@ function RecurringBills() {
       {/* Delete Payment Confirmation Modal */}
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
+        loading={formLoading}
         onClose={closeDeleteModal}
         onConfirm={handleDelete}
         title={t('recurringBills.deleteBill')}
@@ -1133,14 +1189,122 @@ function RecurringBills() {
         variant="warning"
         loading={processingBillId === unmarkModal.bill?.id}
       />
+      {/* Attachments Modal */}
+      {attachmentsModal.isOpen && (
+        <InternalBillAttachmentsModal
+          isOpen={attachmentsModal.isOpen}
+          onClose={() => setAttachmentsModal({ isOpen: false, bill: null })}
+          bill={attachmentsModal.bill}
+          onUpload={handleUploadAttachment}
+          onDelete={handleDeleteAttachment}
+          t={t}
+          formatDueDate={formatDueDate}
+        />
+      )}
     </div>
+  )
+}
+
+/**
+ * Internal Attachments Modal Component
+ */
+function InternalBillAttachmentsModal({ isOpen, onClose, bill, onUpload, onDelete, t, formatDueDate }) {
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = React.useRef(null)
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setUploading(true)
+    await onUpload(file)
+    setUploading(false)
+
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const attachments = bill?.attachments || []
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('recurringBills.attachments') || "Attachments"}
+    >
+      <div className="attachments-modal-content">
+        <div className="upload-section">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+            id="attachment-upload"
+          />
+          <label htmlFor="attachment-upload" className="btn btn-primary" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px', cursor: uploading ? 'wait' : 'pointer' }}>
+            {uploading ? (
+              <><div className="spinner-small"></div> {t('common.uploading') || "Uploading..."}</>
+            ) : (
+              <><FiPlus /> {t('common.addAttachment') || "Add Attachment"}</>
+            )}
+          </label>
+        </div>
+
+        <div className="attachments-list" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {attachments.length === 0 ? (
+            <div className="empty-attachments" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+              <FiPaperclip size={32} style={{ marginBottom: '8px', opacity: 0.5 }} />
+              <p>{t('recurringBills.noAttachments') || "No attachments yet"}</p>
+            </div>
+          ) : (
+            attachments.map(att => (
+              <div key={att.id} className="attachment-item glass-card" style={{ display: 'flex', alignItems: 'center', padding: '10px', gap: '10px', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                  <div className="file-icon" style={{ background: 'var(--primary-light)', padding: '8px', borderRadius: '50%', color: 'var(--primary)' }}>
+                    <FiFileText />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <span className="file-name" style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={att.fileName}>
+                      {att.fileName}
+                    </span>
+                    <span className="file-date" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {new Date(att.uploadedAt).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="file-actions" style={{ display: 'flex', gap: '4px' }}>
+                  <a
+                    href={att.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="icon-btn"
+                    title={t('common.download')}
+                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <FiDownload />
+                  </a>
+                  <button
+                    className="icon-btn danger"
+                    onClick={() => onDelete(att.id)}
+                    title={t('common.delete')}
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </Modal>
   )
 }
 
 /**
  * Bill Card Component
  */
-function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, isProcessing, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency, animationClass }) {
+function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments, isProcessing, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency, animationClass }) {
   /* Swipe Gesture Integration */
   const { handleTouchStart, handleTouchMove, handleTouchEnd, getSwipeProps } = useSwipeGesture({
     onSwipeLeft: () => onDelete(bill.id),
@@ -1238,6 +1402,23 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, isProcessing, 
             {Math.abs(daysUntil)} {t('recurringBills.daysOverdue')}
           </span>
         )}
+      </div>
+
+      {/* Attachment Button Row */}
+      <div className="bill-extras" style={{ display: 'flex', gap: '8px', margin: '8px 0' }}>
+        <button
+          className="btn-text-icon"
+          onClick={(e) => { e.stopPropagation(); onAttachments(bill); }} // Prevent card click if any
+          onTouchEnd={(e) => { e.stopPropagation(); }} // Prevent swipe
+          style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'transparent', border: 'none', padding: '4px 0', cursor: 'pointer' }}
+        >
+          <FiPaperclip />
+          {bill.attachments?.length > 0 ? (
+            <span>{bill.attachments.length} {t('recurringBills.attachments') || "Attachments"}</span>
+          ) : (
+            <span>{t('common.addAttachment') || "Add Attachment"}</span>
+          )}
+        </button>
       </div>
 
       {bill.notes && (

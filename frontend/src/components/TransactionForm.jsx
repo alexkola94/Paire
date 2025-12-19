@@ -37,8 +37,8 @@ function TransactionForm({
     category: transaction?.category || '',
     description: transaction?.description || '',
     date: transaction?.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0],
-    attachment_url: transaction?.attachment_url || '',
-    attachment_path: transaction?.attachment_path || '',
+    attachmentUrl: transaction?.attachmentUrl || '',
+    attachmentPath: transaction?.attachmentPath || '',
     // Phase 3: Advanced features
     isRecurring: transaction?.isRecurring || transaction?.is_recurring || false,
     recurrencePattern: transaction?.recurrencePattern || transaction?.recurrence_pattern || 'monthly',
@@ -127,8 +127,8 @@ function TransactionForm({
     setFile(null)
     setFormData(prev => ({
       ...prev,
-      attachment_url: '',
-      attachment_path: ''
+      attachmentUrl: '',
+      attachmentPath: ''
     }))
   }
 
@@ -158,8 +158,8 @@ function TransactionForm({
       if (file) {
         setUploadProgress(true)
         const uploadResult = await storageService.uploadFile(file)
-        finalData.attachment_url = uploadResult.url
-        finalData.attachment_path = uploadResult.path
+        finalData.attachmentUrl = uploadResult.url
+        finalData.attachmentPath = uploadResult.path
         setUploadProgress(false)
       }
 
@@ -292,7 +292,7 @@ function TransactionForm({
       </FormSection>
 
       {/* Additional Details Section */}
-      <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.attachment_url || formData.tags.length > 0}>
+      <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.attachmentUrl || formData.tags.length > 0}>
         {/* Tags Input */}
         <TagsInput
           tags={formData.tags}
@@ -308,7 +308,7 @@ function TransactionForm({
             {t('transaction.attachment')}
           </label>
 
-          {!file && !formData.attachment_url ? (
+          {!file && !formData.attachmentUrl ? (
             <div className="file-upload">
               <input
                 type="file"

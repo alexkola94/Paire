@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiX, FiDownload } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
@@ -25,6 +25,7 @@ function Income() {
   const [editingIncome, setEditingIncome] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, income: null })
+  const [viewModal, setViewModal] = useState(null) // For viewing full receipt
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
 
@@ -92,27 +93,28 @@ function Income() {
   const handleCreate = async (incomeData) => {
     try {
       setFormLoading(true)
-      // Close form immediately and show full screen loader
-      setShowForm(false)
-      setShowLoadingProgress(true)
 
-      await transactionService.create(incomeData)
+      const created = await transactionService.create(incomeData)
 
-      // Phase 5: Success animation
-      setShowLoadingProgress(false)
+      // Local Update (Optimistic-ish, assuming user is on page 1 or just for feedback)
+      // Actually, if we just reload background, it's fast enough.
+      // But user specifically asked for "no reload page state".
+      // Updating local list:
+      setIncomes(prev => {
+        const newList = [created, ...prev]
+        // If we strictly enforce page size:
+        return newList.slice(0, PAGE_SIZE)
+        // Note: This might make the last item disappear, which is expected pagination behavior.
+      })
+      setTotalItems(prev => prev + 1)
+
       setShowSuccessAnimation(true)
+      setShowForm(false)
 
-      // showSuccess(t('income.createdSuccess'))
-      // announce(t('income.createdSuccess'))
-
-      // Refresh list in background - PREVENTS FLASH
-      await loadIncomes(true)
-
+      // Refresh list in background
+      loadIncomes(true)
     } catch (error) {
       console.error('Error creating income:', error)
-      setShowLoadingProgress(false)
-      setShowForm(true) // Re-open form on error
-      // showError(t('income.createError'))
       throw error
     } finally {
       setFormLoading(false)
@@ -125,32 +127,20 @@ function Income() {
   const handleUpdate = async (incomeData) => {
     try {
       setFormLoading(true)
-      // Close form immediately and show full screen loader
-      setShowForm(false)
-      setShowLoadingProgress(true)
-
-
 
       await transactionService.update(editingIncome.id, incomeData)
 
-      // Phase 5: Success animation
-      setShowLoadingProgress(false)
+      // Local Update
+      setIncomes(prev => prev.map(item => item.id === editingIncome.id ? { ...item, ...incomeData } : item))
+
       setShowSuccessAnimation(true)
-
       setEditingIncome(null)
-      // Form is already closed
+      setShowForm(false)
 
-      // showSuccess(t('income.updatedSuccess'))
-      // announce(t('income.updatedSuccess'))
-
-      // Refresh list in background - PREVENTS FLASH
-      await loadIncomes(true)
-
+      // Refresh list in background
+      loadIncomes(true)
     } catch (error) {
       console.error('Error updating income:', error)
-      setShowLoadingProgress(false)
-      setShowForm(true) // Re-open form on error
-      // showError(t('income.updateError'))
       throw error
     } finally {
       setFormLoading(false)
@@ -180,28 +170,25 @@ function Income() {
 
     try {
       setFormLoading(true)
-      // Note: For delete, we typically keep the confirmation modal open with spinner? 
-      // User asked for "Save" flow specifically. 
-      // I'll leave delete as-is (spinner in button) to avoid UX jarring on small actions, or should I apply it?
-      // "when we press save we should remove immediately the form" -> Implies Create/Update.
-
-
 
       // Delete attachment if exists
-      if (income.attachment_path) {
-        await storageService.deleteFile(income.attachment_path)
+      if (income.attachmentPath) {
+        await storageService.deleteFile(income.attachmentPath)
       }
 
       await transactionService.delete(income.id)
 
-      // Refresh list in background - PREVENTS FLASH
-      await loadIncomes(true)
+      // Local Update
+      setIncomes(prev => prev.filter(i => i.id !== income.id))
+      setTotalItems(prev => Math.max(0, prev - 1))
+
+      // Refresh list in background
+      loadIncomes(true)
 
       closeDeleteModal()
 
     } catch (error) {
       console.error('Error deleting income:', error)
-      // showError(t('income.deleteError'))
     } finally {
       setFormLoading(false)
     }
@@ -331,19 +318,17 @@ function Income() {
                 )}
               </div>
 
-              {income.attachment_url && (
-                <a
-                  href={income.attachment_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="attachment-link"
-                >
-                  <FiFileText size={16} />
-                  {t('transaction.viewAttachment')}
-                </a>
-              )}
-
               <div className="income-actions">
+                {income.attachmentUrl && (
+                  <button
+                    onClick={() => setViewModal(income)}
+                    className="btn-icon"
+                    aria-label={t('transaction.viewAttachment', 'View Receipt')}
+                    title={t('transaction.viewAttachment', 'View Receipt')}
+                  >
+                    <FiFileText size={18} />
+                  </button>
+                )}
                 <button
                   onClick={() => openEditForm(income)}
                   className="btn-icon"
@@ -402,6 +387,44 @@ function Income() {
         loading={formLoading}
         variant="danger"
       />
+
+      {/* Image Viewer Modal via Portal */}
+      <Modal
+        isOpen={!!viewModal}
+        onClose={() => setViewModal(null)}
+        title={t('transaction.viewAttachment', 'View Receipt')}
+        showCloseButton={true}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
+          {viewModal?.attachmentUrl && viewModal.attachmentUrl.toLowerCase().endsWith('.pdf') ? (
+            <iframe
+              src={viewModal.attachmentUrl}
+              title="Receipt PDF"
+              style={{ width: '100%', height: '60vh', border: 'none', borderRadius: '8px' }}
+            />
+          ) : (
+            <img
+              src={viewModal?.attachmentUrl}
+              alt="Full Receipt"
+              style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: '8px', objectFit: 'contain' }}
+            />
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+            <a
+              href={viewModal?.attachmentUrl}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <FiDownload size={18} />
+              {t('common.download', 'Download')}
+            </a>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

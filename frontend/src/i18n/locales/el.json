@@ -284,7 +284,10 @@
     "processing": "Επεξεργασία...",
     "optional": "Προαιρετικό",
     "undo": "Αναίρεση",
-    "loadMore": "Φόρτωση Περισσοτέρων"
+    "loadMore": "Φόρτωση Περισσοτέρων",
+    "uploading": "Μεταφόρτωση...",
+    "addAttachment": "Προσθήκη Συνημμένου",
+    "download": "Λήψη"
   },
   "validation": {
     "required": "Το {{field}} είναι υποχρεωτικό",
@@ -634,7 +637,11 @@
       "monthly": "Μηνιαία",
       "quarterly": "Τριμηνιαία",
       "yearly": "Ετήσια"
-    }
+    },
+    "attachments": "Συνημμένα",
+    "noAttachments": "Δεν υπάρχουν συνημμένα ακόμα",
+    "errorUploading": "Αποτυχία μεταφόρτωσης συνημμένου",
+    "errorDeletingAttachment": "Αποτυχία διαγραφής συνημμένου"
   },
   "shoppingLists": {
     "title": "Λίστες Αγορών",

@@ -33,6 +33,7 @@ function SavingsGoals() {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, goalId: null })
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
+  const [formLoading, setFormLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     targetAmount: '',
@@ -141,9 +142,7 @@ function SavingsGoals() {
     e.preventDefault()
 
     try {
-      // Close form immediately and show full screen loader
-      setShowForm(false)
-      setShowLoadingProgress(true)
+      setFormLoading(true)
 
       const goalData = {
         ...formData,
@@ -152,25 +151,29 @@ function SavingsGoals() {
         targetDate: formData.targetDate || null
       }
 
+      let savedGoal = null
       if (editingGoal) {
-        await savingsGoalService.update(editingGoal.id, goalData)
+        savedGoal = await savingsGoalService.update(editingGoal.id, goalData)
+        // Ensure savedGoal has ID, usually returns updated object
+        setGoals(prev => prev.map(g => g.id === editingGoal.id ? { ...g, ...savedGoal } : g))
       } else {
-        await savingsGoalService.create(goalData)
+        savedGoal = await savingsGoalService.create(goalData)
+        setGoals(prev => [savedGoal, ...prev])
       }
 
-      // Refresh list in background
-      await loadData(true)
-
       // Show success animation
-      setShowLoadingProgress(false)
       setShowSuccessAnimation(true)
+      resetForm() // Closes form
 
-      resetForm()
+      // Refresh list in background
+      loadData(true)
+
     } catch (error) {
       console.error('Error saving goal:', error)
-      setShowLoadingProgress(false)
       setShowForm(true) // Re-open form on error
       alert(t('savingsGoals.errorSaving'))
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -251,12 +254,21 @@ function SavingsGoals() {
     if (!goalId) return
 
     try {
+      setFormLoading(true)
       await savingsGoalService.delete(goalId)
-      await loadData()
+
+      // Local Update
+      setGoals(prev => prev.filter(g => g.id !== goalId))
+
+      // Background Refresh
+      loadData(true)
+
       closeDeleteModal()
     } catch (error) {
       console.error('Error deleting goal:', error)
       alert(t('savingsGoals.errorDeleting'))
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -627,8 +639,8 @@ function SavingsGoals() {
             <button type="button" className="btn btn-secondary" onClick={resetForm}>
               {t('common.cancel')}
             </button>
-            <button type="submit" className="btn btn-primary">
-              {editingGoal ? t('common.update') : t('common.create')}
+            <button type="submit" className="btn btn-primary" disabled={formLoading}>
+              {formLoading ? t('common.saving') : (editingGoal ? t('common.update') : t('common.create'))}
             </button>
           </div>
         </form>
@@ -652,6 +664,7 @@ function SavingsGoals() {
         title={t('savingsGoals.deleteGoal')}
         message={t('savingsGoals.confirmDelete')}
         confirmText={t('common.delete')}
+        loading={formLoading}
         variant="danger"
       />
     </div>

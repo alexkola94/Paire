@@ -16,15 +16,18 @@ namespace YouAndMeExpensesAPI.Controllers
     {
         private readonly AppDbContext _dbContext;
         private readonly IBudgetService _budgetService;
+        private readonly IStorageService _storageService;
         private readonly ILogger<RecurringBillsController> _logger;
 
         public RecurringBillsController(
             AppDbContext dbContext,
             IBudgetService budgetService,
+            IStorageService storageService,
             ILogger<RecurringBillsController> logger)
         {
             _dbContext = dbContext;
             _budgetService = budgetService;
+            _storageService = storageService;
             _logger = logger;
         }
 
@@ -48,6 +51,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 // Get recurring bills from user and partner(s)
                 var bills = await _dbContext.RecurringBills
                     .Where(b => allUserIds.Contains(b.UserId))
+                    .Include(b => b.Attachments)
                     .OrderBy(b => b.NextDueDate)
                     .ToListAsync();
 
@@ -86,7 +90,14 @@ namespace YouAndMeExpensesAPI.Controllers
                     notes = b.Notes,
                     createdAt = b.CreatedAt,
                     updatedAt = b.UpdatedAt,
-                    user_profiles = profileDict.ContainsKey(b.UserId) ? profileDict[b.UserId] : null
+                    user_profiles = profileDict.ContainsKey(b.UserId) ? profileDict[b.UserId] : null,
+                    attachments = b.Attachments.Select(a => new
+                    {
+                        id = a.Id,
+                        fileUrl = a.FileUrl,
+                        fileName = a.FileName,
+                        uploadedAt = a.UploadedAt
+                    }).ToList()
                 }).ToList();
 
                 return Ok(enrichedBills);
@@ -735,6 +746,112 @@ namespace YouAndMeExpensesAPI.Controllers
                     _ => b.Amount * 12
                 };
             });
+        }
+        /// <summary>
+        /// Upload an attachment for a recurring bill
+        /// </summary>
+        [HttpPost("{id}/attachments")]
+        public async Task<IActionResult> UploadAttachment(Guid id, IFormFile file)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file uploaded" });
+            }
+
+            try
+            {
+                var bill = await _dbContext.RecurringBills
+                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId.ToString());
+
+                if (bill == null)
+                {
+                    return NotFound(new { message = $"Recurring bill {id} not found" });
+                }
+
+                // Upload to Supabase using new helper method (or manually if needed)
+                // Assuming IStorageService has an UploadFileAsync method that returns (url, path)
+                // Or similar. Let's use the existing UploadReceipt logic pattern but for generic files.
+                // We'll rename the path to be bill-attachments/{userId}/{guid}
+                
+                var fileExtension = Path.GetExtension(file.FileName);
+                var fileName = $"bill-attachments/{userId}/{Guid.NewGuid()}{fileExtension}";
+
+                var url = await _storageService.UploadFileAsync(file, fileName, "receipts");
+
+                var attachment = new RecurringBillAttachment
+                {
+                    Id = Guid.NewGuid(),
+                    RecurringBillId = id,
+                    FileUrl = url,
+                    FilePath = fileName,
+                    FileName = file.FileName,
+                    UploadedAt = DateTime.UtcNow
+                };
+
+                _dbContext.RecurringBillAttachments.Add(attachment);
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    id = attachment.Id,
+                    fileUrl = attachment.FileUrl,
+                    fileName = attachment.FileName,
+                    uploadedAt = attachment.UploadedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading attachment for bill {Id}", id);
+                return StatusCode(500, new { message = "Error uploading attachment", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Delete an attachment from a recurring bill
+        /// </summary>
+        [HttpDelete("{id}/attachments/{attachmentId}")]
+        public async Task<IActionResult> DeleteAttachment(Guid id, Guid attachmentId)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var bill = await _dbContext.RecurringBills
+                    .FirstOrDefaultAsync(b => b.Id == id && b.UserId == userId.ToString());
+
+                if (bill == null)
+                {
+                    return NotFound(new { message = $"Recurring bill {id} not found" });
+                }
+
+                var attachment = await _dbContext.RecurringBillAttachments
+                    .FirstOrDefaultAsync(a => a.Id == attachmentId && a.RecurringBillId == id);
+
+                if (attachment == null)
+                {
+                    return NotFound(new { message = "Attachment not found" });
+                }
+
+                // Delete from storage
+                if (!string.IsNullOrEmpty(attachment.FilePath))
+                {
+                    await _storageService.DeleteFileAsync(attachment.FilePath, "receipts");
+                }
+
+                _dbContext.RecurringBillAttachments.Remove(attachment);
+                await _dbContext.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting attachment {AttachmentId}", attachmentId);
+                return StatusCode(500, new { message = "Error deleting attachment", error = ex.Message });
+            }
         }
     }
 }

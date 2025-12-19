@@ -25,6 +25,7 @@ function Budgets() {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, budgetId: null })
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
+  const [formLoading, setFormLoading] = useState(false)
   const [formData, setFormData] = useState({
     category: '',
     amount: '',
@@ -114,34 +115,38 @@ function Budgets() {
     e.preventDefault()
 
     try {
-      // Close form immediately and show loader
-      setShowForm(false)
-      setShowLoadingProgress(true)
+      setFormLoading(true)
 
       const budgetData = {
         ...formData,
         amount: parseFloat(formData.amount)
       }
 
+      let savedBudget = null
       if (editingBudget) {
-        await budgetService.update(editingBudget.id, budgetData)
+        savedBudget = await budgetService.update(editingBudget.id, budgetData)
+        // Ensure savedBudget has the ID
+        if (!savedBudget.id) savedBudget.id = editingBudget.id
+        // Local Update
+        setBudgets(prev => prev.map(b => b.id === savedBudget.id ? savedBudget : b))
       } else {
-        await budgetService.create(budgetData)
+        savedBudget = await budgetService.create(budgetData)
+        // Local Update
+        setBudgets(prev => [savedBudget, ...prev])
       }
 
-      // Background refresh
-      await loadData(true)
-
       // Success
-      setShowLoadingProgress(false)
       setShowSuccessAnimation(true)
+      handleCancel() // Closes form
 
-      handleCancel()
+      // Background refresh
+      loadData(true)
     } catch (error) {
       console.error('Error saving budget:', error)
-      setShowLoadingProgress(false)
-      setShowForm(true)
+      setShowForm(true) // Re-open form
       alert(t('budgets.saveError'))
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -167,12 +172,21 @@ function Budgets() {
     if (!budgetId) return
 
     try {
+      setFormLoading(true)
       await budgetService.delete(budgetId)
-      await loadData()
+
+      // Local Update
+      setBudgets(prev => prev.filter(b => b.id !== budgetId))
+
+      // Background refresh
+      loadData(true)
+
       closeDeleteModal()
     } catch (error) {
       console.error('Error deleting budget:', error)
       alert(t('budgets.deleteError'))
+    } finally {
+      setFormLoading(false)
     }
   }
 
@@ -308,9 +322,13 @@ function Budgets() {
             <button
               type="submit"
               className="btn btn-primary"
+              disabled={formLoading}
             >
-              <FiSave size={18} />
-              {t('common.save')}
+              {formLoading ? (
+                <><div className="spinner-small" style={{ marginRight: '8px' }}></div> {t('common.saving') || 'Saving...'}</>
+              ) : (
+                <><FiSave size={18} /> {t('common.save')}</>
+              )}
             </button>
           </div>
         </form>
@@ -429,6 +447,7 @@ function Budgets() {
         title={t('budgets.deleteBudget')}
         message={t('budgets.confirmDelete')}
         confirmText={t('common.delete')}
+        loading={formLoading}
         variant="danger"
       />
     </div>

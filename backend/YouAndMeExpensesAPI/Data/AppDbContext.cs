@@ -24,6 +24,7 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<Budget> Budgets { get; set; }
         public DbSet<SavingsGoal> SavingsGoals { get; set; }
         public DbSet<RecurringBill> RecurringBills { get; set; }
+        public DbSet<RecurringBillAttachment> RecurringBillAttachments { get; set; }
         public DbSet<ReminderPreferences> ReminderPreferences { get; set; }
         public DbSet<ShoppingList> ShoppingLists { get; set; }
         public DbSet<ShoppingListItem> ShoppingListItems { get; set; }
@@ -282,6 +283,29 @@ namespace YouAndMeExpensesAPI.Data
 
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.IsActive);
+            });
+
+            // ============================================
+            // RECURRING BILL ATTACHMENTS TABLE
+            // ============================================
+            modelBuilder.Entity<RecurringBillAttachment>(entity =>
+            {
+                entity.ToTable("recurring_bill_attachments");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.RecurringBillId).HasColumnName("recurring_bill_id").IsRequired();
+                entity.Property(e => e.FileUrl).HasColumnName("file_url").IsRequired();
+                entity.Property(e => e.FilePath).HasColumnName("file_path");
+                entity.Property(e => e.FileName).HasColumnName("file_name");
+                entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.RecurringBillId);
+
+                // Foreign Key
+                entity.HasOne(e => e.RecurringBill)
+                    .WithMany(b => b.Attachments)
+                    .HasForeignKey(e => e.RecurringBillId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // ============================================

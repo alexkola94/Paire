@@ -25,7 +25,7 @@ function Loans() {
   const [showForm, setShowForm] = useState(false)
   const [editingLoan, setEditingLoan] = useState(null)
   // const [formLoading, setFormLoading] = useState(false) - unused variable removed
-  const [formLoading] = useState(false)
+  const [formLoading, setFormLoading] = useState(false)
   const [viewingPayments, setViewingPayments] = useState(null)
   const [paymentHistory, setPaymentHistory] = useState([])
   const [showPaymentForm, setShowPaymentForm] = useState(false)
@@ -109,9 +109,7 @@ function Loans() {
     e.preventDefault()
 
     try {
-      // Close form immediately and show loader
-      setShowForm(false)
-      setShowLoadingProgress(true)
+      setFormLoading(true)
 
       // Prepare loan data based on type
       // For new loans, remainingAmount should equal amount (no payments yet)
@@ -132,29 +130,33 @@ function Loans() {
         date: new Date().toISOString()
       }
 
+      let savedLoan = null
       if (editingLoan) {
         // Include the ID in the loan data for the update request
         loanData.id = editingLoan.id
-        await loanService.update(editingLoan.id, loanData)
+        savedLoan = await loanService.update(editingLoan.id, loanData)
+
+        // Use savedLoan or construct it
+        // Local Update
+        setLoans(prev => prev.map(l => l.id === editingLoan.id ? { ...l, ...loanData } : l))
       } else {
-        await loanService.create(loanData)
+        savedLoan = await loanService.create(loanData)
+        // Local Update
+        setLoans(prev => [savedLoan, ...prev])
       }
 
-      // Background refresh
-      await loadLoans(true)
-
       // Success
-      setShowLoadingProgress(false)
       setShowSuccessAnimation(true)
+      closeForm() // Closes form
 
-      closeForm()
+      // Background refresh
+      loadLoans(true)
     } catch (error) {
       console.error('Error saving loan:', error)
-      setShowLoadingProgress(false)
       setShowForm(true) // Re-open form on error
       // Note: we can show an error toast here if available, or just console log
     } finally {
-      // No need to setFormLoading(false) as we are using the overlay
+      setFormLoading(false)
     }
   }
 
@@ -180,11 +182,20 @@ function Loans() {
     if (!loan) return
 
     try {
+      setFormLoading(true)
       await loanService.delete(loan.id)
-      await loadLoans()
+
+      // Local Update
+      setLoans(prev => prev.filter(l => l.id !== loan.id))
+
+      // Background refresh
+      loadLoans(true)
+
       closeDeleteLoanModal()
     } catch (error) {
       console.error('Error deleting loan:', error)
+    } finally {
+      setFormLoading(false)
     }
   }
 

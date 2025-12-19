@@ -619,6 +619,23 @@ export const recurringBillService = {
 
   async getSummary() {
     return await apiRequest('/api/recurringbills/summary')
+  },
+
+  async uploadAttachment(id, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    return await apiRequest(`/api/recurringbills/${id}/attachments`, {
+      method: 'POST',
+      body: formData,
+      headers: {} // Let browser set Content-Type with boundary
+    })
+  },
+
+  async deleteAttachment(id, attachmentId) {
+    await apiRequest(`/api/recurringbills/${id}/attachments/${attachmentId}`, {
+      method: 'DELETE'
+    })
   }
 }
 

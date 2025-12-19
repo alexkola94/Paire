@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiZoomIn, FiDownload } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiZoomIn, FiDownload, FiX } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
@@ -164,35 +164,33 @@ function Expenses() {
    */
   const handleCreate = async (expenseData) => {
     try {
-      console.log('--- handleCreate started ---')
-      // Close form immediately and show full screen loader
-      setShowForm(false)
-      setShowLoadingProgress(true)
+      setFormLoading(true)
 
-      console.log('Calling transactionService.create...')
       const createdExpense = await transactionService.create(expenseData)
-      console.log('transactionService.create finished. Result:', createdExpense)
 
-      // Phase 5: Success animation
-      setShowLoadingProgress(false)
+      // Local Update
+      setAllExpenses(prev => [createdExpense, ...prev])
+
       setShowSuccessAnimation(true)
-
       showSuccess(t('expenses.createdSuccess'))
       announce(t('expenses.createdSuccess'))
 
+      setShowForm(false)
+
       // Refresh list in background
-      await loadExpenses(true)
+      loadExpenses(true)
 
       // Phase 5: Undo functionality
       performUndoableAction(
         async () => {
-          await loadExpenses(true)
+          loadExpenses(true)
         },
         async () => {
           // Undo: delete the created expense
           try {
             await transactionService.delete(createdExpense.id)
-            await loadExpenses(true)
+            setAllExpenses(prev => prev.filter(e => e.id !== createdExpense.id)) // Local Undo
+            loadExpenses(true)
             showSuccess(t('expenses.undoSuccess'))
             announce(t('expenses.undoSuccess'))
           } catch (error) {
@@ -204,8 +202,7 @@ function Expenses() {
       )
     } catch (error) {
       console.error('Error creating expense:', error)
-      setShowLoadingProgress(false)
-      setShowForm(true) // Re-open form on error
+      setShowForm(true) // Re-open form
       showError(t('expenses.createError'))
       announce(t('expenses.createError'), 'assertive')
       throw error
@@ -220,38 +217,38 @@ function Expenses() {
   const handleUpdate = async (expenseData) => {
     try {
       setFormLoading(true)
-      // Close form immediately and show full screen loader
-      setShowForm(false)
-      setShowLoadingProgress(true)
 
       // Save old data for undo
       const oldExpenseData = { ...editingExpense }
 
       await transactionService.update(editingExpense.id, expenseData)
 
-      // Phase 5: Success animation
-      setShowLoadingProgress(false)
+      // Local Update
+      setAllExpenses(prev => prev.map(e => e.id === editingExpense.id ? { ...e, ...expenseData } : e))
+
       setShowSuccessAnimation(true)
 
       setEditingExpense(null)
-      // Form is already closed
+      setShowForm(false)
 
       showSuccess(t('expenses.updatedSuccess'))
       announce(t('expenses.updatedSuccess'))
 
       // Refresh list in background
-      await loadExpenses(true)
+      loadExpenses(true)
 
       // Phase 5: Undo functionality
       performUndoableAction(
         async () => {
-          await loadExpenses(true)
+          loadExpenses(true)
         },
         async () => {
           // Undo: restore old data
           try {
             await transactionService.update(editingExpense.id, oldExpenseData)
-            await loadExpenses(true)
+            // Local Undo
+            setAllExpenses(prev => prev.map(e => e.id === editingExpense.id ? oldExpenseData : e))
+            loadExpenses(true)
             showSuccess(t('expenses.undoSuccess'))
             announce(t('expenses.undoSuccess'))
           } catch (error) {
@@ -263,7 +260,6 @@ function Expenses() {
       )
     } catch (error) {
       console.error('Error updating expense:', error)
-      setShowLoadingProgress(false)
       setShowForm(true) // Re-open form on error
       showError(t('expenses.updateError'))
       announce(t('expenses.updateError'), 'assertive')
@@ -296,20 +292,23 @@ function Expenses() {
 
     try {
       setFormLoading(true)
-      // Removed intrusive full-screen loader to keep modal visible
 
       // Save expense data for undo
       const expenseToDelete = { ...expense }
 
       // Delete attachment if exists
-      if (expense.attachment_path) {
-        await storageService.deleteFile(expense.attachment_path)
+      if (expense.attachmentPath) {
+        await storageService.deleteFile(expense.attachmentPath)
       }
 
       await transactionService.delete(expense.id)
 
-      // Refresh list in background - PREVENTS FLASH
-      await loadExpenses(true)
+      // Local Update
+      setAllExpenses(prev => prev.filter(e => e.id !== expense.id))
+
+      // Refresh list in background
+      loadExpenses(true)
+
       closeDeleteModal()
 
       // Phase 5: Undo functionality
@@ -319,7 +318,9 @@ function Expenses() {
           // Undo: restore deleted expense
           try {
             await transactionService.create(expenseToDelete)
-            await loadExpenses(true)
+            // Local Undo
+            setAllExpenses(prev => [expenseToDelete, ...prev])
+            loadExpenses(true)
             showSuccess(t('expenses.undoSuccess'))
             announce(t('expenses.undoSuccess'))
           } catch (error) {
@@ -574,18 +575,17 @@ function Expenses() {
                 )}
               </div>
 
-              {expense.attachment_url && (
-                <button
-                  type="button"
-                  onClick={() => setViewModal(expense)}
-                  className="attachment-link-btn"
-                >
-                  <FiFileText size={16} />
-                  {t('transaction.viewAttachment', 'View Receipt')}
-                </button>
-              )}
-
               <div className="expense-actions">
+                {expense.attachmentUrl && (
+                  <button
+                    onClick={() => setViewModal(expense)}
+                    className="btn-icon"
+                    aria-label={t('transaction.viewAttachment', 'View Receipt')}
+                    title={t('transaction.viewAttachment', 'View Receipt')}
+                  >
+                    <FiFileText size={18} />
+                  </button>
+                )}
                 <button
                   onClick={() => openEditForm(expense)}
                   className="btn-icon"
@@ -644,22 +644,43 @@ function Expenses() {
         loading={formLoading}
         variant="danger"
       />
-      {/* Image Viewer Modal */}
-      {viewModal && (
-        <div className="image-viewer-modal" onClick={() => setViewModal(null)} role="dialog" aria-modal="true">
-          <div className="image-viewer-content" onClick={e => e.stopPropagation()}>
-            {viewModal.attachment_url && viewModal.attachment_url.toLowerCase().endsWith('.pdf') ? (
-              <iframe src={viewModal.attachment_url} title="Receipt PDF" width="100%" height="500px"></iframe>
-            ) : (
-              <img src={viewModal.attachment_url} alt="Full Receipt" />
-            )}
-            <button className="close-viewer" onClick={() => setViewModal(null)} aria-label={t('common.close')}>×</button>
-            <a href={viewModal.attachment_url} download target="_blank" rel="noopener noreferrer" className="download-btn btn btn-primary">
-              <FiDownload /> {t('common.download', 'Download')} {viewModal.user_profiles ? (t('dashboard.addedBy') + ' ' + viewModal.user_profiles.display_name) : ''}
+      {/* Image Viewer Modal via Portal */}
+      <Modal
+        isOpen={!!viewModal}
+        onClose={() => setViewModal(null)}
+        title={t('transaction.viewAttachment', 'View Receipt')}
+        showCloseButton={true}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
+          {viewModal?.attachmentUrl && viewModal.attachmentUrl.toLowerCase().endsWith('.pdf') ? (
+            <iframe
+              src={viewModal.attachmentUrl}
+              title="Receipt PDF"
+              style={{ width: '100%', height: '60vh', border: 'none', borderRadius: '8px' }}
+            />
+          ) : (
+            <img
+              src={viewModal?.attachmentUrl}
+              alt="Full Receipt"
+              style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: '8px', objectFit: 'contain' }}
+            />
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+            <a
+              href={viewModal?.attachmentUrl}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <FiDownload size={18} />
+              {t('common.download', 'Download')}
             </a>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   )
 }

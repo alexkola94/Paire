@@ -146,6 +146,9 @@ namespace YouAndMeExpensesAPI.Models
 
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
+
+        // Navigation property for attachments
+        public virtual ICollection<RecurringBillAttachment> Attachments { get; set; } = new List<RecurringBillAttachment>();
     }
 
     /// <summary>

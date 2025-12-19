@@ -597,7 +597,11 @@
       "monthly": "Monthly",
       "quarterly": "Quarterly",
       "yearly": "Yearly"
-    }
+    },
+    "attachments": "Attachments",
+    "noAttachments": "No attachments yet",
+    "errorUploading": "Failed to upload attachment",
+    "errorDeletingAttachment": "Failed to delete attachment"
   },
   "shoppingLists": {
     "title": "Shopping Lists",
@@ -765,7 +769,10 @@
     "of": "of",
     "loadMore": "Load More",
     "showMore": "Show More",
-    "showLess": "Show Less"
+    "showLess": "Show Less",
+    "uploading": "Uploading...",
+    "addAttachment": "Add Attachment",
+    "download": "Download"
   },
   "validation": {
     "required": "{{field}} is required",
