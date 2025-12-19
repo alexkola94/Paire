@@ -6,20 +6,25 @@
     align-items: center;
     width: 100%;
     transition: var(--transition);
-    margin-bottom: var(--spacing-md);
+    /* margin-bottom removed for better alignment control by parent */
 }
 
 .search-input {
     width: 100%;
-    padding: 12px 40px 12px 60px;
-    /* Space for icons */
+    padding: 12px 40px 12px 16px;
+    /* Reduced vertical padding slightly, space for clear button on right */
     font-size: 1rem;
+    /* Match DatePicker */
+    letter-spacing: 0.3px;
+    /* Improved letter spacing */
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: var(--radius-xl);
     /* Pill shape */
     background: var(--bg-secondary);
     transition: var(--transition);
     box-shadow: var(--shadow-sm);
+    height: 48px;
+    /* Explicit height for alignment consistency */
 }
 
 /* Glass effect if supported and desired, consistent with cards */
@@ -36,28 +41,13 @@
     transform: translateY(-1px);
 }
 
-.search-icon {
-    position: absolute;
-    /*left: 14px;*/
-    color: var(--text-light);
-    font-size: 1.1rem;
-    pointer-events: none;
-    /* Let clicks pass through */
-    transition: var(--transition);
-    z-index: 1;
-}
-
-.search-input-container.focused .search-icon {
-    color: var(--primary);
-}
-
 .search-clear-btn {
     position: absolute;
     right: 8px;
     background: transparent;
     border: none;
     color: var(--text-light);
-    font-size: 1.1rem;
+    font-size: 1rem;
     padding: 6px;
     border-radius: 50%;
     display: flex;
@@ -88,8 +78,8 @@
     .search-input {
         font-size: 16px;
         /* Prevent IOS zoom */
-        padding-top: 14px;
-        padding-bottom: 14px;
+        padding-top: 12px;
+        padding-bottom: 12px;
     }
 
     .search-input-container {

@@ -3,6 +3,49 @@
     /* Space for bottom nav on mobile */
 }
 
+/* Professional Filter Grid Layout */
+.receipts-filters-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    align-items: center;
+}
+
+/* Ensure all inputs in the grid have consistent height */
+.receipts-filters-grid input,
+.receipts-filters-grid select,
+.receipts-filters-grid .search-input {
+    height: 48px !important;
+    box-sizing: border-box;
+}
+
+/* Mobile: Stacked (Default 1fr) */
+
+/* Tablet (768px+): Search full width, filters below in 3 columns */
+@media (min-width: 768px) {
+    .receipts-filters-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .search-span-full {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Desktop (1280px+): Single row, 4 columns */
+@media (min-width: 1280px) {
+    .receipts-filters-grid {
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        /* Search | Category | Date | Date */
+    }
+
+    .search-span-full {
+        grid-column: auto;
+        /* Reset to normal flow */
+    }
+}
+
 .receipts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));

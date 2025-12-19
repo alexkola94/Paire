@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiTrash2, FiSearch, FiZoomIn, FiDownload, FiX } from 'react-icons/fi'
 import { transactionService, recurringBillService } from '../services/api'
 import { ALL_CATEGORIES } from '../constants/categories'
-import { format } from 'date-fns'
+import { format, startOfDay, endOfDay } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
 import SearchInput from '../components/SearchInput'
+import DatePicker from '../components/DatePicker'
 import Skeleton from '../components/Skeleton'
 import useToast from '../hooks/useToast'
 import ToastContainer from '../components/ToastContainer'
@@ -14,10 +15,12 @@ import './Receipts.css' // Specific styling
 
 function Receipts() {
     const { t } = useTranslation()
-    const [receipts, setReceipts] = useState([])
+    const [allReceipts, setAllReceipts] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedCategory, setSelectedCategory] = useState('All')
     const [searchQuery, setSearchQuery] = useState('')
+    const [startDate, setStartDate] = useState(null)
+    const [endDate, setEndDate] = useState(null)
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, receipt: null })
     const [viewModal, setViewModal] = useState(null) // For viewing full image
 
@@ -28,15 +31,15 @@ function Receipts() {
 
     useEffect(() => {
         loadReceipts()
-    }, [selectedCategory, searchQuery])
+    }, [])
 
     const loadReceipts = async () => {
         try {
             setLoading(true)
             const [transactions, recurringBills] = await Promise.all([
                 transactionService.getReceipts({
-                    category: selectedCategory === 'All' ? null : selectedCategory,
-                    search: searchQuery
+                    category: null,
+                    search: ''
                 }),
                 recurringBillService.getAll()
             ])
@@ -53,15 +56,6 @@ function Receipts() {
             if (recurringBills && Array.isArray(recurringBills)) {
                 recurringBills.forEach(bill => {
                     if (bill.attachments && bill.attachments.length > 0) {
-                        // Filter by category/search if needed (client-side for now as API fetches all)
-                        if (selectedCategory !== 'All' && bill.category !== selectedCategory) return
-
-                        const matchesSearch = !searchQuery ||
-                            (bill.name && bill.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                            (bill.notes && bill.notes.toLowerCase().includes(searchQuery.toLowerCase()))
-
-                        if (!matchesSearch) return
-
                         bill.attachments.forEach(att => {
                             billAttachments.push({
                                 id: att.id,
@@ -73,7 +67,9 @@ function Receipts() {
                                 category: bill.category,
                                 description: `${bill.name} - ${att.fileName}`,
                                 date: att.uploadedAt || bill.createdAt,
-                                user_profiles: bill.user_profiles
+                                user_profiles: bill.user_profiles,
+                                notes: bill.notes,
+                                name: bill.name
                             })
                         })
                     }
@@ -81,11 +77,11 @@ function Receipts() {
             }
 
             // Merge and sort by date descending
-            const allReceipts = [...txReceipts, ...billAttachments].sort((a, b) =>
+            const mergedReceipts = [...txReceipts, ...billAttachments].sort((a, b) =>
                 new Date(b.date) - new Date(a.date)
             )
 
-            setReceipts(allReceipts)
+            setAllReceipts(mergedReceipts)
         } catch (error) {
             console.error('Error loading receipts:', error)
             showError(t('receipts.loadError', 'Failed to load receipts'))
@@ -93,6 +89,37 @@ function Receipts() {
             setLoading(false)
         }
     }
+
+    // Filter receipts locally
+    const filteredReceipts = useMemo(() => {
+        return allReceipts.filter(receipt => {
+            // Category filter
+            if (selectedCategory !== 'All' && receipt.category !== selectedCategory) {
+                return false
+            }
+
+            // Search filter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase()
+                const description = (receipt.description || '').toLowerCase()
+                const notes = (receipt.notes || '').toLowerCase()
+                const name = (receipt.name || '').toLowerCase() // For recurring bills
+
+                if (!description.includes(query) && !notes.includes(query) && !name.includes(query)) {
+                    return false
+                }
+            }
+
+            // Date Range filter
+            if (startDate || endDate) {
+                const receiptDate = new Date(receipt.date)
+                if (startDate && receiptDate < startOfDay(startDate)) return false
+                if (endDate && receiptDate > endOfDay(endDate)) return false
+            }
+
+            return true
+        })
+    }, [allReceipts, selectedCategory, searchQuery, startDate, endDate])
 
     const handleDelete = async () => {
         const { receipt } = deleteModal
@@ -106,7 +133,7 @@ function Receipts() {
             }
 
             showSuccess(t('receipts.deleteSuccess', 'Receipt deleted successfully'))
-            setReceipts(prev => prev.filter(r => r.uniqueId !== receipt.uniqueId))
+            setAllReceipts(prev => prev.filter(r => r.uniqueId !== receipt.uniqueId))
             closeDeleteModal()
         } catch (error) {
             console.error('Error deleting receipt:', error)
@@ -131,20 +158,20 @@ function Receipts() {
                 </p>
             </div>
 
-            {/* Filters */}
-            <div className="search-filter-container">
-                <div className="search-wrapper flex-grow">
+            {/* Filters - Grid Layout */}
+            <div className="receipts-filters-grid">
+                <div className="search-span-full">
                     <SearchInput
                         onSearch={setSearchQuery}
-                        placeholder={t('common.search', 'Search description, notes...')}
+                        placeholder={t('receipts.searchPlaceholder')}
                     />
                 </div>
 
-                <div className="category-filter">
+                <div className="filter-item">
                     <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="form-control"
+                        className="form-control w-full"
                         aria-label={t('common.filter')}
                     >
                         {categories.map(cat => (
@@ -153,6 +180,24 @@ function Receipts() {
                             </option>
                         ))}
                     </select>
+                </div>
+
+                <div className="filter-item">
+                    <DatePicker
+                        selected={startDate}
+                        onChange={setStartDate}
+                        placeholder={t('common.startDate')}
+                        className="form-control w-full"
+                    />
+                </div>
+
+                <div className="filter-item">
+                    <DatePicker
+                        selected={endDate}
+                        onChange={setEndDate}
+                        placeholder={t('common.endDate')}
+                        className="form-control w-full"
+                    />
                 </div>
             </div>
 
@@ -172,13 +217,13 @@ function Receipts() {
                         </div>
                     ))}
                 </div>
-            ) : receipts.length === 0 ? (
+            ) : filteredReceipts.length === 0 ? (
                 <div className="empty-state card">
                     <p>{t('receipts.noReceipts', 'No receipts found.')}</p>
                 </div>
             ) : (
                 <div className="receipts-grid">
-                    {receipts.map(receipt => (
+                    {filteredReceipts.map(receipt => (
                         <div key={receipt.id} className="card receipt-card">
                             <div className="receipt-image-container" onClick={() => setViewModal(receipt)}>
                                 {receipt.attachmentUrl && receipt.attachmentUrl.toLowerCase().endsWith('.pdf') ? (

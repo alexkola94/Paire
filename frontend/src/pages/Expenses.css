@@ -388,102 +388,50 @@
 
 
 /* ================================
-   Search and Filters
+   Search and Filters - Grid Layout
    ================================ */
-/* ================================
-   Search and Filters
-   ================================ */
-.search-filter-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+
+/* Professional Filter Grid Layout */
+.expenses-filters-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
-}
-
-.search-wrapper {
-  width: 100%;
-}
-
-.filter-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-.date-filters {
-  display: flex;
-  flex-direction: row;
-  /* Side-by-side on mobile */
-  align-items: flex-end;
-  gap: var(--spacing-sm);
-  width: 100%;
-}
-
-.date-picker-custom {
-  flex: 1;
-  /* Equal width */
-}
-
-/* Clear button adjustment */
-.btn-icon-clear {
-  width: 44px;
-  height: 44px;
-  display: flex;
   align-items: center;
-  justify-content: center;
-  background: var(--bg-tertiary);
-  border: none;
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: var(--transition);
+  /* Vertically center items */
 }
 
-.btn-icon-clear:hover {
-  background: var(--error-light);
-  color: var(--error);
+/* Ensure all inputs in the grid have consistent height */
+.expenses-filters-grid input,
+.expenses-filters-grid select,
+.expenses-filters-grid .search-input {
+  height: 48px !important;
+  /* Force consistency */
+  box-sizing: border-box;
 }
 
-/* Mobile Optimizations */
-@media (max-width: 767px) {
+/* Mobile: Stacked (Default 1fr) */
 
-  /* Hide labels to save space */
-  .filter-label,
-  .date-picker-container .date-picker-label {
-    display: none;
-  }
-
-  /* Compact spacing */
-  .date-picker-input {
-    padding: 10px 10px 10px 36px;
-    /* Reduced padding */
-    font-size: 0.85rem;
-  }
-
-  .date-picker-icon {
-    left: 10px;
-    font-size: 1rem;
-  }
-}
-
-/* Tablet and Desktop */
+/* Tablet (768px+): Search full width, filters below in 2 columns for symmetry */
 @media (min-width: 768px) {
-  .search-filter-container {
-    flex-direction: row;
-    align-items: flex-end;
-    gap: var(--spacing-md);
+  .expenses-filters-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .search-wrapper {
-    flex: 2;
+  .search-span-full {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Desktop (1280px+): Single row, 3 columns */
+@media (min-width: 1280px) {
+  .expenses-filters-grid {
+    grid-template-columns: 2fr 1fr 1fr;
+    /* Search | Date | Date */
   }
 
-  .date-filters {
-    width: auto;
-    flex: 1;
-    min-width: 320px;
+  .search-span-full {
+    grid-column: auto;
+    /* Reset to normal flow */
   }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { FiSearch, FiX } from 'react-icons/fi'
+import { FiX } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import './SearchInput.css'
 
@@ -58,7 +58,6 @@ const SearchInput = ({
 
     return (
         <div className={`search-input-container ${isFocused ? 'focused' : ''} ${className}`}>
-            <FiSearch className="search-icon" />
             <input
                 type="text"
                 value={value}

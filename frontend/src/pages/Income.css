@@ -2,6 +2,52 @@
    Income Page Styles
    (Similar to Expenses but with income colors)
    ================================ */
+@import './Expenses.css';
+
+/* Professional Filter Grid Layout */
+.income-filters-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  align-items: center;
+  /* Vertically center items */
+}
+
+/* Ensure all inputs in the grid have consistent height */
+.income-filters-grid input,
+.income-filters-grid select,
+.income-filters-grid .search-input {
+  height: 48px !important;
+  /* Force consistency */
+  box-sizing: border-box;
+}
+
+/* Mobile: Stacked (Default 1fr) */
+
+/* Tablet (768px+): Search full width, filters below in 2 columns for symmetry */
+@media (min-width: 768px) {
+  .income-filters-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .search-span-full {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Desktop (1280px+): Single row, 3 columns */
+@media (min-width: 1280px) {
+  .income-filters-grid {
+    grid-template-columns: 2fr 1fr 1fr;
+    /* Search | Date | Date */
+  }
+
+  .search-span-full {
+    grid-column: auto;
+    /* Reset to normal flow */
+  }
+}
 
 .income-page {
   animation: fadeIn 0.5s ease-out;

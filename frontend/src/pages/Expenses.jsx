@@ -431,52 +431,37 @@ function Expenses() {
         )}
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="search-filter-container">
-        <div className="search-wrapper flex-grow">
-          <label className="filter-label">{t('common.search', 'Search')}</label>
+      {/* Search and Filter Bar - Grid Layout */}
+      <div className="expenses-filters-grid">
+        <div className="search-span-full">
           <SearchInput
             onSearch={handleSearch}
-            placeholder={t('expenses.searchPlaceholder', 'Search expenses...')}
+            placeholder={t('expenses.searchPlaceholder')}
           />
         </div>
 
-        <div className="date-filters">
+        <div className="filter-item">
           <DatePicker
-            label={t('common.from', 'From')}
             selected={startDate}
             onChange={(date) => {
               setStartDate(date ? date.toISOString() : '')
               setPage(1)
             }}
-            placeholder={t('common.startDate', 'Start Date')}
-            className="date-picker-custom"
+            placeholder={t('common.startDate')}
+            className="form-control w-full"
           />
+        </div>
 
+        <div className="filter-item">
           <DatePicker
-            label={t('common.to', 'To')}
             selected={endDate}
             onChange={(date) => {
               setEndDate(date ? date.toISOString() : '')
               setPage(1)
             }}
-            placeholder={t('common.endDate', 'End Date')}
-            className="date-picker-custom"
+            placeholder={t('common.endDate')}
+            className="form-control w-full"
           />
-
-          {(startDate || endDate) && (
-            <button
-              onClick={() => {
-                setStartDate('')
-                setEndDate('')
-                setPage(1)
-              }}
-              className="btn-icon-clear"
-              title={t('common.clearDates', 'Clear dates')}
-            >
-              <FiTrash2 />
-            </button>
-          )}
         </div>
       </div>
 

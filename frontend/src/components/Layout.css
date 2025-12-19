@@ -267,6 +267,7 @@
 
 .menu-item svg {
   flex-shrink: 0;
+  color: currentColor !important;
 }
 
 .menu-item:hover {
