@@ -3,6 +3,10 @@
   "version": "2.0.0",
   "description": "Paire - Expense tracking app for couples",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0 <25.0.0",
+    "npm": ">=9.0.0"
+  },
   "homepage": "https://alexkola94.github.io/Paire",
   "scripts": {
     "dev": "vite",
