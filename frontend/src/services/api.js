@@ -324,7 +324,7 @@ export const profileService = {
 // ========================================
 
 export const partnershipService = {
-  async getMyPartnership() {
+  async getMyPartnerships() {
     return await apiRequest('/api/partnership')
   },
 

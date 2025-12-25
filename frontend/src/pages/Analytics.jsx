@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fi'
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import { Pie, Line, Bar } from 'react-chartjs-2'
-import { analyticsService, transactionService } from '../services/api'
+import { analyticsService, transactionService, partnershipService } from '../services/api'
 import { getStoredUser } from '../services/auth'
 import { format, subDays } from 'date-fns'
 import LogoLoader from '../components/LogoLoader'
@@ -42,8 +42,10 @@ function Analytics() {
   const [loanAnalytics, setLoanAnalytics] = useState(null)
   const [comparativeAnalytics, setComparativeAnalytics] = useState(null)
   const [dateRange, setDateRange] = useState('month') // 'week', 'month', 'year'
-  const [viewFilter, setViewFilter] = useState('together') // 'solo', 'partner', 'together'
+  const [viewFilter, setViewFilter] = useState('together') // 'solo', 'together', or partnerId
   const [exportFormat, setExportFormat] = useState('csv') // 'csv', 'json', 'xlsx'
+  const [partnerships, setPartnerships] = useState([])
+  const [partnersOptions, setPartnersOptions] = useState([])
 
   /**
    * Load analytics data on mount and when date range or filter changes
@@ -51,6 +53,66 @@ function Analytics() {
   useEffect(() => {
     loadAnalytics()
   }, [dateRange, viewFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Load partnerships on mount
+   */
+  useEffect(() => {
+    const fetchPartnerships = async () => {
+      try {
+        const data = await partnershipService.getMyPartnerships()
+        const currentUser = getStoredUser()
+
+        // Process to extract partner profiles
+        const processedList = (data || []).map(p => {
+          const isUser1 = p.user1_id === currentUser.id
+          return {
+            id: p.id,
+            partner: isUser1 ? p.user2 : p.user1
+          }
+        })
+
+        setPartnerships(processedList)
+
+        // Build options
+        const options = [
+          { value: 'together', label: t('analytics.together') },
+          { value: 'solo', label: t('analytics.solo') }
+        ]
+
+        if (processedList.length === 1) {
+          // Exact 1 partner: generic "Partner" label
+          const p = processedList[0]
+          if (p.partner) {
+            options.push({
+              value: p.partner.id,
+              label: t('analytics.partner', 'Partner')
+            })
+          }
+        } else {
+          // Multiple partners: show names
+          processedList.forEach(p => {
+            if (p.partner) {
+              options.push({
+                value: p.partner.id,
+                label: p.partner.display_name || p.partner.email
+              })
+            }
+          })
+        }
+
+        setPartnersOptions(options)
+      } catch (err) {
+        console.error("Failed to load partnerships", err)
+        // Fallback options
+        setPartnersOptions([
+          { value: 'together', label: t('analytics.together') },
+          { value: 'solo', label: t('analytics.solo') }
+        ])
+      }
+    }
+    fetchPartnerships()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Get date range based on selection
@@ -94,27 +156,34 @@ function Analytics() {
     return transactions.filter(transaction => {
       // Check by user_id first (more reliable)
       const transactionUserId = transaction.user_id || transaction.userId
-      const isCurrentUserById = transactionUserId === currentUserId
 
-      // Fallback to email check if user_id doesn't match
+      // Normalize IDs to strings for comparison
+      const txUserIdStr = String(transactionUserId)
+      const currentUserIdStr = String(currentUserId)
+
+      const isCurrentUser = txUserIdStr === currentUserIdStr
+
+      // Fallback to email check if needed (legacy data)
       const userEmail = transaction.user_profiles?.email?.toLowerCase() ||
         transaction.userProfiles?.email?.toLowerCase()
       const isCurrentUserByEmail = userEmail === currentUserEmail
 
-      // Determine transaction ownership
-      const isCurrentUser = isCurrentUserById || isCurrentUserByEmail
-      const isPartner = !isCurrentUser && (transactionUserId || userEmail)
+      const isMe = isCurrentUser || (isCurrentUserByEmail && !transactionUserId)
 
-      switch (viewFilter) {
-        case 'solo':
-          return isCurrentUser
-        case 'partner':
-          return isPartner
-        case 'together':
-          return true // Show all transactions
-        default:
-          return true
+      if (viewFilter === 'solo') {
+        return isMe
       }
+
+      if (viewFilter === 'together') {
+        return true
+      }
+
+      // If filter is specific partner ID
+      if (viewFilter !== 'solo' && viewFilter !== 'together') {
+        return txUserIdStr === viewFilter
+      }
+
+      return true
     })
   }
 
@@ -591,7 +660,7 @@ function Analytics() {
     }
   }
 
-  if (loading) {
+  if (loading && partnersOptions.length === 0) { // Wait for options to load if possible, but keep loading state management
     return (
       <div className="page-loading">
         <LogoLoader size="medium" />
@@ -639,10 +708,9 @@ function Analytics() {
           {/* View Filter */}
           <Dropdown
             icon={<FiFilter size={18} />}
-            options={[
+            options={partnersOptions.length > 0 ? partnersOptions : [
               { value: 'together', label: t('analytics.together') },
-              { value: 'solo', label: t('analytics.solo') },
-              { value: 'partner', label: t('analytics.partner') }
+              { value: 'solo', label: t('analytics.solo') }
             ]}
             value={viewFilter}
             onChange={(value) => setViewFilter(value)}

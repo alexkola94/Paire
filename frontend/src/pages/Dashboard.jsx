@@ -7,9 +7,10 @@ import {
   FiArrowRight,
   FiFileText,
   FiUsers,
-  FiUser
+  FiUser,
+  FiFilter
 } from 'react-icons/fi'
-import { transactionService, budgetService, savingsGoalService } from '../services/api'
+import { transactionService, budgetService, savingsGoalService, partnershipService } from '../services/api'
 import { getStoredUser } from '../services/auth'
 import { format } from 'date-fns'
 import SecurityBadge from '../components/SecurityBadge'
@@ -20,6 +21,7 @@ import CountUpAnimation from '../components/CountUpAnimation'
 import PullToRefresh from '../components/PullToRefresh'
 import BudgetProgressBar from '../components/BudgetProgressBar'
 import SavingGoalProgressBar from '../components/SavingGoalProgressBar'
+import Dropdown from '../components/Dropdown'
 import { FiTarget, FiPieChart } from 'react-icons/fi'
 import './Dashboard.css'
 
@@ -34,11 +36,12 @@ function Dashboard() {
   // Store raw transactions for the month to allow client-side filtering
   const [monthTransactions, setMonthTransactions] = useState([])
   const [recentTransactions, setRecentTransactions] = useState([])
-  const [filterMode, setFilterMode] = useState('solo') // 'solo', 'together', 'partner'
+  const [filterMode, setFilterMode] = useState('solo') // 'solo', 'together', or specific partnerId
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 5
   const [budgets, setBudgets] = useState([])
   const [savingGoals, setSavingGoals] = useState([])
+  const [partnersOptions, setPartnersOptions] = useState([])
 
   // Memoize date calculations to avoid recalculation on every render
   const dateRange = useMemo(() => {
@@ -101,7 +104,60 @@ function Dashboard() {
     loadDashboardData()
   }, [loadDashboardData])
 
+  /**
+   * Load partnerships for filter options
+   */
+  useEffect(() => {
+    const fetchPartnerships = async () => {
+      try {
+        const data = await partnershipService.getMyPartnerships()
+        const currentUser = getStoredUser()
 
+        const processedList = (data || []).map(p => {
+          const isUser1 = p.user1_id === currentUser.id
+          return {
+            id: p.id,
+            partner: isUser1 ? p.user2 : p.user1
+          }
+        })
+
+        const options = [
+          { value: 'solo', label: t('dashboard.filterSolo', 'Solo') },
+          { value: 'together', label: t('dashboard.filterTogether', 'Together') }
+        ]
+
+        if (processedList.length === 1) {
+          // Exact 1 partner: generic "Partner" label
+          const p = processedList[0]
+          if (p.partner) {
+            options.push({
+              value: p.partner.id,
+              label: t('dashboard.filterPartner', 'Partner')
+            })
+          }
+        } else {
+          // Multiple partners: show names
+          processedList.forEach(p => {
+            if (p.partner) {
+              options.push({
+                value: p.partner.id,
+                label: p.partner.display_name || p.partner.email
+              })
+            }
+          })
+        }
+
+        setPartnersOptions(options)
+      } catch (err) {
+        console.error("Failed to load partnerships for filter", err)
+        setPartnersOptions([
+          { value: 'solo', label: t('dashboard.filterSolo', 'Solo') },
+          { value: 'together', label: t('dashboard.filterTogether', 'Together') }
+        ])
+      }
+    }
+    fetchPartnerships()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Filter Logic
@@ -113,20 +169,26 @@ function Dashboard() {
     if (!currentUser) return true // Fallback if no user
 
     // Check both userId (standard) and user_id (from Budgets)
-    const itemUserId = item.userId || item.user_id || (item.user_profiles && item.user_profiles.id)
+    const itemUserId = item.userId || item.user_id || item.userProfileId || (item.user_profiles && item.user_profiles.id)
     const currentUserId = currentUser.id || currentUser.Id
 
-    const isMyItem = String(itemUserId) === String(currentUserId)
+    // Normalize to string
+    const itemUserIdStr = String(itemUserId)
+    const currentUserIdStr = String(currentUserId)
 
-    switch (filterMode) {
-      case 'solo':
-        return isMyItem
-      case 'partner':
-        return !isMyItem
-      case 'together':
-      default:
-        return true
+    const isMyItem = itemUserIdStr === currentUserIdStr
+
+    if (filterMode === 'solo') {
+      return isMyItem
     }
+
+    if (filterMode === 'together') {
+      return true
+    }
+
+    // Specific partner filter
+    return itemUserIdStr === filterMode
+
   }, [filterMode, currentUser])
 
   // Derived Summary based on filtered month transactions
@@ -178,7 +240,7 @@ function Dashboard() {
     setPage(1)
   }, [filterMode])
 
-  if (loading) {
+  if (loading && partnersOptions.length === 0) {
     return (
       <div className="dashboard-page">
         {/* Skeleton Header */}
@@ -247,65 +309,18 @@ function Dashboard() {
         <p className="page-subtitle">{t('dashboard.monthlyOverview')}</p>
       </div>
 
-      {/* Filter Controls */}
-      <div className="dashboard-filters" style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', padding: '0.25rem', background: 'var(--card-bg)', borderRadius: '12px', width: 'fit-content' }}>
-        <button
-          className={`filter-btn ${filterMode === 'solo' ? 'active' : ''}`}
-          onClick={() => setFilterMode('solo')}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            border: 'none',
-            background: filterMode === 'solo' ? 'var(--primary)' : 'transparent',
-            color: filterMode === 'solo' ? 'white' : 'var(--text-secondary)',
-            fontWeight: 500,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <FiUser /> {t('dashboard.filterSolo', 'Solo')}
-        </button>
-        <button
-          className={`filter-btn ${filterMode === 'together' ? 'active' : ''}`}
-          onClick={() => setFilterMode('together')}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            border: 'none',
-            background: filterMode === 'together' ? 'var(--primary)' : 'transparent',
-            color: filterMode === 'together' ? 'white' : 'var(--text-secondary)',
-            fontWeight: 500,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <FiUsers /> {t('dashboard.filterTogether', 'Together')}
-        </button>
-        <button
-          className={`filter-btn ${filterMode === 'partner' ? 'active' : ''}`}
-          onClick={() => setFilterMode('partner')}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            border: 'none',
-            background: filterMode === 'partner' ? 'var(--primary)' : 'transparent',
-            color: filterMode === 'partner' ? 'white' : 'var(--text-secondary)',
-            fontWeight: 500,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <FiUser /> {t('dashboard.filterPartner', 'Partner')}
-        </button>
+      {/* Filter Controls - Dropdown */}
+      <div className="dashboard-filters" style={{ marginBottom: '1.5rem', width: '200px' }}>
+        <Dropdown
+          icon={<FiFilter size={18} />}
+          options={partnersOptions.length > 0 ? partnersOptions : [
+            { value: 'solo', label: t('dashboard.filterSolo', 'Solo') },
+            { value: 'together', label: t('dashboard.filterTogether', 'Together') }
+          ]}
+          value={filterMode}
+          onChange={(value) => setFilterMode(value)}
+          className="dashboard-filter-dropdown"
+        />
       </div>
 
       {/* Summary Cards */}
