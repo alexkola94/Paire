@@ -11,9 +11,33 @@ import { memo, useState, useEffect } from 'react'
 import './BottomNavigation.css'
 import { useTranslation } from 'react-i18next'
 
+import { authService } from '../services/auth'
+import { profileService } from '../services/api'
+
 const BottomNavigation = () => {
     const { t } = useTranslation()
     const [showFabMenu, setShowFabMenu] = useState(false)
+    const [avatarUrl, setAvatarUrl] = useState(null)
+    const [avatarError, setAvatarError] = useState(false)
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const profile = await profileService.getMyProfile()
+                const url = profile.avatar_url || profile.avatarUrl || profile.AvatarUrl
+                if (profile && url) {
+                    setAvatarUrl(url)
+                    setAvatarError(false)
+                }
+            } catch (error) {
+                console.error('Error fetching profile for bottom nav:', error)
+            }
+        }
+
+        if (authService.isAuthenticated()) {
+            fetchProfile()
+        }
+    }, [])
 
     return (
         <nav className="bottom-nav">
@@ -91,7 +115,16 @@ const BottomNavigation = () => {
 
                 <NavLink to="/profile" className="nav-item">
                     <div className="icon-container">
-                        <FiUser size={24} />
+                        {avatarUrl && !avatarError ? (
+                            <img
+                                src={avatarUrl}
+                                alt="Profile"
+                                className="bottom-nav-avatar"
+                                onError={() => setAvatarError(true)}
+                            />
+                        ) : (
+                            <FiUser size={24} />
+                        )}
                     </div>
                     <span className="nav-label">{t('navigation.profile')}</span>
                 </NavLink>
