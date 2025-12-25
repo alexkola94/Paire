@@ -44,6 +44,7 @@ const AdminLayout = lazyWithRetry(() => import('./components/Admin/AdminLayout')
 const AdminLogin = lazyWithRetry(() => import('./pages/Admin/AdminLogin'))
 const AdminSignup = lazyWithRetry(() => import('./pages/Admin/AdminSignup'))
 const AdminDashboard = lazyWithRetry(() => import('./pages/Admin/AdminDashboard'))
+const AdminMonitoring = lazyWithRetry(() => import('./pages/Admin/AdminMonitoring'))
 const AdminUsers = lazyWithRetry(() => import('./pages/Admin/AdminUsers'))
 const AdminLogs = lazyWithRetry(() => import('./pages/Admin/AdminLogs'))
 const AdminJobs = lazyWithRetry(() => import('./pages/Admin/AdminJobs'))
@@ -285,6 +286,7 @@ function App() {
                 >
                   <Route index element={<Navigate to="dashboard" />} />
                   <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="monitoring" element={<AdminMonitoring />} />
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="logs" element={<AdminLogs />} />
                   <Route path="jobs" element={<AdminJobs />} />

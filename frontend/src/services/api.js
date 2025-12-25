@@ -837,6 +837,18 @@ export const adminService = {
 
   async triggerJob(jobName) {
     return await apiRequest(`/api/admin/jobs/${jobName}/trigger`, { method: 'POST' })
+  },
+
+  async getPerformanceMetrics() {
+    return await apiRequest('/api/admin/monitoring/metrics')
+  },
+
+  async getDatabaseHealth() {
+    return await apiRequest('/api/admin/monitoring/database')
+  },
+
+  async getActiveSessions() {
+    return await apiRequest('/api/admin/monitoring/sessions')
   }
 }
 

@@ -193,6 +193,24 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         /// <summary>
+        /// Get all sessions (for admin monitoring)
+        /// </summary>
+        public async Task<List<UserSession>> GetAllSessionsAsync()
+        {
+            try
+            {
+                return await _context.UserSessions
+                    .OrderByDescending(s => s.LastAccessedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all sessions");
+                return new List<UserSession>();
+            }
+        }
+
+        /// <summary>
         /// Clean up expired sessions
         /// </summary>
         public async Task CleanupExpiredSessionsAsync()

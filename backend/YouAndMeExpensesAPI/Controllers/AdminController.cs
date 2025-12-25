@@ -239,7 +239,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     Sessions = activeSessions.Select(s => new
                     {
                         s.TokenId,
-                        s.DeviceInfo,
+                        DeviceInfo = s.UserAgent,
                         s.IpAddress,
                         s.CreatedAt,
                         s.LastAccessedAt,
