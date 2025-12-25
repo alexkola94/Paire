@@ -234,6 +234,10 @@ if (string.IsNullOrEmpty(jwtSecret))
 }
 
 builder.Services.Configure<JwtSettings>(jwtSettings);
+
+// Metrics tracking (singleton to persist across requests)
+builder.Services.AddSingleton<MetricsService>();
+
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 
@@ -403,6 +407,9 @@ app.Use(async (context, next) =>
 
 // Secure headers middleware (add security headers to all responses)
 app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SecureHeadersMiddleware>();
+
+// Metrics tracking middleware (tracks request timing)
+app.UseMiddleware<YouAndMeExpensesAPI.Middleware.MetricsMiddleware>();
 
 // Session validation middleware (must be after CORS, before authentication)
 app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SessionValidationMiddleware>();

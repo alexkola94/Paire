@@ -184,5 +184,74 @@ namespace YouAndMeExpensesAPI.Controllers
             var jobs = _jobMonitor.GetAllJobs();
             return Ok(jobs);
         }
+
+        [HttpGet("monitoring/metrics")]
+        public IActionResult GetPerformanceMetrics([FromServices] MetricsService metricsService)
+        {
+            var metrics = metricsService.GetMetrics();
+            return Ok(metrics);
+        }
+
+        [HttpGet("monitoring/database")]
+        public async Task<IActionResult> GetDatabaseHealth()
+        {
+            try
+            {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                var canConnect = await _context.Database.CanConnectAsync();
+                stopwatch.Stop();
+
+                var stats = new
+                {
+                    Status = canConnect ? "Healthy" : "Unhealthy",
+                    ConnectionTimeMs = stopwatch.ElapsedMilliseconds,
+                    TotalUsers = canConnect ? await _userManager.Users.CountAsync() : 0,
+                    TotalTransactions = canConnect ? await _context.Transactions.CountAsync() : 0,
+                    TotalPartnerships = canConnect ? await _context.Partnerships.CountAsync() : 0,
+                    TotalLoans = canConnect ? await _context.Loans.CountAsync() : 0
+                };
+
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Database health check failed");
+                return Ok(new
+                {
+                    Status = "Error",
+                    Error = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("monitoring/sessions")]
+        public async Task<IActionResult> GetActiveSessions([FromServices] ISessionService sessionService)
+        {
+            try
+            {
+                var allSessions = await sessionService.GetAllSessionsAsync();
+                var activeSessions = allSessions.Where(s => s.IsActive && !s.RevokedAt.HasValue).ToList();
+
+                return Ok(new
+                {
+                    TotalSessions = allSessions.Count,
+                    ActiveSessions = activeSessions.Count,
+                    Sessions = activeSessions.Select(s => new
+                    {
+                        s.TokenId,
+                        s.DeviceInfo,
+                        s.IpAddress,
+                        s.CreatedAt,
+                        s.LastAccessedAt,
+                        ActiveMinutes = (DateTime.UtcNow - s.LastAccessedAt).TotalMinutes
+                    }).OrderByDescending(s => s.LastAccessedAt).Take(10)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get active sessions");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
     }
 }
