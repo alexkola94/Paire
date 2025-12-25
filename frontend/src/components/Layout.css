@@ -250,6 +250,18 @@
   /* Slight zoom instead of lift */
 }
 
+/* Base style for small avatars in tags (Added by...) */
+.tag-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-block;
+}
+
 /* User Avatar Styles */
 .user-avatar {
   width: 48px;

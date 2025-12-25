@@ -553,8 +553,17 @@ function Expenses() {
                     {' • ' + t('dashboard.bankConnection', 'Imported from Bank')}
                   </span>
                 ) : expense.user_profiles && (
-                  <span className="added-by">
-                    {' • ' + t('dashboard.addedBy') + ' '}
+                  <span className="added-by" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {' • '}
+                    {(expense.user_profiles.avatar_url || expense.user_profiles.avatarUrl) && (
+                      <img
+                        src={expense.user_profiles.avatar_url || expense.user_profiles.avatarUrl}
+                        alt={expense.user_profiles.display_name}
+                        className="tag-avatar"
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                    )}
+                    {t('dashboard.addedBy') + ' '}
                     {expense.user_profiles.display_name}
                   </span>
                 )}
