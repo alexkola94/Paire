@@ -22,6 +22,8 @@ namespace YouAndMeExpensesAPI.Models
         public string? DisplayName { get; set; }
         
         public bool EmailNotificationsEnabled { get; set; } = true;
+        
+        public string? SecretKey { get; set; }
     }
 
     /// <summary>
@@ -60,6 +62,7 @@ namespace YouAndMeExpensesAPI.Models
         public bool EmailConfirmed { get; set; }
         public bool TwoFactorEnabled { get; set; }
         public DateTime CreatedAt { get; set; }
+        public IList<string> Roles { get; set; } = new List<string>();
     }
 
     /// <summary>

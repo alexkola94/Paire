@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using YouAndMeExpensesAPI.Models;
 
 namespace YouAndMeExpensesAPI.Services
@@ -10,7 +11,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Generate JWT access token for user
         /// </summary>
-        string GenerateAccessToken(ApplicationUser user);
+        string GenerateAccessToken(ApplicationUser user, IList<string> roles);
 
         /// <summary>
         /// Generate refresh token

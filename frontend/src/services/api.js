@@ -799,6 +799,82 @@ export const achievementService = {
 }
 
 // ========================================
+// Admin Service
+// ========================================
+
+export const adminService = {
+  async getStats() {
+    return await apiRequest('/api/admin/stats')
+  },
+
+  async getUsers(page = 1, pageSize = 20, search = '') {
+    const params = new URLSearchParams()
+    params.append('page', page)
+    params.append('pageSize', pageSize)
+    if (search) params.append('search', search)
+    return await apiRequest(`/api/admin/users?${params}`)
+  },
+
+  async getLogs(count = 50) {
+    return await apiRequest(`/api/admin/logs?count=${count}`)
+  },
+
+  async getJobs() {
+    return await apiRequest('/api/admin/jobs')
+  },
+
+  async lockUser(userId) {
+    return await apiRequest(`/api/admin/users/${userId}/lock`, { method: 'POST' })
+  },
+
+  async unlockUser(userId) {
+    return await apiRequest(`/api/admin/users/${userId}/unlock`, { method: 'POST' })
+  },
+
+  async resetTwoFactor(userId) {
+    return await apiRequest(`/api/admin/users/${userId}/reset-2fa`, { method: 'POST' })
+  },
+
+  async triggerJob(jobName) {
+    return await apiRequest(`/api/admin/jobs/${jobName}/trigger`, { method: 'POST' })
+  }
+}
+
+// ========================================
+// Two-Factor Authentication Service
+// ========================================
+
+export const twoFactorService = {
+  async setup() {
+    return await apiRequest('/api/auth/2fa/setup', {
+      method: 'POST'
+    })
+  },
+
+  async enable(code) {
+    return await apiRequest('/api/auth/2fa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    })
+  },
+
+  async verify(email, code, tempToken) {
+    return await apiRequest('/api/auth/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, tempToken })
+    })
+  },
+
+  async disable(password) {
+    return await apiRequest('/api/auth/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ password })
+    })
+  }
+}
+
+
+// ========================================
 // Currency Service
 // ========================================
 

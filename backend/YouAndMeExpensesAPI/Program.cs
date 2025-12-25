@@ -302,6 +302,14 @@ builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 // Register Achievement Service
 builder.Services.AddScoped<IAchievementService, AchievementService>();
 
+// Register Job Monitor Service (Singleton)
+builder.Services.AddSingleton<JobMonitorService>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
+
 // Register Budget Service
 builder.Services.AddScoped<IBudgetService, BudgetService>();
 

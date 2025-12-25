@@ -896,3 +896,44 @@
     animation: slideDown 0.2s ease;
   }
 }
+
+/* Version Display */
+.version-display {
+  position: fixed;
+  bottom: 10px;
+  right: 20px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  gap: 8px;
+}
+
+.version-display:hover {
+  opacity: 1;
+}
+
+.api-version {
+  color: var(--text-quaternary);
+}
+
+@media (max-width: 768px) {
+  .version-display {
+    display: none;
+  }
+
+  .version-mobile-container {
+    margin-top: auto;
+    padding-bottom: 80px;
+    /* Space for bottom nav */
+  }
+
+  .version-mobile {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-quaternary);
+    padding: 10px;
+  }
+}

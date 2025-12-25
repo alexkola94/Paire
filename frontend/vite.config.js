@@ -45,7 +45,19 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 3000,
     host: true, // Listen on all network interfaces (0.0.0.0)
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5038',
+        changeOrigin: true,
+        secure: false
+      },
+      '/swagger': {
+        target: 'http://localhost:5038',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   build: {
     outDir: 'dist',

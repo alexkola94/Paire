@@ -178,6 +178,9 @@ export const sessionManager = {
         tabId: getTabId()
       })
     }
+
+    // Dispatch local event for current tab (App.jsx listens to this)
+    window.dispatchEvent(new CustomEvent('auth-storage-change'))
   },
 
   /**

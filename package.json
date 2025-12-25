@@ -10,6 +10,7 @@
     ],
     "scripts": {
         "build": "npm run build --workspace=paire-frontend",
-        "dev": "npm run dev --workspace=paire-frontend"
+        "dev": "npm run dev --workspace=paire-frontend",
+        "bump-version": "node scripts/bump-version.js"
     }
 }

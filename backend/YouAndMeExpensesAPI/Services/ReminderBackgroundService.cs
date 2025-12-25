@@ -8,20 +8,24 @@ namespace YouAndMeExpensesAPI.Services
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ReminderBackgroundService> _logger;
+        private readonly JobMonitorService _jobMonitor; // Injected singleton
         private readonly TimeSpan _checkInterval = TimeSpan.FromHours(24); // Check once per day
         private readonly TimeSpan _targetTime = new TimeSpan(9, 0, 0); // 9:00 AM
 
         public ReminderBackgroundService(
             IServiceProvider serviceProvider,
-            ILogger<ReminderBackgroundService> logger)
+            ILogger<ReminderBackgroundService> logger,
+            JobMonitorService jobMonitor)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _jobMonitor = jobMonitor;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Reminder Background Service started");
+            _jobMonitor.ReportStart("ReminderService"); // Monitor start
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -39,11 +43,15 @@ namespace YouAndMeExpensesAPI.Services
 
                     var delay = nextRun - now;
                     _logger.LogInformation($"Next reminder check scheduled for {nextRun} (in {delay.TotalHours:F1} hours)");
+                    
+                    // Report idle status with next run time
+                    _jobMonitor.ReportSuccess("ReminderService", $"Waiting until {nextRun}");
 
                     // Wait until next scheduled time
                     await Task.Delay(delay, stoppingToken);
 
                     // Run reminder checks
+                    _jobMonitor.ReportStart("ReminderService"); // Mark as running again
                     await CheckAndSendReminders();
 
                     // Also wait a bit to avoid double-running
@@ -57,6 +65,7 @@ namespace YouAndMeExpensesAPI.Services
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error in Reminder Background Service");
+                    _jobMonitor.ReportFailure("ReminderService", ex); // Report error
                     // Wait before retrying
                     await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
                 }
@@ -83,11 +92,14 @@ namespace YouAndMeExpensesAPI.Services
                     var totalSent = await reminderService.CheckAndSendAllUsersRemindersAsync();
                     
                     _logger.LogInformation($"Daily reminder check completed. Sent {totalSent} total reminders.");
+                    _jobMonitor.ReportSuccess("ReminderService", $"Completed. Sent {totalSent} reminders.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during daily reminder check");
+                _jobMonitor.ReportFailure("ReminderService", ex);
+                throw; // Re-throw to be caught by ExecuteAsync
             }
         }
 

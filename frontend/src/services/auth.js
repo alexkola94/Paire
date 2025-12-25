@@ -175,34 +175,38 @@ export const authService = {
 
   /**
    * Sign up with email and password
+   * Supports both legacy positional arguments and new object argument
    */
   async signUp(email, password, displayName = '', emailNotificationsEnabled = false) {
+    return this.register({
+      email,
+      password,
+      confirmPassword: password, // Legacy calls imply matching passwords
+      displayName,
+      emailNotificationsEnabled
+    });
+  },
+
+  /**
+   * Register a new user
+   * @param {Object} userData - { email, password, confirmPassword, displayName, secretKey, ... }
+   */
+  async register(userData) {
     try {
       const backendUrl = getBackendUrl().replace(/\/+$/, '');
       const fullUrl = `${backendUrl}/api/auth/register`;
 
-      console.log('Registration request:', { email, url: fullUrl });
+      console.log('Registration request:', { email: userData.email, url: fullUrl });
 
       const data = await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({
-          email,
-          password,
-          confirmPassword: password,
-          displayName,
-          emailNotificationsEnabled
-        })
+        body: JSON.stringify(userData)
       })
 
       console.log('Registration successful:', data);
       return data
     } catch (error) {
-      console.error('Sign up error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack
-      });
+      console.error('Registration error:', error);
       throw error
     }
   },
@@ -397,6 +401,13 @@ export const authService = {
    */
   isAuthenticated() {
     return !!getToken()
+  },
+
+  /**
+   * Get the current user (synchronous, from storage)
+   */
+  getCurrentUser() {
+    return getStoredUser()
   },
 
   /**

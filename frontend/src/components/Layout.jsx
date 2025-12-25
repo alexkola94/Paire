@@ -59,6 +59,7 @@ const Chatbot = lazy(() => import('./Chatbot'))
 import BottomNavigation from './BottomNavigation'
 import AccessibilitySettings from './AccessibilitySettings'
 import './Layout.css'
+import packageJson from '../../package.json'
 
 /**
  * Layout Component
@@ -161,6 +162,33 @@ function Layout() {
     if (authService.isAuthenticated()) {
       fetchProfile()
     }
+  }, [])
+
+  // Fetch backend version
+  const [backendVersion, setBackendVersion] = useState(null)
+
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        // Use the system info endpoint which we just updated
+        // We can access this without auth if we want, or with auth
+        // Assuming /api/system/info is an open endpoint or we use a service
+        // Since we don't have a dedicated service method for this yet, we'll try a direct fetch or skip if complex
+        // Actually, let's use a simple fetch if possible, or just default to null if fails
+        // To be safe and consistent, we'll try to fetch from the health endpoint which is usually public
+        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/system/health`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.version) {
+            setBackendVersion(data.version)
+          }
+        }
+      } catch (err) {
+        // Silent fail for version check
+        console.debug('Failed to fetch backend version', err)
+      }
+    }
+    fetchVersion()
   }, [])
 
   const toggleUserMenu = useCallback(() => {
@@ -511,6 +539,14 @@ function Layout() {
               <span className="nav-label">{t('auth.logout')}</span>
             </button>
           </li>
+
+          {/* Mobile Version Display */}
+          <li className="mobile-only version-mobile-container">
+            <div className="version-mobile">
+              <span>v{packageJson.version}</span>
+              {backendVersion && <span className="api-version-mobile"> / API: v{backendVersion}</span>}
+            </div>
+          </li>
         </ul>
       </nav>
       {/* Main Content */}
@@ -521,6 +557,14 @@ function Layout() {
           </Suspense>
         </PageTransition>
       </main>
+
+      {/* Version Display (Desktop) */}
+      <div className="version-display desktop-only">
+        <span className="app-version">v{packageJson.version}</span>
+        {backendVersion && (
+          <span className="api-version" title="Backend Version"> (API: v{backendVersion})</span>
+        )}
+      </div>
 
       {/* Overlay for mobile menu */}
       {

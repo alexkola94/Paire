@@ -35,6 +35,7 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<Achievement> Achievements { get; set; }
         public DbSet<UserAchievement> UserAchievements { get; set; }
         public DbSet<ImportHistory> ImportHistories { get; set; }
+        public DbSet<SystemLog> SystemLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -557,6 +558,24 @@ namespace YouAndMeExpensesAPI.Data
 
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.ImportDate);
+            });
+
+            // ============================================
+            // SYSTEM LOGS TABLE
+            // ============================================
+            modelBuilder.Entity<SystemLog>(entity =>
+            {
+                entity.ToTable("system_logs");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Level).HasColumnName("level").HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Message).HasColumnName("message").IsRequired();
+                entity.Property(e => e.StackTrace).HasColumnName("stack_trace");
+                entity.Property(e => e.Source).HasColumnName("source").HasMaxLength(255);
+                entity.Property(e => e.Timestamp).HasColumnName("timestamp").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.Level);
+                entity.HasIndex(e => e.Timestamp);
             });
 
             // Configure Transaction -> ImportHistory relationship

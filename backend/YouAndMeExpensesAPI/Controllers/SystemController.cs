@@ -8,7 +8,6 @@ namespace YouAndMeExpenses.Controllers
     /// System controller for health checks and system information
     /// </summary>
     [ApiController]
-    [Route("api/[controller]")]
     [Route("api/system")]
     public class SystemController : ControllerBase
     {
@@ -30,11 +29,13 @@ namespace YouAndMeExpenses.Controllers
         {
             _logger.LogInformation("Health check requested");
             
+            var version = GetType().Assembly.GetName().Version?.ToString() ?? "2.0.0";
+
             return Ok(new
             {
                 status = "healthy",
                 timestamp = DateTime.UtcNow,
-                version = "1.0.0",
+                version = version,
                 service = "Paire API"
             });
         }
@@ -46,19 +47,73 @@ namespace YouAndMeExpenses.Controllers
         [HttpGet("info")]
         public IActionResult GetInfo()
         {
-            return Ok(new
+            try
             {
-                name = "Paire API",
-                version = "1.0.0",
-                description = "API for managing couple expenses, income, and loans",
-                documentation = "/swagger",
-                endpoints = new
+                var version = GetType().Assembly.GetName().Version?.ToString() ?? "2.0.0";
+                
+                return Ok(new
                 {
-                    health = "/api/system/health",
-                    info = "/api/system/info",
-                    clearData = "/api/system/clear-data (DELETE)"
+                    name = "Paire API",
+                    version = version,
+                    description = "API for managing couple expenses, income, and loans",
+                    documentation = "/swagger",
+                    endpoints = new
+                    {
+                        health = "/api/system/health",
+                        info = "/api/system/info",
+                        changelog = "/api/system/changelog",
+                        clearData = "/api/system/clear-data (DELETE)"
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting system info");
+                return StatusCode(500, new { message = "Error getting system info", error = ex.Message, stack = ex.StackTrace });
+            }
+        }
+
+        /// <summary>
+        /// Gets the changelog content
+        /// </summary>
+        /// <returns>Markdown content of CHANGELOG.md</returns>
+        [HttpGet("changelog")]
+        public IActionResult GetChangelog()
+        {
+            try
+            {
+                // Try different paths to find CHANGELOG.md
+                // 1. Root of repo (dev environment: backend/YouAndMeExpensesAPI -> ../../CHANGELOG.md)
+                // 2. Published root (prod environment)
+                var possiblePaths = new[]
+                {
+                    Path.Combine(Directory.GetCurrentDirectory(), "../../CHANGELOG.md"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "../CHANGELOG.md"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "CHANGELOG.md"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CHANGELOG.md")
+                };
+
+                var checkedPaths = new List<string>();
+
+                foreach (var path in possiblePaths)
+                {
+                    var fullPath = Path.GetFullPath(path);
+                    checkedPaths.Add(fullPath);
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        var content = System.IO.File.ReadAllText(fullPath);
+                        return Ok(new { content });
+                    }
                 }
-            });
+
+                _logger.LogWarning("CHANGELOG.md not found in any expected location: {Paths}", string.Join(", ", checkedPaths));
+                return NotFound(new { message = "Changelog not found", checkedPaths });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading changelog");
+                return StatusCode(500, new { message = "Error reading changelog", error = ex.Message, stack = ex.StackTrace });
+            }
         }
 
         /// <summary>
