@@ -238,6 +238,9 @@ builder.Services.Configure<JwtSettings>(jwtSettings);
 // Metrics tracking (singleton to persist across requests)
 builder.Services.AddSingleton<MetricsService>();
 
+// Audit logging service
+builder.Services.AddScoped<IAuditService, AuditService>();
+
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 

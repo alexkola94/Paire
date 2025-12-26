@@ -253,5 +253,43 @@ namespace YouAndMeExpensesAPI.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+        [HttpGet("audit/logs")]
+        public async Task<IActionResult> GetAuditLogs([FromServices] IAuditService auditService, [FromQuery] string? userId = null, [FromQuery] string? action = null, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+        {
+            try
+            {
+                var (logs, totalCount) = await auditService.GetLogsAsync(userId, action, startDate, endDate, page, pageSize);
+
+                return Ok(new
+                {
+                    Logs = logs,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get audit logs");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("audit/security-alerts")]
+        public async Task<IActionResult> GetSecurityAlerts([FromServices] IAuditService auditService)
+        {
+            try
+            {
+                var alerts = await auditService.GetSecurityAlertsAsync();
+                return Ok(alerts);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get security alerts");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
     }
 }
