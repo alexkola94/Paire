@@ -93,9 +93,16 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         [HttpGet("logs")]
-        public async Task<IActionResult> GetLogs([FromQuery] int count = 50)
+        public async Task<IActionResult> GetLogs([FromQuery] int count = 50, [FromQuery] string? level = null)
         {
-            var logs = await _context.SystemLogs
+            var query = _context.SystemLogs.AsQueryable();
+
+            if (!string.IsNullOrEmpty(level) && level != "All")
+            {
+                query = query.Where(l => l.Level == level);
+            }
+
+            var logs = await query
                 .OrderByDescending(l => l.Timestamp)
                 .Take(count)
                 .ToListAsync();
@@ -186,7 +193,7 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         [HttpGet("monitoring/metrics")]
-        public IActionResult GetPerformanceMetrics([FromServices] MetricsService metricsService)
+        public ActionResult<SystemMetricsDto> GetPerformanceMetrics([FromServices] MetricsService metricsService)
         {
             var metrics = metricsService.GetMetrics();
             return Ok(metrics);
@@ -230,7 +237,7 @@ namespace YouAndMeExpensesAPI.Controllers
             try
             {
                 var allSessions = await sessionService.GetAllSessionsAsync();
-                var activeSessions = allSessions.Where(s => s.IsActive && !s.RevokedAt.HasValue).ToList();
+                var activeSessions = allSessions.Where(s => s.IsActive && !s.RevokedAt.HasValue && s.ExpiresAt > DateTime.UtcNow).ToList();
 
                 return Ok(new
                 {

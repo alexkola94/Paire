@@ -211,8 +211,12 @@ function Login() {
       const user = sessionManager.getCurrentUser()
 
       if (!token || !user) {
-        console.error('Tokens not stored properly after 2FA verification')
-        throw new Error('Failed to store authentication data')
+        // Try one more time with a small delay
+        await new Promise(resolve => setTimeout(resolve, 300))
+        const retryToken = sessionManager.getToken()
+        if (!retryToken) {
+          throw new Error('Failed to store authentication data')
+        }
       }
 
       // Broadcast session invalidation to other tabs if same user

@@ -815,8 +815,12 @@ export const adminService = {
     return await apiRequest(`/api/admin/users?${params}`)
   },
 
-  async getLogs(count = 50) {
-    return await apiRequest(`/api/admin/logs?count=${count}`)
+  async getLogs(count = 50, level = null) {
+    let url = `/api/admin/logs?count=${count}`
+    if (level && level !== 'All') {
+      url += `&level=${level}`
+    }
+    return await apiRequest(url)
   },
 
   async getJobs() {

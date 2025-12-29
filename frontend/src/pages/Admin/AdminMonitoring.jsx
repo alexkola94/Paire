@@ -148,47 +148,80 @@ function AdminMonitoring() {
             {/* Database Health */}
             {dbHealth && (
                 <div className="dashboard-section mb-6">
-                    <h2 className="flex items-center gap-2 mb-4">
+                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                         <FiDatabase /> Database Health
                     </h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Status Card */}
-                        <div className="stat-card" style={{ padding: '24px' }}>
-                            <div className="flex items-center justify-between mb-4">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        <div className="stat-card" style={{
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                            padding: '1.5rem',
+                            minHeight: '180px'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-500 mb-2">Status</h3>
-                                    <p className={`text-3xl font-bold ${dbHealth.status === 'Healthy' ? 'text-green' : 'text-red'}`}>
+                                    <h3 style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</h3>
+                                    <div style={{ fontSize: '2rem', fontWeight: 700, color: dbHealth.status === 'Healthy' ? 'var(--success)' : 'var(--error)' }}>
                                         {dbHealth.status}
-                                    </p>
+                                    </div>
                                 </div>
-                                <FiServer className={`text-5xl ${dbHealth.status === 'Healthy' ? 'text-green' : 'text-red'}`} style={{ opacity: 0.3 }} />
+                                <div style={{
+                                    padding: '0.75rem',
+                                    borderRadius: '0.75rem',
+                                    backgroundColor: dbHealth.status === 'Healthy' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                    color: dbHealth.status === 'Healthy' ? '#10b981' : '#ef4444'
+                                }}>
+                                    <FiActivity style={{ fontSize: '1.5rem' }} />
+                                </div>
                             </div>
-                            <div className="pt-4 border-t border-gray-200">
-                                <p className="text-sm text-gray-600">
-                                    <strong>Connection Time:</strong> {formatMs(dbHealth.connectionTimeMs || 0)}
-                                </p>
+
+                            <div style={{
+                                marginTop: 'auto',
+                                paddingTop: '1rem',
+                                borderTop: '1px solid rgba(128, 128, 128, 0.2)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '0.875rem'
+                            }}>
+                                <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Connection Time</span>
+                                <span style={{
+                                    fontFamily: 'monospace',
+                                    fontWeight: 700,
+                                    color: dbHealth.connectionTimeMs < 100 ? '#10b981' : dbHealth.connectionTimeMs < 500 ? '#f59e0b' : '#ef4444'
+                                }}>
+                                    {formatMs(dbHealth.connectionTimeMs || 0)}
+                                </span>
                             </div>
                         </div>
 
                         {/* Entity Counts Card */}
-                        <div className="stat-card" style={{ padding: '24px' }}>
-                            <h3 className="text-sm font-medium text-gray-500 mb-4">Entity Counts</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span className="text-sm text-gray-600">Users</span>
-                                    <strong className="text-lg">{dbHealth.totalUsers?.toLocaleString() || 0}</strong>
+                        <div className="stat-card" style={{
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                            padding: '1.5rem',
+                            minHeight: '180px'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h3 style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Entity Counts</h3>
+                                <FiDatabase style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', opacity: 0.5 }} />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                                <div style={{ padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(128, 128, 128, 0.08)', border: '1px solid rgba(128, 128, 128, 0.1)' }}>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Users</span>
+                                    <strong style={{ fontSize: '1.25rem', display: 'block', color: 'var(--text-primary)' }}>{dbHealth.totalUsers?.toLocaleString() || 0}</strong>
                                 </div>
-                                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span className="text-sm text-gray-600">Transactions</span>
-                                    <strong className="text-lg">{dbHealth.totalTransactions?.toLocaleString() || 0}</strong>
+                                <div style={{ padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(128, 128, 128, 0.08)', border: '1px solid rgba(128, 128, 128, 0.1)' }}>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Transactions</span>
+                                    <strong style={{ fontSize: '1.25rem', display: 'block', color: 'var(--text-primary)' }}>{dbHealth.totalTransactions?.toLocaleString() || 0}</strong>
                                 </div>
-                                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span className="text-sm text-gray-600">Partnerships</span>
-                                    <strong className="text-lg">{dbHealth.totalPartnerships?.toLocaleString() || 0}</strong>
+                                <div style={{ padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(128, 128, 128, 0.08)', border: '1px solid rgba(128, 128, 128, 0.1)' }}>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Partnerships</span>
+                                    <strong style={{ fontSize: '1.25rem', display: 'block', color: 'var(--text-primary)' }}>{dbHealth.totalPartnerships?.toLocaleString() || 0}</strong>
                                 </div>
-                                <div className="flex justify-between items-center py-2">
-                                    <span className="text-sm text-gray-600">Loans</span>
-                                    <strong className="text-lg">{dbHealth.totalLoans?.toLocaleString() || 0}</strong>
+                                <div style={{ padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(128, 128, 128, 0.08)', border: '1px solid rgba(128, 128, 128, 0.1)' }}>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Loans</span>
+                                    <strong style={{ fontSize: '1.25rem', display: 'block', color: 'var(--text-primary)' }}>{dbHealth.totalLoans?.toLocaleString() || 0}</strong>
                                 </div>
                             </div>
                         </div>

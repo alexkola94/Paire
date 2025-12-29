@@ -71,12 +71,11 @@
 
 /* Sidebar Header */
 .sidebar-header {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    /* Subtle separator */
 }
 
 [data-theme='light'] .sidebar-header {
@@ -112,24 +111,20 @@
 .sidebar-user-info {
     font-size: 0.75rem;
     color: var(--text-secondary);
-    opacity: 0.8;
-    margin-top: 4px;
-    padding-top: 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    max-width: 140px;
-    /* Constrain width */
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 [data-theme='light'] .sidebar-user-info {
-    border-top-color: rgba(0, 0, 0, 0.05);
+    border-top-color: rgba(0, 0, 0, 0.08);
 }
 
 .user-email {
     display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-all;
     font-weight: 500;
+    line-height: 1.4;
 }
 
 /* Sidebar Navigation */
