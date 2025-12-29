@@ -1,0 +1,86 @@
+/* ===================================
+   Page Link Widget - Mobile First
+   =================================== */
+
+.page-link-widget {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-link-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+    width: 100%;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.page-link-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+}
+
+.page-link-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.page-link-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.page-link-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.25rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.page-link-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.page-link-arrow {
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}
+
+.page-link-card:hover .page-link-arrow {
+    transform: translateX(4px);
+    color: var(--primary);
+}
+
+/* Responsive */
+@media (min-width: 600px) {
+    .page-link-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .page-link-title {
+        font-size: 1.25rem;
+    }
+}

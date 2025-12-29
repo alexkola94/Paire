@@ -1,0 +1,156 @@
+/* ===================================
+   Upcoming Bills Widget Styles
+   =================================== */
+
+.upcoming-bills-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.upcoming-bills-widget.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    margin: 0.5rem;
+    border: 1px dashed var(--border-color);
+}
+
+.upcoming-bills-widget.empty .empty-icon {
+    margin-bottom: 0.75rem;
+    color: var(--primary);
+    opacity: 0.8;
+}
+
+.upcoming-bills-widget.empty p {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Overdue Alert */
+.overdue-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Bills List */
+.bills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Bill Item */
+.bill-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.bill-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.bill-item.overdue {
+    border-left: 3px solid var(--error-color);
+}
+
+.bill-item.due-soon {
+    border-left: 3px solid var(--warning-color);
+}
+
+/* Countdown */
+.bill-countdown {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 44px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.countdown-number {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.countdown-label {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+}
+
+.countdown-today {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--warning-color);
+}
+
+.overdue-icon {
+    color: var(--error-color);
+}
+
+/* Bill Info */
+.bill-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.bill-name {
+    display: block;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bill-date {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+/* Bill Amount */
+.bill-amount {
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+/* Skeleton */
+.bill-item-skeleton {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+}
