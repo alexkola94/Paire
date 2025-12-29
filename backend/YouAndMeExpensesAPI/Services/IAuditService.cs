@@ -1,4 +1,4 @@
-using You AndMeExpensesAPI.Models;
+using YouAndMeExpensesAPI.Models;
 
 namespace YouAndMeExpensesAPI.Services
 {

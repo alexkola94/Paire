@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import {
   FiShoppingCart, FiPlus, FiEdit, FiTrash2, FiCheck,
@@ -39,6 +40,7 @@ function ShoppingLists() {
   const [showSidebar, setShowSidebar] = useState(false)
   const [togglingItems, setTogglingItems] = useState(new Set()) // Track items being toggled to prevent double-tap
   const [swipeState, setSwipeState] = useState({}) // Track swipe gestures per item
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768) // Track mobile state for portal
 
   // Pagination State
   const [page, setPage] = useState(1)
@@ -82,10 +84,14 @@ function ShoppingLists() {
     loadLists()
   }, [])
 
-  // Add/remove body class when fullscreen is active on mobile
+  // Add/remove body class when fullscreen is active on mobile and track screen size
   useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768
+      setIsMobile(mobile)
+    }
+
     const updateBodyClass = () => {
-      const isMobile = window.innerWidth <= 768
       if (isMobile && selectedList) {
         document.body.classList.add('shopping-list-fullscreen')
       } else {
@@ -95,16 +101,20 @@ function ShoppingLists() {
 
     // Initial check
     updateBodyClass()
+    handleResize()
 
     // Listen for resize events
-    window.addEventListener('resize', updateBodyClass)
+    window.addEventListener('resize', handleResize)
+
+    // Update body class when state changes
+    updateBodyClass()
 
     // Cleanup on unmount
     return () => {
-      window.removeEventListener('resize', updateBodyClass)
+      window.removeEventListener('resize', handleResize)
       document.body.classList.remove('shopping-list-fullscreen')
     }
-  }, [selectedList])
+  }, [selectedList, isMobile])
 
   const loadLists = async (background = false) => {
     try {
@@ -928,232 +938,21 @@ function ShoppingLists() {
           )}
         </div>
 
-        {/* Items Panel */}
-        <div className={`items-panel ${selectedList ? 'mobile-fullscreen' : ''}`}>
-          {selectedList ? (
-            <>
-              <div className="items-header sticky-header">
-                <div className="header-main">
-                  <h2>{selectedList.list.name}</h2>
-                  <div className="items-stats">
-                    <span className="progress-badge">
-                      {selectedList.checkedCount} / {selectedList.itemCount} {t('shoppingLists.items')}
-                    </span>
-                    {selectedList.list.estimatedTotal && (
-                      <span className="estimate">
-                        {t('shoppingLists.estimated')}: {formatCurrency(selectedList.list.estimatedTotal)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="header-actions">
-                  <button
-                    className="mobile-close-btn"
-                    onClick={() => {
-                      setSelectedList(null)
-                      setShowSidebar(false)
-                    }}
-                    aria-label={t('common.close')}
-                    title={t('common.back')}
-                  >
-                    <FiX />
-                  </button>
-                </div>
-              </div>
-
-              <div className="items-actions-bar">
-                <button className="btn btn-sm btn-primary" onClick={() => setShowItemForm(true)}>
-                  <FiPlus /> {t('shoppingLists.addItem')}
-                </button>
-                {!selectedList.list.isCompleted && selectedList.items.length > 0 && (
-                  <button
-                    className="btn btn-sm btn-success"
-                    onClick={() => handleCompleteList(selectedList.list.id)}
-                  >
-                    <FiCheck /> {t('shoppingLists.completeList')}
-                  </button>
-                )}
-              </div>
-
-              <div className="items-list" key={`list-${selectedList.list.id}`}>
-                {selectedList.items.length === 0 ? (
-                  <div className="empty-items">
-                    <FiPackage size={48} />
-                    <h3>{t('shoppingLists.noItems')}</h3>
-                    <p>{t('shoppingLists.noItemsDescription')}</p>
-                    <button className="btn btn-primary" onClick={() => setShowItemForm(true)}>
-                      <FiPlus /> {t('shoppingLists.addFirstItem')}
-                    </button>
-                  </div>
-                ) : (
-                  selectedList.items.map((item) => {
-                    const swipe = swipeState[item.id] || {}
-                    const swipeOffset = swipe.isSwiping ? (swipe.currentX - swipe.startX) : 0
-                    // Determine swipe direction for styling
-                    const isSwipeRight = swipeOffset > 0 && !swipe.isChecked
-                    const isSwipeLeft = swipeOffset < 0 && swipe.isChecked
-                    // Calculate swipe progress for animation (0-100%)
-                    const swipeProgress = isSwipeRight
-                      ? Math.min(100, (swipeOffset / 80) * 100)
-                      : isSwipeLeft
-                        ? Math.min(100, (Math.abs(swipeOffset) / 80) * 100)
-                        : 0
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={`item-card ${item.isChecked ? 'checked' : ''} ${swipe.isSwiping ? 'swiping' : ''} ${isSwipeRight ? 'swipe-right' : ''} ${isSwipeLeft ? 'swipe-left' : ''}`}
-                        onTouchStart={(e) => {
-                          // Don't interfere with checkbox touch events
-                          if (!e.target.closest('.item-checkbox')) {
-                            handleSwipeStart(item.id, e)
-                          }
-                        }}
-                        onTouchMove={(e) => {
-                          if (!e.target.closest('.item-checkbox')) {
-                            handleSwipeMove(item.id, e)
-                          }
-                        }}
-                        onTouchEnd={(e) => {
-                          if (!e.target.closest('.item-checkbox')) {
-                            handleSwipeEnd(item.id, e)
-                          }
-                        }}
-                        style={{
-                          transform: swipe.isSwiping ? `translateX(${swipeOffset}px)` : 'none',
-                          transition: swipe.isSwiping ? 'none' : 'transform 0.3s ease-out'
-                        }}
-                      >
-                        {/* Swipe action indicator - appears on the left when swiping right to check */}
-                        {isSwipeRight && (
-                          <div
-                            className="swipe-indicator swipe-check-indicator"
-                            style={{
-                              opacity: Math.min(1, swipeProgress / 50), // Show earlier
-                              transform: `translate(${-swipeOffset + 16}px, -50%) scale(${Math.min(1, swipeProgress / 60)})`,
-                              left: 0
-                            }}
-                          >
-                            <FiCheck size={24} />
-                          </div>
-                        )}
-
-                        {/* Swipe action indicator - appears on the right when swiping left to uncheck */}
-                        {isSwipeLeft && (
-                          <div
-                            className="swipe-indicator swipe-uncheck-indicator"
-                            style={{
-                              opacity: Math.min(1, swipeProgress / 50), // Show earlier
-                              transform: `translate(${-swipeOffset - 16}px, -50%) scale(${Math.min(1, swipeProgress / 60)})`,
-                              right: 0
-                            }}
-                          >
-                            <FiX size={24} />
-                          </div>
-                        )}
-                        <div
-                          className="item-checkbox"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleToggleItem(item.id, e)
-                          }}
-                          onTouchStart={(e) => {
-                            e.stopPropagation()
-                            e.preventDefault()
-                            handleToggleItem(item.id, e)
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={item.isChecked ? t('shoppingLists.uncheckItem') : t('shoppingLists.checkItem')}
-                        >
-                          {item.isChecked ? <FiCheckSquare size={28} /> : <FiSquare size={28} />}
-                        </div>
-
-                        <div className="item-content">
-                          <div className="item-main">
-                            <h4>{item.name}</h4>
-                            <span className="item-quantity">
-                              {item.quantity} {item.unit}
-                            </span>
-                          </div>
-                          {item.estimatedPrice && (
-                            <div className="item-price">
-                              {formatCurrency(item.estimatedPrice * item.quantity)}
-                            </div>
-                          )}
-                          {item.notes && (
-                            <div className="item-notes">{item.notes}</div>
-                          )}
-                        </div>
-
-                        <div className="item-actions" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            className="icon-btn"
-                            onClick={() => handleEditItem(item)}
-                            aria-label={t('common.edit')}
-                          >
-                            <FiEdit />
-                          </button>
-                          <button
-                            className="icon-btn danger"
-                            onClick={() => openDeleteItemModal(item.id)}
-                            aria-label={t('common.delete')}
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="empty-selection">
-              {activeLists.length > 0 ? (
-                <>
-                  <FiShoppingCart size={64} />
-                  <h3>{t('shoppingLists.selectList')}</h3>
-                  <p>{t('shoppingLists.selectListDescription')}</p>
-                  <div className="mobile-lists-preview">
-                    <h4>{t('shoppingLists.activeLists')} ({activeLists.length})</h4>
-                    <div className="mobile-lists-grid">
-                      {activeLists.map(list => (
-                        <div
-                          key={list.id}
-                          className="mobile-list-card"
-                          onClick={() => {
-                            // Toggle: if already selected, deselect it; otherwise, select it
-                            if (selectedList?.list.id === list.id) {
-                              setSelectedList(null)
-                            } else {
-                              loadListDetails(list.id)
-                            }
-                            setShowSidebar(false)
-                          }}
-                        >
-                          <h5>{list.name}</h5>
-                          {list.estimatedTotal && (
-                            <div className="mobile-list-estimate">
-                              {formatCurrency(list.estimatedTotal)}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <FiShoppingCart size={64} />
-                  <h3>{t('shoppingLists.selectList')}</h3>
-                  <p>{t('shoppingLists.selectListDescription')}</p>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+        {/* Items Panel - Only render here if NOT portal mode (i.e. desktop OR no selection) */}
+        {!(isMobile && selectedList) && (
+          <div className={`items-panel ${selectedList ? 'mobile-fullscreen' : ''}`}>
+            {renderItemsPanelContent()}
+          </div>
+        )}
       </div>
+
+      {/* Portal for Mobile Fullscreen Items Panel */}
+      {(isMobile && selectedList) && createPortal(
+        <div className="items-panel mobile-fullscreen mobile-portal-view">
+          {renderItemsPanelContent()}
+        </div>,
+        document.body
+      )}
 
       {/* List Form Modal (Portal) */}
       <Modal
@@ -1341,6 +1140,238 @@ function ShoppingLists() {
       />
     </div>
   )
+
+  /**
+   * Helper to render the content of the Items Panel
+   * This allows us to use the same logic for both the normal view and the portal view
+   */
+  function renderItemsPanelContent() {
+    return (
+      selectedList ? (
+        <>
+          <div className="items-header sticky-header">
+            <div className="header-main">
+              <h2>{selectedList.list.name}</h2>
+              <div className="items-stats">
+                <span className="progress-badge">
+                  {selectedList.checkedCount} / {selectedList.itemCount} {t('shoppingLists.items')}
+                </span>
+                {selectedList.list.estimatedTotal && (
+                  <span className="estimate">
+                    <div className="estimate-label">{t('shoppingLists.estimated')}:</div>
+                    <div className="estimate-value">{formatCurrency(selectedList.list.estimatedTotal)}</div>
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="header-actions">
+              <button
+                className="mobile-close-btn"
+                onClick={() => {
+                  setSelectedList(null)
+                  setShowSidebar(false)
+                }}
+                aria-label={t('common.close')}
+                title={t('common.back')}
+              >
+                <FiX />
+              </button>
+            </div>
+          </div>
+
+          <div className="items-actions-bar">
+            <button className="btn btn-sm btn-primary" onClick={() => setShowItemForm(true)}>
+              <FiPlus /> {t('shoppingLists.addItem')}
+            </button>
+            {!selectedList.list.isCompleted && selectedList.items.length > 0 && (
+              <button
+                className="btn btn-sm btn-success"
+                onClick={() => handleCompleteList(selectedList.list.id)}
+              >
+                <FiCheck /> {t('shoppingLists.completeList')}
+              </button>
+            )}
+          </div>
+
+          <div className="items-list" key={`list-${selectedList.list.id}`}>
+            {selectedList.items.length === 0 ? (
+              <div className="empty-items">
+                <FiPackage size={48} />
+                <h3>{t('shoppingLists.noItems')}</h3>
+                <p>{t('shoppingLists.noItemsDescription')}</p>
+                <button className="btn btn-primary" onClick={() => setShowItemForm(true)}>
+                  <FiPlus /> {t('shoppingLists.addFirstItem')}
+                </button>
+              </div>
+            ) : (
+              selectedList.items.map((item) => {
+                const swipe = swipeState[item.id] || {}
+                const swipeOffset = swipe.isSwiping ? (swipe.currentX - swipe.startX) : 0
+                // Determine swipe direction for styling
+                const isSwipeRight = swipeOffset > 0 && !swipe.isChecked
+                const isSwipeLeft = swipeOffset < 0 && swipe.isChecked
+                // Calculate swipe progress for animation (0-100%)
+                const swipeProgress = isSwipeRight
+                  ? Math.min(100, (swipeOffset / 80) * 100)
+                  : isSwipeLeft
+                    ? Math.min(100, (Math.abs(swipeOffset) / 80) * 100)
+                    : 0
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`item-card ${item.isChecked ? 'checked' : ''} ${swipe.isSwiping ? 'swiping' : ''} ${isSwipeRight ? 'swipe-right' : ''} ${isSwipeLeft ? 'swipe-left' : ''}`}
+                    onTouchStart={(e) => {
+                      // Don't interfere with checkbox touch events
+                      if (!e.target.closest('.item-checkbox')) {
+                        handleSwipeStart(item.id, e)
+                      }
+                    }}
+                    onTouchMove={(e) => {
+                      if (!e.target.closest('.item-checkbox')) {
+                        handleSwipeMove(item.id, e)
+                      }
+                    }}
+                    onTouchEnd={(e) => {
+                      if (!e.target.closest('.item-checkbox')) {
+                        handleSwipeEnd(item.id, e)
+                      }
+                    }}
+                    style={{
+                      transform: swipe.isSwiping ? `translateX(${swipeOffset}px)` : 'none',
+                      transition: swipe.isSwiping ? 'none' : 'transform 0.3s ease-out'
+                    }}
+                  >
+                    {/* Swipe action indicator - appears on the left when swiping right to check */}
+                    {isSwipeRight && (
+                      <div
+                        className="swipe-indicator swipe-check-indicator"
+                        style={{
+                          opacity: Math.min(1, swipeProgress / 50), // Show earlier
+                          transform: `translate(${-swipeOffset + 16}px, -50%) scale(${Math.min(1, swipeProgress / 60)})`,
+                          left: 0
+                        }}
+                      >
+                        <FiCheck size={24} />
+                      </div>
+                    )}
+
+                    {/* Swipe action indicator - appears on the right when swiping left to uncheck */}
+                    {isSwipeLeft && (
+                      <div
+                        className="swipe-indicator swipe-uncheck-indicator"
+                        style={{
+                          opacity: Math.min(1, swipeProgress / 50), // Show earlier
+                          transform: `translate(${-swipeOffset - 16}px, -50%) scale(${Math.min(1, swipeProgress / 60)})`,
+                          right: 0
+                        }}
+                      >
+                        <FiX size={24} />
+                      </div>
+                    )}
+                    <div
+                      className="item-checkbox"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleItem(item.id, e)
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation()
+                        e.preventDefault()
+                        handleToggleItem(item.id, e)
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={item.isChecked ? t('shoppingLists.uncheckItem') : t('shoppingLists.checkItem')}
+                    >
+                      {item.isChecked ? <FiCheckSquare size={28} /> : <FiSquare size={28} />}
+                    </div>
+
+                    <div className="item-content">
+                      <div className="item-main">
+                        <h4>{item.name}</h4>
+                        <span className="item-quantity">
+                          {item.quantity} {item.unit}
+                        </span>
+                      </div>
+                      {item.estimatedPrice && (
+                        <div className="item-price">
+                          {formatCurrency(item.estimatedPrice * item.quantity)}
+                        </div>
+                      )}
+                      {item.notes && (
+                        <div className="item-notes">{item.notes}</div>
+                      )}
+                    </div>
+
+                    <div className="item-actions" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="icon-btn"
+                        onClick={() => handleEditItem(item)}
+                        aria-label={t('common.edit')}
+                      >
+                        <FiEdit />
+                      </button>
+                      <button
+                        className="icon-btn danger"
+                        onClick={() => openDeleteItemModal(item.id)}
+                        aria-label={t('common.delete')}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="empty-selection">
+          {activeLists.length > 0 ? (
+            <>
+              <FiShoppingCart size={64} />
+              <h3>{t('shoppingLists.selectList')}</h3>
+              <p>{t('shoppingLists.selectListDescription')}</p>
+              <div className="mobile-lists-preview">
+                <h4>{t('shoppingLists.activeLists')} ({activeLists.length})</h4>
+                <div className="mobile-lists-grid">
+                  {activeLists.map(list => (
+                    <div
+                      key={list.id}
+                      className="mobile-list-card"
+                      onClick={() => {
+                        // Toggle: if already selected, deselect it; otherwise, select it
+                        if (selectedList?.list.id === list.id) {
+                          setSelectedList(null)
+                        } else {
+                          loadListDetails(list.id)
+                        }
+                        setShowSidebar(false)
+                      }}
+                    >
+                      <h5>{list.name}</h5>
+                      {list.estimatedTotal && (
+                        <div className="mobile-list-estimate">
+                          {formatCurrency(list.estimatedTotal)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <FiShoppingCart size={64} />
+              <h3>{t('shoppingLists.selectList')}</h3>
+              <p>{t('shoppingLists.selectListDescription')}</p>
+            </>
+          )}
+        </div>
+      )
+    )
+  }
 }
 
 export default ShoppingLists
