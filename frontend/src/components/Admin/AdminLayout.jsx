@@ -15,6 +15,7 @@ import {
 } from 'react-icons/fi'
 import { authService } from '../../services/auth'
 import { useTheme } from '../../context/ThemeContext'
+import AdminHeader from './AdminHeader'
 import './AdminLayout.css'
 
 function AdminLayout() {
@@ -95,22 +96,67 @@ function AdminLayout() {
             {/* Sidebar */}
             <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
-                    <img
-                        src={`${import.meta.env.BASE_URL}paire-logo.svg`}
-                        alt="Paire Logo"
-                        className="sidebar-logo"
-                    />
-                    <div className="sidebar-brand-text">
-                        <h2>Paire</h2>
-                        <span>Admin Portal</span>
-                        {authService.getCurrentUser() && (
-                            <div className="sidebar-user-info">
-                                <span className="user-email" title={authService.getCurrentUser().email}>
-                                    {authService.getCurrentUser().email}
-                                </span>
-                            </div>
-                        )}
+                    {/* Brand Section */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <img
+                            src={`${import.meta.env.BASE_URL}paire-logo.svg`}
+                            alt="Paire Logo"
+                            className="sidebar-logo"
+                        />
+                        <div className="sidebar-brand-text">
+                            <h2>Paire</h2>
+                            <span>Admin Portal</span>
+                        </div>
                     </div>
+
+                    {/* User Info Card */}
+                    {user && (
+                        <div style={{
+                            background: 'rgba(142, 68, 173, 0.08)',
+                            borderRadius: '0.75rem',
+                            padding: '0.875rem 1rem',
+                            border: '1px solid rgba(142, 68, 173, 0.15)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, var(--primary), var(--primary-dark, #6c3483))',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                    fontWeight: 700,
+                                    fontSize: '0.875rem',
+                                    flexShrink: 0
+                                }}>
+                                    {(user.displayName || user.email || 'A').charAt(0).toUpperCase()}
+                                </div>
+                                <div style={{ overflow: 'hidden', flex: 1 }}>
+                                    <div style={{
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        color: 'var(--text-primary)',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    }}>
+                                        {user.displayName || 'Admin User'}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.7rem',
+                                        color: 'var(--text-secondary)',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    }}>
+                                        {user.email}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <nav className="sidebar-nav">
@@ -128,24 +174,16 @@ function AdminLayout() {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button className="nav-item theme-toggle" onClick={toggleTheme}>
-                        {theme === 'dark' ? <FiMoon className="nav-icon" /> : <FiSun className="nav-icon" />}
-                        <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-                    </button>
-
-                    <button className="nav-item back-app" onClick={() => navigate('/dashboard')}>
-                        <span>Back to App</span>
-                    </button>
-
-                    <button className="nav-item logout" onClick={handleLogout}>
-                        <FiLogOut className="nav-icon" />
-                        <span>Logout</span>
-                    </button>
+                    {/* Items moved to header */}
+                    <div className="text-xs text-center text-gray-500 opacity-50 py-4">
+                        v{import.meta.env.PACKAGE_VERSION || '1.0.0'}
+                    </div>
                 </div>
             </aside>
 
             {/* Main Content */}
             <main className="admin-main">
+                <AdminHeader toggleSidebar={toggleSidebar} />
                 <div className="admin-content-container">
                     <Outlet />
                 </div>

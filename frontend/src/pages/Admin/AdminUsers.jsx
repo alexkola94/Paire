@@ -158,7 +158,7 @@ function AdminUsers() {
                             <tr>
                                 <th>Email</th>
                                 <th>Name</th>
-                                <th>Joined</th>
+                                <th className="mobile-hidden">Joined</th>
                                 <th>Status</th>
                                 <th style={{ width: '100px' }}>Actions</th>
                             </tr>
@@ -168,10 +168,10 @@ function AdminUsers() {
                                 <tr key={user.id}>
                                     <td>
                                         <div className="font-medium text-gray-900">{user.email}</div>
-                                        <div className="text-xs text-gray-500 font-mono">{user.id}</div>
+                                        <div className="text-xs text-gray-500 font-mono break-all">{user.id}</div>
                                     </td>
                                     <td>{user.displayName || '-'}</td>
-                                    <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                                    <td className="mobile-hidden">{new Date(user.createdAt).toLocaleDateString()}</td>
                                     <td>
                                         {user.emailConfirmed ? (
                                             <span className="badge badge-green">Verified</span>

@@ -7,15 +7,16 @@ import './Admin.css'
 function AdminLogs() {
     const [logs, setLogs] = useState([])
     const [loading, setLoading] = useState(true)
+    const [selectedLevel, setSelectedLevel] = useState('All')
 
     useEffect(() => {
         loadLogs()
-    }, [])
+    }, [selectedLevel])
 
     const loadLogs = async () => {
         try {
             setLoading(true)
-            const data = await adminService.getLogs(100)
+            const data = await adminService.getLogs(100, selectedLevel)
             setLogs(data)
         } catch (err) {
             console.error(err)
@@ -26,11 +27,28 @@ function AdminLogs() {
 
     return (
         <div className="admin-page">
-            <div className="flex items-center gap-4 mb-6">
-                <h1 className="page-title mb-0">Recent Errors & Logs</h1>
-                <button className="btn-icon" onClick={loadLogs} title="Refresh">
-                    <FiRefreshCcw />
-                </button>
+            <div className="responsive-header">
+                <div className="flex items-center gap-4">
+                    <h1 className="page-title mb-0">Recent Errors & Logs</h1>
+                    <button className="btn-icon" onClick={loadLogs} title="Refresh">
+                        <FiRefreshCcw />
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-2" style={{ justifyContent: 'space-between' }}>
+                    <span className="text-sm font-medium text-gray-500 whitespace-nowrap">Filter Level:</span>
+                    <select
+                        className="form-select text-sm py-1 px-3 border-gray-300 rounded-md"
+                        value={selectedLevel}
+                        onChange={(e) => setSelectedLevel(e.target.value)}
+                        style={{ minWidth: '140px' }}
+                    >
+                        <option value="All">All Levels</option>
+                        <option value="Error">Error Only</option>
+                        <option value="Warning">Warning Only</option>
+                        <option value="Info">Info Only</option>
+                    </select>
+                </div>
             </div>
 
             {loading ? (
@@ -55,8 +73,8 @@ function AdminLogs() {
                                             <span className="text-blue"><FiInfo /></span>
                                         )}
                                     </td>
-                                    <td>
-                                        <div className="font-medium">{log.message}</div>
+                                    <td style={{ maxWidth: '300px' }}>
+                                        <div className="font-medium break-all">{log.message}</div>
                                         {log.stackTrace && (
                                             <details className="mt-1">
                                                 <summary className="details-summary">View Stack Trace</summary>

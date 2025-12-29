@@ -109,7 +109,7 @@ function AdminSystem() {
                             </div>
                             <div className="detail-row">
                                 <span>Documentation:</span>
-                                <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:5038'}/swagger`} target="_blank" rel="noreferrer">
+                                <a href={(import.meta.env.VITE_API_URL || 'http://localhost:5038').replace(/\/api$/, '')} target="_blank" rel="noreferrer">
                                     Swagger UI
                                 </a>
                             </div>

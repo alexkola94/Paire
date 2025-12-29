@@ -150,6 +150,35 @@
     border-bottom: 1px solid var(--glass-border);
 }
 
+/* Sticky Actions Column on Mobile */
+@media (max-width: 768px) {
+
+    .admin-table th:last-child,
+    .admin-table td:last-child {
+        position: sticky;
+        right: 0;
+        background: var(--glass-bg);
+        /* Match table background */
+        backdrop-filter: blur(12px);
+        /* Maintain glass effect if needed, or opaque */
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+        /* Shadow to indicate scroll */
+        z-index: 10;
+        text-align: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .admin-table th:last-child {
+        background: var(--bg-secondary);
+        /* Often slightly different headers */
+    }
+
+    .mobile-hidden {
+        display: none !important;
+    }
+}
+
 .admin-table th {
     background: rgba(0, 0, 0, 0.03);
     font-weight: 600;
@@ -321,6 +350,18 @@
     color: var(--info);
 }
 
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    /* Default max-width, can be overridden */
+}
+
+.break-all {
+    word-break: break-all;
+}
+
 /* Stack Trace */
 .stack-trace {
     margin-top: 0.5rem;
@@ -411,12 +452,28 @@
     outline: none;
 }
 
-.search-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-    font-size: 1.2rem;
-    pointer-events: none;
+/* Responsive Header */
+.responsive-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .responsive-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+
+    .responsive-header .flex.items-center.gap-4 {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .responsive-header .form-select {
+        width: 100%;
+    }
 }

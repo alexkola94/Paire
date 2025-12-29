@@ -36,6 +36,7 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<UserAchievement> UserAchievements { get; set; }
         public DbSet<ImportHistory> ImportHistories { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -576,6 +577,30 @@ namespace YouAndMeExpensesAPI.Data
 
                 entity.HasIndex(e => e.Level);
                 entity.HasIndex(e => e.Timestamp);
+            });
+
+            // ============================================
+            // AUDIT LOGS TABLE
+            // ============================================
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.ToTable("audit_logs");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").HasMaxLength(450).IsRequired();
+                entity.Property(e => e.Action).HasColumnName("action").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.EntityType).HasColumnName("entity_type").HasMaxLength(50);
+                entity.Property(e => e.EntityId).HasColumnName("entity_id").HasMaxLength(450);
+                entity.Property(e => e.Details).HasColumnName("details");
+                entity.Property(e => e.IpAddress).HasColumnName("ip_address").HasMaxLength(45);
+                entity.Property(e => e.UserAgent).HasColumnName("user_agent").HasMaxLength(500);
+                entity.Property(e => e.Timestamp).HasColumnName("timestamp");
+                entity.Property(e => e.Severity).HasColumnName("severity").HasMaxLength(20);
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.Action);
+                entity.HasIndex(e => e.Timestamp);
+                entity.HasIndex(e => e.EntityType);
             });
 
             // Configure Transaction -> ImportHistory relationship

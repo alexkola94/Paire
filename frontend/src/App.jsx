@@ -88,6 +88,17 @@ function App() {
     // Note: New tabs will not have a session (sessionStorage is per-tab)
     // This ensures users must log in again in new tabs
     const checkSession = async () => {
+      // Check if we were just invalidated due to conflict
+      // If so, do NOT auto-login using localStorage (which belongs to the other user)
+      if (sessionStorage.getItem('auth_prevent_autologin')) {
+        // Do NOT clear the flag here. It should only be cleared when a new session is explicitly created via login.
+        // sessionStorage.removeItem('auth_prevent_autologin') 
+        setSession(null)
+        sessionRef.current = null
+        setLoading(false)
+        return
+      }
+
       try {
         const session = await authService.getSession()
         setSession(session)
@@ -129,7 +140,6 @@ function App() {
       }
 
       redirectingRef.current = true
-      console.log('Session invalidated:', e.detail?.reason)
       setSession(null)
       sessionRef.current = null
 
@@ -235,6 +245,12 @@ function App() {
                     (() => {
                       // Check session state first
                       if (session) return <Layout />
+
+                      // Check if we're explicitly preventing auto-login (due to conflict)
+                      if (sessionStorage.getItem('auth_prevent_autologin')) {
+                        return <Navigate to="/login" />
+                      }
+
                       // Fallback: check sessionStorage directly (for race condition after login)
                       const token = sessionManager.getToken()
                       const user = sessionManager.getCurrentUser()

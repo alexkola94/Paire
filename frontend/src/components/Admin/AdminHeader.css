@@ -1,0 +1,78 @@
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    height: 64px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+[data-theme='light'] .admin-header {
+    border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+.admin-header-left {
+    display: flex;
+    align-items: center;
+}
+
+.admin-page-title-mobile {
+    display: none;
+    /* Hidden on desktop, layout handles title usually */
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.admin-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.header-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.header-action-btn:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.header-action-btn.logout {
+    color: var(--error);
+}
+
+.header-action-btn.logout:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.header-action-btn svg {
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .btn-label {
+        display: none;
+    }
+
+    .header-action-btn {
+        padding: 0.5rem;
+    }
+}

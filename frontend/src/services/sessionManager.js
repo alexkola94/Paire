@@ -81,30 +81,54 @@ export const sessionManager = {
       return
     }
 
+    const currentUserId = this.getCurrentUserId()
+
     if (data.type === 'SESSION_INVALIDATED') {
       // Another tab logged in with the same user - invalidate this session
-      const currentUserId = this.getCurrentUserId()
-      if (data.userId && data.userId === currentUserId && this.hasSession()) {
+      if (data.userId && currentUserId && data.userId === currentUserId && this.hasSession()) {
         hasDispatchedInvalidation = true
-        this.clearSession(false) // Don't broadcast - already handled
+        // TRUE: Preserve localStorage because it's now owned by the other tab
+        this.clearSession(false, true)
+
+        // Prevent auto-login on reload/redirect
+        sessionStorage.setItem('auth_prevent_autologin', 'true')
+
         window.dispatchEvent(new CustomEvent('session-invalidated', {
           detail: { reason: 'Another tab logged in with the same user' }
         }))
       }
     } else if (data.type === 'SESSION_CREATED') {
       // Another tab created a session - check if it's the same user
-      const currentUserId = this.getCurrentUserId()
       if (data.userId && currentUserId && data.userId === currentUserId && this.hasSession()) {
         // Same user logged in another tab - invalidate this session
         hasDispatchedInvalidation = true
-        this.clearSession(false) // Don't broadcast - already handled
+        // TRUE: Preserve localStorage because it belongs to the new session
+        this.clearSession(false, true)
+
+        // Prevent auto-login on reload/redirect
+        sessionStorage.setItem('auth_prevent_autologin', 'true')
+
         window.dispatchEvent(new CustomEvent('session-invalidated', {
           detail: { reason: 'Same user logged in another tab' }
         }))
       }
     } else if (data.type === 'LOGOUT') {
-      // Another tab logged out - only clear if we have a session
+      // Another tab logged out - only clear if it's the SAME user
       if (this.hasSession()) {
+
+        // CHECK: Are we using sessionStorage (isolated)?
+        // If so, we should not be affected by logouts in other tabs
+        if (sessionStorage.getItem(SESSION_TOKEN_KEY)) {
+          console.log('🛡️ [SessionManager] Ignoring logout from another tab because we are using isolated sessionStorage')
+          return
+        }
+
+        // If logout message has a userId, check if it matches ours
+        if (data.userId && data.userId !== currentUserId) {
+          console.log('Ignoring logout from different user:', data.userId)
+          return
+        }
+
         hasDispatchedInvalidation = true
         this.clearSession(false) // Don't broadcast - already handled
         window.dispatchEvent(new CustomEvent('session-invalidated', {
@@ -124,8 +148,23 @@ export const sessionManager = {
       const newUserId = localStorage.getItem(CROSS_TAB_USER_KEY)
 
       if (currentUserId && newUserId && currentUserId !== newUserId) {
-        // Different user logged in - clear this session
-        this.clearSession()
+        // CHECK: Are we using sessionStorage (isolated)?
+        // If we are using sessionStorage, we are independent of the shared localStorage
+        // used for "Remember Me" or cross-tab sync. We can ignore this change.
+        if (sessionStorage.getItem(SESSION_TOKEN_KEY)) {
+          console.log('🛡️ [SessionManager] Ignoring cross-tab user change because we are using isolated sessionStorage')
+          return
+        }
+
+        console.log('🔄 [SessionManager] Different user detected, clearing local session only')
+        // Different user logged in - clear this session WITHOUT broadcasting and WITHOUT clearing shared keys
+        // because those keys now belong to the new user
+        this.clearSession(false, true)
+
+        // Prevent auto-login on reload/redirect by setting a flag in sessionStorage
+        // This stops the tab from immediately picking up the new user from localStorage
+        sessionStorage.setItem('auth_prevent_autologin', 'true')
+
         window.dispatchEvent(new CustomEvent('session-invalidated', {
           detail: { reason: 'Different user logged in another tab' }
         }))
@@ -144,6 +183,9 @@ export const sessionManager = {
     // Reset invalidation flag when storing new session
     hasDispatchedInvalidation = false
 
+    // Clear the auto-login prevention flag since we are establishing a valid session for this tab
+    sessionStorage.removeItem('auth_prevent_autologin')
+
     if (rememberMe) {
       // Store in localStorage (persistent)
       localStorage.setItem(SESSION_TOKEN_KEY, token)
@@ -160,10 +202,10 @@ export const sessionManager = {
       sessionStorage.setItem(SESSION_REFRESH_TOKEN_KEY, refreshToken)
       sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(user))
 
-      // Clear localStorage to avoid duplicates/confusion
-      localStorage.removeItem(SESSION_TOKEN_KEY)
-      localStorage.removeItem(SESSION_REFRESH_TOKEN_KEY)
-      localStorage.removeItem(SESSION_USER_KEY)
+      // DO NOT clear localStorage here! 
+      // This allows a persistent session (User A) to exist in localStorage
+      // while this tab uses an isolated session (User B) in sessionStorage.
+      // Since getters prioritize sessionStorage, this tab will see User B.
     }
 
     // Store user ID in localStorage for cross-tab communication (always needed)
@@ -184,24 +226,24 @@ export const sessionManager = {
   },
 
   /**
-   * Get session token (checks localStorage then sessionStorage)
+   * Get session token (checks sessionStorage then localStorage)
    */
   getToken() {
-    return localStorage.getItem(SESSION_TOKEN_KEY) || sessionStorage.getItem(SESSION_TOKEN_KEY)
+    return sessionStorage.getItem(SESSION_TOKEN_KEY) || localStorage.getItem(SESSION_TOKEN_KEY)
   },
 
   /**
-   * Get refresh token (checks localStorage then sessionStorage)
+   * Get refresh token (checks sessionStorage then localStorage)
    */
   getRefreshToken() {
-    return localStorage.getItem(SESSION_REFRESH_TOKEN_KEY) || sessionStorage.getItem(SESSION_REFRESH_TOKEN_KEY)
+    return sessionStorage.getItem(SESSION_REFRESH_TOKEN_KEY) || localStorage.getItem(SESSION_REFRESH_TOKEN_KEY)
   },
 
   /**
-   * Get current user (checks localStorage then sessionStorage)
+   * Get current user (checks sessionStorage then localStorage)
    */
   getCurrentUser() {
-    const userJson = localStorage.getItem(SESSION_USER_KEY) || sessionStorage.getItem(SESSION_USER_KEY)
+    const userJson = sessionStorage.getItem(SESSION_USER_KEY) || localStorage.getItem(SESSION_USER_KEY)
     return userJson ? JSON.parse(userJson) : null
   },
 
@@ -223,33 +265,48 @@ export const sessionManager = {
   /**
    * Clear session (both storages)
    * @param {boolean} broadcast - Whether to broadcast the logout to other tabs (default: true)
+   * @param {boolean} preserveLocalStorage - Whether to preserve localStorage keys (use when clearing due to conflict)
    */
-  clearSession(broadcast = true) {
+  clearSession(broadcast = true, preserveLocalStorage = false) {
     // Prevent infinite loops
     if (isClearingSession) {
       return
     }
 
+    // Capture user ID before clearing, to include in broadcast
+    const userId = this.getCurrentUserId();
+
     isClearingSession = true
 
     try {
-      // Clear both storages
+      // Check if we are clearing an isolated session
+      const isIsolatedSession = !!sessionStorage.getItem(SESSION_TOKEN_KEY);
+
+      // Always clear sessionStorage (local to this tab)
       sessionStorage.removeItem(SESSION_TOKEN_KEY)
       sessionStorage.removeItem(SESSION_REFRESH_TOKEN_KEY)
       sessionStorage.removeItem(SESSION_USER_KEY)
 
-      localStorage.removeItem(SESSION_TOKEN_KEY)
-      localStorage.removeItem(SESSION_REFRESH_TOKEN_KEY)
-      localStorage.removeItem(SESSION_USER_KEY)
+      // Only clear localStorage if:
+      // 1. We are NOT preserving it (normal logout)
+      // 2. AND the session we are clearing was NOT isolated (i.e. it was a localStorage session)
+      // If we are logging out of an isolated session, we MUST NOT touch localStorage
+      // because that belongs to a different "Remember Me" session.
+      if (!preserveLocalStorage && !isIsolatedSession) {
+        localStorage.removeItem(SESSION_TOKEN_KEY)
+        localStorage.removeItem(SESSION_REFRESH_TOKEN_KEY)
+        localStorage.removeItem(SESSION_USER_KEY)
 
-      // Clear cross-tab tracking
-      localStorage.removeItem(CROSS_TAB_USER_KEY)
-      localStorage.removeItem(CROSS_TAB_SESSION_KEY)
+        // Clear cross-tab tracking
+        localStorage.removeItem(CROSS_TAB_USER_KEY)
+        localStorage.removeItem(CROSS_TAB_SESSION_KEY)
+      }
 
       // Broadcast logout to other tabs only if requested (not when triggered by broadcast)
       if (broadcast && broadcastChannel) {
         broadcastChannel.postMessage({
           type: 'LOGOUT',
+          userId: userId, // Include user ID so other tabs can filter
           tabId: getTabId()
         })
       }

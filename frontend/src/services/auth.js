@@ -103,14 +103,10 @@ const apiRequest = async (url, options = {}) => {
   }
 
   try {
-    console.log('Making API request:', { method: options.method || 'GET', url: fullUrl });
-
     const response = await fetch(fullUrl, {
       ...options,
       headers
     })
-
-    console.log('API response:', { status: response.status, statusText: response.statusText, url: fullUrl });
 
     // Handle 401 Unauthorized - session expired or invalid
     if (response.status === 401) {
@@ -196,14 +192,11 @@ export const authService = {
       const backendUrl = getBackendUrl().replace(/\/+$/, '');
       const fullUrl = `${backendUrl}/api/auth/register`;
 
-      console.log('Registration request:', { email: userData.email, url: fullUrl });
-
       const data = await apiRequest('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(userData)
       })
 
-      console.log('Registration successful:', data);
       return data
     } catch (error) {
       console.error('Registration error:', error);
