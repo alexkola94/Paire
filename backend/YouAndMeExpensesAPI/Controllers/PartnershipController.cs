@@ -41,56 +41,55 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Gets the authenticated user's partnership
+        /// Gets the authenticated user's partnerships
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetMyPartnership()
+        public async Task<IActionResult> GetMyPartnerships()
         {
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return error;
 
             try
             {
-                var partnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p => 
-                        p.User1Id == userId || p.User2Id == userId);
-
-                // Return null instead of 404 - no partnership is a valid state, not an error
-                if (partnership == null)
-                {
-                    return Ok((object?)null);
-                }
+                var partnerships = await _dbContext.Partnerships
+                    .Where(p => p.User1Id == userId || p.User2Id == userId)
+                    .ToListAsync();
 
                 // Load partner profiles
-                var user1 = await _dbContext.UserProfiles.FirstOrDefaultAsync(u => u.Id == partnership.User1Id);
-                var user2 = await _dbContext.UserProfiles.FirstOrDefaultAsync(u => u.Id == partnership.User2Id);
+                var responseList = new List<object>();
 
-                var response = new
+                foreach (var partnership in partnerships)
                 {
-                    id = partnership.Id,
-                    user1_id = partnership.User1Id,
-                    user2_id = partnership.User2Id,
-                    user1 = user1 != null ? new { 
-                        id = user1.Id, 
-                        email = user1.Email, 
-                        display_name = user1.DisplayName,
-                        avatar_url = user1.AvatarUrl
-                    } : null,
-                    user2 = user2 != null ? new { 
-                        id = user2.Id, 
-                        email = user2.Email, 
-                        display_name = user2.DisplayName,
-                        avatar_url = user2.AvatarUrl
-                    } : null,
-                    created_at = partnership.CreatedAt
-                };
+                    var user1 = await _dbContext.UserProfiles.FirstOrDefaultAsync(u => u.Id == partnership.User1Id);
+                    var user2 = await _dbContext.UserProfiles.FirstOrDefaultAsync(u => u.Id == partnership.User2Id);
 
-                return Ok(response);
+                    responseList.Add(new
+                    {
+                        id = partnership.Id,
+                        user1_id = partnership.User1Id,
+                        user2_id = partnership.User2Id,
+                        user1 = user1 != null ? new { 
+                            id = user1.Id, 
+                            email = user1.Email, 
+                            display_name = user1.DisplayName,
+                            avatar_url = user1.AvatarUrl
+                        } : null,
+                        user2 = user2 != null ? new { 
+                            id = user2.Id, 
+                            email = user2.Email, 
+                            display_name = user2.DisplayName,
+                            avatar_url = user2.AvatarUrl
+                        } : null,
+                        created_at = partnership.CreatedAt
+                    });
+                }
+
+                return Ok(responseList);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting partnership for user {UserId}", userId);
-                return StatusCode(500, new { message = "Error retrieving partnership", error = ex.Message });
+                _logger.LogError(ex, "Error getting partnerships for user {UserId}", userId);
+                return StatusCode(500, new { message = "Error retrieving partnerships", error = ex.Message });
             }
         }
 
@@ -105,14 +104,15 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Check if user already has a partnership
+                // Check if partnership with THIS partner already exists
                 var existingPartnership = await _dbContext.Partnerships
                     .FirstOrDefaultAsync(p => 
-                        p.User1Id == userId || p.User2Id == userId);
+                        (p.User1Id == userId && p.User2Id == request.PartnerId) || 
+                        (p.User1Id == request.PartnerId && p.User2Id == userId));
 
                 if (existingPartnership != null)
                 {
-                    return BadRequest(new { message = "You already have an active partnership" });
+                    return BadRequest(new { message = "You already have an active partnership with this user" });
                 }
 
                 // Check if partner exists
@@ -124,16 +124,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = "Partner user not found" });
                 }
 
-                // Check if partner already has a partnership
-                var partnerPartnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p => 
-                        p.User1Id == request.PartnerId || 
-                        p.User2Id == request.PartnerId);
 
-                if (partnerPartnership != null)
-                {
-                    return BadRequest(new { message = "Partner already has an active partnership" });
-                }
 
                 // Create partnership
                 var partnership = new Partnership
@@ -187,15 +178,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     return BadRequest(new { message = "Invalid email address" });
                 }
 
-                // Check if user already has a partnership
-                var existingPartnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p => 
-                        p.User1Id == userId || p.User2Id == userId);
 
-                if (existingPartnership != null)
-                {
-                    return BadRequest(new { message = "You already have an active partnership" });
-                }
 
                 // Check if the invitee exists (they must sign up first)
                 var inviteeUser = await _userManager.FindByEmailAsync(request.Email.ToLower());
@@ -204,14 +187,15 @@ namespace YouAndMeExpensesAPI.Controllers
                     return BadRequest(new { message = "The user with this email address must sign up first before you can invite them" });
                 }
 
-                // Check if invitee already has a partnership
-                var inviteePartnership = await _dbContext.Partnerships
+                // Check if already partners with this user
+                var existingPartnership = await _dbContext.Partnerships
                     .FirstOrDefaultAsync(p => 
-                        p.User1Id == Guid.Parse(inviteeUser.Id) || p.User2Id == Guid.Parse(inviteeUser.Id));
+                        (p.User1Id == userId && p.User2Id == Guid.Parse(inviteeUser.Id)) || 
+                        (p.User1Id == Guid.Parse(inviteeUser.Id) && p.User2Id == userId));
 
-                if (inviteePartnership != null)
+                if (existingPartnership != null)
                 {
-                    return BadRequest(new { message = "This user already has an active partnership" });
+                    return BadRequest(new { message = "You are already partners with this user" });
                 }
 
                 // Check if there's already a pending invitation to this email
@@ -418,26 +402,19 @@ namespace YouAndMeExpensesAPI.Controllers
                     return BadRequest(new { message = "This invitation has expired" });
                 }
 
-                // Check if user already has a partnership
+                // Check if already partners
                 var existingPartnership = await _dbContext.Partnerships
                     .FirstOrDefaultAsync(p => 
-                        p.User1Id == userId || p.User2Id == userId);
+                        (p.User1Id == userId && p.User2Id == invitation.InviterId) || 
+                        (p.User1Id == invitation.InviterId && p.User2Id == userId));
 
                 if (existingPartnership != null)
                 {
-                    return BadRequest(new { message = "You already have an active partnership" });
-                }
-
-                // Check if inviter still exists and doesn't have a partnership
-                var inviterPartnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p => 
-                        p.User1Id == invitation.InviterId || p.User2Id == invitation.InviterId);
-
-                if (inviterPartnership != null)
-                {
-                    invitation.Status = "cancelled";
+                     // Already partners, just mark invitation as accepted
+                    invitation.Status = "accepted";
+                    invitation.AcceptedAt = DateTime.UtcNow;
                     await _dbContext.SaveChangesAsync();
-                    return BadRequest(new { message = "The inviter already has an active partnership" });
+                    return Ok(new { message = "You are already partners with this user" });
                 }
 
                 // Create partnership

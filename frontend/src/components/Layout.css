@@ -203,9 +203,15 @@
   position: relative;
   display: none;
   /* Hidden on mobile, shown on desktop */
+  margin-left: 12px;
+  /* Separate from other icons */
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  /* Visual separator */
 }
 
 .user-menu-btn {
+  /* Default button style for when no avatar (icon only) */
   background: rgba(255, 255, 255, 0.15);
   color: white;
   width: 40px;
@@ -218,10 +224,66 @@
   transition: all 0.3s ease;
 }
 
+/* Style when containing an avatar image */
+.user-menu-btn:has(.user-avatar) {
+  background: transparent;
+  /* Cleaner look: no background */
+  width: auto;
+  height: auto;
+  padding: 2px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  /* Ring effect */
+}
+
 .user-menu-btn:hover,
 .user-menu-btn.active {
   background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
+}
+
+.user-menu-btn:has(.user-avatar):hover,
+.user-menu-btn:has(.user-avatar).active {
+  background: transparent;
+  border-color: white;
+  transform: scale(1.05);
+  /* Slight zoom instead of lift */
+}
+
+/* Base style for small avatars in tags (Added by...) */
+.tag-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-block;
+}
+
+/* User Avatar Styles */
+.user-avatar {
+  width: 48px;
+  /* Bigger size */
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.user-avatar-mobile {
+  width: 48px;
+  /* Match desktop size */
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  /* Mirrors nav-icon positioning but larger */
+  margin-right: -10px;
+  /* Offset the larger size to keep text alignment decent, or adjust nav-link padding */
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  /* Ring effect */
 }
 
 /* User Menu Dropdown */
@@ -801,61 +863,77 @@
 
   .nav-link {
     padding: 12px 20px;
-    gap: var(--spacing-sm);
+    min-width: 120px;
   }
 
-  /* Show text labels on desktop */
   .nav-label {
-    display: inline;
+    display: inline-block;
   }
 
-  /* Remove tooltips on desktop (labels are visible) */
+  /* Disable tooltip on desktop since we have labels */
   .nav-link::after {
     display: none;
   }
 
-  /* More button - Desktop: Show text and chevron */
+  /* More button - Desktop: Icon + Text */
   .more-btn {
     padding: 12px 20px;
-    gap: var(--spacing-sm);
   }
 
   .more-btn .nav-label {
-    display: inline;
+    display: inline-block;
   }
 
   .more-chevron {
     display: block;
   }
 
-  /* More dropdown centered on desktop - CHANGED to right-aligned to prevent overflow */
+  /* More dropdown positioning for desktop */
   .more-dropdown {
-    left: auto;
-    right: 0;
-    transform: none;
-    animation: slideDownRight 0.2s ease;
-  }
-
-  /* Ensure more menu container allows dropdown to escape on desktop */
-  .nav-list .more-menu-container {
-    overflow: visible;
-  }
-
-  /* Main content */
-  .layout-main {
-    padding: var(--spacing-xl);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    animation: slideDown 0.2s ease;
   }
 }
 
-/* ================================
-   Large Desktop: 1200px+ (More spacing)
-   ================================ */
-@media (min-width: 1200px) {
-  .nav-list {
-    gap: var(--spacing-md);
+/* Version Display */
+.version-display {
+  position: fixed;
+  bottom: 10px;
+  right: 20px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  gap: 8px;
+}
+
+.version-display:hover {
+  opacity: 1;
+}
+
+.api-version {
+  color: var(--text-quaternary);
+}
+
+@media (max-width: 768px) {
+  .version-display {
+    display: none;
   }
 
-  .nav-link {
-    padding: 12px 24px;
+  .version-mobile-container {
+    margin-top: auto;
+    padding-bottom: 80px;
+    /* Space for bottom nav */
+  }
+
+  .version-mobile {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-quaternary);
+    padding: 10px;
   }
 }

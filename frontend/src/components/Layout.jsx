@@ -52,12 +52,14 @@ const EuroIcon = memo(({ size = 24, className = '', style = {} }) => {
 EuroIcon.displayName = 'EuroIcon'
 
 import { authService } from '../services/auth'
+import { profileService } from '../services/api'
 import LogoLoader from './LogoLoader'
 // Lazy load Chatbot - it's not critical for initial render
 const Chatbot = lazy(() => import('./Chatbot'))
 import BottomNavigation from './BottomNavigation'
 import AccessibilitySettings from './AccessibilitySettings'
 import './Layout.css'
+import packageJson from '../../package.json'
 
 /**
  * Layout Component
@@ -71,6 +73,8 @@ function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState(null)
+  const [avatarError, setAvatarError] = useState(false)
 
   const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false)
   const moreMenuRef = useRef(null)
@@ -136,6 +140,55 @@ function Layout() {
 
   const toggleMoreMenu = useCallback(() => {
     setMoreMenuOpen(prev => !prev)
+  }, [])
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await profileService.getMyProfile()
+        // Check both casing formats (snake_case and camelCase)
+        const url = profile.avatar_url || profile.avatarUrl || profile.AvatarUrl
+        if (profile && url) {
+          setAvatarUrl(url)
+          setAvatarError(false)
+        }
+      } catch (error) {
+        console.error('Error fetching profile for layout:', error)
+      }
+    }
+
+    // Only fetch if authenticated
+    if (authService.isAuthenticated()) {
+      fetchProfile()
+    }
+  }, [])
+
+  // Fetch backend version
+  const [backendVersion, setBackendVersion] = useState(null)
+
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        // Use the system info endpoint which we just updated
+        // We can access this without auth if we want, or with auth
+        // Assuming /api/system/info is an open endpoint or we use a service
+        // Since we don't have a dedicated service method for this yet, we'll try a direct fetch or skip if complex
+        // Actually, let's use a simple fetch if possible, or just default to null if fails
+        // To be safe and consistent, we'll try to fetch from the health endpoint which is usually public
+        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/system/health`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.version) {
+            setBackendVersion(data.version)
+          }
+        }
+      } catch (err) {
+        // Silent fail for version check
+        console.debug('Failed to fetch backend version', err)
+      }
+    }
+    fetchVersion()
   }, [])
 
   const toggleUserMenu = useCallback(() => {
@@ -240,7 +293,16 @@ function Layout() {
                 role="button"
                 tabIndex={0}
               >
-                <FiUser size={22} />
+                {avatarUrl && !avatarError ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Profile"
+                    className="user-avatar"
+                    onError={() => setAvatarError(true)}
+                  />
+                ) : (
+                  <FiUser size={22} />
+                )}
               </span>
 
               {userMenuOpen && (
@@ -407,18 +469,7 @@ function Layout() {
               <span className="nav-label">{t('navigation.reminders')}</span>
             </NavLink>
           </li>
-          <li className="mobile-only">
-            <NavLink
-              to="/profile"
-              className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }
-              onClick={closeMobileMenu}
-            >
-              <FiUser style={{ width: '20px', height: '20px' }} className="nav-icon" />
-              <span className="nav-label">{t('navigation.profile')}</span>
-            </NavLink>
-          </li>
+
 
           {/* Mobile Theme Toggle */}
           <li className="mobile-only">
@@ -453,6 +504,31 @@ function Layout() {
             </button>
           </li>
 
+          {/* Mobile Profile & Logout Section */}
+          <li className="mobile-section-divider mobile-only"></li>
+
+          <li className="mobile-only">
+            <NavLink
+              to="/profile"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? 'active' : ''}`
+              }
+              onClick={closeMobileMenu}
+            >
+              {avatarUrl && !avatarError ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="user-avatar-mobile"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <FiUser style={{ width: '20px', height: '20px' }} className="nav-icon" />
+              )}
+              <span className="nav-label">{t('navigation.profile')}</span>
+            </NavLink>
+          </li>
+
           {/* Mobile logout button */}
           <li className="mobile-only">
             <button
@@ -462,6 +538,14 @@ function Layout() {
               <FiLogOut style={{ width: '20px', height: '20px' }} className="nav-icon" />
               <span className="nav-label">{t('auth.logout')}</span>
             </button>
+          </li>
+
+          {/* Mobile Version Display */}
+          <li className="mobile-only version-mobile-container">
+            <div className="version-mobile">
+              <span>v{packageJson.version}</span>
+              {backendVersion && <span className="api-version-mobile"> / API: v{backendVersion}</span>}
+            </div>
           </li>
         </ul>
       </nav>
@@ -474,14 +558,24 @@ function Layout() {
         </PageTransition>
       </main>
 
+      {/* Version Display (Desktop) */}
+      <div className="version-display desktop-only">
+        <span className="app-version">v{packageJson.version}</span>
+        {backendVersion && (
+          <span className="api-version" title="Backend Version"> (API: v{backendVersion})</span>
+        )}
+      </div>
+
       {/* Overlay for mobile menu */}
-      {mobileMenuOpen && (
-        <div
-          className="mobile-overlay"
-          onClick={closeMobileMenu}
-          aria-hidden="true"
-        />
-      )}
+      {
+        mobileMenuOpen && (
+          <div
+            className="mobile-overlay"
+            onClick={closeMobileMenu}
+            aria-hidden="true"
+          />
+        )
+      }
 
       {/* Floating Chatbot - Available on all pages - Lazy loaded */}
       <Suspense fallback={null}>
@@ -496,7 +590,7 @@ function Layout() {
         isOpen={isAccessibilityOpen}
         onClose={() => setIsAccessibilityOpen(false)}
       />
-    </div>
+    </div >
   )
 }
 

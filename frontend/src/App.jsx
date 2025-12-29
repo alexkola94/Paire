@@ -16,6 +16,7 @@ const ForgotPassword = lazyWithRetry(() => import('./pages/ForgotPassword'))
 const EmailConfirmation = lazyWithRetry(() => import('./pages/EmailConfirmation'))
 const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'))
 const AcceptInvitation = lazyWithRetry(() => import('./pages/AcceptInvitation'))
+const TwoFactorSetup = lazyWithRetry(() => import('./pages/TwoFactorSetup'))
 const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'))
 const Expenses = lazyWithRetry(() => import('./pages/Expenses'))
 const Income = lazyWithRetry(() => import('./pages/Income'))
@@ -35,6 +36,19 @@ const BankCallback = lazyWithRetry(() => import('./pages/BankCallback'))
 const Achievements = lazyWithRetry(() => import('./pages/Achievements'))
 const CurrencyCalculator = lazyWithRetry(() => import('./pages/CurrencyCalculator'))
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
+
+
+
+// Admin Pages
+const AdminLayout = lazyWithRetry(() => import('./components/Admin/AdminLayout'))
+const AdminLogin = lazyWithRetry(() => import('./pages/Admin/AdminLogin'))
+const AdminSignup = lazyWithRetry(() => import('./pages/Admin/AdminSignup'))
+const AdminDashboard = lazyWithRetry(() => import('./pages/Admin/AdminDashboard'))
+const AdminMonitoring = lazyWithRetry(() => import('./pages/Admin/AdminMonitoring'))
+const AdminUsers = lazyWithRetry(() => import('./pages/Admin/AdminUsers'))
+const AdminLogs = lazyWithRetry(() => import('./pages/Admin/AdminLogs'))
+const AdminJobs = lazyWithRetry(() => import('./pages/Admin/AdminJobs'))
+const AdminSystem = lazyWithRetry(() => import('./pages/Admin/AdminSystem'))
 
 
 // Layout - Keep synchronous as it's always needed
@@ -172,7 +186,7 @@ function App() {
     <ThemeProvider>
       <AccessibilityProvider>
         <ToastProvider>
-          <Router basename={import.meta.env.BASE_URL}>
+          <Router basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             {/* Handle GitHub Pages redirects */}
             <RedirectHandler />
             <CookieConsent />
@@ -203,6 +217,10 @@ function App() {
                 <Route
                   path="/bank-callback"
                   element={<BankCallback />}
+                />
+                <Route
+                  path="/setup-2fa"
+                  element={!session ? <Navigate to="/login" /> : <TwoFactorSetup />}
                 />
                 <Route
                   path="/privacy"
@@ -250,6 +268,29 @@ function App() {
                   <Route path="reminders" element={<ReminderSettings />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="currency-calculator" element={<CurrencyCalculator />} />
+                </Route>
+
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={!session ? <AdminLogin /> : <Navigate to="/admin/dashboard" />} />
+                <Route path="/admin/signup" element={!session ? <AdminSignup /> : <Navigate to="/admin/dashboard" />} />
+
+                {/* Secure Admin Area */}
+                <Route
+                  path="/admin"
+                  element={
+                    !session ? <Navigate to="/admin/login" /> :
+                      <Suspense fallback={<LoadingFallback />}>
+                        <AdminLayout />
+                      </Suspense>
+                  }
+                >
+                  <Route index element={<Navigate to="dashboard" />} />
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="monitoring" element={<AdminMonitoring />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="logs" element={<AdminLogs />} />
+                  <Route path="jobs" element={<AdminJobs />} />
+                  <Route path="system" element={<AdminSystem />} />
                 </Route>
 
                 {/* Catch all - redirect to login or dashboard */}

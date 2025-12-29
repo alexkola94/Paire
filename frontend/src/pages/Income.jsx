@@ -362,8 +362,17 @@ function Income() {
                     {' • ' + t('dashboard.bankConnection', 'Imported from Bank')}
                   </span>
                 ) : income.user_profiles && (
-                  <span className="added-by">
-                    {' • ' + t('dashboard.addedBy') + ' '}
+                  <span className="added-by" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {' • '}
+                    {(income.user_profiles.avatar_url || income.user_profiles.avatarUrl) && (
+                      <img
+                        src={income.user_profiles.avatar_url || income.user_profiles.avatarUrl}
+                        alt={income.user_profiles.display_name}
+                        className="tag-avatar"
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                    )}
+                    {t('dashboard.addedBy') + ' '}
                     {income.user_profiles.display_name}
                   </span>
                 )}

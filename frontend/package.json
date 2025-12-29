@@ -1,6 +1,6 @@
 {
   "name": "paire-frontend",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Paire - Expense tracking app for couples",
   "type": "module",
   "engines": {
@@ -9,9 +9,9 @@
   },
   "homepage": "https://alexkola94.github.io/Paire",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "node node_modules/vite/bin/vite.js",
+    "build": "node node_modules/vite/bin/vite.js build",
+    "preview": "node node_modules/vite/bin/vite.js preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "test": "node node_modules/vitest/vitest.mjs",
@@ -41,7 +41,7 @@
     "recharts": "^2.15.4",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
-    "vercel": "^50.1.3"
+    "vercel": "^25.2.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.28.1"

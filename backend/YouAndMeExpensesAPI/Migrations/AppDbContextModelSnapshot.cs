@@ -1321,6 +1321,50 @@ namespace YouAndMeExpensesAPI.Migrations
                     b.ToTable("bank_accounts", (string)null);
                 });
 
+            modelBuilder.Entity("YouAndMeExpensesAPI.Models.SystemLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("level");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("StackTrace")
+                        .HasColumnType("text")
+                        .HasColumnName("stack_trace");
+
+                    b.Property<DateTime>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("timestamp")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Level");
+
+                    b.HasIndex("Timestamp");
+
+                    b.ToTable("system_logs", (string)null);
+                });
+
             modelBuilder.Entity("YouAndMeExpensesAPI.Models.Transaction", b =>
                 {
                     b.Property<Guid>("Id")

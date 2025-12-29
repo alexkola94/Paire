@@ -31,6 +31,11 @@ namespace YouAndMeExpensesAPI.Services
         Task UpdateLastAccessedAsync(string tokenId);
 
         /// <summary>
+        /// Get all sessions (for admin monitoring)
+        /// </summary>
+        Task<List<YouAndMeExpensesAPI.Models.UserSession>> GetAllSessionsAsync();
+
+        /// <summary>
         /// Clean up expired sessions
         /// </summary>
         Task CleanupExpiredSessionsAsync();

@@ -190,97 +190,7 @@
   overflow-y: auto;
 }
 
-/* Form Modal Styles - Mobile/Tablet */
-.form-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: var(--spacing-md);
-  animation: fadeIn 0.3s ease-out;
-  transition: var(--transition);
-  /* Ensure modal is always on top and not clipped */
-  overflow: visible;
-  pointer-events: auto;
-}
 
-.form-card {
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: slideUp 0.3s ease-out;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  transition: var(--transition);
-}
-
-.form-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  position: sticky;
-  top: 0;
-  background: var(--bg-secondary);
-  z-index: 10;
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--bg-tertiary);
-}
-
-.form-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.form-close-btn {
-  background: var(--bg-tertiary);
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
-  color: var(--text-secondary);
-  flex-shrink: 0;
-  padding: 0;
-}
-
-.form-close-btn:hover:not(:disabled) {
-  background: var(--error);
-  color: white;
-  transform: scale(1.1);
-}
-
-.form-close-btn:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 .input-with-icon {
   position: relative;
@@ -422,6 +332,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -457,6 +368,7 @@
 @media (min-width: 1024px) {
   .partnership-page {
     max-width: 900px;
+    margin: 0 auto;
   }
 
   .help-content {
@@ -464,106 +376,10 @@
     grid-template-columns: repeat(1, 1fr);
   }
 
-  /* Desktop: Position form modal on the right side - no overlay since list is visible */
-  .form-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: transparent;
-    display: flex;
-    align-items: stretch;
-    justify-content: flex-end;
-    z-index: 1000;
-    padding: 0;
-    animation: fadeIn 0.3s ease-out;
-  }
-
-  .form-card {
-    max-width: 500px;
-    width: 500px;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-    margin: 0;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-    animation: slideInRight 0.3s ease-out;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* Ensure form header doesn't shrink */
-  .form-card .form-header,
-  .form-card .card-header.form-header {
-    flex-shrink: 0;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  /* Ensure form content is scrollable */
-  .form-card .invite-form {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--spacing-xl);
-    min-height: 0; /* Important for flex children to allow scrolling */
-  }
 
   /* Better spacing for form groups on desktop */
-  .form-card .invite-form .form-group {
-    margin-bottom: var(--spacing-xl);
-  }
-
-  .form-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--spacing-md);
-    position: sticky;
-    top: 0;
-    background: var(--bg-secondary);
-    z-index: 10;
-    padding-bottom: var(--spacing-md);
-    border-bottom: 1px solid var(--bg-tertiary);
-  }
-
-  .form-close-btn {
-    background: var(--bg-tertiary);
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition);
-    color: var(--text-secondary);
-    flex-shrink: 0;
-    padding: 0;
-  }
-
-  .form-close-btn:hover:not(:disabled) {
-    background: var(--error);
-    color: white;
-    transform: scale(1.1);
-  }
-
-  .form-close-btn:active:not(:disabled) {
-    transform: scale(0.95);
-  }
-
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+  .invite-form .form-group {
+    margin-bottom: var(--spacing-lg);
   }
 }
 
@@ -584,36 +400,7 @@
     justify-content: center;
   }
 
-  .form-modal {
-    padding: 0;
-    align-items: flex-start;
-    background: rgba(0, 0, 0, 0.7);
-  }
-
-  .form-card {
-    max-height: 100vh;
-    border-radius: 0;
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-  }
-
-  .form-header {
-    padding: var(--spacing-md);
-    margin: 0;
-  }
-
-  .form-header h2 {
-    font-size: 1.25rem;
-  }
-
-  .form-close-btn {
-    width: 36px;
-    height: 36px;
-  }
-
   .invite-form {
     padding: var(--spacing-md);
   }
 }
-

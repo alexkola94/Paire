@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -28,7 +29,7 @@ namespace YouAndMeExpensesAPI.Services
         /// <summary>
         /// Generate JWT access token for authenticated user
         /// </summary>
-        public string GenerateAccessToken(ApplicationUser user)
+        public string GenerateAccessToken(ApplicationUser user, IList<string> roles)
         {
             var claims = new List<Claim>
             {
@@ -39,6 +40,12 @@ namespace YouAndMeExpensesAPI.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty)
             };
+
+            // Add role claims
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

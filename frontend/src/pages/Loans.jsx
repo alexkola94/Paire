@@ -609,8 +609,19 @@ function Loans() {
                 )}
 
                 {loan.user_profiles && (
-                  <div className="loan-added-by">
-                    Added by {loan.user_profiles.display_name}
+                  <div className="loan-added-by" style={{ display: 'flex', alignItems: 'center' }}>
+                    Added by
+                    {(loan.user_profiles.avatar_url || loan.user_profiles.avatarUrl) && (
+                      <img
+                        src={loan.user_profiles.avatar_url || loan.user_profiles.avatarUrl}
+                        alt={loan.user_profiles.display_name}
+                        className="tag-avatar"
+                        style={{ marginLeft: '6px', marginRight: '6px' }}
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                    )}
+                    {!((loan.user_profiles.avatar_url || loan.user_profiles.avatarUrl)) && ' '}
+                    {loan.user_profiles.display_name}
                   </div>
                 )}
 

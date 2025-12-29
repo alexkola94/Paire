@@ -29,7 +29,11 @@ function EmailConfirmation() {
       }, 1000)
       return () => clearTimeout(timer)
     } else if (status === 'success' && countdown === 0) {
-      navigate('/login')
+      if (searchParams.get('isAdmin') === 'true' || searchParams.get('setup2fa') === 'true') {
+        navigate('/login?redirect=/setup-2fa')
+      } else {
+        navigate('/login')
+      }
     }
   }, [status, countdown, navigate])
 
@@ -99,6 +103,12 @@ function EmailConfirmation() {
               </div>
               <h1>{t('emailConfirmation.confirmedTitle')}</h1>
               <p className="success-message">{message}</p>
+
+              {(searchParams.get('isAdmin') === 'true' || searchParams.get('setup2fa') === 'true') && (
+                <div className="bg-blue-50 text-blue-700 p-3 rounded mb-4 text-sm">
+                  <strong>Next Step:</strong> Please log in to set up Two-Factor Authentication.
+                </div>
+              )}
 
               <div className="redirect-notice">
                 <FiMail size={20} />

@@ -23,11 +23,13 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly ITwoFactorAuthService _twoFactorAuthService;
         private readonly ISessionService _sessionService;
         private readonly AppDbContext _context;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AuthController> _logger;
         private readonly IConfiguration _configuration;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
             SignInManager<ApplicationUser> signInManager,
             IJwtTokenService jwtTokenService,
             IEmailService emailService,
@@ -38,6 +40,7 @@ namespace YouAndMeExpensesAPI.Controllers
             IConfiguration configuration)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _signInManager = signInManager;
             _jwtTokenService = jwtTokenService;
             _emailService = emailService;
@@ -103,6 +106,31 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
 
                 _logger.LogInformation("User created successfully: {Email}, ID: {UserId}", user.Email, user.Id);
+
+                try
+                {
+                    // Check for Admin Secret Key
+                    // In a real app, this key should be in appsettings.json or Azure Key Vault
+                    // For now, we'll hardcode a secure-ish key for demonstration/MVP
+                    const string AdminSecretKey = "AdminSecretKey123!@#"; // TODO: Move to config
+                    
+                    if (!string.IsNullOrEmpty(request.SecretKey) && request.SecretKey == AdminSecretKey)
+                    {
+                        _logger.LogInformation("Admin Secret Key matched for {Email}. Assigning Admin role.", user.Email);
+                        
+                        // Ensure Admin role exists
+                        if (!await _roleManager.RoleExistsAsync("Admin"))
+                        {
+                            await _roleManager.CreateAsync(new IdentityRole { Name = "Admin" });
+                        }
+                        
+                        await _userManager.AddToRoleAsync(user, "Admin");
+                    }
+                }
+                catch (Exception roleEx)
+                {
+                     _logger.LogError(roleEx, "Error assigning roles for {Email}", user.Email);
+                }
 
                 // Create user profile first (before email operations)
                 try
@@ -306,8 +334,11 @@ namespace YouAndMeExpensesAPI.Controllers
                     });
                 }
 
+                // Get user roles
+                var roles = await _userManager.GetRolesAsync(user);
+
                 // No 2FA required - generate tokens and complete login
-                var accessToken = _jwtTokenService.GenerateAccessToken(user);
+                var accessToken = _jwtTokenService.GenerateAccessToken(user, roles);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
                 var tokenId = _jwtTokenService.GetTokenId(accessToken);
 
@@ -347,7 +378,8 @@ namespace YouAndMeExpensesAPI.Controllers
                     AvatarUrl = user.AvatarUrl,
                     EmailConfirmed = user.EmailConfirmed,
                     TwoFactorEnabled = user.TwoFactorEnabled,
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    Roles = roles
                 };
 
                 var response = new AuthResponse
@@ -533,6 +565,8 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { error = "User not found" });
                 }
 
+                var roles = await _userManager.GetRolesAsync(user);
+
                 var userDto = new UserDto
                 {
                     Id = user.Id,
@@ -541,7 +575,8 @@ namespace YouAndMeExpensesAPI.Controllers
                     AvatarUrl = user.AvatarUrl,
                     EmailConfirmed = user.EmailConfirmed,
                     TwoFactorEnabled = user.TwoFactorEnabled,
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    Roles = roles
                 };
 
                 return Ok(userDto);
@@ -798,8 +833,11 @@ namespace YouAndMeExpensesAPI.Controllers
                     return Unauthorized(new { error = "Invalid verification code" });
                 }
 
+                // Get user roles (needed for token)
+                var roles = await _userManager.GetRolesAsync(user);
+
                 // Generate tokens and complete login
-                var accessToken = _jwtTokenService.GenerateAccessToken(user);
+                var accessToken = _jwtTokenService.GenerateAccessToken(user, roles);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
                 var tokenId = _jwtTokenService.GetTokenId(accessToken);
 
@@ -839,7 +877,8 @@ namespace YouAndMeExpensesAPI.Controllers
                     AvatarUrl = user.AvatarUrl,
                     EmailConfirmed = user.EmailConfirmed,
                     TwoFactorEnabled = user.TwoFactorEnabled,
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    Roles = roles
                 };
 
                 var response = new AuthResponse
@@ -910,8 +949,11 @@ namespace YouAndMeExpensesAPI.Controllers
                 user.BackupCodes = System.Text.Json.JsonSerializer.Serialize(hashedCodes);
                 await _userManager.UpdateAsync(user);
 
+                // Get user roles (needed for token)
+                var roles = await _userManager.GetRolesAsync(user);
+
                 // Generate tokens and complete login
-                var accessToken = _jwtTokenService.GenerateAccessToken(user);
+                var accessToken = _jwtTokenService.GenerateAccessToken(user, roles);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
                 var tokenId = _jwtTokenService.GetTokenId(accessToken);
 

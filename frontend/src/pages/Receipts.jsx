@@ -256,7 +256,16 @@ function Receipts() {
                                 <div className="receipt-meta text-xs text-muted mt-2">
                                     <div>{format(new Date(receipt.date), 'MMM dd, yyyy')}</div>
                                     {receipt.user_profiles && (
-                                        <div className="uploaded-by">
+                                        <div className="uploaded-by" style={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
+                                            {(receipt.user_profiles.avatar_url || receipt.user_profiles.avatarUrl) && (
+                                                <img
+                                                    src={receipt.user_profiles.avatar_url || receipt.user_profiles.avatarUrl}
+                                                    alt={receipt.user_profiles.display_name}
+                                                    className="tag-avatar"
+                                                    style={{ width: '16px', height: '16px', borderRadius: '50%', marginRight: '6px', objectFit: 'cover' }}
+                                                    onError={(e) => e.target.style.display = 'none'}
+                                                />
+                                            )}
                                             {t('dashboard.addedBy')} {receipt.user_profiles.display_name}
                                         </div>
                                     )}

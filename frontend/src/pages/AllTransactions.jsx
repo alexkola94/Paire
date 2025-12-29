@@ -466,8 +466,17 @@ const TransactionItem = ({ transaction, formatCurrency, t, onEdit, onDelete }) =
         <p className="transaction-date">
           {formattedDate}
           {transaction.user_profiles && (
-            <span className="added-by">
-              {' • ' + t('dashboard.addedBy') + ' '}
+            <span className="added-by" style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {' • '}
+              {(transaction.user_profiles.avatar_url || transaction.user_profiles.avatarUrl) && (
+                <img
+                  src={transaction.user_profiles.avatar_url || transaction.user_profiles.avatarUrl}
+                  alt={transaction.user_profiles.display_name}
+                  className="tag-avatar"
+                  onError={(e) => e.target.style.display = 'none'}
+                />
+              )}
+              {t('dashboard.addedBy') + ' '}
               {transaction.user_profiles.display_name}
             </span>
           )}
