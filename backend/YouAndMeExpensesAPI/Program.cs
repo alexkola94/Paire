@@ -7,6 +7,7 @@ using System.Text;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
+using YouAndMeExpensesAPI.Hubs;
 using System;
 using System.IO;
 // Disable reload on change to avoid inotify limits on Render.com
@@ -26,6 +27,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
+
+// Add SignalR
+builder.Services.AddSignalR();
 
 // Add API Explorer for Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -266,9 +270,24 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
     
-    // Note: By default, JWT Bearer middleware validates tokens when present
-    // and populates User claims, even without [Authorize] attribute.
-    // [Authorize] only requires authentication, but doesn't prevent token validation.
+    // Configure SignalR authentication (token in query string)
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            // If the request is for our hub...
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) &&
+                (path.StartsWithSegments("/hubs")))
+            {
+                // Read the token out of the query string
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -363,6 +382,9 @@ builder.Services.AddHostedService<ReminderBackgroundService>();
 // Uncomment the line below to enable automatic bank transaction sync every 6 hours
 // builder.Services.AddHostedService<BankTransactionSyncBackgroundService>();
 
+// Enable Real-time Monitoring Background Service
+builder.Services.AddHostedService<MonitoringBackgroundService>();
+
 // =====================================================
 // Build the Application
 // =====================================================
@@ -429,6 +451,7 @@ app.UseAuthorization();
 
 // Map Controllers
 app.MapControllers();
+app.MapHub<MonitoringHub>("/hubs/monitoring");
 
 // Health Check Endpoint
 app.MapGet("/health", () => Results.Ok(new

@@ -49,6 +49,7 @@ const AdminUsers = lazyWithRetry(() => import('./pages/Admin/AdminUsers'))
 const AdminLogs = lazyWithRetry(() => import('./pages/Admin/AdminLogs'))
 const AdminJobs = lazyWithRetry(() => import('./pages/Admin/AdminJobs'))
 const AdminSystem = lazyWithRetry(() => import('./pages/Admin/AdminSystem'))
+const AdminSecurity = lazyWithRetry(() => import('./pages/Admin/AdminSecurity'))
 
 
 // Layout - Keep synchronous as it's always needed
@@ -307,6 +308,7 @@ function App() {
                   <Route path="logs" element={<AdminLogs />} />
                   <Route path="jobs" element={<AdminJobs />} />
                   <Route path="system" element={<AdminSystem />} />
+                  <Route path="security" element={<AdminSecurity />} />
                 </Route>
 
                 {/* Catch all - redirect to login or dashboard */}

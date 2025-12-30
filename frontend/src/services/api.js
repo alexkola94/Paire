@@ -853,6 +853,22 @@ export const adminService = {
 
   async getActiveSessions() {
     return await apiRequest('/api/admin/monitoring/sessions')
+  },
+
+  async getAuditLogs(filters = {}, page = 1, pageSize = 50) {
+    const params = new URLSearchParams()
+    if (filters.userId) params.append('userId', filters.userId)
+    if (filters.action) params.append('action', filters.action)
+    if (filters.startDate) params.append('startDate', filters.startDate)
+    if (filters.endDate) params.append('endDate', filters.endDate)
+    params.append('page', page)
+    params.append('pageSize', pageSize)
+
+    return await apiRequest(`/api/admin/audit/logs?${params}`)
+  },
+
+  async getSecurityAlerts() {
+    return await apiRequest('/api/admin/audit/security-alerts')
   }
 }
 

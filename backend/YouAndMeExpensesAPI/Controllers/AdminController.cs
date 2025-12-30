@@ -16,17 +16,20 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly JobMonitorService _jobMonitor;
+        private readonly IAuditService _auditService;
         private readonly ILogger<AdminController> _logger;
 
         public AdminController(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
             JobMonitorService jobMonitor,
+            IAuditService auditService,
             ILogger<AdminController> logger)
         {
             _context = context;
             _userManager = userManager;
             _jobMonitor = jobMonitor;
+            _auditService = auditService;
             _logger = logger;
         }
 
@@ -126,7 +129,17 @@ namespace YouAndMeExpensesAPI.Controllers
 
             await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100)); // Permanent lock
             
+            
             _logger.LogWarning($"User {user.Email} locked by Admin {User.Identity?.Name}");
+            await _auditService.LogAsync(
+                userId: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                action: "UserLocked",
+                entityType: "User",
+                entityId: user.Id,
+                details: $"Locked by admin {User.Identity?.Name}",
+                severity: "Warning"
+            );
+
             return Ok(new { message = $"User {user.Email} has been locked." });
         }
 
@@ -138,7 +151,17 @@ namespace YouAndMeExpensesAPI.Controllers
 
             await _userManager.SetLockoutEndDateAsync(user, null);
             
+            
             _logger.LogInformation($"User {user.Email} unlocked by Admin {User.Identity?.Name}");
+            await _auditService.LogAsync(
+                userId: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                action: "UserUnlocked",
+                entityType: "User",
+                entityId: user.Id,
+                details: $"Unlocked by admin {User.Identity?.Name}",
+                severity: "Info"
+            );
+
             return Ok(new { message = $"User {user.Email} has been unlocked." });
         }
 
@@ -151,7 +174,17 @@ namespace YouAndMeExpensesAPI.Controllers
             await _userManager.SetTwoFactorEnabledAsync(user, false);
             await _userManager.ResetAuthenticatorKeyAsync(user);
             
+            
             _logger.LogWarning($"2FA reset for user {user.Email} by Admin {User.Identity?.Name}");
+            await _auditService.LogAsync(
+                userId: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                action: "TwoFactorReset",
+                entityType: "User",
+                entityId: user.Id,
+                details: $"2FA reset by admin {User.Identity?.Name}",
+                severity: "Warning"
+            );
+
             return Ok(new { message = $"2FA has been disabled and reset for {user.Email}." });
         }
 
@@ -173,6 +206,14 @@ namespace YouAndMeExpensesAPI.Controllers
                 {
                     var count = await reminderService.CheckAndSendAllUsersRemindersAsync();
                     _jobMonitor.ReportSuccess("ReminderService", $"Manual Run: Sent {count} reminders.");
+                    await _auditService.LogAsync(
+                        userId: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                        action: "JobTriggered",
+                        entityType: "Job",
+                        entityId: name,
+                        details: $"Job manually triggered by admin {User.Identity?.Name}. Sent {count} reminders.",
+                        severity: "Info"
+                    );
                     return Ok(new { message = $"Job '{name}' executed successfully. Sent {count} reminders." });
                 }
                 catch (Exception ex)

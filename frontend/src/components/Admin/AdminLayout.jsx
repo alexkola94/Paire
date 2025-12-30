@@ -11,7 +11,8 @@ import {
     FiLogOut,
     FiMoon,
     FiSun,
-    FiServer
+    FiServer,
+    FiShield
 } from 'react-icons/fi'
 import { authService } from '../../services/auth'
 import { useTheme } from '../../context/ThemeContext'
@@ -68,6 +69,7 @@ function AdminLayout() {
     const navItems = [
         { path: '/admin/dashboard', icon: FiHome, label: 'Overview' },
         { path: '/admin/monitoring', icon: FiActivity, label: 'Monitoring' },
+        { path: '/admin/security', icon: FiShield, label: 'Security' },
         { path: '/admin/users', icon: FiUsers, label: 'User Lookup' },
         { path: '/admin/logs', icon: FiActivity, label: 'System Logs' },
         { path: '/admin/jobs', icon: FiCpu, label: 'Background Jobs' },

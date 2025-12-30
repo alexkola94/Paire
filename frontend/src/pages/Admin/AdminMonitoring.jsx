@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { adminService } from '../../services/api'
 import LogoLoader from '../../components/LogoLoader'
-import { FiRefreshCw, FiServer, FiClock, FiDatabase, FiUsers, FiCpu, FiActivity } from 'react-icons/fi'
+import { FiRefreshCw, FiServer, FiClock, FiDatabase, FiUsers, FiCpu, FiActivity, FiWifi } from 'react-icons/fi'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr' // Import SignalR
+import { sessionManager } from '../../services/sessionManager' // For auth token
+import { getBackendUrl } from '../../utils/getBackendUrl'
 import './Admin.css'
 
 function AdminMonitoring() {
@@ -11,9 +14,14 @@ function AdminMonitoring() {
     const [metrics, setMetrics] = useState(null)
     const [dbHealth, setDbHealth] = useState(null)
     const [sessions, setSessions] = useState(null)
-    const [autoRefresh, setAutoRefresh] = useState(true)
 
-    const loadMonitoringData = useCallback(async () => {
+    // Switch from "Auto-refresh" to "Live Mode"
+    const [isLive, setIsLive] = useState(true)
+    const [connectionStatus, setConnectionStatus] = useState('Disconnected')
+
+    const connectionRef = useRef(null)
+
+    const loadInitialData = useCallback(async () => {
         try {
             setLoading(true)
             setError(null)
@@ -35,33 +43,92 @@ function AdminMonitoring() {
         }
     }, [])
 
+    // Initial Load
     useEffect(() => {
-        loadMonitoringData()
-    }, [loadMonitoringData])
+        loadInitialData()
+    }, [loadInitialData])
 
+    // SignalR Connection
+    // SignalR Connection Management
     useEffect(() => {
-        if (!autoRefresh) return
+        let isMounted = true;
+        let currentConnection = null;
 
-        const interval = setInterval(() => {
-            loadMonitoringData()
-        }, 30000) // Refresh every 30 seconds
+        const startConnection = async () => {
+            // If live mode is off, ensure we are disconnected and explicitly return
+            if (!isLive) {
+                setConnectionStatus('Disconnected');
+                return;
+            }
 
-        return () => clearInterval(interval)
-    }, [autoRefresh, loadMonitoringData])
+            setConnectionStatus('Connecting...');
+
+            try {
+                const token = sessionManager.getToken();
+                const backendUrl = getBackendUrl();
+
+                const connection = new HubConnectionBuilder()
+                    .withUrl(`${backendUrl}/hubs/monitoring`, {
+                        accessTokenFactory: () => token
+                    })
+                    .configureLogging(LogLevel.Information)
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on('ReceiveMetrics', (newMetrics) => {
+                    if (isMounted) {
+                        setMetrics(newMetrics);
+                    }
+                });
+
+                connection.onreconnecting(() => {
+                    if (isMounted) setConnectionStatus('Reconnecting...');
+                });
+
+                connection.onreconnected(() => {
+                    if (isMounted) setConnectionStatus('Live');
+                });
+
+                connection.onclose(() => {
+                    if (isMounted) setConnectionStatus('Disconnected');
+                });
+
+                await connection.start();
+
+                // CRITICAL CHECK: Did the effect cleanup run while we were awaiting start()?
+                if (!isMounted) {
+                    console.log('Component unmounted during connection start, stopping connection...');
+                    connection.stop();
+                    return;
+                }
+
+                // If we are still mounted, save the connection reference
+                currentConnection = connection;
+                connectionRef.current = connection;
+                setConnectionStatus('Live');
+
+            } catch (err) {
+                if (isMounted) {
+                    console.error('SignalR Connection Error:', err);
+                    setConnectionStatus('Error');
+                }
+            }
+        };
+
+        startConnection();
+
+        return () => {
+            isMounted = false;
+            // Cleanup: Stop the specific connection created in this effect
+            if (currentConnection) {
+                currentConnection.off('ReceiveMetrics');
+                currentConnection.stop();
+                connectionRef.current = null;
+            }
+        };
+    }, [isLive]);
 
     if (loading && !metrics) return <LogoLoader />
-
-    if (error && !metrics) {
-        return (
-            <div className="admin-page">
-                <div className="error-banner">
-                    <h3>Error Loading Monitoring Data</h3>
-                    <p>{error}</p>
-                    <button className="btn-primary mt-4" onClick={loadMonitoringData}>Retry</button>
-                </div>
-            </div>
-        )
-    }
 
     const formatMs = (ms) => `${ms.toFixed(2)}ms`
     const formatMB = (mb) => `${mb.toFixed(2)} MB`
@@ -69,30 +136,56 @@ function AdminMonitoring() {
 
     return (
         <div className="admin-page">
-            <div className="flex items-center justify-between mb-6">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h1 className="page-title mb-0">System Monitoring</h1>
-                    <p className="text-sm text-gray-500 mt-2">Real-time performance & health metrics</p>
+                    <h1 className="page-title" style={{ marginBottom: '0.25rem' }}>System Monitoring</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Real-time performance & health metrics</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={autoRefresh}
-                            onChange={(e) => setAutoRefresh(e.target.checked)}
-                        />
-                        <span className="text-sm">Auto-refresh (30s)</span>
-                    </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <button
+                        onClick={() => setIsLive(!isLive)}
+                        title={isLive ? "Disable Real-time Updates" : "Enable Real-time Updates"}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '0.5rem',
+                            border: 'none',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            background: isLive ? 'var(--success)' : 'var(--bg-tertiary)',
+                            color: isLive ? 'white' : 'var(--text-primary)',
+                            boxShadow: isLive ? '0 2px 8px rgba(46, 204, 113, 0.3)' : 'none'
+                        }}
+                    >
+                        <FiWifi style={{ opacity: isLive ? 1 : 0.5 }} />
+                        <span>{isLive ? 'Live' : 'Go Live'}</span>
+                        {isLive && (
+                            <span style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                backgroundColor: 'white',
+                                animation: 'pulse 1.5s infinite'
+                            }} />
+                        )}
+                    </button>
+
                     <button
                         className="btn-icon"
-                        onClick={loadMonitoringData}
+                        onClick={loadInitialData}
                         disabled={loading}
-                        title="Refresh Now"
+                        title="Force Refresh"
                     >
                         <FiRefreshCw className={loading ? 'spinning' : ''} />
                     </button>
                 </div>
             </div>
+
+            {/* Same UI as before, but driven by 'metrics' state which updates live */}
 
             {/* System Stats Cards */}
             {metrics && (
@@ -145,6 +238,9 @@ function AdminMonitoring() {
                 </div>
             )}
 
+            {/* The rest of the component (Database Health, API Performance, Active Sessions) remains largely the same 
+                as they are less frequently updated or require different data sources not yet in the fast loop 
+            */}
             {/* Database Health */}
             {dbHealth && (
                 <div className="dashboard-section mb-6">
@@ -228,7 +324,6 @@ function AdminMonitoring() {
                     </div>
                 </div>
             )}
-
             {/* API Performance */}
             {metrics && metrics.endpointStats && metrics.endpointStats.length > 0 && (
                 <div className="dashboard-section mb-6">

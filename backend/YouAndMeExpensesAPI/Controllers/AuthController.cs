@@ -26,6 +26,7 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AuthController> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IAuditService _auditService;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
@@ -37,7 +38,8 @@ namespace YouAndMeExpensesAPI.Controllers
             ISessionService sessionService,
             AppDbContext context,
             ILogger<AuthController> logger,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IAuditService auditService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -49,6 +51,7 @@ namespace YouAndMeExpensesAPI.Controllers
             _context = context;
             _logger = logger;
             _configuration = configuration;
+            _auditService = auditService;
         }
 
         /// <summary>
@@ -311,6 +314,15 @@ namespace YouAndMeExpensesAPI.Controllers
 
                 if (!result.Succeeded)
                 {
+                    await _auditService.LogAsync(
+                        userId: user.Id,
+                        action: "LoginFailed",
+                        entityType: "User",
+                        entityId: user.Id,
+                        details: $"Failed login attempt for {user.Email}. IsLockedOut: {result.IsLockedOut}",
+                        severity: "Warning"
+                    );
+
                     if (result.IsLockedOut)
                     {
                         return Unauthorized(new { error = "Account locked due to multiple failed login attempts. Please try again later." });
