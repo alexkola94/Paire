@@ -923,3 +923,62 @@ export const currencyService = {
     return await apiRequest(`/api/currency/convert?from=${from}&to=${to}&amount=${amount}`)
   }
 }
+
+// ========================================
+// Public Stats Service (No Auth Required)
+// ========================================
+
+/**
+ * Make a public API request (no authentication required)
+ * @param {string} url - API endpoint URL
+ * @returns {Promise<any>} Response data
+ */
+const publicApiRequest = async (url) => {
+  const { getBackendUrl } = await import('../utils/getBackendUrl')
+  let backendApiUrl = getBackendUrl()
+
+  // Handle same IP override logic
+  if (typeof window !== 'undefined' && window.location) {
+    const currentHostname = window.location.hostname
+    const currentProtocol = window.location.protocol
+
+    if (currentHostname &&
+      currentHostname !== 'localhost' &&
+      currentHostname !== '127.0.0.1' &&
+      backendApiUrl.includes('localhost')) {
+      backendApiUrl = `${currentProtocol}//${currentHostname}:5038`
+    }
+  }
+
+  backendApiUrl = backendApiUrl.replace(/\/+$/, '')
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`
+  const fullUrl = `${backendApiUrl}${normalizedUrl}`
+
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Public API request failed:', error)
+    throw error
+  }
+}
+
+export const publicStatsService = {
+  /**
+   * Get public platform statistics for the landing page
+   * No authentication required
+   */
+  async getStats() {
+    return await publicApiRequest('/api/public/stats')
+  }
+}

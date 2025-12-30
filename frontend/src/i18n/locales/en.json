@@ -993,5 +993,83 @@
       "decline": "Decline",
       "moreInfo": "More Info"
     }
+  },
+  "landing": {
+    "hero": {
+      "badge": "Secure & Private",
+      "title": "Manage Your Finances Together",
+      "subtitle": "The smart way for couples and individuals to track expenses, set budgets, and achieve financial goals. Beautiful, intuitive, and powerful.",
+      "getStarted": "Get Started Free",
+      "login": "I already have an account",
+      "trust1": "Free forever",
+      "trust2": "No credit card required",
+      "trust3": "Bank-level security"
+    },
+    "features": {
+      "title": "Everything You Need to Take Control",
+      "subtitle": "Powerful features designed to make managing your finances effortless and even enjoyable.",
+      "tracking": {
+        "title": "Smart Expense Tracking",
+        "description": "Automatically categorize and track every transaction with intelligent suggestions and receipt scanning."
+      },
+      "partnership": {
+        "title": "Shared Finances",
+        "description": "Perfect for couples - share expenses and income seamlessly while maintaining individual privacy when needed."
+      },
+      "analytics": {
+        "title": "Powerful Analytics",
+        "description": "Beautiful charts and insights to understand your spending patterns and make smarter financial decisions."
+      },
+      "budgets": {
+        "title": "Budgets & Goals",
+        "description": "Set spending limits and savings goals to stay on track. Get alerts before you overspend."
+      },
+      "reminders": {
+        "title": "Bill Reminders",
+        "description": "Never miss a payment with smart recurring bill tracking and email notifications."
+      },
+      "shopping": {
+        "title": "Shopping Lists",
+        "description": "Plan and share shopping lists with your partner. Check off items in real-time together."
+      }
+    },
+    "howItWorks": {
+      "title": "Get Started in 3 Easy Steps",
+      "subtitle": "Start managing your finances in under a minute.",
+      "step1": {
+        "title": "Create Your Account",
+        "description": "Sign up in seconds with just your email. No credit card required."
+      },
+      "step2": {
+        "title": "Track Transactions",
+        "description": "Add your expenses and income with smart categorization and tags."
+      },
+      "step3": {
+        "title": "Achieve Your Goals",
+        "description": "Use powerful insights to save more and spend wisely."
+      }
+    },
+    "stats": {
+      "users": "Active Users",
+      "transactions": "Transactions Tracked",
+      "saved": "Money Saved"
+    },
+    "mobile": {
+      "title": "Take Control Anywhere",
+      "subtitle": "Access your finances from any device. Our responsive design works beautifully on desktop, tablet, and mobile.",
+      "feature1": "Dark mode for comfortable viewing",
+      "feature2": "Quick add transactions on the go",
+      "feature3": "Real-time sync across devices",
+      "pwa": "Install as an App"
+    },
+    "cta": {
+      "title": "Ready to Take Control of Your Finances?",
+      "subtitle": "Join thousands of users who are already managing their money smarter with Paire.",
+      "button": "Start Free Today"
+    },
+    "footer": {
+      "copyright": "© {{year}} Paire. All rights reserved.",
+      "privacy": "Privacy Policy"
+    }
   }
 }

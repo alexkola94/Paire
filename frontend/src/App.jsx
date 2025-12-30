@@ -36,6 +36,7 @@ const BankCallback = lazyWithRetry(() => import('./pages/BankCallback'))
 const Achievements = lazyWithRetry(() => import('./pages/Achievements'))
 const CurrencyCalculator = lazyWithRetry(() => import('./pages/CurrencyCalculator'))
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
+const Landing = lazyWithRetry(() => import('./pages/Landing'))
 
 
 
@@ -237,11 +238,38 @@ function App() {
                   path="/privacy"
                   element={<PrivacyPolicy />}
                 />
+                {/* Landing page - shown to non-authenticated users */}
+                <Route
+                  path="/"
+                  element={
+                    (() => {
+                      // Check session state first
+                      if (session) return <Navigate to="/dashboard" />
+
+                      // Check if we're explicitly preventing auto-login (due to conflict)
+                      if (sessionStorage.getItem('auth_prevent_autologin')) {
+                        return <Landing />
+                      }
+
+                      // Fallback: check sessionStorage directly (for race condition after login)
+                      const token = sessionManager.getToken()
+                      const user = sessionManager.getCurrentUser()
+                      if (token && user) {
+                        // Session exists in storage but state hasn't updated yet
+                        // Trigger state update and redirect to dashboard
+                        setTimeout(() => {
+                          window.dispatchEvent(new CustomEvent('auth-storage-change'))
+                        }, 0)
+                        return <Navigate to="/dashboard" />
+                      }
+                      return <Landing />
+                    })()
+                  }
+                />
 
                 {/* Protected routes - Require authentication */}
                 {/* Check both session state and sessionStorage to avoid race conditions after login */}
                 <Route
-                  path="/"
                   element={
                     (() => {
                       // Check session state first
@@ -267,7 +295,6 @@ function App() {
                     })()
                   }
                 >
-                  <Route index element={<Navigate to="/dashboard" />} />
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="expenses" element={<Expenses />} />
                   <Route path="income" element={<Income />} />
@@ -286,6 +313,7 @@ function App() {
                   <Route path="profile" element={<Profile />} />
                   <Route path="currency-calculator" element={<CurrencyCalculator />} />
                 </Route>
+
 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={!session ? <AdminLogin /> : <Navigate to="/admin/dashboard" />} />
@@ -311,10 +339,10 @@ function App() {
                   <Route path="security" element={<AdminSecurity />} />
                 </Route>
 
-                {/* Catch all - redirect to login or dashboard */}
+                {/* Catch all - redirect to landing or dashboard */}
                 <Route
                   path="*"
-                  element={<Navigate to={session ? "/dashboard" : "/login"} />}
+                  element={<Navigate to={session ? "/dashboard" : "/"} />}
                 />
               </Routes>
             </Suspense>
