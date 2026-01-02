@@ -82,9 +82,6 @@ namespace YouAndMeExpensesAPI.Controllers
                     var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                     var jwt = handler.ReadJwtToken(accessToken);
                     
-                    _logger.LogInformation("Decoding JWT from Shield. Claims Found: {Claims}", 
-                        string.Join(", ", jwt.Claims.Select(c => $"{c.Type}={c.Value}")));
-
                     var identity = new ClaimsIdentity(jwt.Claims);
                     var principal = new ClaimsPrincipal(identity);
                     
@@ -126,8 +123,8 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            // Forward X-Tenant-Id if present
-            var tenantId = Request.Headers["X-Tenant-Id"].FirstOrDefault();
+            // Forward X-Tenant-Id if present, or default to "thepaire"
+            var tenantId = Request.Headers["X-Tenant-Id"].FirstOrDefault() ?? "thepaire";
             
             var payload = new
             {

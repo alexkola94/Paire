@@ -81,7 +81,12 @@ namespace YouAndMeExpensesAPI.Services
 
                 if (payload != null)
                 {
-                    request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    };
+                    var json = JsonSerializer.Serialize(payload, jsonOptions);
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 }
 
                 if (!string.IsNullOrEmpty(token))

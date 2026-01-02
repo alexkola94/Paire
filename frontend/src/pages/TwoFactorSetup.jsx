@@ -5,7 +5,6 @@ import { authService } from '../services/auth'
 import LogoLoader from '../components/LogoLoader'
 import { FiSmartphone, FiShield, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi'
 import { useToast } from '../components/Toast'
-import './Admin/AdminLogin.css' // Reuse the nice glass theme
 
 function TwoFactorSetup() {
     const navigate = useNavigate()

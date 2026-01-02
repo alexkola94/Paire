@@ -38,21 +38,6 @@ const CurrencyCalculator = lazyWithRetry(() => import('./pages/CurrencyCalculato
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
 const Landing = lazyWithRetry(() => import('./pages/Landing'))
 
-
-
-// Admin Pages
-const AdminLayout = lazyWithRetry(() => import('./components/Admin/AdminLayout'))
-const AdminLogin = lazyWithRetry(() => import('./pages/Admin/AdminLogin'))
-const AdminSignup = lazyWithRetry(() => import('./pages/Admin/AdminSignup'))
-const AdminDashboard = lazyWithRetry(() => import('./pages/Admin/AdminDashboard'))
-const AdminMonitoring = lazyWithRetry(() => import('./pages/Admin/AdminMonitoring'))
-const AdminUsers = lazyWithRetry(() => import('./pages/Admin/AdminUsers'))
-const AdminLogs = lazyWithRetry(() => import('./pages/Admin/AdminLogs'))
-const AdminJobs = lazyWithRetry(() => import('./pages/Admin/AdminJobs'))
-const AdminSystem = lazyWithRetry(() => import('./pages/Admin/AdminSystem'))
-const AdminSecurity = lazyWithRetry(() => import('./pages/Admin/AdminSecurity'))
-
-
 // Layout - Keep synchronous as it's always needed
 import Layout from './components/Layout'
 import CookieConsent from './components/CookieConsent'
@@ -310,31 +295,6 @@ function App() {
                   <Route path="reminders" element={<ReminderSettings />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="currency-calculator" element={<CurrencyCalculator />} />
-                </Route>
-
-
-                {/* Admin Routes */}
-                <Route path="/admin/login" element={!session ? <AdminLogin /> : <Navigate to="/admin/dashboard" />} />
-                <Route path="/admin/signup" element={!session ? <AdminSignup /> : <Navigate to="/admin/dashboard" />} />
-
-                {/* Secure Admin Area */}
-                <Route
-                  path="/admin"
-                  element={
-                    !session ? <Navigate to="/admin/login" /> :
-                      <Suspense fallback={<LoadingFallback />}>
-                        <AdminLayout />
-                      </Suspense>
-                  }
-                >
-                  <Route index element={<Navigate to="dashboard" />} />
-                  <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="monitoring" element={<AdminMonitoring />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="logs" element={<AdminLogs />} />
-                  <Route path="jobs" element={<AdminJobs />} />
-                  <Route path="system" element={<AdminSystem />} />
-                  <Route path="security" element={<AdminSecurity />} />
                 </Route>
 
                 {/* Catch all - redirect to landing or dashboard */}

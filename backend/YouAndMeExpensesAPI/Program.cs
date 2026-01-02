@@ -271,7 +271,6 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "Codename_Shield",
         ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "Codename_Shield_Clients",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? "Supers3cretKey@345!hasToBEV3ryLongForHS256Algorithm!")),
-        ClockSkew = TimeSpan.Zero,
         RoleClaimType = "roles" // Map Shield's 'roles' claim to ASP.NET Identity Roles
     };
     
