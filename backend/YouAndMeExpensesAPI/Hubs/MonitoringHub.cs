@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace YouAndMeExpensesAPI.Hubs
 {
-    [Authorize(Policy = "AdminOnly")]
     public class MonitoringHub : Hub
     {
         // Clients connect to this hub to receive "ReceiveMetrics" events

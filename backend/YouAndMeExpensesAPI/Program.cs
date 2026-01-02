@@ -29,7 +29,11 @@ builder.Services.AddControllers()
     });
 
 // Add SignalR
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 
 // Add API Explorer for Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -264,8 +268,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "Codename_Shield",
+        ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "Codename_Shield_Clients",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
         ClockSkew = TimeSpan.Zero
     };
@@ -324,6 +328,9 @@ builder.Services.AddScoped<IChatbotService, ChatbotService>();
 
 // Register Two-Factor Authentication Service
 builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
+
+// Register Shield Auth Proxy Service
+builder.Services.AddHttpClient<IShieldAuthService, ShieldAuthService>();
 
 // Register Achievement Service
 builder.Services.AddScoped<IAchievementService, AchievementService>();

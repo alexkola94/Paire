@@ -36,16 +36,36 @@ namespace YouAndMeExpensesAPI.Services
                     // 1. Get Metrics
                     var metrics = _metricsService.GetMetrics();
 
-                    // 2. Get Active Sessions (Need scope for scoped service)
-                    // Note: We're doing this inside the loop, so creating a scope is necessary if ISessionService is scoped
-                    // However, for performance, we might want to optimize or skip if no clients connected (hard to know with standard SignalR without tracking).
-                    // For now, let's just broadcast metrics. DB calls every 3s might be heavy if not careful.
-                    // Let's stick to system metrics for the high-frequency update.
+                    // Broadcast metrics in the format expected by Watchtower Client
                     
-                    // Broadcast metrics
-                    await _hubContext.Clients.All.SendAsync("ReceiveMetrics", metrics, stoppingToken);
+                    // 1. System Stats
+                    var systemStats = new
+                    {
+                        memoryUsageMb = (int)metrics.MemoryUsageMB,
+                        threadCount = metrics.ThreadCount
+                    };
+                    await _hubContext.Clients.All.SendAsync("ReceiveSystemStats", systemStats, stoppingToken);
 
-                    // Optional: Broadcast DB health/heavy stats less frequently?
+                    // 2. Request Stats (Snapshot)
+                    // We create a synthetic "tick" stat representing the current state
+                    var avgLatency = metrics.EndpointStats.Any() 
+                        ? metrics.EndpointStats.Average(e => e.AverageMs) 
+                        : 0;
+
+                    var requestStats = new
+                    {
+                        latencyMs = avgLatency,
+                        activeRequests = 0, // Not currently tracked
+                        method = "AVG",
+                        path = "System",
+                        statusCode = 200,
+                        totalRequests = metrics.TotalRequests
+                    };
+                    await _hubContext.Clients.All.SendAsync("ReceiveRequestStats", requestStats, stoppingToken);
+                    
+                    // 3. Active Requests (Placeholder for now)
+                    await _hubContext.Clients.All.SendAsync("ReceiveActiveRequests", new List<object>(), stoppingToken);
+
                     // For now, let's keep it simple. The frontend can still pool sessions/db health if needed, 
                     // or we can add it here.
                 }

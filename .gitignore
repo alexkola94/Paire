@@ -286,3 +286,9 @@ storybook-static/
 # Note: docs/ directory is tracked for deployment guides and troubleshooting
 # Only ignore specific doc files if needed (e.g., generated docs)
 
+
+# Monitoring App
+motitoring app/
+
+# Shield API Source
+codename_Shield-microservice/Codename_Shield.API/

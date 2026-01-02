@@ -11,7 +11,6 @@ namespace YouAndMeExpensesAPI.Controllers
 {
     [ApiController]
     [Route("api/admin")]
-    [Authorize(Policy = "AdminOnly")]
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -64,6 +63,7 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         // 2. Health Check
+        [AllowAnonymous]
         [HttpGet("health")]
         public async Task<IActionResult> GetHealth()
         {
@@ -207,6 +207,7 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         // 6. Tenant Features
+        [AllowAnonymous]
         [HttpGet("features")]
         public IActionResult GetFeatures()
         {

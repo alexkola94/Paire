@@ -1,0 +1,9 @@
+**/.git
+**/.vscode
+**/bin
+**/obj
+**/TestResults
+**/*.user
+**/*.lock.json
+**/appsettings.Development.json
+**/appsettings.Local.json
