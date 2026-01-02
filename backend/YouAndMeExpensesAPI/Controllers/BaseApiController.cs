@@ -14,7 +14,9 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>User ID as string, or null if not authenticated</returns>
         protected string? GetCurrentUserId()
         {
-            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                ?? User.FindFirst("sub")?.Value 
+                ?? User.FindFirst("uid")?.Value;
         }
 
         /// <summary>
@@ -23,7 +25,8 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>User email as string, or null if not authenticated</returns>
         protected string? GetCurrentUserEmail()
         {
-            return User.FindFirst(ClaimTypes.Email)?.Value;
+            return User.FindFirst(ClaimTypes.Email)?.Value
+                ?? User.FindFirst("email")?.Value;
         }
 
         /// <summary>
@@ -32,7 +35,8 @@ namespace YouAndMeExpensesAPI.Controllers
         /// <returns>User display name as string, or null if not authenticated</returns>
         protected string? GetCurrentUserName()
         {
-            return User.FindFirst(ClaimTypes.Name)?.Value;
+            return User.FindFirst(ClaimTypes.Name)?.Value
+                ?? User.FindFirst("name")?.Value;
         }
 
         /// <summary>
@@ -59,7 +63,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
             if (!Guid.TryParse(userIdString, out var userId))
             {
-                return (Guid.Empty, BadRequest(new { error = "Invalid user ID format" }));
+                return (Guid.Empty, BadRequest(new { error = $"Invalid user ID format: {userIdString}" }));
             }
 
             return (userId, null);

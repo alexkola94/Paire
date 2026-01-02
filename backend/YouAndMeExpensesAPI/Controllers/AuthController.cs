@@ -1,4 +1,7 @@
 using System.Text;
+using System.Text.Json;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +25,7 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly IJwtTokenService _jwtTokenService;
         private readonly ISessionService _sessionService;
         private readonly AppDbContext _context;
+        private readonly IUserSyncService _userSyncService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
@@ -31,6 +35,7 @@ namespace YouAndMeExpensesAPI.Controllers
             IJwtTokenService jwtTokenService,
             ISessionService sessionService,
             AppDbContext context,
+            IUserSyncService userSyncService,
             ILogger<AuthController> logger)
         {
             _shieldAuthService = shieldAuthService;
@@ -39,6 +44,7 @@ namespace YouAndMeExpensesAPI.Controllers
             _jwtTokenService = jwtTokenService;
             _sessionService = sessionService;
             _context = context;
+            _userSyncService = userSyncService;
             _logger = logger;
         }
 
@@ -48,10 +54,77 @@ namespace YouAndMeExpensesAPI.Controllers
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
-            => HandleProxyResponse(await _shieldAuthService.LoginAsync(new { Username = request.Email, request.Password }));
+        {
+            var shieldResponse = await _shieldAuthService.LoginAsync(new { Username = request.Email, request.Password });
+
+            if (!shieldResponse.IsSuccess)
+            {
+                return HandleProxyResponse(shieldResponse);
+            }
+
+            // Shield returns { "accessToken": "...", "refreshToken": "..." }
+            // Frontend expects { "token": "...", "refreshToken": "...", "user": { ... } }
+            
+            try 
+            {
+                var responseData = JsonSerializer.Deserialize<JsonElement>(shieldResponse.Content);
+                var accessToken = responseData.TryGetProperty("accessToken", out var at) ? at.GetString() : null;
+                var refreshToken = responseData.TryGetProperty("refreshToken", out var rt) ? rt.GetString() : null;
+
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    // Sync User from the new token
+                    // We need a helper to read claims from string token without validating (since we just got it from Shield)
+                    // Or we can just let the frontend call /me. 
+                    // But frontend expects 'user' object in login response.
+                    // Let's decode the token manually to get the ID/Claims for sync.
+                    
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    var jwt = handler.ReadJwtToken(accessToken);
+                    
+                    _logger.LogInformation("Decoding JWT from Shield. Claims Found: {Claims}", 
+                        string.Join(", ", jwt.Claims.Select(c => $"{c.Type}={c.Value}")));
+
+                    var identity = new ClaimsIdentity(jwt.Claims);
+                    var principal = new ClaimsPrincipal(identity);
+                    
+                    var user = await _userSyncService.SyncUserAsync(principal);
+                    
+                    if (user != null)
+                    {
+                        var roles = await _userManager.GetRolesAsync(user);
+                        var userDto = new UserDto
+                        {
+                           Id = user.Id,
+                           Email = user.Email!,
+                           DisplayName = user.DisplayName,
+                           AvatarUrl = user.AvatarUrl,
+                           EmailConfirmed = user.EmailConfirmed,
+                           TwoFactorEnabled = user.TwoFactorEnabled,
+                           CreatedAt = user.CreatedAt,
+                           Roles = roles
+                        };
+
+                        return Ok(new 
+                        { 
+                            token = accessToken, 
+                            refreshToken, 
+                            user = userDto 
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing login response");
+            }
+
+            // Fallback if parsing fails
+            return HandleProxyResponse(shieldResponse);
+        }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request, [FromServices] RoleManager<IdentityRole> roleManager)
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             // Forward X-Tenant-Id if present
             var tenantId = Request.Headers["X-Tenant-Id"].FirstOrDefault();
@@ -65,42 +138,6 @@ namespace YouAndMeExpensesAPI.Controllers
             };
 
             var response = await _shieldAuthService.RegisterAsync(payload, tenantId);
-            
-            // If Shield registration succeeded, check for Admin Secret Key
-            if (response.IsSuccess && !string.IsNullOrEmpty(request.SecretKey))
-            {
-                try 
-                {
-                    // Verify Secret Key (In production, use config/KV)
-                    const string AdminSecretKey = "AdminSecretKey123!@#"; 
-                    if (request.SecretKey == AdminSecretKey)
-                    {
-                         _logger.LogInformation("Admin Secret Key matched for {Email}. Assigning Admin role.", request.Email);
-                         
-                         // We need the user to exist locally. Shield created it in the DB (Shared DB assumption).
-                         // Wait for a moment or try to find immediately?
-                         // Ideally, find immediately.
-                         var user = await _userManager.FindByEmailAsync(request.Email);
-                         if (user != null)
-                         {
-                             if (!await roleManager.RoleExistsAsync("Admin"))
-                             {
-                                 await roleManager.CreateAsync(new IdentityRole { Name = "Admin" });
-                             }
-                             await _userManager.AddToRoleAsync(user, "Admin");
-                         }
-                         else
-                         {
-                             _logger.LogWarning("User {Email} not found locally after Shield creation. Separation of concern?", request.Email);
-                         }
-                    }
-                }
-                catch (Exception ex)
-                {
-                     _logger.LogError(ex, "Error assigning admin role after registration");
-                }
-            }
-            
             return HandleProxyResponse(response);
         }
 
@@ -151,7 +188,7 @@ namespace YouAndMeExpensesAPI.Controllers
         // ==================================================================================
 
         /// <summary>
-        /// Get current user info & Lazy Initialize Profile
+        /// Get current user info & Synchronize Shadow User
         /// </summary>
         [Authorize]
         [HttpGet("me")]
@@ -159,16 +196,11 @@ namespace YouAndMeExpensesAPI.Controllers
         {
             try
             {
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized(new { error = "User not authenticated" });
-
-                var user = await _userManager.FindByIdAsync(userId);
+                // Sync user from Token Claims
+                var user = await _userSyncService.SyncUserAsync(User);
                 
                 if (user == null)
-                    return NotFound(new { error = "User not found in system" });
-
-                await EnsureUserProfileExists(user);
+                    return Unauthorized(new { error = "User sync failed. Invalid token or claims." });
 
                 var roles = await _userManager.GetRolesAsync(user);
 
@@ -231,53 +263,6 @@ namespace YouAndMeExpensesAPI.Controllers
                  ContentType = response.ContentType,
                  StatusCode = response.StatusCode
              };
-        }
-
-        private async Task EnsureUserProfileExists(ApplicationUser user)
-        {
-            try 
-            {
-                var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.Id == Guid.Parse(user.Id));
-                if (userProfile == null)
-                {
-                    _logger.LogInformation("Lazy-initializing user profile for {Email}", user.Email);
-                    userProfile = new UserProfile
-                    {
-                        Id = Guid.Parse(user.Id),
-                        DisplayName = user.DisplayName ?? user.Email?.Split('@')[0],
-                        Email = user.Email,
-                        AvatarUrl = user.AvatarUrl,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-                    _context.UserProfiles.Add(userProfile);
-                    
-                    var preferences = await _context.ReminderPreferences.FirstOrDefaultAsync(p => p.UserId == Guid.Parse(user.Id));
-                    if (preferences == null)
-                    {
-                        _context.ReminderPreferences.Add(new ReminderPreferences
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = Guid.Parse(user.Id),
-                            EmailEnabled = user.EmailNotificationsEnabled,
-                            BillRemindersEnabled = true,
-                            BillReminderDays = 3,
-                            LoanRemindersEnabled = true,
-                            LoanReminderDays = 7,
-                            BudgetAlertsEnabled = true,
-                            BudgetAlertThreshold = 90,
-                            SavingsMilestonesEnabled = true,
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        });
-                    }
-                    await _context.SaveChangesAsync();
-                }
-            }
-            catch(Exception ex)
-            {
-                _logger.LogError(ex, "Failed to lazy-initialize profile for {Email}", user.Email);
-            }
         }
 
         private string GetToken()

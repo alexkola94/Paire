@@ -43,7 +43,7 @@ export const isTokenExpired = (token) => {
   // exp is in seconds, Date.now() is in milliseconds
   const expirationTime = decoded.exp * 1000
   const currentTime = Date.now()
-  
+
   // Consider token expired if it expires within the next 5 seconds (buffer)
   return currentTime >= (expirationTime - 5000)
 }

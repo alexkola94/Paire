@@ -91,10 +91,8 @@ function App() {
     // This ensures users must log in again in new tabs
     const checkSession = async () => {
       // Check if we were just invalidated due to conflict
-      // If so, do NOT auto-login using localStorage (which belongs to the other user)
       if (sessionStorage.getItem('auth_prevent_autologin')) {
         // Do NOT clear the flag here. It should only be cleared when a new session is explicitly created via login.
-        // sessionStorage.removeItem('auth_prevent_autologin') 
         setSession(null)
         sessionRef.current = null
         setLoading(false)

@@ -103,6 +103,7 @@ const apiRequest = async (url, options = {}) => {
     // Handle 401 Unauthorized - session expired or invalid
     if (response.status === 401) {
       console.warn('Received 401 Unauthorized, clearing session')
+
       handleSessionExpiration()
       const errorData = await response.text().catch(() => '')
       const errorMessage = errorData || 'Session expired. Please log in again.'

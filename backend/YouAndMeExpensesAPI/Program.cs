@@ -270,13 +270,50 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "Codename_Shield",
         ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "Codename_Shield_Clients",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-        ClockSkew = TimeSpan.Zero
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? "Supers3cretKey@345!hasToBEV3ryLongForHS256Algorithm!")),
+        ClockSkew = TimeSpan.Zero,
+        RoleClaimType = "roles" // Map Shield's 'roles' claim to ASP.NET Identity Roles
     };
     
     // Configure SignalR authentication (token in query string)
     options.Events = new JwtBearerEvents
     {
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError("Authentication Failed: {Message}", context.Exception.Message);
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = async context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            var userSyncService = context.HttpContext.RequestServices.GetRequiredService<IUserSyncService>();
+
+            try 
+            {
+                // Sync user (lookup by email/sub) to get local ID
+                var user = await userSyncService.SyncUserAsync(context.Principal);
+
+                if (user != null)
+                {
+                    var identity = context.Principal.Identity as System.Security.Claims.ClaimsIdentity;
+                    if (identity != null && !identity.HasClaim(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier))
+                    {
+                        identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id));
+                        logger.LogInformation("Enriched Principal with Local User ID: {UserId}", user.Id);
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("UserSyncService failed to resolve user for Principal: {Name}", context.Principal.Identity.Name);
+                    // context.Fail("User synchronization failed"); // Optional: Fail strictly?
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error in OnTokenValidated during User Sync");
+            }
+        },
         OnMessageReceived = context =>
         {
             var accessToken = context.Request.Query["access_token"];
@@ -331,6 +368,7 @@ builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 
 // Register Shield Auth Proxy Service
 builder.Services.AddHttpClient<IShieldAuthService, ShieldAuthService>();
+builder.Services.AddScoped<IUserSyncService, UserSyncService>();
 
 // Register Achievement Service
 builder.Services.AddScoped<IAchievementService, AchievementService>();

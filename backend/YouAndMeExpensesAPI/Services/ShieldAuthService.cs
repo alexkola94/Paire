@@ -24,17 +24,17 @@ namespace YouAndMeExpensesAPI.Services
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<ShieldAuthService> _logger;
-        // Using localhost directly as per user config
-        private const string BaseUrl = "http://localhost:5002/api/v1/auth";
+        private readonly string _baseUrl;
 
-        public ShieldAuthService(HttpClient httpClient, ILogger<ShieldAuthService> logger)
+        public ShieldAuthService(HttpClient httpClient, ILogger<ShieldAuthService> logger, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _logger = logger;
+            _baseUrl = configuration["Shield:BaseUrl"] ?? "http://localhost:5002/api/v1/auth";
         }
 
         public async Task<ProxyAuthResponse> LoginAsync(object request)
-            => await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/login", request);
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/login", request);
 
         public async Task<ProxyAuthResponse> RegisterAsync(object request, string? tenantId = null)
         {
@@ -43,35 +43,35 @@ namespace YouAndMeExpensesAPI.Services
             {
                 headers.Add("X-Tenant-Id", tenantId);
             }
-            return await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/register", request, null, headers);
+            return await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/register", request, null, headers);
         }
 
         public async Task<ProxyAuthResponse> RefreshTokenAsync(object request)
-            => await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/refresh-token", request);
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/refresh-token", request);
 
         public async Task<ProxyAuthResponse> RevokeAsync(string token)
-            => await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/revoke", null, token);
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/revoke", null, token);
 
         public async Task<ProxyAuthResponse> ForgotPasswordAsync(object request)
-            => await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/forgot-password", request);
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/forgot-password", request);
 
         public async Task<ProxyAuthResponse> ResetPasswordAsync(object request)
-            => await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/reset-password", request);
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/reset-password", request);
 
         public async Task<ProxyAuthResponse> VerifyEmailAsync(object request)
-            => await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/verify-email", request);
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/verify-email", request);
 
         public async Task<ProxyAuthResponse> ResendVerificationEmailAsync(object request)
-            => await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/resend-verification-email", request);
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/resend-verification-email", request);
 
         public async Task<ProxyAuthResponse> ChangePasswordAsync(object request, string token)
-            => await ProxyRequestAsync(HttpMethod.Post, $"{BaseUrl}/change-password", request, token);
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/change-password", request, token);
 
         public async Task<ProxyAuthResponse> DeleteAccountAsync(object request, string token)
-            => await ProxyRequestAsync(HttpMethod.Delete, $"{BaseUrl}/delete-account", request, token);
+            => await ProxyRequestAsync(HttpMethod.Delete, $"{_baseUrl}/delete-account", request, token);
 
         public async Task<ProxyAuthResponse> GetUserTenantAsync(string token)
-            => await ProxyRequestAsync(HttpMethod.Get, $"{BaseUrl}/user-tenant", null, token);
+            => await ProxyRequestAsync(HttpMethod.Get, $"{_baseUrl}/user-tenant", null, token);
 
         private async Task<ProxyAuthResponse> ProxyRequestAsync(HttpMethod method, string url, object? payload = null, string? token = null, Dictionary<string, string>? headers = null)
         {
