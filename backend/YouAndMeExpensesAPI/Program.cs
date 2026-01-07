@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 using System.Text;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
@@ -202,6 +203,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 // =====================================================
+// Configure Forwarded Headers for proxies (Render, Nginx, etc.)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear(); // Trust all networks/proxies (safe for Render)
+    options.KnownProxies.Clear();
+});
+
 // Configure ASP.NET Core Identity
 // =====================================================
 
@@ -480,8 +489,8 @@ app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SecureHeadersMiddleware>();
 // Metrics tracking middleware (tracks request timing)
 app.UseMiddleware<YouAndMeExpensesAPI.Middleware.MetricsMiddleware>();
 
-// Session validation middleware (must be after CORS, before authentication)
-app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SessionValidationMiddleware>();
+// Enable Forwarded Headers (MUST be before HttpsRedirection)
+app.UseForwardedHeaders();
 
 // Enable HTTPS Redirection (only in production)
 if (!app.Environment.IsDevelopment())
@@ -492,6 +501,9 @@ if (!app.Environment.IsDevelopment())
 // Enable Authentication and Authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Session validation middleware (must be AFTER Authorization to access User claims)
+app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SessionValidationMiddleware>();
 
 // Map Controllers
 app.MapControllers();

@@ -22,6 +22,14 @@ namespace YouAndMeExpensesAPI.Middleware
         {
             // Skip validation for public endpoints
             var path = context.Request.Path.Value?.ToLower() ?? "";
+            
+            // Skip OPTIONS requests (CORS preflight)
+            if (context.Request.Method == "OPTIONS")
+            {
+                await _next(context);
+                return;
+            }
+
             if (path.StartsWith("/api/auth/login") ||
                 path.StartsWith("/api/auth/register") ||
                 path.StartsWith("/api/auth/forgot-password") ||
