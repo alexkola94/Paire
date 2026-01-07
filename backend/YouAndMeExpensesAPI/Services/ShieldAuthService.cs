@@ -19,6 +19,7 @@ namespace YouAndMeExpensesAPI.Services
         Task<ProxyAuthResponse> DeleteAccountAsync(object request, string token);
         Task<ProxyAuthResponse> GetUserTenantAsync(string token);
         Task<bool> ValidateSessionAsync(string sessionId);
+        Task<bool> ValidatePasswordAsync(string token, string password);
     }
 
     public class ShieldAuthService : IShieldAuthService
@@ -92,6 +93,16 @@ namespace YouAndMeExpensesAPI.Services
                  catch {}
             }
             return false; // Fail safe
+        }
+
+        public async Task<bool> ValidatePasswordAsync(string token, string password)
+        {
+             var response = await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/validate-password", new { Password = password }, token);
+             if (response.IsSuccess)
+             {
+                 return true;
+             }
+             return false;
         }
 
         private async Task<ProxyAuthResponse> ProxyRequestAsync(HttpMethod method, string url, object? payload = null, string? token = null, Dictionary<string, string>? headers = null)
