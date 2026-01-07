@@ -18,6 +18,7 @@ namespace YouAndMeExpensesAPI.Services
         Task<ProxyAuthResponse> ChangePasswordAsync(object request, string token);
         Task<ProxyAuthResponse> DeleteAccountAsync(object request, string token);
         Task<ProxyAuthResponse> GetUserTenantAsync(string token);
+        Task<bool> ValidateSessionAsync(string sessionId);
     }
 
     public class ShieldAuthService : IShieldAuthService
@@ -72,6 +73,26 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<ProxyAuthResponse> GetUserTenantAsync(string token)
             => await ProxyRequestAsync(HttpMethod.Get, $"{_baseUrl}/user-tenant", null, token);
+
+        public async Task<bool> ValidateSessionAsync(string sessionId)
+        {
+            // We use a direct HTTP call (via ProxyRequest logic or simplified)
+            // Since ValidateSession returns a boolean wrapped in JSON { isValid: true/false }
+            var response = await ProxyRequestAsync(HttpMethod.Get, $"{_baseUrl}/sessions/{sessionId}/validate");
+            if (response.IsSuccess)
+            {
+                 try 
+                 {
+                     using var doc = JsonDocument.Parse(response.Content);
+                     if (doc.RootElement.TryGetProperty("isValid", out var isValidProp))
+                     {
+                         return isValidProp.GetBoolean();
+                     }
+                 } 
+                 catch {}
+            }
+            return false; // Fail safe
+        }
 
         private async Task<ProxyAuthResponse> ProxyRequestAsync(HttpMethod method, string url, object? payload = null, string? token = null, Dictionary<string, string>? headers = null)
         {

@@ -18,7 +18,7 @@ namespace YouAndMeExpensesAPI.Middleware
             _logger = logger;
         }
 
-        public async Task InvokeAsync(HttpContext context, ISessionService sessionService)
+        public async Task InvokeAsync(HttpContext context, IShieldAuthService shieldAuthService)
         {
             // Skip validation for public endpoints
             var path = context.Request.Path.Value?.ToLower() ?? "";
@@ -54,19 +54,20 @@ namespace YouAndMeExpensesAPI.Middleware
                     
                     try
                     {
-                        // Extract token ID (JTI) from token
                         var handler = new JwtSecurityTokenHandler();
                         var jwtToken = handler.ReadJwtToken(token);
-                        var tokenId = jwtToken.Id;
+                        
+                        // Extract session_id claim
+                        var sessionIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "session_id")?.Value;
 
-                        if (!string.IsNullOrEmpty(tokenId))
+                        if (!string.IsNullOrEmpty(sessionIdClaim))
                         {
-                            // Validate session
-                            var isValid = await sessionService.IsSessionValidAsync(tokenId);
+                            // Validate session via Shield API
+                            var isValid = await shieldAuthService.ValidateSessionAsync(sessionIdClaim);
                             
                             if (!isValid)
                             {
-                                _logger.LogWarning($"Invalid or revoked session: {tokenId}");
+                                _logger.LogWarning($"Invalid or revoked session: {sessionIdClaim}");
                                 context.Response.StatusCode = 401;
                                 await context.Response.WriteAsJsonAsync(new { error = "Session expired or revoked. Please log in again." });
                                 return;
