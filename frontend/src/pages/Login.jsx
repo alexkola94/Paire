@@ -173,11 +173,24 @@ function Login() {
             attempts++
           }
 
+
           // Check if there's a redirect URL
           const targetPath = redirectUrl || '/dashboard'
 
-          // Navigate to dashboard
-          navigate(targetPath, { replace: true })
+          // Detect if we're on a mobile device
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+          if (isMobile) {
+            // For mobile browsers, use window.location for more reliable navigation
+            // This ensures a full page reload which properly initializes App.jsx and fixes the empty sidebar issue
+            const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
+            const fullPath = `${basename}${targetPath}`
+            window.location.href = fullPath
+          } else {
+            // For desktop, use React Router navigation (faster, no reload)
+            // Navigate to dashboard
+            navigate(targetPath, { replace: true })
+          }
         }
       }
     } catch (err) {
