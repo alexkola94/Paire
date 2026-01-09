@@ -6,6 +6,8 @@ using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 using System.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.SignalR;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -15,8 +17,13 @@ namespace YouAndMeExpensesAPI.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IShieldAuthService _shieldAuthService;
-        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
-        private readonly Microsoft.AspNetCore.SignalR.IHubContext<YouAndMeExpensesAPI.Hubs.MonitoringHub> _hubContext;
+        private readonly IMemoryCache _cache;
+        private readonly IHubContext<YouAndMeExpensesAPI.Hubs.MonitoringHub> _hubContext;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly JobMonitorService _jobMonitor;
+        private readonly IAuditService _auditService;
+        private readonly ILogger<AdminController> _logger;
+        private readonly IWebHostEnvironment _env;
 
         public AdminController(
             AppDbContext context,
@@ -26,8 +33,8 @@ namespace YouAndMeExpensesAPI.Controllers
             ILogger<AdminController> logger,
             IWebHostEnvironment env,
             IShieldAuthService shieldAuthService,
-            Microsoft.Extensions.Caching.Memory.IMemoryCache cache,
-            Microsoft.AspNetCore.SignalR.IHubContext<YouAndMeExpensesAPI.Hubs.MonitoringHub> hubContext)
+            IMemoryCache cache,
+            IHubContext<YouAndMeExpensesAPI.Hubs.MonitoringHub> hubContext)
         {
             _context = context;
             _userManager = userManager;
@@ -98,7 +105,7 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 search = search.ToLower();
                 query = query.Where(u => 
-                    u.Email.ToLower().Contains(search) || 
+                    (u.Email != null && u.Email.ToLower().Contains(search)) || 
                     (u.DisplayName != null && u.DisplayName.ToLower().Contains(search)));
             }
 
@@ -107,7 +114,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 .Select(u => new
                 {
                     id = u.Id,
-                    email = u.Email,
+                    email = u.Email ?? "",
                     tenantId = "default", // Multi-tenancy not implemented
                     isLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow,
                     twoFactorEnabled = u.TwoFactorEnabled,
@@ -247,7 +254,7 @@ namespace YouAndMeExpensesAPI.Controllers
             
             _logger.LogWarning($"User {user.Email} locked by Admin {User.Identity?.Name}");
             await _auditService.LogAsync(
-                userId: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                userId: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown",
                 action: "UserLocked",
                 entityType: "User",
                 entityId: user.Id,
@@ -278,7 +285,7 @@ namespace YouAndMeExpensesAPI.Controllers
             
             _logger.LogInformation($"User {user.Email} unlocked by Admin {User.Identity?.Name}");
             await _auditService.LogAsync(
-                userId: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                userId: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown",
                 action: "UserUnlocked",
                 entityType: "User",
                 entityId: user.Id,
@@ -395,8 +402,10 @@ namespace YouAndMeExpensesAPI.Controllers
                 return BadRequest(new { Message = "Invalid password" });
             }
 
-            var options = new Microsoft.Extensions.Caching.Memory.MemoryCacheEntryOptions()
-               .SetPriority(Microsoft.Extensions.Caching.Memory.CacheItemPriority.NeverRemove);
+            var options = new MemoryCacheEntryOptions
+            {
+                Priority = CacheItemPriority.NeverRemove
+            };
             
             _cache.Set("MaintenanceMode", model.Enabled, options);
 

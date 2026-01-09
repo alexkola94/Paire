@@ -300,11 +300,11 @@ builder.Services.AddAuthentication(options =>
             try 
             {
                 // Sync user (lookup by email/sub) to get local ID
-                var user = await userSyncService.SyncUserAsync(context.Principal);
+                var user = context.Principal != null ? await userSyncService.SyncUserAsync(context.Principal) : null;
 
                 if (user != null)
                 {
-                    var identity = context.Principal.Identity as System.Security.Claims.ClaimsIdentity;
+                    var identity = context.Principal?.Identity as System.Security.Claims.ClaimsIdentity;
                     if (identity != null && !identity.HasClaim(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier))
                     {
                         identity.AddClaim(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id));
@@ -313,7 +313,7 @@ builder.Services.AddAuthentication(options =>
                 }
                 else
                 {
-                    logger.LogWarning("UserSyncService failed to resolve user for Principal: {Name}", context.Principal.Identity.Name);
+                    logger.LogWarning("UserSyncService failed to resolve user for Principal: {Name}", context.Principal?.Identity?.Name);
                     // context.Fail("User synchronization failed"); // Optional: Fail strictly?
                 }
             }

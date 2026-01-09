@@ -56,7 +56,7 @@ namespace YouAndMeExpensesAPI.Services
                                   ?? principal.FindFirst("sub")?.Value 
                                   ?? principal.FindFirst("uid")?.Value;
 
-                string userId = userIdClaim;
+                string? userId = userIdClaim;
 
                 // 3. If ID is missing, try to resolve by Email
                 if (string.IsNullOrEmpty(userId))

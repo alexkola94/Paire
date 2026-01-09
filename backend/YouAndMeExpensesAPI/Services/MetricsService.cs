@@ -112,7 +112,7 @@ namespace YouAndMeExpensesAPI.Services
             {
                 endpointStats.Add(new EndpointStatDto
                 {
-                    Endpoint = route,
+                    Endpoint = route ?? "Unknown",
                     TotalRequests = 0
                 });
             }
