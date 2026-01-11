@@ -3,6 +3,7 @@ import OtpInput from 'react-otp-input';
 import { useTranslation } from 'react-i18next';
 import { getBackendUrl } from '../utils/getBackendUrl';
 import { sessionManager } from '../services/sessionManager';
+import { decodeUserFromToken } from '../utils/jwtDecoder';
 import './TwoFactorVerification.css';
 
 /**
@@ -85,7 +86,6 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
           code: normalizedCode,
           tempToken,
         }),
@@ -116,7 +116,7 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
       }
 
       // Verify we have the required data
-      if (!data.token) {
+      if (!data.accessToken) {
         hasErrorOccurred.current = true;
         lastFailedCode.current = normalizedCode;
         throw new Error(t('twoFactor.verificationError') || 'Invalid response: missing token');
@@ -126,8 +126,11 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
       hasErrorOccurred.current = false;
       lastFailedCode.current = '';
 
+      // Decode user info from JWT token (Shield doesn't return user object)
+      const userFromToken = decodeUserFromToken(data.accessToken, email);
+
       // Store token and user data using sessionManager (per-tab or persistent)
-      sessionManager.storeSession(data.token, data.refreshToken || '', data.user, rememberMe);
+      sessionManager.storeSession(data.accessToken, data.refreshToken || '', userFromToken, rememberMe);
 
       // Show success animation before navigating
       setIsSuccess(true);
@@ -184,8 +187,7 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
-          code: backupCode.trim(),
+          backupCode: backupCode.trim(),
           tempToken,
         }),
       });
@@ -196,8 +198,11 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
         throw new Error(data.error || t('twoFactor.verificationError'));
       }
 
+      // Decode user info from JWT token (Shield doesn't return user object)
+      const userFromToken = decodeUserFromToken(data.accessToken, email);
+
       // Store token and user data using sessionManager (per-tab or persistent)
-      sessionManager.storeSession(data.token, data.refreshToken || '', data.user, rememberMe);
+      sessionManager.storeSession(data.accessToken, data.refreshToken || '', userFromToken, rememberMe);
 
       // Show success animation before navigating
       setIsSuccess(true);

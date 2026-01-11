@@ -95,7 +95,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
       }
 
       // Show backup codes
-      setBackupCodes(data.codes);
+      setBackupCodes(data.backupCodes);
       setShowBackupCodes(true);
       setSuccess(t('twoFactor.enableSuccess'));
       setSetupMode(false);
@@ -183,7 +183,7 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
         throw new Error(data.error || t('twoFactor.regenerateError'));
       }
 
-      setBackupCodes(data.codes);
+      setBackupCodes(data.backupCodes);
       setShowBackupCodes(true);
       setSuccess(t('twoFactor.regenerateSuccess'));
     } catch (err) {
