@@ -224,7 +224,7 @@ namespace YouAndMeExpensesAPI.Services
             }
         }
 
-        public async Task<List<BankAccount>> GetAccountsAsync(string? sessionJson = null)
+        public Task<List<BankAccount>> GetAccountsAsync(string? sessionJson = null)
         {
             // If we have the session JSON from the creation step, we can parse accounts directly from it.
             // Enable Banking doesn't always have a simple "Get All Accounts" endpoint detached from session creation 
@@ -253,11 +253,11 @@ namespace YouAndMeExpensesAPI.Services
                              Currency = acc.currency
                          });
                     }
-                    return accounts;
+                    return Task.FromResult(accounts);
                  }
             }
 
-            return new List<BankAccount>();
+            return Task.FromResult(new List<BankAccount>());
         }
 
         public async Task<BankBalance> GetBalanceAsync(string accountUid)

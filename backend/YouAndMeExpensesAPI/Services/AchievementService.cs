@@ -713,11 +713,11 @@ namespace YouAndMeExpensesAPI.Services
             return await SaveAchievementsAsync(newAchievements, userId);
         }
 
-        public async Task<List<UserAchievement>> CheckConsistencyAchievementsAsync(string userId)
+        public Task<List<UserAchievement>> CheckConsistencyAchievementsAsync(string userId)
         {
             // Login streak checking would require tracking login dates
             // For now, return empty list - can be enhanced later
-            return new List<UserAchievement>();
+            return Task.FromResult(new List<UserAchievement>());
         }
 
         public async Task<List<UserAchievement>> CheckMilestoneAchievementsAsync(string userId)

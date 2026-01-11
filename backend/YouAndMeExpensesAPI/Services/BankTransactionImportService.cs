@@ -119,7 +119,7 @@ namespace YouAndMeExpensesAPI.Services
             _logger = logger;
         }
 
-        public async Task<BankTransactionImportResult> ImportTransactionsAsync(
+        public Task<BankTransactionImportResult> ImportTransactionsAsync(
             string userId,
             DateTime? fromDate = null,
             DateTime? toDate = null,
@@ -128,10 +128,10 @@ namespace YouAndMeExpensesAPI.Services
             // NOT IMPLEMENTED: Since we removed Plaid, we don't have a way to auto-fetch transactions for all accounts anymore
             // This method is kept to satisfy the interface, or it could be deprecated/removed.
             // For now, we'll return an empty result or throw.
-            return new BankTransactionImportResult();
+            return Task.FromResult(new BankTransactionImportResult());
         }
 
-        public async Task<BankTransactionImportResult> ImportTransactionsForAccountAsync(
+        public Task<BankTransactionImportResult> ImportTransactionsForAccountAsync(
              string userId,
              string accountId,
              DateTime? fromDate = null,
@@ -139,7 +139,7 @@ namespace YouAndMeExpensesAPI.Services
              CancellationToken cancellationToken = default)
         {
              // Not implemented for similar reasons as above.
-             return new BankTransactionImportResult();
+             return Task.FromResult(new BankTransactionImportResult());
         }
         
         // <summary>
