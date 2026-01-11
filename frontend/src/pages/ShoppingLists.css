@@ -103,14 +103,7 @@
   height: 20px;
 }
 
-/* Items actions bar (separate from header on mobile) */
-.items-actions-bar {
-  display: none;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--bg-tertiary);
-  margin-bottom: var(--spacing-md);
-}
+
 
 .lists-section {
   background: var(--bg-secondary);
@@ -289,21 +282,70 @@
   margin-bottom: var(--spacing-lg);
 }
 
+.header-main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
 .items-header h2 {
-  margin: 0 0 var(--spacing-xs) 0;
+  margin: 0;
   font-size: 1.5rem;
 }
 
 .items-stats {
   display: flex;
-  gap: var(--spacing-md);
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
   font-size: 0.875rem;
   color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+/* Progress Badge - Clean Text Style */
+.progress-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  border: none;
 }
 
 .items-stats .estimate {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   font-weight: 600;
   color: var(--primary);
+  background: var(--bg-tertiary);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+}
+
+.items-stats .estimate-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.items-stats .estimate-value {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.header-action-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .items-actions {
@@ -1186,17 +1228,16 @@
     line-height: 1.2;
   }
 
-  /* Modern Clean Badge Style (Subtle) */
+  /* Progress Badge - Clean Text Style (mobile) */
   .progress-badge {
-    background: rgba(108, 92, 231, 0.1);
-    /* Very subtle primary tint */
-    color: var(--primary);
-    border: 1px solid rgba(108, 92, 231, 0.2);
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
     box-shadow: none;
-    padding: 4px 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border-radius: var(--radius-full);
+    padding: 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 0;
   }
 
   .items-stats {
@@ -1226,6 +1267,28 @@
 
   .header-main {
     width: 100%;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  /* Header Action Buttons */
+  .header-action-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-sm);
+    width: 100%;
+  }
+
+  .header-action-buttons .btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 36px;
   }
 
   .items-header h2 {
@@ -1233,14 +1296,15 @@
     margin-bottom: var(--spacing-xs);
   }
 
+  /* Progress Badge - Clean Text Style (small mobile) */
   .progress-badge {
     display: inline-block;
-    padding: 4px 12px;
-    background: var(--primary);
-    color: white;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    font-size: 0.875rem;
+    padding: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 0;
+    font-weight: 500;
+    font-size: 0.85rem;
   }
 
   .items-actions-bar {
@@ -1257,7 +1321,7 @@
   /* Ultra-optimized item cards for mobile */
   .items-list {
     flex: 1;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
     padding: 0;
     max-height: none;
     padding-bottom: var(--spacing-xl);
@@ -1309,8 +1373,8 @@
 
   .item-card {
     flex-wrap: nowrap;
-    padding: var(--spacing-lg);
-    min-height: 80px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: 60px;
     cursor: default;
     position: relative;
     border-left-width: 4px;
@@ -1341,12 +1405,12 @@
 
   /* Larger checkbox for mobile - minimum 48px touch target */
   .item-checkbox {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
     margin: 0;
-    padding: 10px;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1394,13 +1458,13 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: var(--spacing-xs);
-    margin-bottom: var(--spacing-xs);
+    margin-bottom: 0;
   }
 
   .item-main h4 {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 600;
-    line-height: 1.4;
+    line-height: 1.3;
     margin: 0;
     word-break: break-word;
     overflow-wrap: break-word;

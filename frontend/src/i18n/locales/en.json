@@ -645,6 +645,7 @@
     "confirmDelete": "Are you sure you want to delete this shopping list?",
     "confirmDeleteList": "Are you sure you want to delete this shopping list? All items will be removed.",
     "confirmDeleteItem": "Are you sure you want to delete this item?",
+    "confirmCompleteList": "Are you sure you want to complete this shopping list?",
     "deleteItem": "Delete Item",
     "deleteList": "Delete List",
     "deleteListTitle": "Delete Shopping List",

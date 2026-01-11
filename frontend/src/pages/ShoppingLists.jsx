@@ -33,6 +33,7 @@ function ShoppingLists() {
   const [deleteListModal, setDeleteListModal] = useState({ isOpen: false, listId: null })
 
   const [deleteItemModal, setDeleteItemModal] = useState({ isOpen: false, itemId: null })
+  const [completeListModal, setCompleteListModal] = useState({ isOpen: false, listId: null })
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
@@ -169,7 +170,7 @@ function ShoppingLists() {
             isChecked: item.is_checked ?? item.isChecked,
             category: item.category,
             notes: item.notes
-          })),
+          })).sort((a, b) => a.name.localeCompare(b.name)),
           itemCount: data.itemCount ?? data.item_count ?? 0,
           checkedCount: data.checkedCount ?? data.checked_count ?? 0
         }
@@ -529,6 +530,20 @@ function ShoppingLists() {
   }
 
   /**
+   * Open complete list confirmation modal
+   */
+  const openCompleteListModal = (listId) => {
+    setCompleteListModal({ isOpen: true, listId })
+  }
+
+  /**
+   * Close complete list confirmation modal
+   */
+  const closeCompleteListModal = () => {
+    setCompleteListModal({ isOpen: false, listId: null })
+  }
+
+  /**
    * Handle deleting item
    */
   const handleDeleteItem = async () => {
@@ -556,11 +571,15 @@ function ShoppingLists() {
     }
   }
 
-  const handleCompleteList = async (listId) => {
+  const handleCompleteList = async () => {
+    const { listId } = completeListModal
+    if (!listId) return
+
     try {
       await shoppingListService.complete(listId)
       await loadLists()
       setSelectedList(null)
+      closeCompleteListModal()
     } catch (error) {
       console.error('Error completing list:', error)
       alert(t('shoppingLists.errorCompleting'))
@@ -1129,6 +1148,16 @@ function ShoppingLists() {
         variant="danger"
       />
 
+      {/* Complete List Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={completeListModal.isOpen}
+        onClose={closeCompleteListModal}
+        onConfirm={handleCompleteList}
+        title={t('shoppingLists.completeList')}
+        message={t('shoppingLists.confirmCompleteList')}
+        confirmText={t('common.confirm')}
+      />
+
       {/* Loading Progress Overlay */}
       <LoadingProgress show={showLoadingProgress} />
 
@@ -1163,6 +1192,20 @@ function ShoppingLists() {
                   </span>
                 )}
               </div>
+
+              <div className="header-action-buttons">
+                <button className="btn btn-sm btn-primary" onClick={() => setShowItemForm(true)}>
+                  <FiPlus /> {t('shoppingLists.addItem')}
+                </button>
+                {!selectedList.list.isCompleted && selectedList.items.length > 0 && (
+                  <button
+                    className="btn btn-sm btn-success"
+                    onClick={() => openCompleteListModal(selectedList.list.id)}
+                  >
+                    <FiCheck /> {t('shoppingLists.completeList')}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="header-actions">
               <button
@@ -1179,19 +1222,7 @@ function ShoppingLists() {
             </div>
           </div>
 
-          <div className="items-actions-bar">
-            <button className="btn btn-sm btn-primary" onClick={() => setShowItemForm(true)}>
-              <FiPlus /> {t('shoppingLists.addItem')}
-            </button>
-            {!selectedList.list.isCompleted && selectedList.items.length > 0 && (
-              <button
-                className="btn btn-sm btn-success"
-                onClick={() => handleCompleteList(selectedList.list.id)}
-              >
-                <FiCheck /> {t('shoppingLists.completeList')}
-              </button>
-            )}
-          </div>
+
 
           <div className="items-list" key={`list-${selectedList.list.id}`}>
             {selectedList.items.length === 0 ? (
