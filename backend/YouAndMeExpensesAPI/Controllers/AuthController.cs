@@ -179,6 +179,43 @@ namespace YouAndMeExpensesAPI.Controllers
         public async Task<IActionResult> GetUserTenant()
             => HandleProxyResponse(await _shieldAuthService.GetUserTenantAsync(GetToken()));
 
+        // ==================================================================================
+        // TWO-FACTOR AUTHENTICATION PROXY ENDPOINTS
+        // ==================================================================================
+
+        [Authorize]
+        [HttpPost("2fa/setup")]
+        public async Task<IActionResult> Setup2FA()
+            => HandleProxyResponse(await _shieldAuthService.Setup2FAAsync(GetToken()));
+
+        [Authorize]
+        [HttpPost("2fa/enable")]
+        public async Task<IActionResult> Enable2FA([FromBody] object request)
+            => HandleProxyResponse(await _shieldAuthService.Enable2FAAsync(request, GetToken()));
+
+        [Authorize]
+        [HttpPost("2fa/disable")]
+        public async Task<IActionResult> Disable2FA([FromBody] object request)
+            => HandleProxyResponse(await _shieldAuthService.Disable2FAAsync(request, GetToken()));
+
+        [HttpPost("2fa/verify")]
+        public async Task<IActionResult> Verify2FA([FromBody] object request)
+            => HandleProxyResponse(await _shieldAuthService.Verify2FAAsync(request));
+
+        [HttpPost("2fa/verify-backup")]
+        public async Task<IActionResult> VerifyBackupCode([FromBody] object request)
+            => HandleProxyResponse(await _shieldAuthService.VerifyBackupCodeAsync(request));
+
+        [Authorize]
+        [HttpPost("2fa/regenerate-backup-codes")]
+        public async Task<IActionResult> RegenerateBackupCodes([FromBody] object request)
+            => HandleProxyResponse(await _shieldAuthService.RegenerateBackupCodesAsync(request, GetToken()));
+
+        [Authorize]
+        [HttpGet("2fa/status")]
+        public async Task<IActionResult> Get2FAStatus()
+            => HandleProxyResponse(await _shieldAuthService.Get2FAStatusAsync(GetToken()));
+
 
         // ==================================================================================
         // LOCAL ENDPOINTS (Resource Server Logic)

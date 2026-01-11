@@ -20,6 +20,15 @@ namespace YouAndMeExpensesAPI.Services
         Task<ProxyAuthResponse> GetUserTenantAsync(string token);
         Task<bool> ValidateSessionAsync(string sessionId);
         Task<bool> ValidatePasswordAsync(string token, string password);
+        
+        // Two-Factor Authentication
+        Task<ProxyAuthResponse> Setup2FAAsync(string token);
+        Task<ProxyAuthResponse> Enable2FAAsync(object request, string token);
+        Task<ProxyAuthResponse> Disable2FAAsync(object request, string token);
+        Task<ProxyAuthResponse> Verify2FAAsync(object request);
+        Task<ProxyAuthResponse> VerifyBackupCodeAsync(object request);
+        Task<ProxyAuthResponse> RegenerateBackupCodesAsync(object request, string token);
+        Task<ProxyAuthResponse> Get2FAStatusAsync(string token);
     }
 
     public class ShieldAuthService : IShieldAuthService
@@ -104,6 +113,28 @@ namespace YouAndMeExpensesAPI.Services
              }
              return false;
         }
+
+        // Two-Factor Authentication
+        public async Task<ProxyAuthResponse> Setup2FAAsync(string token)
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/2fa/setup", null, token);
+
+        public async Task<ProxyAuthResponse> Enable2FAAsync(object request, string token)
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/2fa/enable", request, token);
+
+        public async Task<ProxyAuthResponse> Disable2FAAsync(object request, string token)
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/2fa/disable", request, token);
+
+        public async Task<ProxyAuthResponse> Verify2FAAsync(object request)
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/2fa/verify", request);
+
+        public async Task<ProxyAuthResponse> VerifyBackupCodeAsync(object request)
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/2fa/verify-backup", request);
+
+        public async Task<ProxyAuthResponse> RegenerateBackupCodesAsync(object request, string token)
+            => await ProxyRequestAsync(HttpMethod.Post, $"{_baseUrl}/2fa/regenerate-backup-codes", request, token);
+
+        public async Task<ProxyAuthResponse> Get2FAStatusAsync(string token)
+            => await ProxyRequestAsync(HttpMethod.Get, $"{_baseUrl}/2fa/status", null, token);
 
         private async Task<ProxyAuthResponse> ProxyRequestAsync(HttpMethod method, string url, object? payload = null, string? token = null, Dictionary<string, string>? headers = null)
         {
