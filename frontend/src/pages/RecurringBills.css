@@ -722,36 +722,212 @@
 }
 
 /* ================================
-   Animations
+   Mark as Paid / Revert Animations
+   Smooth, performant transitions with visual feedback
    ================================ */
 
-@keyframes slideOutRight {
-  to {
-    opacity: 0;
-    transform: translateX(100%) scale(0.9);
-    height: 0;
-    margin-bottom: 0;
-    padding: 0;
+/* Base transition setup for smooth animations */
+.bill-card {
+  will-change: transform, opacity;
+  transform-origin: center center;
+}
+
+/* Success checkmark overlay that appears when marking paid */
+.bill-card::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 80px;
+  height: 80px;
+  background: var(--success-dark);
+  color: white;
+  border-radius: 50%;
+  font-size: 2.5rem;
+  font-weight: bold;
+  line-height: 80px;
+  text-align: center;
+  opacity: 0;
+  z-index: 10;
+  pointer-events: none;
+  transition: none;
+  box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
+}
+
+/* Revert icon overlay */
+.bill-card.reverting::after,
+.bill-card.reverting-exit::after {
+  content: '↺';
+  background: var(--warning-dark);
+  box-shadow: 0 4px 20px rgba(255, 152, 0, 0.4);
+}
+
+/* ---- Mark as Paid Animation ---- */
+@keyframes markPaidPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: var(--shadow-md);
+  }
+  15% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.3), var(--shadow-lg);
+  }
+  30% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
-@keyframes slideOutLeft {
-  to {
+@keyframes checkmarkPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
     opacity: 0;
-    transform: translateX(-100%) scale(0.9);
-    height: 0;
-    margin-bottom: 0;
-    padding: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 1;
+  }
+  85% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutFade {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  70% {
+    opacity: 0.5;
+    transform: translateX(30px) scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(60px) scale(0.95);
   }
 }
 
 .bill-card.marking-paid {
-  animation: slideOutRight 0.4s ease-in forwards;
+  animation: markPaidPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   pointer-events: none;
-  /* Prevent clicks while animating */
+  border-left-color: var(--success-dark) !important;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, var(--bg-secondary) 100%) !important;
+}
+
+.bill-card.marking-paid::after {
+  animation: checkmarkPop 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+}
+
+/* Exit animation after checkmark */
+.bill-card.marking-paid-exit {
+  animation: slideOutFade 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+  border-left-color: var(--success-dark) !important;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, var(--bg-secondary) 100%) !important;
+}
+
+/* Keep checkmark visible but faded during exit */
+.bill-card.marking-paid-exit::after {
+  opacity: 0.6;
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+/* ---- Revert Animation ---- */
+@keyframes revertPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: var(--shadow-md);
+  }
+  15% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.3), var(--shadow-lg);
+  }
+  30% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slideOutLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  70% {
+    opacity: 0.5;
+    transform: translateX(-30px) scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-60px) scale(0.95);
+  }
 }
 
 .bill-card.reverting {
-  animation: slideOutLeft 0.4s ease-in forwards;
+  animation: revertPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   pointer-events: none;
+  border-left-color: var(--warning-dark) !important;
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, var(--bg-secondary) 100%) !important;
+}
+
+.bill-card.reverting::after {
+  animation: checkmarkPop 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+}
+
+.bill-card.reverting-exit {
+  animation: slideOutLeft 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+  border-left-color: var(--warning-dark) !important;
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15) 0%, var(--bg-secondary) 100%) !important;
+}
+
+/* Keep icon visible but faded during exit */
+.bill-card.reverting-exit::after {
+  opacity: 0.6;
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+/* ---- Entrance animation for newly appeared cards ---- */
+@keyframes slideInFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.bill-card.just-appeared {
+  animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Paid section cards styling */
+.paid-section .bill-card {
+  border-left-color: var(--success-dark);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, var(--bg-secondary) 100%);
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .bill-card,
+  .bill-card::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -20,6 +20,7 @@ import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import Skeleton from '../components/Skeleton'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import TransactionDetailModal from '../components/TransactionDetailModal'
 import './Expenses.css'
 
 function Expenses() {
@@ -37,6 +38,7 @@ function Expenses() {
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, expense: null })
   const [viewModal, setViewModal] = useState(null) // For viewing full receipt
+  const [detailModal, setDetailModal] = useState(null) // For viewing transaction details
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
@@ -530,7 +532,14 @@ function Expenses() {
       ) : (
         <div className="expenses-grid">
           {displayedExpenses.map((expense) => (
-            <div key={expense.id} className="expense-card card">
+            <div 
+              key={expense.id} 
+              className="expense-card card clickable"
+              onClick={() => setDetailModal(expense)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && setDetailModal(expense)}
+            >
               <div className="expense-header">
                 <div className="expense-category">
                   {t(`categories.${(expense.category || '').toLowerCase()}`)}
@@ -569,10 +578,10 @@ function Expenses() {
                 )}
               </div>
 
-              <div className="expense-actions">
+              <div className="expense-actions" onClick={(e) => e.stopPropagation()}>
                 {expense.attachmentUrl && (
                   <button
-                    onClick={() => setViewModal(expense)}
+                    onClick={(e) => { e.stopPropagation(); setViewModal(expense); }}
                     className="btn-icon"
                     aria-label={t('transaction.viewAttachment', 'View Receipt')}
                     title={t('transaction.viewAttachment', 'View Receipt')}
@@ -581,14 +590,14 @@ function Expenses() {
                   </button>
                 )}
                 <button
-                  onClick={() => openEditForm(expense)}
+                  onClick={(e) => { e.stopPropagation(); openEditForm(expense); }}
                   className="btn-icon"
                   aria-label="Edit"
                 >
                   <FiEdit size={18} />
                 </button>
                 <button
-                  onClick={() => openDeleteModal(expense)}
+                  onClick={(e) => { e.stopPropagation(); openDeleteModal(expense); }}
                   className="btn-icon delete"
                   aria-label="Delete"
                 >
@@ -675,6 +684,13 @@ function Expenses() {
           </div>
         </div>
       </Modal>
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal
+        transaction={detailModal}
+        isOpen={!!detailModal}
+        onClose={() => setDetailModal(null)}
+      />
     </div>
   )
 }

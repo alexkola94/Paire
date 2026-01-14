@@ -30,6 +30,15 @@ export const getStoredUser = () => {
 }
 
 /**
+ * Update stored user data (optimistic update)
+ * Useful for updating specific user properties without full re-auth
+ * @param {Object} updates - Partial user object with properties to update
+ */
+export const updateStoredUser = (updates) => {
+  return sessionManager.updateCurrentUser(updates)
+}
+
+/**
  * Store authentication data (per-tab session or persistent)
  * The storeSession method automatically broadcasts SESSION_CREATED
  * which will invalidate other tabs with the same user

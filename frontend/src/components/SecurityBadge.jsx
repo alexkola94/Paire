@@ -1,16 +1,18 @@
 import { Link } from 'react-router-dom';
 import { FiShield, FiAlertCircle } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
-import { getStoredUser } from '../services/auth';
+import useCurrentUser from '../hooks/useCurrentUser';
 import './SecurityBadge.css';
 
 /**
  * Security Badge Component
  * Small inline security indicator for the dashboard header
+ * Uses useCurrentUser hook to reactively update when 2FA status changes
  */
 const SecurityBadge = () => {
   const { t } = useTranslation();
-  const user = getStoredUser();
+  // Use the hook to stay in sync with user updates (including 2FA changes)
+  const user = useCurrentUser();
   
   // Check if 2FA is enabled
   const has2FA = user?.twoFactorEnabled || false;

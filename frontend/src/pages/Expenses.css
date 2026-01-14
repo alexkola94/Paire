@@ -435,3 +435,26 @@
     /* Reset to normal flow */
   }
 }
+
+/* ================================
+   Clickable Card Styles
+   ================================ */
+
+.clickable {
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.clickable:active {
+  transform: translateY(0);
+}
+
+.clickable:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

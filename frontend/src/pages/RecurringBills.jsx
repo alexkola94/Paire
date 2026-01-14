@@ -112,7 +112,14 @@ function RecurringBills() {
 
   const markPaidMutation = useMutation({
     mutationFn: recurringBillService.markPaid,
+    // Optimistic update handled manually in handleMarkPaid
     onSuccess: () => {
+      // Silently refresh in background to sync with server
+      queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
+      queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
+    },
+    onError: (error, billId) => {
+      // Restore the bill on error - refetch from server
       queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
       queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
     }
@@ -120,7 +127,13 @@ function RecurringBills() {
 
   const unmarkPaidMutation = useMutation({
     mutationFn: recurringBillService.unmarkPaid,
+    // Optimistic update handled manually in confirmUnmark
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
+      queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
+    },
+    onError: (error, billId) => {
+      // Restore on error - refetch from server
       queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
       queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] })
     }
@@ -244,18 +257,31 @@ function RecurringBills() {
   const handleMarkPaid = async (billId, billAmount, notes) => {
     if (processingBillId || animatingBill.id) return
 
-    // 1. Trigger Animation
-    setAnimatingBill({ id: billId, type: 'marking-paid' })
-
-    const bill = bills.find(b => b.id === billId)
     // Keep local references for loan logic if needed
     const loanRefMatch = notes && notes.match(/\[LOAN_REF:([^\]]+)\]/)
 
-    // Wait for animation
+    // Phase 1: Start checkmark animation
+    setAnimatingBill({ id: billId, type: 'marking-paid' })
+
+    // Phase 2: After checkmark shows, trigger exit animation AND optimistically remove from cache
+    setTimeout(() => {
+      setAnimatingBill({ id: billId, type: 'marking-paid-exit' })
+      
+      // OPTIMISTIC UPDATE: Remove bill from cache immediately so it never comes back
+      queryClient.setQueryData(['recurringBills'], (oldBills) => {
+        if (!oldBills) return oldBills
+        // We don't actually remove it - we mark it as "processing" by moving nextDueDate forward
+        // The server will calculate the new nextDueDate, so we just hide it from current view
+        return oldBills.filter(b => b.id !== billId)
+      })
+    }, 700)
+
+    // Phase 3: After exit animation, make API call (card is already gone from view)
     setTimeout(async () => {
       try {
         setProcessingBillId(billId)
-        // Mark Paid Mutation
+        
+        // Mark Paid Mutation - this will refresh the data with correct nextDueDate
         await markPaidMutation.mutateAsync(billId)
 
         // Additional Logic: Loan Payment Creation (Manual for now as it was before)
@@ -278,11 +304,13 @@ function RecurringBills() {
       } catch (error) {
         console.error('Error marking bill as paid:', error)
         alert(t('recurringBills.errorMarkingPaid'))
+        // On error, refetch to restore the bill
+        queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
       } finally {
         setProcessingBillId(null)
         setAnimatingBill({ id: null, type: null })
       }
-    }, 400)
+    }, 1050) // 700ms (checkmark) + 350ms (exit animation)
   }
 
   const handleUnmarkPaid = (bill) => {
@@ -294,8 +322,22 @@ function RecurringBills() {
     if (!bill) return
 
     setUnmarkModal({ isOpen: false, bill: null })
+    
+    // Phase 1: Start revert animation with icon
     setAnimatingBill({ id: bill.id, type: 'reverting' })
 
+    // Phase 2: After icon shows, trigger exit animation AND optimistically remove from cache
+    setTimeout(() => {
+      setAnimatingBill({ id: bill.id, type: 'reverting-exit' })
+      
+      // OPTIMISTIC UPDATE: Remove bill from cache immediately so it never comes back
+      queryClient.setQueryData(['recurringBills'], (oldBills) => {
+        if (!oldBills) return oldBills
+        return oldBills.filter(b => b.id !== bill.id)
+      })
+    }, 700)
+
+    // Phase 3: After exit animation, make API call (card is already gone from view)
     setTimeout(async () => {
       try {
         setProcessingBillId(bill.id)
@@ -323,11 +365,13 @@ function RecurringBills() {
       } catch (error) {
         console.error('Error unmarking bill:', error)
         alert(t('recurringBills.errorUnmarking'))
+        // On error, refetch to restore the bill
+        queryClient.invalidateQueries({ queryKey: ['recurringBills'] })
       } finally {
         setProcessingBillId(null)
         setAnimatingBill({ id: null, type: null })
       }
-    }, 400)
+    }, 1050) // 700ms (icon) + 350ms (exit animation)
   }
 
   /**

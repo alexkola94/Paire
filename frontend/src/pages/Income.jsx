@@ -1,22 +1,19 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiX, FiDownload } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
-import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns'
+import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import LogoLoader from '../components/LogoLoader'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
-import SearchInput from '../components/SearchInput' // Added
-import DatePicker from '../components/DatePicker' // Added for consistency with Expenses if desired, or stick to Receipts style? Receipts has Search+Category. Expenses has Search+Date. Income likely benefits from Date. I'll add Search+Category+Date to be robust, but user asked for "identical search functionality" (referring to Receipts?). Receipts has Search+Category. I'll stick to Search + Category to Match Receipts EXACTLY as requested, but maybe keep DatePicker if it was there? It wasn't there before.
-// Actually, Receipts has Search + Category. Expenses has Search + Date. 
-// "implement identical search functionality for [Income.jsx] as well" -> likely refers to local search + filters.
-// I'll add Search + Category (from Receipts) and maybe Date (from Expenses) since Income is time-based.
-// But to be safe and follow "identical", I'll definitely add Search + Category.
+import SearchInput from '../components/SearchInput'
+import DatePicker from '../components/DatePicker'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import TransactionDetailModal from '../components/TransactionDetailModal'
 import './Income.css'
 
 /**
@@ -25,13 +22,18 @@ import './Income.css'
  */
 function Income() {
   const { t } = useTranslation()
+  // All incomes from API
   const [allIncomes, setAllIncomes] = useState([])
+  // Incomes for current page (after filtering and pagination)
+  const [displayedIncomes, setDisplayedIncomes] = useState([])
+  
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingIncome, setEditingIncome] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, income: null })
   const [viewModal, setViewModal] = useState(null) // For viewing full receipt
+  const [detailModal, setDetailModal] = useState(null) // For viewing transaction details
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
 
@@ -39,10 +41,14 @@ function Income() {
   const [searchQuery, setSearchQuery] = useState('')
 
   // Date Filters
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
-  // Date Filters
-  const [startDate, setStartDate] = useState(null)
-  const [endDate, setEndDate] = useState(null)
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const PAGE_SIZE = 6
 
   // Deep linking
   const [searchParams, setSearchParams] = useSearchParams()
@@ -94,31 +100,55 @@ function Income() {
     }
   }
 
-  // Filter incomes locally
-  const filteredIncomes = useMemo(() => {
-    return allIncomes.filter(income => {
-      // Search
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        const description = (income.description || '').toLowerCase()
-        const category = (income.category || '').toLowerCase()
-        const amount = income.amount.toString()
+  /**
+   * Handle Search & Pagination Effect
+   * Runs whenever allIncomes, searchQuery, dates, or page changes
+   */
+  useEffect(() => {
+    // 1. Filter
+    let result = allIncomes
 
-        if (!description.includes(query) && !category.includes(query) && !amount.includes(query)) {
-          return false
-        }
-      }
+    // Text Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(income =>
+        (income.description && income.description.toLowerCase().includes(query)) ||
+        (income.category && income.category.toLowerCase().includes(query)) ||
+        (income.notes && income.notes.toLowerCase().includes(query)) ||
+        (income.amount && income.amount.toString().includes(query))
+      )
+    }
 
-      // Date Range
-      if (startDate || endDate) {
-        const incomeDate = new Date(income.date)
-        if (startDate && incomeDate < startOfDay(startDate)) return false
-        if (endDate && incomeDate > endOfDay(endDate)) return false
-      }
+    // Date Filter
+    if (startDate) {
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      result = result.filter(income => new Date(income.date) >= start)
+    }
 
-      return true
-    })
-  }, [allIncomes, searchQuery, startDate, endDate])
+    if (endDate) {
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      result = result.filter(income => new Date(income.date) <= end)
+    }
+
+    setTotalItems(result.length)
+    setTotalPages(Math.ceil(result.length / PAGE_SIZE))
+
+    // 2. Paginate
+    const startIndex = (page - 1) * PAGE_SIZE
+    const paginated = result.slice(startIndex, startIndex + PAGE_SIZE)
+    setDisplayedIncomes(paginated)
+
+  }, [allIncomes, searchQuery, page, startDate, endDate])
+
+  /**
+   * Handle search input
+   */
+  const handleSearch = (query) => {
+    setSearchQuery(query)
+    setPage(1) // Reset to first page
+  }
 
   /**
    * Handle creating new income
@@ -253,7 +283,7 @@ function Income() {
         <div>
           <h1>{t('income.title')}</h1>
           <p className="page-subtitle">
-            {t('income.totalCount', { count: filteredIncomes.length })}
+            {t('income.totalCount', { count: totalItems })}
           </p>
         </div>
         {!showForm && (
@@ -271,7 +301,7 @@ function Income() {
       <div className="income-filters-grid">
         <div className="search-span-full">
           <SearchInput
-            onSearch={setSearchQuery}
+            onSearch={handleSearch}
             placeholder={t('income.searchPlaceholder')}
           />
         </div>
@@ -279,7 +309,10 @@ function Income() {
         <div className="filter-item">
           <DatePicker
             selected={startDate}
-            onChange={setStartDate}
+            onChange={(date) => {
+              setStartDate(date ? date.toISOString() : '')
+              setPage(1)
+            }}
             placeholder={t('common.startDate')}
             className="form-control w-full"
           />
@@ -288,7 +321,10 @@ function Income() {
         <div className="filter-item">
           <DatePicker
             selected={endDate}
-            onChange={setEndDate}
+            onChange={(date) => {
+              setEndDate(date ? date.toISOString() : '')
+              setPage(1)
+            }}
             placeholder={t('common.endDate')}
             className="form-control w-full"
           />
@@ -325,7 +361,7 @@ function Income() {
       )}
 
       {/* Income List */}
-      {filteredIncomes.length === 0 ? (
+      {allIncomes.length === 0 && !loading ? (
         <div className="card empty-state">
           <p>{t('income.noIncome')}</p>
           <button
@@ -336,10 +372,21 @@ function Income() {
             {t('income.addIncome')}
           </button>
         </div>
+      ) : displayedIncomes.length === 0 && !loading ? (
+        <div className="card empty-state">
+          <p>{t('common.noResults', 'No income found matching your search.')}</p>
+        </div>
       ) : (
         <div className="income-grid">
-          {filteredIncomes.map((income) => (
-            <div key={income.id} className="income-card card">
+          {displayedIncomes.map((income) => (
+            <div 
+              key={income.id} 
+              className="income-card card clickable"
+              onClick={() => setDetailModal(income)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && setDetailModal(income)}
+            >
               <div className="income-header">
                 <div className="income-category">
                   {t(`categories.${(income.category || '').toLowerCase()}`)}
@@ -378,10 +425,10 @@ function Income() {
                 )}
               </div>
 
-              <div className="income-actions">
+              <div className="income-actions" onClick={(e) => e.stopPropagation()}>
                 {income.attachmentUrl && (
                   <button
-                    onClick={() => setViewModal(income)}
+                    onClick={(e) => { e.stopPropagation(); setViewModal(income); }}
                     className="btn-icon"
                     aria-label={t('transaction.viewAttachment', 'View Receipt')}
                     title={t('transaction.viewAttachment', 'View Receipt')}
@@ -390,14 +437,14 @@ function Income() {
                   </button>
                 )}
                 <button
-                  onClick={() => openEditForm(income)}
+                  onClick={(e) => { e.stopPropagation(); openEditForm(income); }}
                   className="btn-icon"
                   aria-label="Edit"
                 >
                   <FiEdit size={18} />
                 </button>
                 <button
-                  onClick={() => openDeleteModal(income)}
+                  onClick={(e) => { e.stopPropagation(); openDeleteModal(income); }}
                   className="btn-icon delete"
                   aria-label="Delete"
                 >
@@ -406,6 +453,33 @@ function Income() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pagination-controls">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="btn btn-secondary pagination-btn"
+          >
+            <FiChevronLeft />
+            {t('common.previous')}
+          </button>
+
+          <span className="pagination-info">
+            {t('common.page')} {page} {t('common.of')} {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="btn btn-secondary pagination-btn"
+          >
+            {t('common.next')}
+            <FiChevronRight />
+          </button>
         </div>
       )}
 
@@ -458,6 +532,13 @@ function Income() {
           </div>
         </div>
       </Modal>
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal
+        transaction={detailModal}
+        isOpen={!!detailModal}
+        onClose={() => setDetailModal(null)}
+      />
     </div>
   )
 }

@@ -256,6 +256,35 @@ export const sessionManager = {
   },
 
   /**
+   * Update current user data in storage (optimistic update)
+   * Useful for updating specific user properties without full re-auth
+   * @param {Object} updates - Partial user object with properties to update
+   */
+  updateCurrentUser(updates) {
+    const currentUser = this.getCurrentUser()
+    if (!currentUser) return null
+
+    // Merge updates with current user
+    const updatedUser = { ...currentUser, ...updates }
+
+    // Update in the appropriate storage
+    const userJson = JSON.stringify(updatedUser)
+    if (sessionStorage.getItem(SESSION_USER_KEY)) {
+      sessionStorage.setItem(SESSION_USER_KEY, userJson)
+    }
+    if (localStorage.getItem(SESSION_USER_KEY)) {
+      localStorage.setItem(SESSION_USER_KEY, userJson)
+    }
+
+    // Dispatch event to notify all components listening for user updates
+    window.dispatchEvent(new CustomEvent('user-updated', {
+      detail: { user: updatedUser, updates }
+    }))
+
+    return updatedUser
+  },
+
+  /**
    * Check if session exists
    */
   hasSession() {

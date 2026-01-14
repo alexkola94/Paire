@@ -51,7 +51,7 @@ const BankStatementImport = ({ onImportSuccess }) => {
         if (!validExtensions.includes(extension)) {
             setUploadResult({
                 type: 'error',
-                message: t('import.invalidFileType', 'Invalid file type. Please upload a .csv, .xlsx, or .pdf file.')
+                message: t('import.invalidFileType')
             })
             return
         }
@@ -60,7 +60,7 @@ const BankStatementImport = ({ onImportSuccess }) => {
         if (selectedFile.size > 5 * 1024 * 1024) {
             setUploadResult({
                 type: 'error',
-                message: t('import.fileTooLarge', 'File is too large using. Max size is 5MB.')
+                message: t('import.fileTooLarge')
             })
             return
         }
@@ -94,7 +94,7 @@ const BankStatementImport = ({ onImportSuccess }) => {
     }
 
     const handleRevert = async (importId) => {
-        if (!window.confirm(t('import.revertConfirm', 'Are you sure you want to revert this import? All associated transactions will be deleted.'))) {
+        if (!window.confirm(t('import.revertConfirm'))) {
             return
         }
 
@@ -108,13 +108,13 @@ const BankStatementImport = ({ onImportSuccess }) => {
             if (response.ok) {
                 fetchHistory() // Refresh history
                 if (onImportSuccess) onImportSuccess() // Trigger parent refresh if needed
-                alert(t('import.revertSuccess', 'Import reverted successfully.'))
+                alert(t('import.revertSuccess'))
             } else {
                 throw new Error('Revert failed')
             }
         } catch (error) {
             console.error('Error reverting import:', error)
-            alert(t('import.revertError', 'Failed to revert import.'))
+            alert(t('import.revertError'))
         }
     }
 
@@ -140,12 +140,12 @@ const BankStatementImport = ({ onImportSuccess }) => {
             const data = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.message || t('import.uploadFailed', 'Upload failed'))
+                throw new Error(data.message || t('import.uploadFailed'))
             }
 
             setUploadResult({
                 type: 'success',
-                message: t('import.success', 'Import successful!'),
+                message: t('import.success'),
                 details: data.result
             })
 
@@ -162,7 +162,7 @@ const BankStatementImport = ({ onImportSuccess }) => {
             console.error('Import error:', error)
             setUploadResult({
                 type: 'error',
-                message: error.message || t('import.genericError', 'An error occurred during import.')
+                message: error.message || t('import.genericError')
             })
         } finally {
             setIsUploading(false)
@@ -190,10 +190,10 @@ const BankStatementImport = ({ onImportSuccess }) => {
                     <div className="drop-zone-content">
                         <FiUpload className="upload-icon" size={40} />
                         <p className="upload-text">
-                            {t('import.dragDrop', 'Click or drag file to upload statement')}
+                            {t('import.dragDrop')}
                         </p>
                         <p className="upload-subtext">
-                            {t('import.formats', 'Supports CSV, Excel, and PDF from major banks')}
+                            {t('import.formats')}
                         </p>
                     </div>
                 ) : (
@@ -228,7 +228,7 @@ const BankStatementImport = ({ onImportSuccess }) => {
                         <span className="spinner-small"></span>
                     ) : (
                         <>
-                            <FiUpload /> {t('import.uploadBtn', 'Import Transactions')}
+                            <FiUpload /> {t('import.uploadBtn')}
                         </>
                     )}
                 </button>
@@ -243,10 +243,10 @@ const BankStatementImport = ({ onImportSuccess }) => {
                                 <h4>{uploadResult.message}</h4>
                                 {uploadResult.details && (
                                     <ul className="import-stats">
-                                        <li>{t('import.total', 'Imported')}: <strong>{uploadResult.details.totalImported}</strong></li>
-                                        <li>{t('import.skipped', 'Skipped (Duplicates)')}: <strong>{uploadResult.details.duplicatesSkipped}</strong></li>
+                                        <li>{t('import.total')}: <strong>{uploadResult.details.totalImported}</strong></li>
+                                        <li>{t('import.skipped')}: <strong>{uploadResult.details.duplicatesSkipped}</strong></li>
                                         {uploadResult.details.errors > 0 && (
-                                            <li className="text-danger">{t('import.errors', 'Errors')}: <strong>{uploadResult.details.errors}</strong></li>
+                                            <li className="text-danger">{t('import.errors')}: <strong>{uploadResult.details.errors}</strong></li>
                                         )}
                                     </ul>
                                 )}
@@ -262,11 +262,11 @@ const BankStatementImport = ({ onImportSuccess }) => {
             )}
 
             <div className="import-instructions">
-                <h4>{t('import.instructionsTitle', 'How to import your statement')}</h4>
+                <h4>{t('import.instructionsTitle')}</h4>
                 <ol>
-                    <li>{t('import.step1', 'Log in to your online banking.')}</li>
-                    <li>{t('import.step2', 'Download your transaction history as CSV, Excel, or PDF.')}</li>
-                    <li>{t('import.step3', 'Upload the file here to sync your transactions.')}</li>
+                    <li>{t('import.step1')}</li>
+                    <li>{t('import.step2')}</li>
+                    <li>{t('import.step3')}</li>
                 </ol>
             </div>
 
@@ -275,7 +275,7 @@ const BankStatementImport = ({ onImportSuccess }) => {
                     <details>
                         <summary>
                             <FiClock className="history-icon" />
-                            {t('import.historyTitle', 'Import History')} ({history.length})
+                            {t('import.historyTitle')} ({history.length})
                         </summary>
                         <div className="history-list">
                             {history.map((record) => (
@@ -292,9 +292,9 @@ const BankStatementImport = ({ onImportSuccess }) => {
                                     <button
                                         className="revert-btn"
                                         onClick={() => handleRevert(record.id)}
-                                        title={t('import.revertTitle', 'Revert this import')}
+                                        title={t('import.revertTitle')}
                                     >
-                                        <FiTrash2 /> {t('import.revert', 'Revert')}
+                                        <FiTrash2 /> {t('import.revert')}
                                     </button>
                                 </div>
                             ))}

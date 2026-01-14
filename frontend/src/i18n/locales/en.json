@@ -180,6 +180,9 @@
     "uploadReceipt": "Upload Receipt",
     "deleteAttachment": "Delete Attachment",
     "viewAttachment": "View Attachment",
+    "notes": "Notes",
+    "source": "Source",
+    "manual": "Manual Entry",
     "quickAmount": "Quick amount: €{{amount}}",
     "quickDate": {
       "today": "Today",
@@ -375,7 +378,12 @@
     "balance": "Balance",
     "lastWeek": "Last 7 Days",
     "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "last3Months": "Last 3 Months",
+    "last6Months": "Last 6 Months",
     "thisYear": "This Year",
+    "lastYear": "Last Year",
+    "allTime": "All Time",
     "loansGiven": "Loans Given",
     "loansReceived": "Loans Received",
     "paidBack": "Paid Back",
@@ -384,7 +392,9 @@
     "partner": "Partner",
     "together": "Together",
     "noCategoryData": "No category data available",
-    "noCategoryDataDescription": "Add expenses to see spending breakdown by category"
+    "noCategoryDataDescription": "Add expenses to see spending breakdown by category",
+    "clickToViewTransactions": "Click to view transactions",
+    "noTransactionsInCategory": "No transactions in this category"
   },
   "partnership": {
     "title": "Partnership",
@@ -779,7 +789,9 @@
     "download": "Download",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "allCategories": "All Categories"
+    "allCategories": "All Categories",
+    "income": "Income",
+    "expense": "Expense"
   },
   "validation": {
     "required": "{{field}} is required",
@@ -1072,5 +1084,29 @@
       "copyright": "© {{year}} Paire. All rights reserved.",
       "privacy": "Privacy Policy"
     }
+  },
+  "import": {
+    "title": "Import Statements",
+    "dragDrop": "Click or drag file to upload statement",
+    "formats": "Supports CSV, Excel, and PDF from major banks",
+    "invalidFileType": "Invalid file type. Please upload a .csv, .xlsx, or .pdf file.",
+    "fileTooLarge": "File is too large. Max size is 5MB.",
+    "uploadFailed": "Upload failed",
+    "success": "Import successful!",
+    "genericError": "An error occurred during import.",
+    "uploadBtn": "Import Transactions",
+    "instructionsTitle": "How to import your statement",
+    "step1": "Log in to your online banking.",
+    "step2": "Download your transaction history as CSV, Excel, or PDF.",
+    "step3": "Upload the file here to sync your transactions.",
+    "historyTitle": "Import History",
+    "revertConfirm": "Are you sure you want to revert this import? All associated transactions will be deleted.",
+    "revertSuccess": "Import reverted successfully.",
+    "revertError": "Failed to revert import.",
+    "revertTitle": "Revert this import",
+    "revert": "Revert",
+    "total": "Imported",
+    "skipped": "Skipped (Duplicates)",
+    "errors": "Errors"
   }
 }

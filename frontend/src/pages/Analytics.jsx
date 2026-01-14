@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import {
   FiTrendingUp,
@@ -8,7 +9,11 @@ import {
   FiActivity,
   FiCalendar,
   FiFilter,
-  FiDownload
+  FiDownload,
+  FiX,
+  FiTag,
+  FiFileText,
+  FiUser
 } from 'react-icons/fi'
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import { Pie, Line, Bar } from 'react-chartjs-2'
@@ -46,6 +51,14 @@ function Analytics() {
   const [exportFormat, setExportFormat] = useState('csv') // 'csv', 'json', 'xlsx'
   const [partnerships, setPartnerships] = useState([])
   const [partnersOptions, setPartnersOptions] = useState([])
+  
+  // Category transactions modal state
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [categoryTransactions, setCategoryTransactions] = useState([])
+  const [allFilteredTransactions, setAllFilteredTransactions] = useState([])
+  const modalRef = useRef(null)
+  const closeButtonRef = useRef(null)
 
   /**
    * Load analytics data on mount and when date range or filter changes
@@ -123,13 +136,43 @@ function Analytics() {
 
     switch (dateRange) {
       case 'week':
+        // Last 7 days
         start = subDays(end, 7)
         break
       case 'month':
+        // This month (from 1st to today)
         start = new Date(end.getFullYear(), end.getMonth(), 1)
         break
+      case 'lastMonth':
+        // Last month (full month)
+        start = new Date(end.getFullYear(), end.getMonth() - 1, 1)
+        // End should be last day of last month
+        return {
+          start: start.toISOString(),
+          end: new Date(end.getFullYear(), end.getMonth(), 0, 23, 59, 59).toISOString()
+        }
+      case 'last3Months':
+        // Last 3 months from today
+        start = new Date(end.getFullYear(), end.getMonth() - 3, end.getDate())
+        break
+      case 'last6Months':
+        // Last 6 months from today
+        start = new Date(end.getFullYear(), end.getMonth() - 6, end.getDate())
+        break
       case 'year':
+        // This year (from Jan 1st to today)
         start = new Date(end.getFullYear(), 0, 1)
+        break
+      case 'lastYear':
+        // Last year (full year)
+        start = new Date(end.getFullYear() - 1, 0, 1)
+        return {
+          start: start.toISOString(),
+          end: new Date(end.getFullYear() - 1, 11, 31, 23, 59, 59).toISOString()
+        }
+      case 'all':
+        // All time - set start to a very early date
+        start = new Date(2000, 0, 1)
         break
       default:
         start = new Date(end.getFullYear(), end.getMonth(), 1)
@@ -313,6 +356,9 @@ function Analytics() {
 
         // Filter transactions based on view filter
         const filteredTransactions = filterTransactions(allTransactions || [])
+        
+        // Store filtered transactions for category drill-down
+        setAllFilteredTransactions(filteredTransactions)
 
         // Calculate analytics from filtered transactions
         const calculatedAnalytics = calculateAnalyticsFromTransactions(filteredTransactions)
@@ -660,6 +706,63 @@ function Analytics() {
     }
   }
 
+  /**
+   * Handle category click - open modal with filtered transactions
+   */
+  const handleCategoryClick = (category) => {
+    // Filter transactions by the selected category (expenses only)
+    const filtered = allFilteredTransactions.filter(
+      tx => tx.type === 'expense' && 
+           (tx.category || 'other').toLowerCase() === category.toLowerCase()
+    ).sort((a, b) => new Date(b.date) - new Date(a.date))
+    
+    setSelectedCategory(category)
+    setCategoryTransactions(filtered)
+    setCategoryModalOpen(true)
+  }
+
+  /**
+   * Close category modal
+   */
+  const closeCategoryModal = () => {
+    setCategoryModalOpen(false)
+    setSelectedCategory(null)
+    setCategoryTransactions([])
+  }
+
+  /**
+   * Handle click outside modal to close and manage focus
+   */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        closeCategoryModal()
+      }
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeCategoryModal()
+      }
+    }
+
+    if (categoryModalOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+      // Focus the close button for accessibility
+      setTimeout(() => {
+        closeButtonRef.current?.focus()
+      }, 100)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = ''
+    }
+  }, [categoryModalOpen])
+
   if (loading && partnersOptions.length === 0) { // Wait for options to load if possible, but keep loading state management
     return (
       <div className="page-loading">
@@ -723,7 +826,12 @@ function Analytics() {
             options={[
               { value: 'week', label: t('analytics.lastWeek') },
               { value: 'month', label: t('analytics.thisMonth') },
-              { value: 'year', label: t('analytics.thisYear') }
+              { value: 'lastMonth', label: t('analytics.lastMonth') },
+              { value: 'last3Months', label: t('analytics.last3Months') },
+              { value: 'last6Months', label: t('analytics.last6Months') },
+              { value: 'year', label: t('analytics.thisYear') },
+              { value: 'lastYear', label: t('analytics.lastYear') },
+              { value: 'all', label: t('analytics.allTime') }
             ]}
             value={dateRange}
             onChange={(value) => setDateRange(value)}
@@ -795,10 +903,18 @@ function Analytics() {
                 <Pie data={getCategoryChartData()} options={chartOptions} />
               </div>
 
-              {/* Category List - Show all categories */}
+              {/* Category List - Show all categories (clickable) */}
               <div className="category-list">
                 {analytics.categoryBreakdown.map((cat, index) => (
-                  <div key={index} className="category-item">
+                  <div 
+                    key={index} 
+                    className="category-item clickable"
+                    onClick={() => handleCategoryClick(cat.category)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCategoryClick(cat.category)}
+                    title={t('analytics.clickToViewTransactions', 'Click to view transactions')}
+                  >
                     <div className="category-info">
                       <span
                         className="category-color-indicator"
@@ -931,6 +1047,100 @@ function Analytics() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Category Transactions Modal - Rendered via Portal for proper positioning */}
+      {categoryModalOpen && createPortal(
+        <div 
+          className="category-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="category-modal-title"
+        >
+          <div className="category-modal" ref={modalRef}>
+            {/* Modal Header */}
+            <div className="category-modal-header">
+              <div className="modal-title-section">
+                <div className="modal-icon-wrapper">
+                  <FiTag size={20} />
+                </div>
+                <div className="modal-title-text">
+                  <h2 id="category-modal-title">
+                    {t(`categories.${(selectedCategory || '').toLowerCase()}`) || selectedCategory}
+                  </h2>
+                  <span className="modal-subtitle">
+                    {categoryTransactions.length} {t('analytics.transactions')}
+                  </span>
+                </div>
+              </div>
+              <button 
+                ref={closeButtonRef}
+                className="modal-close-btn"
+                onClick={closeCategoryModal}
+                aria-label={t('common.close')}
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content - Transaction List */}
+            <div className="category-modal-content">
+              {categoryTransactions.length === 0 ? (
+                <div className="empty-transactions">
+                  <FiFileText size={48} />
+                  <p>{t('analytics.noTransactionsInCategory', 'No transactions in this category')}</p>
+                </div>
+              ) : (
+                <div className="category-transactions-list">
+                  {categoryTransactions.map((tx, index) => (
+                    <div key={tx.id || index} className="category-transaction-item">
+                      <div className="transaction-main">
+                        <div className="transaction-info">
+                          <span className="transaction-description">
+                            {tx.description || t(`categories.${(tx.category || '').toLowerCase()}`) || tx.category}
+                          </span>
+                          <span className="transaction-date">
+                            {format(new Date(tx.date), 'MMM dd, yyyy')}
+                          </span>
+                        </div>
+                        <span className="transaction-amount negative">
+                          -{formatCurrency(tx.amount)}
+                        </span>
+                      </div>
+                      {/* Show who added it if available */}
+                      {(tx.user_profiles?.display_name || tx.userProfiles?.display_name) && (
+                        <div className="transaction-meta">
+                          <FiUser size={12} />
+                          <span>{tx.user_profiles?.display_name || tx.userProfiles?.display_name}</span>
+                        </div>
+                      )}
+                      {tx.notes && (
+                        <div className="transaction-notes">
+                          <FiFileText size={12} />
+                          <span>{tx.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="category-modal-footer">
+              <div className="modal-total">
+                <span>{t('analytics.totalExpenses')}:</span>
+                <strong className="negative">
+                  {formatCurrency(categoryTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0))}
+                </strong>
+              </div>
+              <button className="btn btn-secondary" onClick={closeCategoryModal}>
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   )

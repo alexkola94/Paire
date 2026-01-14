@@ -9,8 +9,6 @@ import TwoFactorSetup from '../components/TwoFactorSetup'
 import LogoLoader from '../components/LogoLoader'
 import './Profile.css'
 
-import BankStatementImport from '../components/BankStatementImport'
-
 /**
  * Profile Page Component
  * User settings and preferences
@@ -599,24 +597,6 @@ function Profile() {
           }
         }}
       />
-
-
-      <div className="card">
-        <div className="card-header">
-          <h2>
-            <FiGlobe size={24} />
-            {t('profile.importStatements', 'Import Bank Statements')}
-          </h2>
-        </div>
-
-        <BankStatementImport
-          onImportSuccess={(result) => {
-            console.log('Import completed', result);
-            // Optionally trigger a refresh of transactions if there were a context or global state
-          }}
-        />
-      </div>
-
 
       {/* Legal Information */}
       <div className="card">

@@ -40,6 +40,7 @@ function ShoppingLists() {
   const [uploading, setUploading] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [togglingItems, setTogglingItems] = useState(new Set()) // Track items being toggled to prevent double-tap
+  const [animatingItems, setAnimatingItems] = useState({}) // Track items with animation state: 'checking' | 'unchecking'
   const [swipeState, setSwipeState] = useState({}) // Track swipe gestures per item
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768) // Track mobile state for portal
 
@@ -430,40 +431,69 @@ function ShoppingLists() {
     // Mark item as being toggled
     setTogglingItems(prev => new Set(prev).add(itemId))
 
+    // Get current item state to determine animation type
+    const currentItem = selectedList.items.find(item => item.id === itemId)
+    const wasChecked = currentItem?.isChecked || false
+
+    // Set animation state for visual feedback
+    setAnimatingItems(prev => ({
+      ...prev,
+      [itemId]: wasChecked ? 'unchecking' : 'checking'
+    }))
+
+    // Optimistic update - update UI immediately for instant feedback
+    const updatedItems = selectedList.items.map(item =>
+      item.id === itemId
+        ? { ...item, isChecked: !item.isChecked }
+        : item
+    )
+
+    const checkedCount = updatedItems.filter(item => item.isChecked).length
+
+    // Update state immediately with new checked count
+    setSelectedList(prev => ({
+      ...prev,
+      items: updatedItems,
+      checkedCount: checkedCount,
+      itemCount: prev.itemCount || prev.items.length
+    }))
+
     try {
-      // Optimistic update - update UI immediately for instant feedback
-      const updatedItems = selectedList.items.map(item =>
-        item.id === itemId
-          ? { ...item, isChecked: !item.isChecked }
-          : item
-      )
-
-      const checkedCount = updatedItems.filter(item => item.isChecked).length
-
-      // Update state immediately with new checked count
-      setSelectedList(prev => ({
-        ...prev,
-        items: updatedItems,
-        checkedCount: checkedCount,
-        itemCount: prev.itemCount || prev.items.length
-      }))
-
-      // Then update on server
+      // Call API in background - don't wait for success to update UI
       await shoppingListService.toggleItem(selectedList.list.id, itemId)
-
-      // Reload to ensure sync with server (but don't wait for it to update UI)
-      loadListDetails(selectedList.list.id).catch(err => {
-        console.error('Error reloading list details:', err)
-      })
+      
+      // Success - animation will clear automatically, no need to reload
+      // This prevents the "flicker" caused by reloading after success
     } catch (error) {
       console.error('Error toggling item:', error)
-      // Revert optimistic update on error by reloading
+      
+      // Revert optimistic update on error by reloading from server
       try {
         await loadListDetails(selectedList.list.id)
       } catch (reloadError) {
         console.error('Error reloading after toggle failure:', reloadError)
+        // As a fallback, manually revert the local state
+        const revertedItems = selectedList.items.map(item =>
+          item.id === itemId
+            ? { ...item, isChecked: wasChecked }
+            : item
+        )
+        setSelectedList(prev => ({
+          ...prev,
+          items: revertedItems,
+          checkedCount: revertedItems.filter(item => item.isChecked).length
+        }))
       }
     } finally {
+      // Clear animation state after animation completes
+      setTimeout(() => {
+        setAnimatingItems(prev => {
+          const next = { ...prev }
+          delete next[itemId]
+          return next
+        })
+      }, 400) // Animation duration
+
       // Remove from toggling set after a short delay to allow for rapid successive taps
       setTimeout(() => {
         setTogglingItems(prev => {
@@ -1247,11 +1277,13 @@ function ShoppingLists() {
                   : isSwipeLeft
                     ? Math.min(100, (Math.abs(swipeOffset) / 80) * 100)
                     : 0
+                // Get animation state for this item
+                const animationState = animatingItems[item.id]
 
                 return (
                   <div
                     key={item.id}
-                    className={`item-card ${item.isChecked ? 'checked' : ''} ${swipe.isSwiping ? 'swiping' : ''} ${isSwipeRight ? 'swipe-right' : ''} ${isSwipeLeft ? 'swipe-left' : ''}`}
+                    className={`item-card ${item.isChecked ? 'checked' : ''} ${swipe.isSwiping ? 'swiping' : ''} ${isSwipeRight ? 'swipe-right' : ''} ${isSwipeLeft ? 'swipe-left' : ''} ${animationState === 'checking' ? 'animate-check' : ''} ${animationState === 'unchecking' ? 'animate-uncheck' : ''}`}
                     onTouchStart={(e) => {
                       // Don't interfere with checkbox touch events
                       if (!e.target.closest('.item-checkbox')) {

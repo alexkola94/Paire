@@ -26,7 +26,8 @@ import {
   FiUser,
   FiType,
   FiCpu,
-  FiImage
+  FiImage,
+  FiUpload
 } from 'react-icons/fi'
 
 
@@ -58,6 +59,7 @@ import LogoLoader from './LogoLoader'
 const Chatbot = lazy(() => import('./Chatbot'))
 import BottomNavigation from './BottomNavigation'
 import AccessibilitySettings from './AccessibilitySettings'
+import BankStatementImport from './BankStatementImport'
 import './Layout.css'
 import packageJson from '../../package.json'
 
@@ -77,8 +79,10 @@ function Layout() {
   const [avatarError, setAvatarError] = useState(false)
 
   const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false)
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const moreMenuRef = useRef(null)
   const userMenuRef = useRef(null)
+  const importModalRef = useRef(null)
 
   // Primary navigation items (always visible on desktop)
   const mainNavItems = [
@@ -137,6 +141,25 @@ function Layout() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Handle import modal keyboard and body scroll
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isImportOpen) {
+        setIsImportOpen(false)
+      }
+    }
+
+    if (isImportOpen) {
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = ''
+    }
+  }, [isImportOpen])
 
   const toggleMoreMenu = useCallback(() => {
     setMoreMenuOpen(prev => !prev)
@@ -257,6 +280,18 @@ function Layout() {
               tabIndex={0}
             >
               <FiFileText size={22} />
+            </span>
+
+            {/* Import Bank Statements - desktop only (Quick Tools) */}
+            <span
+              className="header-icon-btn import-button desktop-only"
+              onClick={() => setIsImportOpen(true)}
+              aria-label={t('import.title', 'Import Statements')}
+              title={t('import.title', 'Import Statements')}
+              role="button"
+              tabIndex={0}
+            >
+              <FiUpload size={22} />
             </span>
 
             {/* Currency Calculator - desktop only (Quick Tools) - New Icon */}
@@ -458,6 +493,18 @@ function Layout() {
             </NavLink>
           </li>
           <li className="mobile-only">
+            <button
+              className="nav-link"
+              onClick={() => {
+                setIsImportOpen(true)
+                closeMobileMenu()
+              }}
+            >
+              <FiUpload style={{ width: '20px', height: '20px' }} className="nav-icon" />
+              <span className="nav-label">{t('import.title', 'Import Statements')}</span>
+            </button>
+          </li>
+          <li className="mobile-only">
             <NavLink
               to="/reminders"
               className={({ isActive }) =>
@@ -590,6 +637,44 @@ function Layout() {
         isOpen={isAccessibilityOpen}
         onClose={() => setIsAccessibilityOpen(false)}
       />
+
+      {/* Import Bank Statements Modal */}
+      {isImportOpen && (
+        <div 
+          className="import-modal-overlay"
+          onClick={(e) => {
+            // Close on overlay click
+            if (e.target === e.currentTarget) {
+              setIsImportOpen(false)
+            }
+          }}
+        >
+          <div className="import-modal-panel" ref={importModalRef}>
+            <div className="import-modal-header">
+              <div className="import-modal-title">
+                <FiUpload size={24} />
+                <h2>{t('import.title', 'Import Bank Statements')}</h2>
+              </div>
+              <button
+                className="import-modal-close"
+                onClick={() => setIsImportOpen(false)}
+                aria-label={t('common.close')}
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+            <div className="import-modal-content">
+              <BankStatementImport
+                onImportSuccess={(result) => {
+                  console.log('Import completed', result)
+                  // Optionally close modal after successful import
+                  // setIsImportOpen(false)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   )
 }

@@ -8,7 +8,8 @@ import {
   FiFileText,
   FiUsers,
   FiUser,
-  FiFilter
+  FiFilter,
+  FiRefreshCw
 } from 'react-icons/fi'
 import { transactionService, budgetService, savingsGoalService, partnershipService } from '../services/api'
 import { getStoredUser } from '../services/auth'
@@ -23,6 +24,7 @@ import BudgetProgressBar from '../components/BudgetProgressBar'
 import SavingGoalProgressBar from '../components/SavingGoalProgressBar'
 import Dropdown from '../components/Dropdown'
 import { FiTarget, FiPieChart } from 'react-icons/fi'
+import TransactionDetailModal from '../components/TransactionDetailModal'
 import './Dashboard.css'
 
 /**
@@ -32,7 +34,8 @@ import './Dashboard.css'
  */
 function Dashboard() {
   const { t } = useTranslation()
-  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true) // First load - show skeleton
+  const [refreshing, setRefreshing] = useState(false) // Subsequent loads - show blur overlay
   // Store raw transactions for the month to allow client-side filtering
   const [monthTransactions, setMonthTransactions] = useState([])
   const [recentTransactions, setRecentTransactions] = useState([])
@@ -42,6 +45,8 @@ function Dashboard() {
   const [budgets, setBudgets] = useState([])
   const [savingGoals, setSavingGoals] = useState([])
   const [partnersOptions, setPartnersOptions] = useState([])
+  const [dataLoaded, setDataLoaded] = useState(false) // Track if we have data
+  const [detailModal, setDetailModal] = useState(null) // For viewing transaction details
 
   // Memoize date calculations to avoid recalculation on every render
   const dateRange = useMemo(() => {
@@ -55,10 +60,16 @@ function Dashboard() {
   /**
    * Fetch summary, recent transactions, and budgets
    * Memoized with useCallback to prevent unnecessary re-renders
+   * @param {boolean} isRefresh - Whether this is a refresh (vs initial load)
    */
-  const loadDashboardData = useCallback(async () => {
+  const loadDashboardData = useCallback(async (isRefresh = false) => {
     try {
-      setLoading(true)
+      // Use different loading states for initial vs refresh
+      if (isRefresh) {
+        setRefreshing(true)
+      } else {
+        setInitialLoading(true)
+      }
 
       // Fetch ALL transactions for current month (raw data instead of summary)
       // This allows us to filter by user/partner on the client side
@@ -90,10 +101,14 @@ function Dashboard() {
         console.warn('Failed to load saving goals', err)
       }
 
+      // Mark data as loaded
+      setDataLoaded(true)
+
     } catch (error) {
       console.error('❌ Error loading dashboard data:', error)
     } finally {
-      setLoading(false)
+      setInitialLoading(false)
+      setRefreshing(false)
     }
   }, [dateRange.startOfMonth, dateRange.endOfMonth])
 
@@ -240,7 +255,17 @@ function Dashboard() {
     setPage(1)
   }, [filterMode])
 
-  if (loading && partnersOptions.length === 0) {
+  /**
+   * Handle pull-to-refresh
+   */
+  const handleRefresh = async () => {
+    await loadDashboardData(true) // Pass true to indicate refresh
+  }
+
+  /**
+   * Skeleton Loading State - Initial Load
+   */
+  if (initialLoading && !dataLoaded) {
     return (
       <div className="dashboard-page">
         {/* Skeleton Header */}
@@ -249,17 +274,56 @@ function Dashboard() {
           <Skeleton height="20px" width="150px" />
         </div>
 
+        {/* Skeleton Filter */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <Skeleton height="44px" width="200px" style={{ borderRadius: '12px' }} />
+        </div>
+
         {/* Skeleton Summary Cards */}
         <div className="summary-cards">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="summary-card glass-card">
+            <div key={i} className="summary-card glass-card skeleton-pulse">
               <div className="card-icon">
                 <Skeleton type="circular" width="32px" height="32px" />
               </div>
               <div className="card-content">
                 <Skeleton height="16px" width="80px" style={{ marginBottom: '8px' }} />
-                <Skeleton height="24px" width="100px" />
+                <Skeleton height="28px" width="120px" />
               </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Skeleton Budget Section */}
+        <div className="glass-card skeleton-pulse" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <Skeleton height="24px" width="120px" />
+            <Skeleton height="20px" width="60px" />
+          </div>
+          {[1, 2].map(i => (
+            <div key={i} style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <Skeleton height="14px" width="100px" />
+                <Skeleton height="14px" width="80px" />
+              </div>
+              <Skeleton height="8px" width="100%" style={{ borderRadius: '4px' }} />
+            </div>
+          ))}
+        </div>
+
+        {/* Skeleton Saving Goals */}
+        <div className="glass-card skeleton-pulse" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <Skeleton height="24px" width="140px" />
+            <Skeleton height="20px" width="60px" />
+          </div>
+          {[1, 2].map(i => (
+            <div key={i} style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <Skeleton height="14px" width="120px" />
+                <Skeleton height="14px" width="80px" />
+              </div>
+              <Skeleton height="8px" width="100%" style={{ borderRadius: '4px' }} />
             </div>
           ))}
         </div>
@@ -267,25 +331,25 @@ function Dashboard() {
         {/* Skeleton Quick Access */}
         <div className="quick-access-section" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
           {[1, 2].map(i => (
-            <Skeleton key={i} height="80px" style={{ flex: 1, borderRadius: '16px' }} />
+            <Skeleton key={i} height="80px" style={{ flex: 1, borderRadius: '16px' }} className="skeleton-pulse" />
           ))}
         </div>
 
         {/* Skeleton Recent Transactions */}
-        <div className="card recent-transactions glass-card">
+        <div className="card recent-transactions glass-card skeleton-pulse">
           <div className="card-header flex-between">
             <Skeleton height="24px" width="180px" />
             <Skeleton height="20px" width="80px" />
           </div>
           <div className="transactions-list">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} style={{ display: 'flex', gap: '1rem', padding: '1rem 0' }}>
+              <div key={i} style={{ display: 'flex', gap: '1rem', padding: '1rem 0', alignItems: 'center' }}>
                 <Skeleton type="circular" width="40px" height="40px" />
                 <div style={{ flex: 1 }}>
-                  <Skeleton height="16px" width="60%" style={{ marginBottom: '4px' }} />
-                  <Skeleton height="12px" width="30%" />
+                  <Skeleton height="16px" width="60%" style={{ marginBottom: '6px' }} />
+                  <Skeleton height="12px" width="40%" />
                 </div>
-                <Skeleton height="20px" width="60px" />
+                <Skeleton height="20px" width="70px" />
               </div>
             ))}
           </div>
@@ -294,34 +358,42 @@ function Dashboard() {
     )
   }
 
-  const handleRefresh = async () => {
-    await loadDashboardData()
-  }
-
   return (
     <PullToRefresh onRefresh={handleRefresh} className="dashboard-page">
-      {/* Page Header */}
-      <div className="page-header">
-        <h1>
-          {t('dashboard.title')}
-          <SecurityBadge />
-        </h1>
-        <p className="page-subtitle">{t('dashboard.monthlyOverview')}</p>
-      </div>
+      {/* Blur Overlay for Refreshing State */}
+      {refreshing && (
+        <div className="dashboard-refresh-overlay">
+          <div className="refresh-spinner">
+            <FiRefreshCw className="spinning" size={32} />
+            <span>{t('common.refreshing', 'Refreshing...')}</span>
+          </div>
+        </div>
+      )}
 
-      {/* Filter Controls - Dropdown */}
-      <div className="dashboard-filters" style={{ marginBottom: '1.5rem', width: '200px' }}>
-        <Dropdown
-          icon={<FiFilter size={18} />}
-          options={partnersOptions.length > 0 ? partnersOptions : [
-            { value: 'solo', label: t('dashboard.filterSolo', 'Solo') },
-            { value: 'together', label: t('dashboard.filterTogether', 'Together') }
-          ]}
-          value={filterMode}
-          onChange={(value) => setFilterMode(value)}
-          className="dashboard-filter-dropdown"
-        />
-      </div>
+      {/* Main Content - Blur when refreshing */}
+      <div className={`dashboard-content ${refreshing ? 'is-refreshing' : ''}`}>
+        {/* Page Header */}
+        <div className="page-header">
+          <h1>
+            {t('dashboard.title')}
+            <SecurityBadge />
+          </h1>
+          <p className="page-subtitle">{t('dashboard.monthlyOverview')}</p>
+        </div>
+
+        {/* Filter Controls - Dropdown */}
+        <div className="dashboard-filters" style={{ marginBottom: '1.5rem', width: '200px' }}>
+          <Dropdown
+            icon={<FiFilter size={18} />}
+            options={partnersOptions.length > 0 ? partnersOptions : [
+              { value: 'solo', label: t('dashboard.filterSolo', 'Solo') },
+              { value: 'together', label: t('dashboard.filterTogether', 'Together') }
+            ]}
+            value={filterMode}
+            onChange={(value) => setFilterMode(value)}
+            className="dashboard-filter-dropdown"
+          />
+        </div>
 
       {/* Summary Cards */}
       <div className="summary-cards">
@@ -502,6 +574,7 @@ function Dashboard() {
                     transaction={transaction}
                     formatCurrency={formatCurrency}
                     t={t}
+                    onClick={() => setDetailModal(transaction)}
                   />
                 ))
               ) : (
@@ -540,6 +613,14 @@ function Dashboard() {
           </>
         )}
       </div>
+      </div> {/* End dashboard-content */}
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal
+        transaction={detailModal}
+        isOpen={!!detailModal}
+        onClose={() => setDetailModal(null)}
+      />
     </PullToRefresh>
   )
 }
@@ -548,13 +629,19 @@ function Dashboard() {
  * Transaction Item Component
  * Memoized to prevent re-renders when parent updates
  */
-const TransactionItem = memo(({ transaction, formatCurrency, t }) => {
+const TransactionItem = memo(({ transaction, formatCurrency, t, onClick }) => {
   const formattedDate = useMemo(() => {
     return format(new Date(transaction.date), 'MMM dd, yyyy')
   }, [transaction.date])
 
   return (
-    <div className={`transaction-item ${transaction.type}`}>
+    <div 
+      className={`transaction-item ${transaction.type} clickable`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+    >
       <div className="transaction-icon">
         {transaction.type === 'income' ? (
           <FiTrendingUp size={20} />

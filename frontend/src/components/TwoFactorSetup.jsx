@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import OtpInput from 'react-otp-input';
 import { useTranslation } from 'react-i18next';
-import { getToken } from '../services/auth';
+import { getToken, updateStoredUser } from '../services/auth';
 import { getBackendUrl } from '../utils/getBackendUrl';
 import './TwoFactorSetup.css';
 
@@ -101,6 +101,10 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
       setSetupMode(false);
       setVerificationCode('');
 
+      // Optimistically update stored user data immediately
+      // This triggers the 'user-updated' event for SecurityBadge and other components
+      updateStoredUser({ twoFactorEnabled: true });
+
       // Notify parent component
       if (onStatusChange) {
         onStatusChange(true);
@@ -144,6 +148,10 @@ const TwoFactorSetup = ({ isEnabled, onStatusChange }) => {
       setSuccess(t('twoFactor.disableSuccess'));
       setShowDisableModal(false);
       setDisablePassword('');
+
+      // Optimistically update stored user data immediately
+      // This triggers the 'user-updated' event for SecurityBadge and other components
+      updateStoredUser({ twoFactorEnabled: false });
 
       // Notify parent component
       if (onStatusChange) {

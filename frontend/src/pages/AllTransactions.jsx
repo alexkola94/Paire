@@ -20,6 +20,7 @@ import Modal from '../components/Modal' // Add Modal
 import SuccessAnimation from '../components/SuccessAnimation'
 import SearchInput from '../components/SearchInput'
 import DatePicker from '../components/DatePicker'
+import TransactionDetailModal from '../components/TransactionDetailModal'
 import './AllTransactions.css'
 
 /**
@@ -47,6 +48,7 @@ function AllTransactions() {
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, transactionId: null })
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+  const [detailModal, setDetailModal] = useState(null) // For viewing transaction details
 
   // Pagination
   const [page, setPage] = useState(1)
@@ -326,6 +328,7 @@ function AllTransactions() {
                 t={t}
                 onEdit={() => openEditForm(transaction)}
                 onDelete={() => openDeleteModal(transaction.id)}
+                onClick={() => setDetailModal(transaction)}
               />
             ))}
           </div>
@@ -393,6 +396,13 @@ function AllTransactions() {
         onComplete={() => setShowSuccessAnimation(false)}
         message={t('common.success')}
       />
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal
+        transaction={detailModal}
+        isOpen={!!detailModal}
+        onClose={() => setDetailModal(null)}
+      />
     </div>
   )
 }
@@ -401,7 +411,7 @@ function AllTransactions() {
 /**
  * Transaction Item Component
  */
-const TransactionItem = ({ transaction, formatCurrency, t, onEdit, onDelete }) => {
+const TransactionItem = ({ transaction, formatCurrency, t, onEdit, onDelete, onClick }) => {
   const formattedDate = useMemo(() => {
     return format(new Date(transaction.date), 'MMM dd, yyyy')
   }, [transaction.date])
@@ -421,8 +431,12 @@ const TransactionItem = ({ transaction, formatCurrency, t, onEdit, onDelete }) =
 
   return (
     <div
-      className={`transaction-item ${transaction.type} ${swipeProps.className || ''}`}
+      className={`transaction-item ${transaction.type} ${swipeProps.className || ''} clickable`}
       style={{ ...swipeProps.style, position: 'relative' }}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       onTouchStart={(e) => handleTouchStart(transaction.id, e)}
       onTouchMove={(e) => handleTouchMove(transaction.id, e)}
       onTouchEnd={(e) => handleTouchEnd(transaction.id, e)}
