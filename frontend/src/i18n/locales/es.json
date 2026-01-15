@@ -293,5 +293,10 @@
       "epic": "Épico",
       "legendary": "Legendario"
     }
+  },
+  "recurringBills": {
+    "deleteAttachment": "¿Eliminar adjunto?",
+    "confirmDeleteAttachment": "¿Estás seguro de que quieres eliminar este adjunto? Esta acción no se puede deshacer.",
+    "errorDeletingAttachment": "Error al eliminar el adjunto"
   }
 }

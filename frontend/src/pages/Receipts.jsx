@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiTrash2, FiSearch, FiZoomIn, FiDownload, FiX } from 'react-icons/fi'
+import { FiTrash2, FiSearch, FiZoomIn, FiDownload, FiX, FiFileText } from 'react-icons/fi'
 import { transactionService, recurringBillService } from '../services/api'
 import { ALL_CATEGORIES } from '../constants/categories'
 import { format, startOfDay, endOfDay } from 'date-fns'
@@ -228,7 +228,11 @@ function Receipts() {
                             <div className="receipt-image-container" onClick={() => setViewModal(receipt)}>
                                 {receipt.attachmentUrl && receipt.attachmentUrl.toLowerCase().endsWith('.pdf') ? (
                                     <div className="pdf-placeholder">
-                                        <span>PDF</span>
+                                        <div className="pdf-icon-wrapper">
+                                            <FiFileText size={48} />
+                                        </div>
+                                        <span className="pdf-label">PDF</span>
+                                        <span className="pdf-hint">{t('receipts.clickToView', 'Click to view')}</span>
                                     </div>
                                 ) : (
                                     <img src={receipt.attachmentUrl} alt={t('transaction.receipt')} className="receipt-image" loading="lazy" />
@@ -312,9 +316,19 @@ function Receipts() {
                         </div>
                         <div className="modal-body">
                             {viewModal.attachmentUrl && viewModal.attachmentUrl.toLowerCase().endsWith('.pdf') ? (
-                                <iframe src={viewModal.attachmentUrl} title="Receipt PDF"></iframe>
+                                <div className="pdf-viewer-container">
+                                    <iframe 
+                                        src={viewModal.attachmentUrl} 
+                                        title="Receipt PDF"
+                                        className="pdf-viewer-iframe"
+                                    />
+                                    <div className="pdf-viewer-info">
+                                        <FiFileText size={20} />
+                                        <span>{t('receipts.pdfDocument', 'PDF Document')}</span>
+                                    </div>
+                                </div>
                             ) : (
-                                <img src={viewModal.attachmentUrl} alt="Full Receipt" />
+                                <img src={viewModal.attachmentUrl} alt="Full Receipt" className="modal-receipt-image" />
                             )}
                         </div>
                         <div className="modal-footer">
