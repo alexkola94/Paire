@@ -43,7 +43,7 @@ namespace YouAndMeExpensesAPI.Models
 
     /// <summary>
     /// Reminder preferences model (maps to database)
-    /// Uses Entity Framework Core
+    /// Also used as a general per-user preferences store.
     /// </summary>
     [System.ComponentModel.DataAnnotations.Schema.Table("reminder_preferences")]
     public class ReminderPreferences
@@ -78,6 +78,12 @@ namespace YouAndMeExpensesAPI.Models
 
         [System.ComponentModel.DataAnnotations.Schema.Column("savings_milestones_enabled")]
         public bool SavingsMilestonesEnabled { get; set; } = true;
+
+        /// <summary>
+        /// When true, user prefers to hide financial numbers in the UI (privacy mode).
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.Schema.Column("privacy_hide_numbers")]
+        public bool PrivacyHideNumbers { get; set; } = false;
 
         [System.ComponentModel.DataAnnotations.Schema.Column("created_at")]
         public DateTime CreatedAt { get; set; }

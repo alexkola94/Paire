@@ -327,6 +327,7 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.BudgetAlertsEnabled).HasColumnName("budget_alerts_enabled");
                 entity.Property(e => e.BudgetAlertThreshold).HasColumnName("budget_alert_threshold").HasColumnType("decimal(5,2)");
                 entity.Property(e => e.SavingsMilestonesEnabled).HasColumnName("savings_milestones_enabled");
+                entity.Property(e => e.PrivacyHideNumbers).HasColumnName("privacy_hide_numbers");
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
 

@@ -1,0 +1,199 @@
+/**
+ * PrivacyToggle Styles
+ * Styling for the privacy mode toggle button
+ * Includes smooth transitions, responsive design, and theme support
+ */
+
+/* Base toggle button styles */
+.privacy-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--bg-secondary, rgba(255, 255, 255, 0.1));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text-secondary, #666);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+/* Size variants */
+.privacy-toggle--small {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.privacy-toggle--medium {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.privacy-toggle--large {
+    padding: 0.625rem 1rem;
+    font-size: 1rem;
+}
+
+/* State: Numbers visible (default) */
+.privacy-toggle--visible {
+    color: var(--text-secondary, #666);
+    background: var(--bg-secondary, rgba(255, 255, 255, 0.1));
+}
+
+.privacy-toggle--visible:hover {
+    color: var(--primary, #6c5ce7);
+    background: var(--primary-light, rgba(108, 92, 231, 0.1));
+    border-color: var(--primary, #6c5ce7);
+    transform: scale(1.02);
+}
+
+/* State: Numbers hidden (privacy on) */
+.privacy-toggle--hidden {
+    color: var(--warning-color, #f39c12);
+    background: rgba(243, 156, 18, 0.1);
+    border-color: var(--warning-color, #f39c12);
+}
+
+.privacy-toggle--hidden:hover {
+    color: var(--warning-color, #f39c12);
+    background: rgba(243, 156, 18, 0.15);
+    transform: scale(1.02);
+}
+
+/* Focus styles for accessibility */
+.privacy-toggle:focus-visible {
+    outline: 2px solid var(--primary, #6c5ce7);
+    outline-offset: 2px;
+}
+
+/* Icon animation */
+.privacy-toggle svg {
+    transition: transform 0.3s ease;
+}
+
+.privacy-toggle:hover svg {
+    transform: scale(1.1);
+}
+
+.privacy-toggle--hidden svg {
+    animation: pulse-eye 2s infinite ease-in-out;
+}
+
+@keyframes pulse-eye {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Label styles */
+.privacy-toggle__label {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Masked amount placeholder styles - can be used globally */
+.privacy-masked {
+    font-family: monospace;
+    letter-spacing: 0.1em;
+    color: var(--text-muted, #888);
+    user-select: none;
+}
+
+/* Animation for revealing/hiding numbers */
+.privacy-amount-reveal {
+    animation: reveal-number 0.3s ease-out;
+}
+
+@keyframes reveal-number {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .privacy-toggle--medium {
+        padding: 0.5rem;
+    }
+    
+    .privacy-toggle__label {
+        display: none;
+    }
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .privacy-toggle {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .privacy-toggle--visible:hover {
+    background: rgba(108, 92, 231, 0.2);
+}
+
+[data-theme="dark"] .privacy-toggle--hidden {
+    background: rgba(243, 156, 18, 0.15);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .privacy-toggle {
+        border-width: 2px;
+    }
+    
+    .privacy-toggle--hidden {
+        border-color: currentColor;
+    }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .privacy-toggle,
+    .privacy-toggle svg {
+        transition: none;
+    }
+    
+    .privacy-toggle--hidden svg {
+        animation: none;
+    }
+    
+    .privacy-amount-reveal {
+        animation: none;
+    }
+}
+
+/* ============================================
+   MASKED NUMBER STYLES
+   Global class for hiding financial amounts
+   ============================================ */
+
+/* Blur effect for hidden numbers */
+.masked-number {
+    filter: blur(8px);
+    user-select: none;
+    pointer-events: none;
+    transition: filter 0.3s ease;
+}
+
+/* Remove blur on hover for quick peek (optional) */
+.masked-number:hover {
+    filter: blur(4px);
+}
+
+/* Alternative: Replace with dots/asterisks instead of blur */
+.masked-number--dots::after {
+    content: '••••••';
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: inherit;
+}

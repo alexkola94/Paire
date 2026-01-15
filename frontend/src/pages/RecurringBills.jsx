@@ -22,6 +22,7 @@ import LoadingProgress from '../components/LoadingProgress'
 import Skeleton from '../components/Skeleton'
 import useSwipeGesture from '../hooks/useSwipeGesture'
 import CalendarView from '../components/CalendarView'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './RecurringBills.css'
 
 /**
@@ -34,6 +35,7 @@ function RecurringBills() {
   const { t } = useTranslation()
   const formatCurrency = useCurrencyFormatter()
   const queryClient = useQueryClient()
+  const { isPrivate } = usePrivacyMode()
 
   // Queries
   const { data: bills = [], isLoading: billsLoading } = useQuery({
@@ -717,7 +719,7 @@ function RecurringBills() {
             <FiCalendar className="page-icon" />
             {t('recurringBills.title')}
           </h1>
-          <div className="header-actions-group" style={{ display: 'flex', gap: '1rem' }}>
+          <div className="header-actions-group" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             {/* View Toggle */}
             <div className="view-toggle glass-card" style={{ display: 'flex', padding: '4px', borderRadius: '8px', gap: '4px' }}>
               <button
@@ -767,10 +769,10 @@ function RecurringBills() {
             </div>
             <div className="summary-content">
               <h3>{t('recurringBills.remainingThisMonth') || "Remaining (Unpaid)"}</h3>
-              <p className="summary-value" style={{ color: 'var(--warning-color)' }}>
+              <p className={`summary-value ${isPrivate ? 'masked-number' : ''}`} style={{ color: 'var(--warning-color)' }}>
                 {formatCurrency(currentMonthUnpaidAmount)}
               </p>
-              <p className="summary-detail">
+              <p className={`summary-detail ${isPrivate ? 'masked-number' : ''}`}>
                 {t('recurringBills.monthlyTotal')}: {formatCurrency(summary.totalMonthlyAmount)}
               </p>
             </div>
@@ -782,7 +784,7 @@ function RecurringBills() {
             </div>
             <div className="summary-content">
               <h3>{t('recurringBills.nextMonthTotal') || "Next Month (Est.)"}</h3>
-              <p className="summary-value">{formatCurrency(nextMonthProjectedAmount)}</p>
+              <p className={`summary-value ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(nextMonthProjectedAmount)}</p>
               <p className="summary-detail">
                 {t('recurringBills.forecast') || "Projected"}
               </p>
@@ -845,6 +847,7 @@ function RecurringBills() {
                   status="overdue"
                   formatCurrency={formatCurrency}
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
+                  isPrivate={isPrivate}
                 />
               ))}
             </div>
@@ -875,6 +878,7 @@ function RecurringBills() {
                   status="upcoming"
                   formatCurrency={formatCurrency}
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
+                  isPrivate={isPrivate}
                 />
               ))}
             </div>
@@ -905,6 +909,7 @@ function RecurringBills() {
                   status="paid"
                   formatCurrency={formatCurrency}
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
+                  isPrivate={isPrivate}
                 />
               ))}
             </div>
@@ -935,6 +940,7 @@ function RecurringBills() {
                   status="later"
                   formatCurrency={formatCurrency}
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
+                  isPrivate={isPrivate}
                 />
               ))}
             </div>
@@ -1348,7 +1354,7 @@ function InternalBillAttachmentsModal({ isOpen, onClose, bill, onUpload, onDelet
 /**
  * Bill Card Component
  */
-function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments, isProcessing, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency, animationClass }) {
+function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments, isProcessing, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency, animationClass, isPrivate }) {
   /* Swipe Gesture Integration */
   const { handleTouchStart, handleTouchMove, handleTouchEnd, getSwipeProps } = useSwipeGesture({
     onSwipeLeft: () => onDelete(bill.id),
@@ -1428,7 +1434,7 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
       </div>
 
       <div className="bill-amount">
-        <span className="amount">{formatCurrency(bill.amount)}</span>
+        <span className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(bill.amount)}</span>
         {(bill.autoPay ?? bill.auto_pay) && <span className="auto-pay-badge">{t('recurringBills.autoPayEnabled')}</span>}
       </div>
 

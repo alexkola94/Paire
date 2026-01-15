@@ -12,6 +12,7 @@ import FormSection from '../components/FormSection'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './Loans.css'
 
 /**
@@ -20,6 +21,7 @@ import './Loans.css'
  */
 function Loans() {
   const { t } = useTranslation()
+  const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
   const [loans, setLoans] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -377,15 +379,17 @@ function Loans() {
             Total: {loans.length} {loans.length === 1 ? 'loan' : 'loans'}
           </p>
         </div>
-        {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
-            <FiPlus />
-            {t('loans.addLoan')}
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {!showForm && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="btn btn-primary"
+            >
+              <FiPlus />
+              {t('loans.addLoan')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Form Modal (Portal) */}
@@ -585,13 +589,13 @@ function Loans() {
                 <div className="loan-amounts">
                   <div className="amount-item">
                     <span className="amount-label">{t('loans.totalAmount')}</span>
-                    <span className="amount-value">
+                    <span className={`amount-value ${isPrivate ? 'masked-number' : ''}`}>
                       {formatCurrency(loan.amount ?? 0)}
                     </span>
                   </div>
                   <div className="amount-item">
                     <span className="amount-label">{t('loans.remainingAmount')}</span>
-                    <span className="amount-value remaining">
+                    <span className={`amount-value remaining ${isPrivate ? 'masked-number' : ''}`}>
                       {formatCurrency(loan.remainingAmount ?? loan.remaining_amount ?? 0)}
                     </span>
                   </div>

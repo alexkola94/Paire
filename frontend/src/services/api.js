@@ -476,6 +476,75 @@ export const chatbotService = {
     // Get language from localStorage
     const language = localStorage.getItem('language') || 'en'
     return await apiRequest(`/api/chatbot/suggestions?language=${language}`)
+  },
+
+  /**
+   * Generate and download a report file (CSV or PDF)
+   * @param {Object} params - Report parameters
+   * @param {string} params.reportType - Type of report (expenses_by_category, monthly_summary, etc.)
+   * @param {string} params.format - File format (csv or pdf)
+   * @param {string} params.startDate - Start date (ISO string)
+   * @param {string} params.endDate - End date (ISO string)
+   * @param {string} params.category - Optional category filter
+   * @param {string} params.groupBy - Optional grouping (category, month, week, day)
+   * @returns {Promise<Blob>} The generated file as a blob
+   */
+  async generateReport(params) {
+    const language = localStorage.getItem('language') || 'en'
+    
+    // Get backend URL dynamically
+    let backendApiUrl = getBackendApiUrl()
+    
+    // Handle IP override
+    if (typeof window !== 'undefined' && window.location) {
+      const currentHostname = window.location.hostname
+      const currentProtocol = window.location.protocol
+      if (currentHostname && currentHostname !== 'localhost' && currentHostname !== '127.0.0.1' && backendApiUrl.includes('localhost')) {
+        backendApiUrl = `${currentProtocol}//${currentHostname}:5038`
+      }
+    }
+    
+    backendApiUrl = backendApiUrl.replace(/\/+$/, '')
+    const token = getToken()
+    
+    const response = await fetch(`${backendApiUrl}/api/chatbot/generate-report`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify({
+        reportType: params.reportType,
+        format: params.format || 'csv',
+        startDate: params.startDate,
+        endDate: params.endDate,
+        category: params.category || null,
+        groupBy: params.groupBy || 'category',
+        language
+      })
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to generate report: ${response.statusText}`)
+    }
+    
+    return await response.blob()
+  },
+
+  /**
+   * Download a file blob to user's device
+   * @param {Blob} blob - The file blob
+   * @param {string} filename - The filename for download
+   */
+  downloadFile(blob, filename) {
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
   }
 }
 

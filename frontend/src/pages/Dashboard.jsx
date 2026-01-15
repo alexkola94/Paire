@@ -25,6 +25,8 @@ import SavingGoalProgressBar from '../components/SavingGoalProgressBar'
 import Dropdown from '../components/Dropdown'
 import { FiTarget, FiPieChart } from 'react-icons/fi'
 import TransactionDetailModal from '../components/TransactionDetailModal'
+import PrivacyToggle from '../components/PrivacyToggle'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './Dashboard.css'
 
 /**
@@ -34,6 +36,7 @@ import './Dashboard.css'
  */
 function Dashboard() {
   const { t } = useTranslation()
+  const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
   const [initialLoading, setInitialLoading] = useState(true) // First load - show skeleton
   const [refreshing, setRefreshing] = useState(false) // Subsequent loads - show blur overlay
   // Store raw transactions for the month to allow client-side filtering
@@ -381,18 +384,20 @@ function Dashboard() {
           <p className="page-subtitle">{t('dashboard.monthlyOverview')}</p>
         </div>
 
-        {/* Filter Controls - Dropdown */}
-        <div className="dashboard-filters" style={{ marginBottom: '1.5rem', width: '200px' }}>
+        {/* Filter Controls - Dropdown + Privacy Toggle */}
+        <div className="dashboard-filters" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}>
           <Dropdown
-            icon={<FiFilter size={18} />}
+            icon={<FiFilter size={16} />}
             options={partnersOptions.length > 0 ? partnersOptions : [
               { value: 'solo', label: t('dashboard.filterSolo', 'Solo') },
               { value: 'together', label: t('dashboard.filterTogether', 'Together') }
             ]}
             value={filterMode}
             onChange={(value) => setFilterMode(value)}
-            className="dashboard-filter-dropdown"
+            className="dashboard-filter-dropdown compact"
+            style={{ minWidth: '120px', maxWidth: '160px' }}
           />
+          <PrivacyToggle size="small" />
         </div>
 
       {/* Summary Cards */}
@@ -404,7 +409,7 @@ function Dashboard() {
           </div>
           <div className="card-content">
             <h3>{t('dashboard.totalIncome')}</h3>
-            <p className="amount">
+            <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>
               <CountUpAnimation value={displayedSummary.income} formatter={formatCurrency} />
             </p>
           </div>
@@ -417,7 +422,7 @@ function Dashboard() {
           </div>
           <div className="card-content">
             <h3>{t('dashboard.totalExpenses')}</h3>
-            <p className="amount">
+            <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>
               <CountUpAnimation value={displayedSummary.expenses} formatter={formatCurrency} />
             </p>
           </div>
@@ -430,7 +435,7 @@ function Dashboard() {
           </div>
           <div className="card-content">
             <h3>{t('dashboard.balance')}</h3>
-            <p className={`amount ${displayedSummary.balance >= 0 ? 'positive' : 'negative'}`}>
+            <p className={`amount ${displayedSummary.balance >= 0 ? 'positive' : 'negative'} ${isPrivate ? 'masked-number' : ''}`}>
               <CountUpAnimation value={displayedSummary.balance} formatter={formatCurrency} />
             </p>
           </div>
@@ -477,8 +482,8 @@ function Dashboard() {
                 spent={spent}
                 total={budget.amount}
                 currencyFormatter={formatCurrency}
-                // No specific icon mapping yet, generic or based on category
                 icon={null}
+                isPrivate={isPrivate}
               />
             )
           })
@@ -509,6 +514,7 @@ function Dashboard() {
               targetAmount={goal.targetAmount}
               currencyFormatter={formatCurrency}
               icon={null}
+              isPrivate={isPrivate}
             />
           ))
         ) : (
@@ -575,6 +581,7 @@ function Dashboard() {
                     formatCurrency={formatCurrency}
                     t={t}
                     onClick={() => setDetailModal(transaction)}
+                    isPrivate={isPrivate}
                   />
                 ))
               ) : (
@@ -628,8 +635,9 @@ function Dashboard() {
 /**
  * Transaction Item Component
  * Memoized to prevent re-renders when parent updates
+ * Supports privacy mode to hide sensitive amounts
  */
-const TransactionItem = memo(({ transaction, formatCurrency, t, onClick }) => {
+const TransactionItem = memo(({ transaction, formatCurrency, t, onClick, isPrivate }) => {
   const formattedDate = useMemo(() => {
     return format(new Date(transaction.date), 'MMM dd, yyyy')
   }, [transaction.date])
@@ -674,7 +682,7 @@ const TransactionItem = memo(({ transaction, formatCurrency, t, onClick }) => {
           )}
         </p>
       </div>
-      <div className={`transaction-amount ${transaction.type}`}>
+      <div className={`transaction-amount ${transaction.type} ${isPrivate ? 'masked-number' : ''}`}>
         {transaction.type === 'income' ? '+' : '-'}
         {formatCurrency(Math.abs(transaction.amount))}
       </div>

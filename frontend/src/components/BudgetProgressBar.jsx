@@ -1,7 +1,13 @@
 
 import { useMemo } from 'react'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './BudgetProgressBar.css'
 
+/**
+ * BudgetProgressBar Component
+ * Displays budget progress with spent/total values
+ * Supports privacy mode to hide sensitive amounts
+ */
 export default function BudgetProgressBar({
     label,
     spent,
@@ -10,6 +16,8 @@ export default function BudgetProgressBar({
     color = 'var(--primary)',
     icon
 }) {
+    const { isPrivate } = usePrivacyMode()
+    
     const percentage = useMemo(() => {
         if (!total || total === 0) return 0
         return Math.min(100, Math.max(0, (spent / total) * 100))
@@ -31,7 +39,7 @@ export default function BudgetProgressBar({
                     {icon && <span className="budget-icon">{icon}</span>}
                     <span className="budget-label">{label}</span>
                 </div>
-                <div className="budget-values">
+                <div className={`budget-values ${isPrivate ? 'masked-number' : ''}`}>
                     <span className={`spent-value ${isOverBudget ? 'over-budget' : ''}`}>
                         {currencyFormatter(spent)}
                     </span>

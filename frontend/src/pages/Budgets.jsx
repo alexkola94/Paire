@@ -9,6 +9,7 @@ import LogoLoader from '../components/LogoLoader'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './Budgets.css'
 
 /**
@@ -17,6 +18,7 @@ import './Budgets.css'
  */
 function Budgets() {
   const { t } = useTranslation()
+  const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
   const [loading, setLoading] = useState(true)
   const [budgets, setBudgets] = useState([])
   const [expenses, setExpenses] = useState([])
@@ -243,15 +245,17 @@ function Budgets() {
           </h1>
           <p className="page-subtitle">{t('budgets.subtitle')}</p>
         </div>
-        {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
-            <FiPlus />
-            {t('budgets.addBudget')}
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {!showForm && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="btn btn-primary"
+            >
+              <FiPlus />
+              {t('budgets.addBudget')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Budget Form Modal (Portal) */}
@@ -393,17 +397,17 @@ function Budgets() {
                 <div className="budget-amounts">
                   <div className="amount-item">
                     <label>{t('budgets.budgeted')}</label>
-                    <span className="amount">{formatCurrency(budget.amount)}</span>
+                    <span className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(budget.amount)}</span>
                   </div>
                   <div className="amount-item">
                     <label>{t('budgets.spent')}</label>
-                    <span className={`amount ${isOverBudget ? 'over' : ''}`}>
+                    <span className={`amount ${isOverBudget ? 'over' : ''} ${isPrivate ? 'masked-number' : ''}`}>
                       {formatCurrency(spent)}
                     </span>
                   </div>
                   <div className="amount-item">
                     <label>{t('budgets.remaining')}</label>
-                    <span className={`amount ${remaining >= 0 ? 'positive' : 'negative'}`}>
+                    <span className={`amount ${remaining >= 0 ? 'positive' : 'negative'} ${isPrivate ? 'masked-number' : ''}`}>
                       {formatCurrency(remaining)}
                     </span>
                   </div>

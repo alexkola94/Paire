@@ -23,6 +23,7 @@ import { format, subDays } from 'date-fns'
 import LogoLoader from '../components/LogoLoader'
 import Dropdown from '../components/Dropdown'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import ExcelJS from 'exceljs'
 import './Analytics.css'
 
@@ -42,6 +43,7 @@ ChartJS.register(
 function Analytics() {
   const { t } = useTranslation()
   const formatCurrency = useCurrencyFormatter()
+  const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
   const [loading, setLoading] = useState(true)
   const [analytics, setAnalytics] = useState(null)
   const [loanAnalytics, setLoanAnalytics] = useState(null)
@@ -849,7 +851,7 @@ function Analytics() {
             </div>
             <div className="card-content">
               <h3>{t('analytics.totalIncome')}</h3>
-              <p className="amount">{formatCurrency(analytics.totalIncome)}</p>
+              <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(analytics.totalIncome)}</p>
             </div>
           </div>
 
@@ -859,7 +861,7 @@ function Analytics() {
             </div>
             <div className="card-content">
               <h3>{t('analytics.totalExpenses')}</h3>
-              <p className="amount">{formatCurrency(analytics.totalExpenses)}</p>
+              <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(analytics.totalExpenses)}</p>
             </div>
           </div>
 
@@ -869,7 +871,7 @@ function Analytics() {
             </div>
             <div className="card-content">
               <h3>{t('analytics.netBalance')}</h3>
-              <p className={`amount ${analytics.balance >= 0 ? 'positive' : 'negative'}`}>
+              <p className={`amount ${analytics.balance >= 0 ? 'positive' : 'negative'} ${isPrivate ? 'masked-number' : ''}`}>
                 {formatCurrency(analytics.balance)}
               </p>
             </div>
@@ -881,7 +883,7 @@ function Analytics() {
             </div>
             <div className="card-content">
               <h3>{t('analytics.avgDailySpending')}</h3>
-              <p className="amount">{formatCurrency(analytics.averageDailySpending)}</p>
+              <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(analytics.averageDailySpending)}</p>
             </div>
           </div>
         </div>
@@ -926,7 +928,7 @@ function Analytics() {
                         {t(`categories.${(cat.category || '').toLowerCase()}`) || cat.category}
                       </span>
                     </div>
-                    <span className="category-amount">
+                    <span className={`category-amount ${isPrivate ? 'masked-number' : ''}`}>
                       {formatCurrency(cat.amount)}
                       <small> ({cat.percentage.toFixed(1)}%)</small>
                     </span>
@@ -997,19 +999,19 @@ function Analytics() {
             <div className="loan-stats-grid">
               <div className="loan-stat">
                 <label>{t('analytics.loansGiven')}</label>
-                <span className="stat-value">{formatCurrency(loanAnalytics.totalLoansGiven)}</span>
+                <span className={`stat-value ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(loanAnalytics.totalLoansGiven)}</span>
               </div>
               <div className="loan-stat">
                 <label>{t('analytics.loansReceived')}</label>
-                <span className="stat-value">{formatCurrency(loanAnalytics.totalLoansReceived)}</span>
+                <span className={`stat-value ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(loanAnalytics.totalLoansReceived)}</span>
               </div>
               <div className="loan-stat">
                 <label>{t('analytics.paidBack')}</label>
-                <span className="stat-value positive">{formatCurrency(loanAnalytics.totalPaidBack)}</span>
+                <span className={`stat-value positive ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(loanAnalytics.totalPaidBack)}</span>
               </div>
               <div className="loan-stat">
                 <label>{t('analytics.outstanding')}</label>
-                <span className="stat-value negative">{formatCurrency(loanAnalytics.totalOutstanding)}</span>
+                <span className={`stat-value negative ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(loanAnalytics.totalOutstanding)}</span>
               </div>
             </div>
           </div>
@@ -1036,9 +1038,9 @@ function Analytics() {
                 {analytics.monthlyComparison.map((month, index) => (
                   <tr key={index}>
                     <td>{month.month} {month.year}</td>
-                    <td className="positive">{formatCurrency(month.income)}</td>
-                    <td className="negative">{formatCurrency(month.expenses)}</td>
-                    <td className={month.balance >= 0 ? 'positive' : 'negative'}>
+                    <td className={`positive ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(month.income)}</td>
+                    <td className={`negative ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(month.expenses)}</td>
+                    <td className={`${month.balance >= 0 ? 'positive' : 'negative'} ${isPrivate ? 'masked-number' : ''}`}>
                       {formatCurrency(month.balance)}
                     </td>
                   </tr>

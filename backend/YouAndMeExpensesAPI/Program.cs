@@ -371,6 +371,9 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 // Register Chatbot Service
 builder.Services.AddScoped<IChatbotService, ChatbotService>();
 
+// Register Report Generation Service (for chatbot file downloads)
+builder.Services.AddScoped<IReportGenerationService, ReportGenerationService>();
+
 // Register Two-Factor Authentication Service
 builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 

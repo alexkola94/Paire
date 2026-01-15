@@ -146,6 +146,14 @@
       "high": "Alta"
     }
   },
+  "timeline": {
+    "title": "Línea de Tiempo de Transacciones",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "noTransactions": "No hay transacciones para mostrar",
+    "income": "Ingresos",
+    "expense": "Gastos"
+  },
   "common": {
     "save": "Guardar",
     "saving": "Guardando...",

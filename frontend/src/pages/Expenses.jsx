@@ -21,10 +21,12 @@ import LoadingProgress from '../components/LoadingProgress'
 import Skeleton from '../components/Skeleton'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import TransactionDetailModal from '../components/TransactionDetailModal'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './Expenses.css'
 
 function Expenses() {
   const { t } = useTranslation()
+  const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
   // All expenses from API
   const [allExpenses, setAllExpenses] = useState([])
   // Expenses after search filter
@@ -434,8 +436,8 @@ function Expenses() {
       </div>
 
       {/* Search and Filter Bar - Grid Layout */}
-      <div className="expenses-filters-grid">
-        <div className="search-span-full">
+        <div className="expenses-filters-grid">
+        <div className="search-span-full" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <SearchInput
             onSearch={handleSearch}
             placeholder={t('expenses.searchPlaceholder')}
@@ -544,7 +546,7 @@ function Expenses() {
                 <div className="expense-category">
                   {t(`categories.${(expense.category || '').toLowerCase()}`)}
                 </div>
-                <div className="expense-amount">
+                <div className={`expense-amount ${isPrivate ? 'masked-number' : ''}`}>
                   {formatCurrency(expense.amount)}
                 </div>
               </div>

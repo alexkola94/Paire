@@ -494,7 +494,12 @@
     "welcomeMessage": "Hi! 👋 I'm your financial assistant. Ask me anything about your expenses, income, or financial insights!",
     "errorMessage": "Sorry, I encountered an error. Please try again.",
     "chatCleared": "Chat cleared! How can I help you?",
-    "thinking": "Thinking..."
+    "thinking": "Thinking...",
+    "downloadCSV": "Download CSV",
+    "downloadPDF": "Download PDF",
+    "downloading": "Downloading...",
+    "downloadSuccess": "Report downloaded successfully!",
+    "downloadError": "Error generating report. Please try again."
   },
   "reminders": {
     "title": "Reminder Settings",
@@ -748,6 +753,14 @@
       "high": "High"
     }
   },
+  "timeline": {
+    "title": "Transaction Timeline",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "noTransactions": "No transactions to display",
+    "income": "Income",
+    "expense": "Expense"
+  },
   "common": {
     "accessibility": "Accessibility",
     "reset": "Reset Defaults",
@@ -997,6 +1010,13 @@
     "reducedMotionDesc": "Minimize animations and transitions",
     "highContrast": "High Contrast",
     "highContrastDesc": "Increase contrast for borders and text"
+  },
+  "privacy": {
+    "showNumbers": "Show amounts",
+    "hideNumbers": "Hide amounts",
+    "togglePrivacy": "Toggle privacy mode",
+    "privacyModeEnabled": "Privacy mode enabled - amounts are hidden",
+    "privacyModeDisabled": "Privacy mode disabled - amounts are visible"
   },
   "legal": {
     "privacyPolicy": "Privacy Policy",

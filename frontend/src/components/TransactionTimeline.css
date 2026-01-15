@@ -1,0 +1,516 @@
+/* ================================
+   Transaction Timeline Component
+   ================================ */
+
+.timeline-container {
+  position: relative;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--spacing-md) 0;
+  padding-right: var(--spacing-md);
+  /* Ensure scrollbar appears at the far right with offset */
+  scrollbar-gutter: stable;
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+}
+
+/* Central vertical axis */
+.timeline-axis {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--primary-light) 5%,
+    var(--primary) 50%,
+    var(--primary-light) 95%,
+    transparent 100%
+  );
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+/* Timeline content container */
+.timeline-content {
+  position: relative;
+  z-index: 2;
+  padding-bottom: var(--spacing-md);
+  padding-right: var(--spacing-sm);
+}
+
+.timeline-group {
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Custom scrollbar styling - minimalist pill design */
+.timeline-container::-webkit-scrollbar {
+  width: 6px;
+  margin-right: 4px;
+}
+
+.timeline-container::-webkit-scrollbar-track {
+  background: transparent;
+  margin: var(--spacing-sm) 0;
+}
+
+.timeline-container::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 100px;
+  min-height: 40px;
+  transition: background 0.2s ease;
+}
+
+.timeline-container::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+.timeline-container::-webkit-scrollbar-thumb:active {
+  background: var(--primary-dark);
+}
+
+/* Firefox scrollbar - thin minimalist style */
+.timeline-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+
+/* Scrollbar offset wrapper */
+.timeline-scrollbar-wrapper {
+  position: relative;
+  height: 100%;
+  padding-right: 4px;
+}
+
+/* ================================
+   Date Headers
+   ================================ */
+
+.timeline-date-header-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.timeline-date-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.timeline-date-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-xl);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+  z-index: 3;
+  min-width: 80px;
+}
+
+/* ================================
+   Desktop Layout (Split View)
+   ================================ */
+
+.timeline-item-desktop {
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  gap: var(--spacing-sm);
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+}
+
+.timeline-side {
+  display: flex;
+  min-height: 60px;
+}
+
+.timeline-side-left {
+  justify-content: flex-end;
+  padding-right: var(--spacing-sm);
+}
+
+.timeline-side-right {
+  justify-content: flex-start;
+  padding-left: var(--spacing-sm);
+}
+
+/* Center node area */
+.timeline-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-node-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 2px solid;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
+  z-index: 3;
+}
+
+.timeline-node-expense {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.timeline-node-income {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.timeline-node-circle:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Connector lines */
+.timeline-connector {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  width: 100%;
+  background: var(--bg-tertiary);
+  z-index: 1;
+}
+
+.timeline-connector-left {
+  right: 50%;
+  background: linear-gradient(to left, var(--error-dark), transparent);
+}
+
+.timeline-connector-right {
+  left: 50%;
+  background: linear-gradient(to right, var(--success-dark), transparent);
+}
+
+/* ================================
+   Transaction Cards
+   ================================ */
+
+.timeline-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  width: 100%;
+  max-width: 280px;
+  border-left: 3px solid transparent;
+}
+
+.timeline-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.timeline-card-expense {
+  border-left-color: var(--error);
+}
+
+.timeline-card-income {
+  border-left-color: var(--success);
+}
+
+.timeline-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.timeline-card-description {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-card-amount {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.timeline-amount-expense {
+  color: var(--error-dark);
+}
+
+.timeline-amount-income {
+  color: var(--success-dark);
+}
+
+.timeline-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.timeline-card-category {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.timeline-card-time {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+/* ================================
+   Mobile Layout (Single Column)
+   ================================ */
+
+.timeline-mobile .timeline-axis {
+  left: 24px;
+  transform: none;
+}
+
+.timeline-item-mobile {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--spacing-xs) var(--spacing-md);
+  padding-left: 8px;
+  gap: var(--spacing-sm);
+}
+
+.timeline-node-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.timeline-node-mobile .timeline-node-circle {
+  width: 32px;
+  height: 32px;
+}
+
+.timeline-connector-mobile {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  background: var(--bg-tertiary);
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.timeline-item-mobile .timeline-card {
+  flex: 1;
+  max-width: none;
+}
+
+/* ================================
+   Empty State
+   ================================ */
+
+.timeline-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.timeline-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.timeline-empty-icon {
+  color: var(--text-light);
+  opacity: 0.5;
+}
+
+.timeline-empty-state p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* ================================
+   Animations
+   ================================ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.timeline-card {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.timeline-date-badge {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Staggered animation for visible items */
+.timeline-item:nth-child(1) .timeline-card { animation-delay: 0.05s; }
+.timeline-item:nth-child(2) .timeline-card { animation-delay: 0.1s; }
+.timeline-item:nth-child(3) .timeline-card { animation-delay: 0.15s; }
+.timeline-item:nth-child(4) .timeline-card { animation-delay: 0.2s; }
+.timeline-item:nth-child(5) .timeline-card { animation-delay: 0.25s; }
+
+/* ================================
+   Dark Mode Adjustments
+   ================================ */
+
+[data-theme='dark'] .timeline-axis {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--primary-dark) 5%,
+    var(--primary) 50%,
+    var(--primary-dark) 95%,
+    transparent 100%
+  );
+}
+
+[data-theme='dark'] .timeline-date-badge {
+  background: var(--glass-bg);
+  color: var(--primary-light);
+}
+
+[data-theme='dark'] .timeline-card {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+
+[data-theme='dark'] .timeline-card-category {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .timeline-node-circle {
+  background: var(--bg-secondary);
+}
+
+/* ================================
+   Responsive Breakpoints
+   ================================ */
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .timeline-card {
+    max-width: 220px;
+    padding: var(--spacing-sm);
+  }
+
+  .timeline-card-description {
+    font-size: 0.875rem;
+  }
+
+  .timeline-card-amount {
+    font-size: 0.875rem;
+  }
+}
+
+/* Large desktop */
+@media (min-width: 1280px) {
+  .timeline-card {
+    max-width: 320px;
+    padding: var(--spacing-md);
+  }
+
+  .timeline-node-circle {
+    width: 48px;
+    height: 48px;
+  }
+
+  .timeline-item-desktop {
+    grid-template-columns: 1fr 80px 1fr;
+  }
+}
+
+/* ================================
+   Accessibility
+   ================================ */
+
+/* Reduced motion */
+[data-motion="reduced"] .timeline-card,
+[data-motion="reduced"] .timeline-date-badge,
+[data-motion="reduced"] .timeline-node-circle {
+  animation: none;
+  transition: none;
+}
+
+/* High contrast */
+[data-contrast="high"] .timeline-card {
+  border-width: 2px;
+}
+
+[data-contrast="high"] .timeline-card-expense {
+  border-left-width: 4px;
+}
+
+[data-contrast="high"] .timeline-card-income {
+  border-left-width: 4px;
+}
+
+[data-contrast="high"] .timeline-axis {
+  width: 3px;
+  background: var(--primary);
+}
+
+/* Focus states for keyboard navigation */
+.timeline-card:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.timeline-node-circle:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}

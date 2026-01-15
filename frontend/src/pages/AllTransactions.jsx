@@ -7,20 +7,24 @@ import {
   FiArrowLeft,
   FiChevronLeft,
   FiChevronRight,
-  FiEdit, // Add icons
-  FiTrash2
+  FiEdit,
+  FiTrash2,
+  FiList,
+  FiGitBranch
 } from 'react-icons/fi'
 import { transactionService } from '../services/api'
 import { format } from 'date-fns'
 import LogoLoader from '../components/LogoLoader'
 import useSwipeGesture from '../hooks/useSwipeGesture'
-import TransactionForm from '../components/TransactionForm' // Correct import
+import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
-import Modal from '../components/Modal' // Add Modal
+import Modal from '../components/Modal'
 import SuccessAnimation from '../components/SuccessAnimation'
 import SearchInput from '../components/SearchInput'
 import DatePicker from '../components/DatePicker'
 import TransactionDetailModal from '../components/TransactionDetailModal'
+import TransactionTimeline from '../components/TransactionTimeline'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './AllTransactions.css'
 
 /**
@@ -31,11 +35,15 @@ import './AllTransactions.css'
 function AllTransactions() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { isPrivate } = usePrivacyMode()
 
   // Data State
   const [loading, setLoading] = useState(true)
   const [allTransactions, setAllTransactions] = useState([]) // Store all fetched transactions
   const [displayedTransactions, setDisplayedTransactions] = useState([]) // Transactions for current page
+
+  // View Mode State
+  const [viewMode, setViewMode] = useState('list') // 'list' or 'timeline'
 
   // Filter State
   const [searchQuery, setSearchQuery] = useState('')
@@ -88,11 +96,10 @@ function AllTransactions() {
   }, [])
 
   /**
-   * Handle Search & Pagination Effect
-   * Runs whenever allTransactions, searchQuery, dates, or page changes
+   * Filter transactions (shared by both views)
+   * Memoized to avoid recalculation on every render
    */
-  useEffect(() => {
-    // 1. Filter
+  const filteredTransactions = useMemo(() => {
     let result = allTransactions
 
     // Text Search
@@ -119,15 +126,23 @@ function AllTransactions() {
       result = result.filter(transaction => new Date(transaction.date) <= end)
     }
 
-    setTotalItems(result.length)
-    setTotalPages(Math.ceil(result.length / PAGE_SIZE) || 1)
+    return result
+  }, [allTransactions, searchQuery, startDate, endDate, t])
 
-    // 2. Paginate
+  /**
+   * Handle Search & Pagination Effect (for list view)
+   * Runs whenever filteredTransactions or page changes
+   */
+  useEffect(() => {
+    setTotalItems(filteredTransactions.length)
+    setTotalPages(Math.ceil(filteredTransactions.length / PAGE_SIZE) || 1)
+
+    // Paginate for list view
     const startIndex = (page - 1) * PAGE_SIZE
-    const paginated = result.slice(startIndex, startIndex + PAGE_SIZE)
+    const paginated = filteredTransactions.slice(startIndex, startIndex + PAGE_SIZE)
     setDisplayedTransactions(paginated)
 
-  }, [allTransactions, searchQuery, page, startDate, endDate, t])
+  }, [filteredTransactions, page])
 
   /**
    * Handle search input
@@ -252,6 +267,28 @@ function AllTransactions() {
             <FiArrowLeft size={20} />
             <span>{t('common.back')}</span>
           </button>
+          <div className="header-actions">
+            <div className="view-toggle" role="tablist" aria-label="View mode">
+              <button
+                className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+                onClick={() => setViewMode('list')}
+                aria-selected={viewMode === 'list'}
+                role="tab"
+                title={t('common.listView', 'List View')}
+              >
+                <FiList size={18} />
+              </button>
+              <button
+                className={`view-toggle-btn ${viewMode === 'timeline' ? 'active' : ''}`}
+                onClick={() => setViewMode('timeline')}
+                aria-selected={viewMode === 'timeline'}
+                role="tab"
+                title={t('timeline.title', 'Timeline View')}
+              >
+                <FiGitBranch size={18} />
+              </button>
+            </div>
+          </div>
         </div>
         <div className="page-header-content">
           <h1>{t('allTransactions.title')}</h1>
@@ -308,16 +345,26 @@ function AllTransactions() {
         </div>
       </div>
 
-      {/* Transactions List */}
+      {/* Transactions Display */}
       {allTransactions.length === 0 && !loading ? (
         <div className="card empty-state">
           <p>{t('allTransactions.noTransactions')}</p>
+        </div>
+      ) : viewMode === 'timeline' ? (
+        /* Timeline View */
+        <div className="card timeline-view-container">
+          <TransactionTimeline
+            transactions={filteredTransactions}
+            maxHeight="70vh"
+            showRelativeDates={true}
+          />
         </div>
       ) : displayedTransactions.length === 0 && !loading ? (
         <div className="card empty-state">
           <p>{t('common.noResults', 'No transactions found matching your search.')}</p>
         </div>
       ) : (
+        /* List View */
         <div className="card transactions-container">
           <div className="transactions-list">
             {displayedTransactions.map((transaction) => (
@@ -329,6 +376,7 @@ function AllTransactions() {
                 onEdit={() => openEditForm(transaction)}
                 onDelete={() => openDeleteModal(transaction.id)}
                 onClick={() => setDetailModal(transaction)}
+                isPrivate={isPrivate}
               />
             ))}
           </div>
@@ -411,7 +459,7 @@ function AllTransactions() {
 /**
  * Transaction Item Component
  */
-const TransactionItem = ({ transaction, formatCurrency, t, onEdit, onDelete, onClick }) => {
+const TransactionItem = ({ transaction, formatCurrency, t, onEdit, onDelete, onClick, isPrivate }) => {
   const formattedDate = useMemo(() => {
     return format(new Date(transaction.date), 'MMM dd, yyyy')
   }, [transaction.date])
@@ -496,7 +544,7 @@ const TransactionItem = ({ transaction, formatCurrency, t, onEdit, onDelete, onC
           )}
         </p>
       </div>
-      <div className={`transaction-amount ${transaction.type}`}>
+      <div className={`transaction-amount ${transaction.type} ${isPrivate ? 'masked-number' : ''}`}>
         {transaction.type === 'income' ? '+' : '-'}
         {formatCurrency(Math.abs(transaction.amount))}
       </div>

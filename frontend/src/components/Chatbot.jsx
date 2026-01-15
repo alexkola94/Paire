@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { FiMessageCircle, FiX, FiSend, FiMinus } from 'react-icons/fi'
+import { FiMessageCircle, FiX, FiSend, FiMinus, FiDownload } from 'react-icons/fi'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
@@ -52,6 +52,7 @@ function Chatbot() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isRevealed, setIsRevealed] = useState(false) // For mobile reveal state
   const [isMobile, setIsMobile] = useState(false)
+  const [downloadingReport, setDownloadingReport] = useState(null) // Track which report is downloading
   const messagesEndRef = useRef(null)
 
   /**
@@ -126,8 +127,16 @@ function Chatbot() {
 
   /**
    * Add a bot message to chat
+   * @param {string} message - The message text
+   * @param {string} type - Message type (text, insight, warning, report_ready, etc.)
+   * @param {Object} data - Additional data
+   * @param {Array} quickActions - Quick action suggestions
+   * @param {string} actionLink - Link to related page
+   * @param {boolean} canGenerateReport - Whether a report can be generated
+   * @param {string} reportType - Type of report available
+   * @param {Object} reportParams - Parameters for report generation
    */
-  const addBotMessage = (message, type = 'text', data = null, quickActions = null, actionLink = null) => {
+  const addBotMessage = (message, type = 'text', data = null, quickActions = null, actionLink = null, canGenerateReport = false, reportType = null, reportParams = null) => {
     setMessages(prev => [
       ...prev,
       {
@@ -138,8 +147,11 @@ function Chatbot() {
         data,
         quickActions,
         actionLink,
+        canGenerateReport,
+        reportType,
+        reportParams,
         timestamp: new Date(),
-        typing: type === 'text' // Only type out text messages
+        typing: type === 'text' || type === 'report_ready' // Type out text and report messages
       }
     ])
 
@@ -198,7 +210,10 @@ function Chatbot() {
         response.type,
         response.data,
         response.quickActions,
-        response.actionLink
+        response.actionLink,
+        response.canGenerateReport,
+        response.reportType,
+        response.reportParams
       )
     } catch (error) {
       // Get language from localStorage for error message
@@ -224,10 +239,132 @@ function Chatbot() {
   }
 
   /**
-   * Handle quick action click
+   * Build a human-friendly, language-aware filename for reports
    */
-  const handleQuickAction = (action) => {
+  const buildReportFileName = (reportParams, format, language) => {
+    const type = reportParams?.reportType || 'financial_report'
+
+    let baseName = 'financial_report'
+    if (language === 'el') {
+      switch (type) {
+        case 'expenses_by_category':
+          baseName = 'analysi_exodon_ana_katigoria'
+          break
+        case 'monthly_summary':
+          baseName = 'miniaia_oikonomiki_perilipsi'
+          break
+        case 'loans_summary':
+          baseName = 'synopsi_daneion'
+          break
+        case 'savings_goals':
+          baseName = 'stoxoi_apotamieusis'
+          break
+        default:
+          baseName = 'oikonomiki_anafora'
+          break
+      }
+    } else {
+      switch (type) {
+        case 'expenses_by_category':
+          baseName = 'expenses_by_category'
+          break
+        case 'monthly_summary':
+          baseName = 'monthly_financial_summary'
+          break
+        case 'loans_summary':
+          baseName = 'loans_summary'
+          break
+        case 'savings_goals':
+          baseName = 'savings_goals'
+          break
+        default:
+          baseName = 'financial_report'
+          break
+      }
+    }
+
+    const start = new Date(reportParams.startDate)
+    const end = new Date(reportParams.endDate)
+    const startStr = start.toISOString().split('T')[0]
+    const endStr = end.toISOString().split('T')[0]
+
+    return `${baseName}_${startStr}_to_${endStr}.${format}`
+  }
+
+  /**
+   * Handle quick action click
+   * Detects if action is a download request and handles accordingly
+   */
+  const handleQuickAction = (action, msgReportParams = null) => {
+    const actionLower = action.toLowerCase()
+    
+    // Check if this is a download action
+    if (actionLower.includes('download') || actionLower.includes('κατέβασε')) {
+      const format = actionLower.includes('pdf') ? 'pdf' : 'csv'
+      
+      // If we have report params from the message, use them
+      if (msgReportParams) {
+        handleReportDownload(msgReportParams, format)
+        return
+      }
+    }
+    
+    // Otherwise, send as a regular message
     sendMessage(action)
+  }
+
+  /**
+   * Handle report download
+   * @param {Object} reportParams - Report parameters from the message
+   * @param {string} format - File format (csv or pdf)
+   */
+  const handleReportDownload = async (reportParams, format = 'csv') => {
+    if (!reportParams) return
+    
+    const language = localStorage.getItem('language') || 'en'
+    const downloadId = `${reportParams.reportType}-${format}`
+    setDownloadingReport(downloadId)
+    
+    // Add a status message
+    const statusMessage = language === 'el'
+      ? `⏳ Δημιουργία αρχείου ${format.toUpperCase()}...`
+      : `⏳ Generating ${format.toUpperCase()} file...`
+    
+    addBotMessage(statusMessage, 'info')
+    
+    try {
+      const blob = await chatbotService.generateReport({
+        reportType: reportParams.reportType,
+        format: format,
+        startDate: reportParams.startDate,
+        endDate: reportParams.endDate,
+        category: reportParams.category,
+        groupBy: reportParams.groupBy
+      })
+      
+      // Generate human-friendly, language-aware filename
+      const filename = buildReportFileName(reportParams, format, language)
+      
+      // Trigger download
+      chatbotService.downloadFile(blob, filename)
+      
+      // Success message
+      const successMessage = language === 'el'
+        ? `✅ Η αναφορά κατέβηκε με επιτυχία! Ελέγξτε τον φάκελο λήψεων σας.`
+        : `✅ Report downloaded successfully! Check your downloads folder.`
+      
+      addBotMessage(successMessage, 'insight')
+      
+    } catch (error) {
+      console.error('Error downloading report:', error)
+      const errorMessage = language === 'el'
+        ? `❌ Σφάλμα κατά τη δημιουργία της αναφοράς. Παρακαλώ δοκιμάστε ξανά.`
+        : `❌ Error generating report. Please try again.`
+      
+      addBotMessage(errorMessage, 'error')
+    } finally {
+      setDownloadingReport(null)
+    }
   }
 
   /**
@@ -408,15 +545,26 @@ function Chatbot() {
                       {/* Quick Actions - Only show after typing is done */}
                       {!msg.typing && msg.quickActions && msg.quickActions.length > 0 && (
                         <div className="chatbot-quick-actions">
-                          {msg.quickActions.map((action, i) => (
-                            <button
-                              key={i}
-                              className="chatbot-quick-action-btn"
-                              onClick={() => handleQuickAction(action)}
-                            >
-                              {action}
-                            </button>
-                          ))}
+                          {msg.quickActions.map((action, i) => {
+                            const actionLower = action.toLowerCase()
+                            const isDownload = actionLower.includes('download') || actionLower.includes('κατέβασε')
+                            const isDownloading = downloadingReport && (
+                              (actionLower.includes('csv') && downloadingReport.includes('csv')) ||
+                              (actionLower.includes('pdf') && downloadingReport.includes('pdf'))
+                            )
+                            
+                            return (
+                              <button
+                                key={i}
+                                className={`chatbot-quick-action-btn ${isDownload ? 'download-btn' : ''} ${isDownloading ? 'downloading' : ''}`}
+                                onClick={() => handleQuickAction(action, msg.reportParams)}
+                                disabled={isDownloading}
+                              >
+                                {isDownload && <FiDownload size={14} style={{ marginRight: '6px' }} />}
+                                {isDownloading ? (t('chatbot.downloading', 'Downloading...')) : action}
+                              </button>
+                            )
+                          })}
                         </div>
                       )}
 

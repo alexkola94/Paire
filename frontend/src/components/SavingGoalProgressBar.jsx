@@ -1,7 +1,13 @@
 
 import { useMemo } from 'react'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './SavingGoalProgressBar.css'
 
+/**
+ * SavingGoalProgressBar Component
+ * Displays savings goal progress with current/target values
+ * Supports privacy mode to hide sensitive amounts
+ */
 export default function SavingGoalProgressBar({
     label,
     currentAmount,
@@ -9,6 +15,8 @@ export default function SavingGoalProgressBar({
     currencyFormatter,
     icon
 }) {
+    const { isPrivate } = usePrivacyMode()
+    
     const percentage = useMemo(() => {
         if (!targetAmount || targetAmount === 0) return 0
         return Math.min(100, Math.max(0, (currentAmount / targetAmount) * 100))
@@ -27,7 +35,7 @@ export default function SavingGoalProgressBar({
                     {icon && <span className="saving-icon">{icon}</span>}
                     <span className="saving-label">{label}</span>
                 </div>
-                <div className="saving-values">
+                <div className={`saving-values ${isPrivate ? 'masked-number' : ''}`}>
                     <span className="current-value">
                         {currencyFormatter(currentAmount)}
                     </span>

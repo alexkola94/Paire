@@ -6,6 +6,7 @@ import { sessionManager } from './services/sessionManager'
 import { isTokenExpired } from './utils/tokenUtils'
 import { ThemeProvider } from './context/ThemeContext'
 import { AccessibilityProvider } from './context/AccessibilityContext'
+import { PrivacyModeProvider } from './context/PrivacyModeContext'
 import LogoLoader from './components/LogoLoader'
 import { ToastProvider } from './components/Toast'
 
@@ -180,8 +181,9 @@ function App() {
   return (
     <ThemeProvider>
       <AccessibilityProvider>
-        <ToastProvider>
-          <Router basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <PrivacyModeProvider>
+          <ToastProvider>
+            <Router basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             {/* Handle GitHub Pages redirects */}
             <RedirectHandler />
             <CookieConsent />
@@ -304,8 +306,9 @@ function App() {
                 />
               </Routes>
             </Suspense>
-          </Router>
-        </ToastProvider>
+            </Router>
+          </ToastProvider>
+        </PrivacyModeProvider>
       </AccessibilityProvider>
     </ThemeProvider>
   )

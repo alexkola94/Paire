@@ -28,123 +28,163 @@ namespace YouAndMeExpensesAPI.Services
             "UAH", "EGP", "TWD", "DZD", "MAD", "JOD", "BHD", "OMR", "QAR", "LKR"
         };
 
-        // Pattern definitions for query recognition (enhanced with more patterns)
+        // Pattern definitions for query recognition (enhanced with comprehensive patterns)
         private readonly Dictionary<string, List<string>> _queryPatterns = new()
         {
-            // Spending queries
+            // Spending queries - comprehensive patterns for various phrasings
             ["total_spending"] = new() { 
                 "how much.*spent", "total.*spending", "what.*spent", "spending.*total",
                 "expenses.*total", "money.*spent", "spent.*so far", "expenditure",
-                "how much.*spend", "what.*spend", "did.*spend"
+                "how much.*spend", "what.*spend", "did.*spend", "show.*spending",
+                "my spending", "all.*expenses", "all my.*expenses", "my expenses",
+                "what are my expenses", "sum.*expenses", "total expenses", "expense total",
+                "spent this", "spending summary", "expenses summary", "what did i spend"
             },
             ["category_spending"] = new() { 
                 "spent.*on (\\w+)", "spending.*on (\\w+)", 
-                "how much.*(groceries|food|transport|entertainment|bills|shopping|dining|health|utilities)",
-                "expenses.*for (\\w+)", 
+                "how much.*(groceries|food|transport|entertainment|bills|shopping|dining|health|utilities|rent|gas|fuel|clothing|education|subscription|medical|pharmacy|restaurant|coffee|amazon|uber)",
+                "expenses.*for (\\w+)", "expenses.*in (\\w+)",
+                "(groceries|food|transport|entertainment|bills|shopping|dining|health|utilities|rent|gas|fuel|clothing|education|subscription|medical|pharmacy|restaurant|coffee|amazon|uber).*spending",
+                "(groceries|food|transport|entertainment|bills|shopping|dining|health|utilities|rent|gas|fuel|clothing|education|subscription|medical|pharmacy|restaurant|coffee|amazon|uber).*expenses",
                 "(?!(?:total|daily|monthly|average|top|biggest|highest|most|largest|major|predict|future|seasonal|my|your|show|give|tell|what|is|are|can|please|list|graph|chart|trend|me|the|a|an|all|to|in|of|on|at|by|for|with|category|categories))(\\b\\w{2,}\\b).*spending", 
                 "(?!(?:total|daily|monthly|average|top|biggest|highest|most|largest|major|predict|future|seasonal|my|your|show|give|tell|what|is|are|can|please|list|graph|chart|trend|me|the|a|an|all|to|in|of|on|at|by|for|with|category|categories))(\\b\\w{2,}\\b).*expenses"
             },
             ["monthly_spending"] = new() { 
-                "spent.*month", "spending.*month", "monthly.*spending",
-                "this month.*expenses", "month.*expenditure"
+                "spent.*month", "spending.*month", "monthly.*spending", "monthly spending",
+                "this month.*expenses", "month.*expenditure", "expenses this month",
+                "spending this month", "this month's spending", "month's expenses"
             },
             ["daily_average"] = new() { 
-                "average.*day", "daily.*average", "spending.*per day",
-                "per day.*spending", "daily.*expenses", "day.*average"
+                "average.*day", "daily.*average", "spending.*per day", "daily average",
+                "per day.*spending", "daily.*expenses", "day.*average", "average daily",
+                "daily spending", "spend per day", "average spend"
             },
             
-            // Income queries
+            // Income queries - comprehensive patterns
             ["total_income"] = new() { 
                 "how much.*earned", "total.*income", "what.*income", "income.*total",
-                "earnings", "money.*made", "revenue", "earned.*so far"
+                "earnings", "money.*made", "revenue", "earned.*so far", "my income",
+                "all income", "income summary", "what did i earn", "how much.*earn",
+                "salary", "wages", "paycheck", "what i made", "total earned"
             },
             ["income_sources"] = new() { 
-                "income.*from", "where.*income", "income.*sources",
-                "earning.*sources", "where.*money.*from"
+                "income.*from", "where.*income", "income.*sources", "sources of income",
+                "earning.*sources", "where.*money.*from", "income breakdown",
+                "where does my income come from", "income categories"
             },
             
-            // Balance queries
+            // Balance queries - comprehensive patterns
             ["current_balance"] = new() { 
                 "what.*balance", "current.*balance", "how much.*left", "balance.*now",
-                "remaining.*money", "net.*balance", "financial.*position"
+                "remaining.*money", "net.*balance", "financial.*position", "my balance",
+                "bank balance", "account balance", "how much do i have", "what do i have",
+                "money left", "what's left", "available money", "available balance",
+                "net worth", "financial status", "financial situation", "funds available"
             },
             ["savings"] = new() { 
-                "savings", "saved.*money", "how much.*saved",
-                "saving.*amount", "money.*saved"
+                "savings", "saved.*money", "how much.*saved", "my savings",
+                "saving.*amount", "money.*saved", "total saved", "savings total",
+                "what have i saved", "how much did i save", "saving progress"
             },
             
-            // Comparison queries
+            // Comparison queries - comprehensive patterns
             ["compare_months"] = new() { 
                 "compare.*month", "last month.*this month", "month.*comparison",
                 "versus.*last month", "vs.*previous month", "month.*over.*month",
                 "what.*changed", "biggest.*change", "most.*changed", "spending.*change",
-                "change.*in.*spending"
+                "change.*in.*spending", "compared to last month", "difference.*month",
+                "month to month", "monthly comparison", "how does this month compare",
+                "better.*worse.*month", "improvement.*month"
             },
             ["compare_partners"] = new() { 
                 "who.*spent.*more", "compare.*spending", "partner.*comparison",
-                "spending.*between", "who.*paid.*more"
+                "spending.*between", "who.*paid.*more", "compare with partner",
+                "partner spending", "spouse spending", "household spending comparison"
             },
             
-            // Loan queries
+            // Loan queries - comprehensive patterns
             ["total_loans"] = new() { 
-                "total.*loans", "how much.*owed", "loan.*total",
-                "debt.*amount", "outstanding.*loans"
+                "total.*loans", "how much.*owed", "loan.*total", "total debt",
+                "debt.*amount", "outstanding.*loans", "all loans", "my loans",
+                "loan balance", "debt balance", "what do i owe", "owed money",
+                "money i owe", "debts", "liabilities"
             },
             ["loan_status"] = new() { 
-                "loan.*status", "active.*loans", "pending.*loans",
-                "loan.*summary", "debt.*status"
+                "loan.*status", "active.*loans", "pending.*loans", "loan progress",
+                "loan.*summary", "debt.*status", "loans overview", "loan overview",
+                "current loans", "loan details", "debt summary"
             },
             ["next_payment"] = new() { 
-                "next.*payment", "when.*pay", "payment.*due",
-                "upcoming.*payment", "when.*payment.*due"
+                "next.*payment", "when.*pay", "payment.*due", "due date",
+                "upcoming.*payment", "when.*payment.*due", "when is.*due",
+                "payment schedule", "next loan payment", "bill due"
             },
             
-            // Budget queries
+            // Budget queries - comprehensive patterns
             ["budget_status"] = new() { 
                 "budget.*status", "within.*budget", "over.*budget", "budget.*remaining",
-                "budget.*progress", "spending.*limit", "budget.*health"
+                "budget.*progress", "spending.*limit", "budget.*health", "my budget",
+                "am i on budget", "budget check", "budget overview", "how's my budget",
+                "under budget", "budget update", "budget report"
             },
             ["budget_categories"] = new() { 
                 "budget.*for (\\w+)", "budget.*(groceries|food|transport|entertainment)",
-                "(\\w+).*budget", "limit.*for (\\w+)"
+                "(\\w+).*budget", "limit.*for (\\w+)", "category budget",
+                "spending limit", "budget by category", "budgets by category"
             },
             
-            // Insights and suggestions
+            // Insights and suggestions - comprehensive patterns
             ["spending_insights"] = new() { 
                 "insights", "analysis", "tell me.*spending", "financial.*health",
-                "money.*habits", "spending.*pattern", "financial.*overview"
+                "money.*habits", "spending.*pattern", "financial.*overview",
+                "spending analysis", "expense analysis", "analyze.*spending",
+                "give me insights", "financial insights", "money insights",
+                "understand.*spending", "spending report", "financial report"
             },
             ["save_money"] = new() { 
                 "how.*save", "save.*money", "reduce.*spending", "cut.*costs",
-                "save.*more", "tips.*saving", "reduce.*expenses"
+                "save.*more", "tips.*saving", "reduce.*expenses", "saving tips",
+                "money saving", "ways to save", "help.*save", "cut spending",
+                "decrease.*expenses", "lower.*spending", "spend less",
+                "be more frugal", "economize", "save more money"
             },
             ["spending_trends"] = new() { 
                 "spending.*trend", "trend.*spending", "pattern.*spending",
-                "spending.*over time", "expense.*pattern"
+                "spending.*over time", "expense.*pattern", "spending history",
+                "historical spending", "spending evolution", "how has.*spending changed",
+                "spending trajectory", "expense trends"
             },
             
-            // Top spenders
+            // Top spenders - comprehensive patterns
             ["top_expenses"] = new() { 
                 "top.*expenses", "biggest.*expenses", "highest.*spending", "most.*spent",
-                "largest.*expenses", "major.*expenses"
+                "largest.*expenses", "major.*expenses", "main expenses", "biggest costs",
+                "where.*most money.*go", "where does.*money go", "highest expenses",
+                "most expensive", "largest transactions"
             },
             ["top_categories"] = new() { 
                 "top.*categories", "which.*category", "spent.*most.*on",
                 "main.*categories", "primary.*expenses", "categories.*list",
                 "show.*all.*categories", "show.*me.*spending.*by.*category",
-                "spending.*breakdown", "category.*breakdown"
+                "spending.*breakdown", "category.*breakdown", "expense categories",
+                "breakdown by category", "spending by category", "expenses by category",
+                "list categories", "all categories", "category list", "category summary"
             },
             
-            // Goals
+            // Goals - comprehensive patterns
             ["savings_goals"] = new() { 
                 "savings.*goal", "goal.*progress", "how close.*goal",
-                "saving.*target", "goal.*status", "progress.*toward"
+                "saving.*target", "goal.*status", "progress.*toward",
+                "my goals", "financial goals", "saving goals", "goal tracking",
+                "how much.*goal", "am i on track", "goal progress", "target progress"
             },
             
-            // Predictions
+            // Predictions - comprehensive patterns
             ["predict_spending"] = new() { 
                 "predict.*spending", "forecast.*expenses", "estimate.*month",
-                "future.*spending", "projected.*expenses", "expected.*spending"
+                "future.*spending", "projected.*expenses", "expected.*spending",
+                "spending forecast", "expense forecast", "spending prediction",
+                "what will i spend", "estimated expenses", "projection"
             },
             
             // Loan Scenarios & What-If Analysis
@@ -237,6 +277,17 @@ namespace YouAndMeExpensesAPI.Services
                 "convert", "exchange.*rate", "how.*much.*is.*in", "currency", 
                 "(\\d+).*([a-zA-Z]{3}).*to.*([a-zA-Z]{3})",
                 "price.*of.*([a-zA-Z]{3})"
+            },
+            
+            // Report Generation - User wants to download a file
+            ["generate_report"] = new() {
+                "download.*report", "download.*csv", "download.*pdf", "generate.*report",
+                "export.*report", "export.*csv", "export.*pdf", "get.*report",
+                "create.*report", "make.*report", "file.*download", "download.*file",
+                "download.*expenses", "export.*expenses", "export.*data",
+                "yes.*generate", "yes.*download", "yes.*file", "yes.*report",
+                "give.*file", "send.*file", "want.*file", "need.*file",
+                "want.*report", "need.*report", "give.*report"
             }
         };
 
@@ -484,6 +535,7 @@ namespace YouAndMeExpensesAPI.Services
                     "financial_ratios" => await GetFinancialRatiosAsync(userId),
                     "money_tips" => GetMoneyTipsAsync(),
                     "help" => GetHelpResponse(language),
+                    "generate_report" => await HandleReportGenerationRequestAsync(userId, normalizedQuery, history, language),
                     _ => GetUnknownResponse(normalizedQuery, history, language)
                 };
             }
@@ -944,8 +996,8 @@ namespace YouAndMeExpensesAPI.Services
                 .ToList();
             
             var defaultQuickActions = language == "el"
-                ? new List<string> { "Δείξε περισσότερες λεπτομέρειες", "Δώσε μου ανάλυση" }
-                : new List<string> { "Show more details", "Give me insights" };
+                ? new List<string> { "Κατέβασε αναφορά CSV", "Κατέβασε αναφορά PDF", "Δείξε περισσότερες λεπτομέρειες", "Δώσε μου ανάλυση" }
+                : new List<string> { "Download CSV report", "Download PDF report", "Show more details", "Give me insights" };
             
             return new ChatbotResponse
             {
@@ -992,25 +1044,30 @@ namespace YouAndMeExpensesAPI.Services
 
         /// <summary>
         /// Get total spending for a period with enhanced insights
+        /// Includes robust null handling and accurate calculations
         /// </summary>
         private async Task<ChatbotResponse> GetTotalSpendingAsync(string userId, string query, string language = "en")
         {
             var period = ExtractTimePeriod(query, language);
             var (start, end) = GetDateRange(period);
 
+            // Fetch transactions with null-safe amount handling
             var transactions = await _dbContext.Transactions
                 .Where(t => t.UserId == userId && t.Type == "expense")
                 .Where(t => t.Date >= start && t.Date <= end)
                 .ToListAsync();
 
+            // Calculate total with explicit null handling to prevent math errors
             var total = transactions.Sum(t => t.Amount);
             var count = transactions.Count;
-            var avgPerTransaction = count > 0 ? total / count : 0;
+            
+            // Safe average calculation - prevent division by zero
+            var avgPerTransaction = count > 0 ? Math.Round(total / count, 2) : 0m;
 
-            // Get previous period for comparison
-            var periodDays = (end - start).Days + 1;
+            // Get previous period for comparison - ensure proper date range
+            var periodDays = Math.Max((end - start).Days + 1, 1); // Ensure at least 1 day
             var prevStart = start.AddDays(-periodDays);
-            var prevEnd = start.AddDays(-1);
+            var prevEnd = start.AddTicks(-1); // End just before current period starts
             
             var prevTransactions = await _dbContext.Transactions
                 .Where(t => t.UserId == userId && t.Type == "expense")
@@ -1019,44 +1076,78 @@ namespace YouAndMeExpensesAPI.Services
             
             var prevTotal = prevTransactions.Sum(t => t.Amount);
             var change = total - prevTotal;
-            var changePercent = prevTotal > 0 ? (change / prevTotal) * 100 : 0;
+            
+            // Safe percentage calculation - handle zero previous total
+            decimal changePercent = 0m;
+            if (prevTotal > 0)
+            {
+                changePercent = Math.Round((change / prevTotal) * 100, 1);
+            }
+            else if (total > 0)
+            {
+                // If no previous data but we have current spending, show as 100% increase
+                changePercent = 100m;
+            }
 
             // Generate personalized message
             var message = GenerateSpendingMessage(total, count, avgPerTransaction, change, changePercent, period, language);
 
+            // Add report offer if there's meaningful data
+            if (count > 0)
+            {
+                message += language == "el"
+                    ? "\n\n📄 **Θέλετε να κατεβάσετε αναφορά;** Κάντε κλικ παρακάτω για να λάβετε ένα αρχείο CSV ή PDF."
+                    : "\n\n📄 **Want to download a report?** Click below to get a CSV or PDF file.";
+            }
+
             var quickActions = language == "el"
                 ? new List<string>
                 {
+                    "Κατέβασε αναφορά CSV",
+                    "Κατέβασε αναφορά PDF",
                     "Δείξε μου έξοδα ανά κατηγορία",
-                    "Ποια είναι τα κύρια έξοδά μου;",
                     "Πώς μπορώ να αποταμιεύσω χρήματα;"
                 }
                 : new List<string>
                 {
+                    "Download CSV report",
+                    "Download PDF report",
                     "Show me spending by category",
-                    "What are my top expenses?",
                     "How can I save money?"
                 };
+
+            // Calculate accurate daily average with proper rounding
+            var dailyAverage = periodDays > 0 ? Math.Round(total / periodDays, 2) : 0m;
 
             return new ChatbotResponse
             {
                 Message = message,
-                Type = changePercent > 20 ? "warning" : "text",
+                Type = Math.Abs(changePercent) > 20 ? "warning" : "text",
                 Data = new 
                 { 
-                    total, 
+                    total = Math.Round(total, 2), 
                     count, 
                     avgPerTransaction,
                     period, 
                     startDate = start, 
                     endDate = end,
-                    previousTotal = prevTotal,
-                    change,
+                    previousTotal = Math.Round(prevTotal, 2),
+                    change = Math.Round(change, 2),
                     changePercent,
-                    dailyAverage = periodDays > 0 ? total / periodDays : 0
+                    dailyAverage
                 },
                 QuickActions = quickActions,
-                ActionLink = "/expenses"
+                ActionLink = "/expenses",
+                // Enable report generation
+                CanGenerateReport = count > 0,
+                ReportType = "expenses_by_category",
+                ReportParams = new ReportParameters
+                {
+                    ReportType = "expenses_by_category",
+                    StartDate = start,
+                    EndDate = end,
+                    Language = language
+                }
             };
         }
 
@@ -1075,19 +1166,19 @@ namespace YouAndMeExpensesAPI.Services
                     return $"Τελευταία νέα! Δεν έχετε ξοδέψει τίποτα {period}. Συνεχίστε έτσι! 🎉";
                 }
 
-                messages.Add($"Έχετε ξοδέψει **${total:N2}** {period} σε {count} συναλλαγή{(count != 1 ? "ές" : "")}.");
-                messages.Add($"Αυτό είναι ένας μέσος όρος **${avg:N2}** ανά συναλλαγή.");
+                messages.Add($"Έχετε ξοδέψει **€{total:N2}** {period} σε {count} συναλλαγή{(count != 1 ? "ές" : "")}.");
+                messages.Add($"Αυτό είναι ένας μέσος όρος **€{avg:N2}** ανά συναλλαγή.");
 
                 // Comparison insight (Greek)
                 if (Math.Abs(changePercent) > 5)
                 {
                     if (change > 0)
                     {
-                        messages.Add($"\n⚠️ Ξοδεύετε **{Math.Abs(changePercent):F1}%** περισσότερο από την προηγούμενη περίοδο (${Math.Abs(change):N2} αύξηση).");
+                        messages.Add($"\n⚠️ Ξοδεύετε **{Math.Abs(changePercent):F1}%** περισσότερο από την προηγούμενη περίοδο (€{Math.Abs(change):N2} αύξηση).");
                     }
                     else
                     {
-                        messages.Add($"\n✅ Καλή δουλειά! Ξοδεύετε **{Math.Abs(changePercent):F1}%** λιγότερο από την προηγούμενη περίοδο (${Math.Abs(change):N2} αποταμιεύτηκαν).");
+                        messages.Add($"\n✅ Καλή δουλειά! Ξοδεύετε **{Math.Abs(changePercent):F1}%** λιγότερο από την προηγούμενη περίοδο (€{Math.Abs(change):N2} αποταμιεύτηκαν).");
                     }
                 }
                 else
@@ -1103,19 +1194,19 @@ namespace YouAndMeExpensesAPI.Services
                     return $"Great news! You haven't spent anything {period}. Keep it up! 🎉";
                 }
 
-                messages.Add($"You've spent **${total:N2}** {period} across {count} transaction{(count != 1 ? "s" : "")}.");
-                messages.Add($"That's an average of **${avg:N2}** per transaction.");
+                messages.Add($"You've spent **€{total:N2}** {period} across {count} transaction{(count != 1 ? "s" : "")}.");
+                messages.Add($"That's an average of **€{avg:N2}** per transaction.");
 
                 // Comparison insight (English)
                 if (Math.Abs(changePercent) > 5)
                 {
                     if (change > 0)
                     {
-                        messages.Add($"\n⚠️ You're spending **{Math.Abs(changePercent):F1}%** more than the previous period (${Math.Abs(change):N2} increase).");
+                        messages.Add($"\n⚠️ You're spending **{Math.Abs(changePercent):F1}%** more than the previous period (€{Math.Abs(change):N2} increase).");
                     }
                     else
                     {
-                        messages.Add($"\n✅ Great job! You're spending **{Math.Abs(changePercent):F1}%** less than the previous period (${Math.Abs(change):N2} saved).");
+                        messages.Add($"\n✅ Great job! You're spending **{Math.Abs(changePercent):F1}%** less than the previous period (€{Math.Abs(change):N2} saved).");
                     }
                 }
                 else
@@ -1169,19 +1260,32 @@ namespace YouAndMeExpensesAPI.Services
                 category, categoryTotal, percentage, transactionCount, 
                 avgPerTransaction, monthlyChange, monthlyChangePercent, language);
 
+            // Add report offer if there's meaningful data
+            if (transactionCount > 0)
+            {
+                message += language == "el"
+                    ? "\n\n📄 **Θέλετε αναφορά;** Μπορώ να δημιουργήσω CSV ή PDF με τα έξοδα αυτής της κατηγορίας."
+                    : "\n\n📄 **Want a report?** I can generate a CSV or PDF with this category's expenses.";
+            }
+
             var quickActions = language == "el"
                 ? new List<string>
                 {
+                    "Κατέβασε αναφορά CSV",
+                    "Κατέβασε αναφορά PDF",
                     "Δείξε όλες τις κατηγορίες",
-                    "Σύγκρινε με τον προηγούμενο μήνα",
                     "Πώς μπορώ να το μειώσω;"
                 }
                 : new List<string>
                 {
+                    "Download CSV report",
+                    "Download PDF report",
                     "Show all categories",
-                    "Compare with last month",
                     "How can I reduce this?"
                 };
+
+            // Use the same month range we already calculated above
+            var end = now;
 
             return new ChatbotResponse
             {
@@ -1195,9 +1299,22 @@ namespace YouAndMeExpensesAPI.Services
                     avgPerTransaction,
                     lastMonthTotal,
                     monthlyChange,
-                    monthlyChangePercent
+                    monthlyChangePercent,
+                    reportType = "expenses_by_category",
+                    startDate = start,
+                    endDate = end
                 },
-                QuickActions = quickActions
+                QuickActions = quickActions,
+                CanGenerateReport = transactionCount > 0,
+                ReportType = "expenses_by_category",
+                ReportParams = transactionCount > 0 ? new ReportParameters
+                {
+                    ReportType = "expenses_by_category",
+                    StartDate = start,
+                    EndDate = end,
+                    Category = category,
+                    Language = language
+                } : null
             };
         }
 
@@ -1282,74 +1399,119 @@ namespace YouAndMeExpensesAPI.Services
 
         /// <summary>
         /// Get current balance (Global Net Worth)
+        /// Includes safe calculations and proper null handling
         /// </summary>
         private async Task<ChatbotResponse> GetCurrentBalanceAsync(string userId, string language = "en")
         {
-            // Calculate global balance directly in DB for performance
-            var income = await _dbContext.Transactions
-                .Where(t => t.UserId == userId && t.Type == "income")
-                .SumAsync(t => t.Amount);
+            // Calculate global balance - SumAsync returns 0 for empty sequences in EF Core
+            // Fetch as list first to handle empty results properly
+            var allTransactions = await _dbContext.Transactions
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
 
-            var expenses = await _dbContext.Transactions
-                .Where(t => t.UserId == userId && t.Type == "expense")
-                .SumAsync(t => t.Amount);
+            var income = allTransactions
+                .Where(t => t.Type == "income")
+                .Sum(t => t.Amount);
 
-            var balance = income - expenses;
+            var expenses = allTransactions
+                .Where(t => t.Type == "expense")
+                .Sum(t => t.Amount);
+
+            // Calculate balance with proper rounding
+            var balance = Math.Round(income - expenses, 2);
 
             // Get monthly stats for context
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             
-            var monthlyIncome = await _dbContext.Transactions
-                .Where(t => t.UserId == userId && t.Type == "income" && t.Date >= monthStart)
-                .SumAsync(t => t.Amount);
+            var monthlyIncome = allTransactions
+                .Where(t => t.Type == "income" && t.Date >= monthStart)
+                .Sum(t => t.Amount);
                 
-            var monthlyExpenses = await _dbContext.Transactions
-                .Where(t => t.UserId == userId && t.Type == "expense" && t.Date >= monthStart)
-                .SumAsync(t => t.Amount);
+            var monthlyExpenses = allTransactions
+                .Where(t => t.Type == "expense" && t.Date >= monthStart)
+                .Sum(t => t.Amount);
+            
+            // Round values for display
+            monthlyIncome = Math.Round(monthlyIncome, 2);
+            monthlyExpenses = Math.Round(monthlyExpenses, 2);
+            var monthlyNet = Math.Round(monthlyIncome - monthlyExpenses, 2);
 
             var message = "";
             
             if (language == "el")
             {
                 message = $"### 💰 Τρέχον Υπόλοιπο\n" +
-                         $"**Συνολικό Υπόλοιπο:** ${(balance):N2}\n\n" +
+                         $"**Συνολικό Υπόλοιπο:** €{balance:N2}\n\n" +
                          $"#### Επισκόπηση Αυτού του Μήνα:\n" +
-                         $"* 📥 Έσοδα: ${monthlyIncome:N2}\n" +
-                         $"* 📤 Έξοδα: ${monthlyExpenses:N2}\n" +
-                         $"* 📉 Καθαρή Ροή: ${(monthlyIncome - monthlyExpenses):N2}";
+                         $"* 📥 Έσοδα: €{monthlyIncome:N2}\n" +
+                         $"* 📤 Έξοδα: €{monthlyExpenses:N2}\n" +
+                         $"* 📉 Καθαρή Ροή: €{monthlyNet:N2}";
             }
             else
             {
                 message = $"### 💰 Current Balance\n" +
-                         $"**Net Balance:** ${(balance):N2}\n\n" +
+                         $"**Net Balance:** €{balance:N2}\n\n" +
                          $"#### This Month's Overview:\n" +
-                         $"* 📥 Income: ${monthlyIncome:N2}\n" +
-                         $"* 📤 Expenses: ${monthlyExpenses:N2}\n" +
-                         $"* 📉 Net Flow: ${(monthlyIncome - monthlyExpenses):N2}";
+                         $"* 📥 Income: €{monthlyIncome:N2}\n" +
+                         $"* 📤 Expenses: €{monthlyExpenses:N2}\n" +
+                         $"* 📉 Net Flow: €{monthlyNet:N2}";
+            }
+
+            // Add report offer if there's meaningful data
+            if (allTransactions.Any())
+            {
+                message += language == "el"
+                    ? "\n\n📄 **Θέλετε αναφορά;** Μπορώ να δημιουργήσω CSV ή PDF με την οικονομική σας κατάσταση."
+                    : "\n\n📄 **Want a report?** I can generate a CSV or PDF with your financial status.";
             }
 
             var quickActions = language == "el"
                 ? new List<string>
                 {
+                    "Κατέβασε αναφορά CSV",
+                    "Κατέβασε αναφορά PDF",
                     "Δείξε πηγές εσόδων",
-                    "Ανάλυση εξόδων",
-                    "Κατάσταση προϋπολογισμού"
+                    "Ανάλυση εξόδων"
                 }
                 : new List<string>
                 {
+                    "Download CSV report",
+                    "Download PDF report",
                     "Show income sources",
-                    "Expense analysis",
-                    "Budget status"
+                    "Expense analysis"
                 };
+
+            // Reuse existing monthStart / now for the report range
+            var start = monthStart;
+            var end = now;
 
             return new ChatbotResponse
             {
                 Message = message,
                 Type = balance >= 0 ? "insight" : "warning",
-                Data = new { totalIncome = income, totalExpenses = expenses, balance, monthlyNet = monthlyIncome - monthlyExpenses },
+                Data = new { 
+                    totalIncome = Math.Round(income, 2), 
+                    totalExpenses = Math.Round(expenses, 2), 
+                    balance, 
+                    monthlyIncome,
+                    monthlyExpenses,
+                    monthlyNet,
+                    reportType = "monthly_summary",
+                    startDate = start,
+                    endDate = end
+                },
                 QuickActions = quickActions,
-                ActionLink = "/dashboard"
+                ActionLink = "/dashboard",
+                CanGenerateReport = allTransactions.Any(),
+                ReportType = "monthly_summary",
+                ReportParams = allTransactions.Any() ? new ReportParameters
+                {
+                    ReportType = "monthly_summary",
+                    StartDate = start,
+                    EndDate = end,
+                    Language = language
+                } : null
             };
         }
 
@@ -1529,18 +1691,29 @@ namespace YouAndMeExpensesAPI.Services
             }
 
             var message = string.Join("\n", insights);
+            
+            // Add report offer if there's meaningful data
+            if (analytics.TotalExpenses > 0 || analytics.TotalIncome > 0)
+            {
+                message += language == "el"
+                    ? "\n\n📄 **Θέλετε αναφορά;** Μπορώ να δημιουργήσω CSV ή PDF με την πλήρη οικονομική σας ανάλυση."
+                    : "\n\n📄 **Want a report?** I can generate a CSV or PDF with your complete financial analysis.";
+            }
+
             var quickActions = language == "el"
                 ? new List<string>
                 {
+                    "Κατέβασε αναφορά CSV",
+                    "Κατέβασε αναφορά PDF",
                     "Πώς μπορώ να αποταμιεύσω χρήματα;",
-                    "Δείξε κύρια έξοδα",
-                    "Σύγκρινε με τον προηγούμενο μήνα"
+                    "Δείξε κύρια έξοδα"
                 }
                 : new List<string>
                 {
+                    "Download CSV report",
+                    "Download PDF report",
                     "How can I save money?",
-                    "Show top expenses",
-                    "Compare with last month"
+                    "Show top expenses"
                 };
 
             return new ChatbotResponse
@@ -1552,10 +1725,22 @@ namespace YouAndMeExpensesAPI.Services
                     analytics,
                     projectedMonthEnd = (analytics.TotalExpenses / now.Day) * DateTime.DaysInMonth(now.Year, now.Month),
                     savingsRate = analytics.TotalIncome > 0 ? (analytics.Balance / analytics.TotalIncome) * 100 : 0,
-                    daysRemaining = DateTime.DaysInMonth(now.Year, now.Month) - now.Day
+                    daysRemaining = DateTime.DaysInMonth(now.Year, now.Month) - now.Day,
+                    reportType = "monthly_summary",
+                    startDate = monthStart,
+                    endDate = now
                 },
                 QuickActions = quickActions,
-                ActionLink = "/analytics"
+                ActionLink = "/analytics",
+                CanGenerateReport = analytics.TotalExpenses > 0 || analytics.TotalIncome > 0,
+                ReportType = "monthly_summary",
+                ReportParams = (analytics.TotalExpenses > 0 || analytics.TotalIncome > 0) ? new ReportParameters
+                {
+                    ReportType = "monthly_summary",
+                    StartDate = monthStart,
+                    EndDate = now,
+                    Language = language
+                } : null
             };
         }
 
@@ -1855,18 +2040,32 @@ namespace YouAndMeExpensesAPI.Services
                 lastMonthEnd
             );
 
-            var diff = thisMonth.TotalExpenses - lastMonth.TotalExpenses;
-            var percentChange = lastMonth.TotalExpenses > 0 
-                ? (diff / lastMonth.TotalExpenses) * 100 
-                : 0;
+            // Calculate difference with proper rounding
+            var diff = Math.Round(thisMonth.TotalExpenses - lastMonth.TotalExpenses, 2);
+            
+            // Safe percentage calculation to avoid division by zero
+            decimal percentChange = 0m;
+            if (lastMonth.TotalExpenses > 0)
+            {
+                percentChange = Math.Round((diff / lastMonth.TotalExpenses) * 100, 1);
+            }
+            else if (thisMonth.TotalExpenses > 0)
+            {
+                // If no data from last month but we have current data
+                percentChange = 100m;
+            }
 
             var message = language == "el"
                 ? (diff > 0
-                    ? $"Ξοδεύετε {percentChange:F1}% περισσότερο αυτόν τον μήνα (${diff:N2} αύξηση). Προηγούμενος μήνας: ${lastMonth.TotalExpenses:N2}, Αυτός ο μήνας: ${thisMonth.TotalExpenses:N2}"
-                    : $"Καλή δουλειά! Ξοδεύετε {Math.Abs(percentChange):F1}% λιγότερο αυτόν τον μήνα (${Math.Abs(diff):N2} αποταμιεύτηκαν). Προηγούμενος μήνας: ${lastMonth.TotalExpenses:N2}, Αυτός ο μήνας: ${thisMonth.TotalExpenses:N2}")
+                    ? $"Ξοδεύετε **{Math.Abs(percentChange):F1}%** περισσότερο αυτόν τον μήνα (€{Math.Abs(diff):N2} αύξηση).\n\n• Προηγούμενος μήνας: €{lastMonth.TotalExpenses:N2}\n• Αυτός ο μήνας: €{thisMonth.TotalExpenses:N2}"
+                    : (diff < 0
+                        ? $"Καλή δουλειά! Ξοδεύετε **{Math.Abs(percentChange):F1}%** λιγότερο αυτόν τον μήνα (€{Math.Abs(diff):N2} αποταμιεύτηκαν).\n\n• Προηγούμενος μήνας: €{lastMonth.TotalExpenses:N2}\n• Αυτός ο μήνας: €{thisMonth.TotalExpenses:N2}"
+                        : $"📊 Οι δαπάνες σας είναι σταθερές σε σχέση με τον προηγούμενο μήνα.\n\n• Προηγούμενος μήνας: €{lastMonth.TotalExpenses:N2}\n• Αυτός ο μήνας: €{thisMonth.TotalExpenses:N2}"))
                 : (diff > 0
-                    ? $"You're spending {percentChange:F1}% more this month (${diff:N2} increase). Last month: ${lastMonth.TotalExpenses:N2}, This month: ${thisMonth.TotalExpenses:N2}"
-                    : $"Great job! You're spending {Math.Abs(percentChange):F1}% less this month (${Math.Abs(diff):N2} saved). Last month: ${lastMonth.TotalExpenses:N2}, This month: ${thisMonth.TotalExpenses:N2}");
+                    ? $"You're spending **{Math.Abs(percentChange):F1}%** more this month (€{Math.Abs(diff):N2} increase).\n\n• Last month: €{lastMonth.TotalExpenses:N2}\n• This month: €{thisMonth.TotalExpenses:N2}"
+                    : (diff < 0
+                        ? $"Great job! You're spending **{Math.Abs(percentChange):F1}%** less this month (€{Math.Abs(diff):N2} saved).\n\n• Last month: €{lastMonth.TotalExpenses:N2}\n• This month: €{thisMonth.TotalExpenses:N2}"
+                        : $"📊 Your spending is consistent with last month.\n\n• Last month: €{lastMonth.TotalExpenses:N2}\n• This month: €{thisMonth.TotalExpenses:N2}"));
 
             var quickActions = language == "el"
                 ? new List<string>
@@ -2130,6 +2329,171 @@ namespace YouAndMeExpensesAPI.Services
                 Data = new { activeCount = activeLoans.Count, totalOwed, nextPayment },
                 QuickActions = quickActions,
                 ActionLink = "/loans"
+            };
+        }
+
+        /// <summary>
+        /// Handle report generation request from user
+        /// Detects report type from context and provides download options
+        /// </summary>
+        private async Task<ChatbotResponse> HandleReportGenerationRequestAsync(
+            string userId, string query, List<ChatMessage>? history, string language = "en")
+        {
+            // Determine report type from query or context
+            var reportType = DetermineReportTypeFromContext(query, history);
+            var format = query.Contains("pdf", StringComparison.OrdinalIgnoreCase) ? "pdf" : "csv";
+            
+            // Get date range from context or default to last 6 months
+            var endDate = DateTime.UtcNow;
+            var startDate = endDate.AddMonths(-6);
+            
+            // Try to extract specific date range from query
+            if (query.Contains("month", StringComparison.OrdinalIgnoreCase) && !query.Contains("6 month", StringComparison.OrdinalIgnoreCase))
+            {
+                startDate = new DateTime(endDate.Year, endDate.Month, 1);
+            }
+            else if (query.Contains("year", StringComparison.OrdinalIgnoreCase))
+            {
+                startDate = new DateTime(endDate.Year, 1, 1);
+            }
+            else if (query.Contains("3 month", StringComparison.OrdinalIgnoreCase) || query.Contains("quarter", StringComparison.OrdinalIgnoreCase))
+            {
+                startDate = endDate.AddMonths(-3);
+            }
+            else if (query.Contains("6 month", StringComparison.OrdinalIgnoreCase))
+            {
+                startDate = endDate.AddMonths(-6);
+            }
+            
+            // Extract category if mentioned
+            var category = ExtractCategory(query);
+            if (category == "expenses") category = null; // No specific category filter
+            
+            var formatName = format.ToUpper();
+            var reportTypeFriendly = GetFriendlyReportTypeName(reportType, language);
+            
+            var message = language == "el"
+                ? $"📄 **Ετοιμάζω την αναφορά σας!**\n\n" +
+                  $"• **Τύπος:** {reportTypeFriendly}\n" +
+                  $"• **Μορφή:** {formatName}\n" +
+                  $"• **Περίοδος:** {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}\n\n" +
+                  $"Κάντε κλικ στο κουμπί παρακάτω για να κατεβάσετε το αρχείο."
+                : $"📄 **Preparing your report!**\n\n" +
+                  $"• **Type:** {reportTypeFriendly}\n" +
+                  $"• **Format:** {formatName}\n" +
+                  $"• **Period:** {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}\n\n" +
+                  $"Click the button below to download your file.";
+
+            var quickActions = language == "el"
+                ? new List<string>
+                {
+                    $"⬇️ Κατέβασε {formatName}",
+                    format == "csv" ? "Κατέβασε PDF αντί" : "Κατέβασε CSV αντί",
+                    "Δείξε άλλες αναφορές"
+                }
+                : new List<string>
+                {
+                    $"⬇️ Download {formatName}",
+                    format == "csv" ? "Download PDF instead" : "Download CSV instead",
+                    "Show other reports"
+                };
+
+            return new ChatbotResponse
+            {
+                Message = message,
+                Type = "report_ready",
+                QuickActions = quickActions,
+                CanGenerateReport = true,
+                ReportType = reportType,
+                ReportParams = new ReportParameters
+                {
+                    ReportType = reportType,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Category = category,
+                    GroupBy = reportType.Contains("monthly") ? "month" : "category",
+                    Language = language
+                }
+            };
+        }
+
+        /// <summary>
+        /// Determine the report type based on query and conversation history
+        /// </summary>
+        private string DetermineReportTypeFromContext(string query, List<ChatMessage>? history)
+        {
+            var queryLower = query.ToLower();
+            
+            // Check explicit report type mentions
+            if (queryLower.Contains("categor") || queryLower.Contains("breakdown"))
+                return "expenses_by_category";
+            if (queryLower.Contains("monthly") || queryLower.Contains("month"))
+                return "monthly_summary";
+            if (queryLower.Contains("income") || queryLower.Contains("vs expense"))
+                return "income_vs_expenses";
+            if (queryLower.Contains("transaction") || queryLower.Contains("all expense"))
+                return "all_transactions";
+            if (queryLower.Contains("budget"))
+                return "budget_status";
+            if (queryLower.Contains("loan") || queryLower.Contains("debt"))
+                return "loans_summary";
+            if (queryLower.Contains("saving") || queryLower.Contains("goal"))
+                return "savings_goals";
+            
+            // Check conversation history for context
+            if (history != null && history.Any())
+            {
+                var recentMessages = history.OrderByDescending(m => m.Timestamp).Take(4).ToList();
+                foreach (var msg in recentMessages)
+                {
+                    var msgLower = msg.Message.ToLower();
+                    if (msgLower.Contains("categor") || msgLower.Contains("breakdown"))
+                        return "expenses_by_category";
+                    if (msgLower.Contains("monthly") || msgLower.Contains("compare month"))
+                        return "monthly_summary";
+                    if (msgLower.Contains("income vs") || msgLower.Contains("income and expense"))
+                        return "income_vs_expenses";
+                    if (msgLower.Contains("budget"))
+                        return "budget_status";
+                    if (msgLower.Contains("loan"))
+                        return "loans_summary";
+                }
+            }
+            
+            // Default to expenses by category
+            return "expenses_by_category";
+        }
+
+        /// <summary>
+        /// Get friendly report type name for display
+        /// </summary>
+        private string GetFriendlyReportTypeName(string reportType, string language)
+        {
+            if (language == "el")
+            {
+                return reportType switch
+                {
+                    "expenses_by_category" => "Έξοδα ανά Κατηγορία",
+                    "monthly_summary" => "Μηνιαία Σύνοψη",
+                    "income_vs_expenses" => "Έσοδα vs Έξοδα",
+                    "all_transactions" => "Όλες οι Συναλλαγές",
+                    "budget_status" => "Κατάσταση Προϋπολογισμού",
+                    "loans_summary" => "Σύνοψη Δανείων",
+                    "savings_goals" => "Στόχοι Αποταμίευσης",
+                    _ => reportType
+                };
+            }
+
+            return reportType switch
+            {
+                "expenses_by_category" => "Expenses by Category",
+                "monthly_summary" => "Monthly Summary",
+                "income_vs_expenses" => "Income vs Expenses",
+                "all_transactions" => "All Transactions",
+                "budget_status" => "Budget Status",
+                "loans_summary" => "Loans Summary",
+                "savings_goals" => "Savings Goals",
+                _ => reportType
             };
         }
 
@@ -2499,21 +2863,74 @@ I use natural language and advanced calculations to help you make smart financia
                 }
             }
 
+            // Build a more helpful response based on what we detected
             var message = language == "el"
-                ? "Δεν είμαι σίγουρος ότι καταλαβαίνω αυτή την ερώτηση. 🤔\n\n"
-                : "I'm not sure I understand that question. 🤔\n\n";
+                ? "Δεν κατάλαβα ακριβώς την ερώτησή σας. 🤔\n\n"
+                : "I didn't quite understand your question. 🤔\n\n";
+            
+            // If we detected some keywords, acknowledge them
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                var queryLower = query.ToLowerInvariant();
+                
+                // Try to provide more specific guidance based on detected keywords
+                if (language == "en")
+                {
+                    if (Regex.IsMatch(queryLower, @"\b(how much|total|sum|amount)\b"))
+                    {
+                        message = "I understand you're asking about amounts. Let me suggest some specific questions:\n\n";
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(when|date|time|due)\b"))
+                    {
+                        message = "I see you're asking about timing. Here are some questions I can answer:\n\n";
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(why|reason|because|explain)\b"))
+                    {
+                        message = "I can help explain your financial data. Try these questions:\n\n";
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(compare|versus|vs|difference|better|worse)\b"))
+                    {
+                        message = "I can help with comparisons! Here are some options:\n\n";
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(help|what can you|how do i|guide)\b"))
+                    {
+                        message = "I'm your financial assistant! Here's what I can do:\n\n";
+                    }
+                }
+                else // Greek
+                {
+                    if (Regex.IsMatch(queryLower, @"\b(πόσο|συνολικά|άθροισμα|ποσό)\b"))
+                    {
+                        message = "Καταλαβαίνω ότι ρωτάτε για ποσά. Δοκιμάστε αυτές τις ερωτήσεις:\n\n";
+                    }
+                    else if (Regex.IsMatch(queryLower, @"\b(πότε|ημερομηνία|χρόνος|οφειλή)\b"))
+                    {
+                        message = "Βλέπω ότι ρωτάτε για χρονοδιάγραμμα. Μπορώ να απαντήσω:\n\n";
+                    }
+                }
+            }
             
             message += language == "el"
-                ? "Ακολουθούν μερικά πράγματα με τα οποία μπορώ να σας βοηθήσω:\n"
-                : "Here are some things I can help you with:\n";
+                ? "Ακολουθούν μερικές προτάσεις:\n"
+                : "Here are some suggestions:\n";
+            
+            // Ensure we have at least 3 suggestions
+            while (suggestions.Count < 3)
+            {
+                suggestions.Add(language == "el" ? "Βοήθεια" : "Help");
+            }
             
             message += $"• {suggestions[0]}\n";
             message += $"• {suggestions[1]}\n";
             message += $"• {suggestions[2]}\n\n";
             
             message += language == "el"
-                ? "Ή πληκτρολογήστε **'βοήθεια'** για να δείτε όλες τις δυνατότητές μου!"
-                : "Or type **'help'** to see all my capabilities!";
+                ? "💡 **Συμβουλή:** Δοκιμάστε να ρωτήσετε με απλές φράσεις όπως \"Πόσο ξόδεψα;\" ή \"Δείξε τον προϋπολογισμό μου\".\n\n"
+                : "💡 **Tip:** Try asking in simple phrases like \"How much did I spend?\" or \"Show my budget\".\n\n";
+            
+            message += language == "el"
+                ? "Πληκτρολογήστε **'βοήθεια'** για όλες τις δυνατότητες!"
+                : "Type **'help'** for all my capabilities!";
 
             return new ChatbotResponse
             {
@@ -4433,68 +4850,132 @@ I use natural language and advanced calculations to help you make smart financia
 
         /// <summary>
         /// Extract time period from query with enhanced pattern matching
+        /// Improved to handle more natural language variations
         /// </summary>
         private string ExtractTimePeriod(string query, string language = "en")
         {
-            // Check for specific dates first
+            // Check for specific dates first (formats: MM/DD/YYYY, DD-MM-YYYY, etc.)
             var datePattern = @"(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})";
             if (Regex.IsMatch(query, datePattern)) return "specific_date";
 
             if (language == "el")
             {
-                // Greek time periods
-                if (Regex.IsMatch(query, @"\b(σήμερα|τώρα|τρέχον)\b", RegexOptions.IgnoreCase)) return "today";
-                if (Regex.IsMatch(query, @"\b(χθες|προχθές)\b", RegexOptions.IgnoreCase)) return "yesterday";
-                if (Regex.IsMatch(query, @"\b(αυτή.*εβδομάδα|τρέχουσα.*εβδομάδα|εβδομάδα|7.*ημέρες|τελευταία.*εβδομάδα)\b", RegexOptions.IgnoreCase)) return "this week";
-                if (Regex.IsMatch(query, @"\b(προηγούμενη.*εβδομάδα|πέρυσι.*εβδομάδα)\b", RegexOptions.IgnoreCase)) return "last week";
-                if (Regex.IsMatch(query, @"\b(αυτό.*μήνα|τρέχον.*μήνα|μήνας|30.*ημέρες|τελευταίο.*μήνα)\b", RegexOptions.IgnoreCase)) return "this month";
-                if (Regex.IsMatch(query, @"\b(προηγούμενος.*μήνας|πέρυσι.*μήνα)\b", RegexOptions.IgnoreCase)) return "last month";
-                if (Regex.IsMatch(query, @"\b(αυτό.*έτος|τρέχον.*έτος|έτος|365.*ημέρες|τελευταίο.*έτος)\b", RegexOptions.IgnoreCase)) return "this year";
-                if (Regex.IsMatch(query, @"\b(προηγούμενο.*έτος|πέρυσι.*έτος)\b", RegexOptions.IgnoreCase)) return "last year";
+                // Greek time periods with comprehensive patterns
+                if (Regex.IsMatch(query, @"\b(σήμερα|τώρα|τρέχον|σημερινά)\b", RegexOptions.IgnoreCase)) return "today";
+                if (Regex.IsMatch(query, @"\b(χθες|προχθές|χτες)\b", RegexOptions.IgnoreCase)) return "yesterday";
+                if (Regex.IsMatch(query, @"\b(αυτή.*εβδομάδα|τρέχουσα.*εβδομάδα|εβδομάδα|7.*ημέρες|τελευταία.*εβδομάδα|αυτήν.*εβδομάδα)\b", RegexOptions.IgnoreCase)) return "this week";
+                if (Regex.IsMatch(query, @"\b(προηγούμενη.*εβδομάδα|πέρυσι.*εβδομάδα|περασμένη.*εβδομάδα)\b", RegexOptions.IgnoreCase)) return "last week";
+                if (Regex.IsMatch(query, @"\b(αυτό.*μήνα|τρέχον.*μήνα|μήνας|30.*ημέρες|τελευταίο.*μήνα|αυτόν.*μήνα|τον.*μήνα)\b", RegexOptions.IgnoreCase)) return "this month";
+                if (Regex.IsMatch(query, @"\b(προηγούμενος.*μήνας|πέρυσι.*μήνα|περασμένο.*μήνα|προηγούμενο.*μήνα)\b", RegexOptions.IgnoreCase)) return "last month";
+                if (Regex.IsMatch(query, @"\b(αυτό.*έτος|τρέχον.*έτος|έτος|365.*ημέρες|τελευταίο.*έτος|φέτος)\b", RegexOptions.IgnoreCase)) return "this year";
+                if (Regex.IsMatch(query, @"\b(προηγούμενο.*έτος|πέρυσι.*έτος|πέρσι|πέρυσι)\b", RegexOptions.IgnoreCase)) return "last year";
             }
             else
             {
-                // English time periods with better matching
-                if (Regex.IsMatch(query, @"\b(today|now|current)\b", RegexOptions.IgnoreCase)) return "today";
-                if (Regex.IsMatch(query, @"\b(yesterday|last day)\b", RegexOptions.IgnoreCase)) return "yesterday";
-                if (Regex.IsMatch(query, @"\b(this week|current week|week|7 days|past week)\b", RegexOptions.IgnoreCase)) return "this week";
-                if (Regex.IsMatch(query, @"\b(last week|previous week)\b", RegexOptions.IgnoreCase)) return "last week";
-                if (Regex.IsMatch(query, @"\b(this month|current month|month|30 days|past month)\b", RegexOptions.IgnoreCase)) return "this month";
-                if (Regex.IsMatch(query, @"\b(last month|previous month)\b", RegexOptions.IgnoreCase)) return "last month";
-                if (Regex.IsMatch(query, @"\b(this year|current year|year|365 days|past year)\b", RegexOptions.IgnoreCase)) return "this year";
-                if (Regex.IsMatch(query, @"\b(last year|previous year)\b", RegexOptions.IgnoreCase)) return "last year";
+                // English time periods with comprehensive patterns
+                // Today patterns
+                if (Regex.IsMatch(query, @"\b(today|today's|now|current day|currently|so far today)\b", RegexOptions.IgnoreCase)) return "today";
+                
+                // Yesterday patterns
+                if (Regex.IsMatch(query, @"\b(yesterday|yesterday's|last day)\b", RegexOptions.IgnoreCase)) return "yesterday";
+                
+                // This week patterns - more comprehensive
+                if (Regex.IsMatch(query, @"\b(this week|this week's|current week|past 7 days|last 7 days|7 days|weekly|past week)\b", RegexOptions.IgnoreCase)) return "this week";
+                
+                // Last week patterns
+                if (Regex.IsMatch(query, @"\b(last week|last week's|previous week|week before)\b", RegexOptions.IgnoreCase)) return "last week";
+                
+                // This month patterns - more comprehensive
+                if (Regex.IsMatch(query, @"\b(this month|this month's|current month|past 30 days|last 30 days|30 days|monthly|the month)\b", RegexOptions.IgnoreCase)) return "this month";
+                
+                // Last month patterns
+                if (Regex.IsMatch(query, @"\b(last month|last month's|previous month|month before)\b", RegexOptions.IgnoreCase)) return "last month";
+                
+                // This year patterns - more comprehensive
+                if (Regex.IsMatch(query, @"\b(this year|this year's|current year|past year|ytd|year to date|annually|the year|all year)\b", RegexOptions.IgnoreCase)) return "this year";
+                
+                // Last year patterns
+                if (Regex.IsMatch(query, @"\b(last year|last year's|previous year|year before)\b", RegexOptions.IgnoreCase)) return "last year";
+                
+                // Quarter patterns
+                if (Regex.IsMatch(query, @"\b(this quarter|current quarter|q\d|quarter)\b", RegexOptions.IgnoreCase)) return "this quarter";
             }
-            if (Regex.IsMatch(query, @"\b(\d+)\s*(days?|weeks?|months?|years?)\s*(ago|back)\b", RegexOptions.IgnoreCase)) 
+            
+            // Handle relative time expressions (e.g., "3 days ago", "2 weeks back")
+            if (Regex.IsMatch(query, @"\b(\d+)\s*(days?|weeks?|months?|years?)\s*(ago|back|before)\b", RegexOptions.IgnoreCase)) 
             {
                 var match = Regex.Match(query, @"(\d+)\s*(days?|weeks?|months?|years?)", RegexOptions.IgnoreCase);
                 if (match.Success)
                 {
                     var value = int.Parse(match.Groups[1].Value);
                     var unit = match.Groups[2].Value.ToLower();
-                    if (unit.StartsWith("day") && value <= 7) return "this week";
-                    if (unit.StartsWith("week") && value <= 4) return "this month";
-                    if (unit.StartsWith("month") && value <= 12) return "this year";
+                    if (unit.StartsWith("day"))
+                    {
+                        if (value == 1) return "yesterday";
+                        if (value <= 7) return "this week";
+                        if (value <= 30) return "this month";
+                        return "this year";
+                    }
+                    if (unit.StartsWith("week"))
+                    {
+                        if (value == 1) return "last week";
+                        if (value <= 4) return "this month";
+                        return "this year";
+                    }
+                    if (unit.StartsWith("month"))
+                    {
+                        if (value == 1) return "last month";
+                        if (value <= 12) return "this year";
+                        return "last year";
+                    }
+                    if (unit.StartsWith("year"))
+                    {
+                        if (value == 1) return "last year";
+                        return "last year";
+                    }
                 }
             }
             
-            return "this month"; // Default
+            // Handle "in the past X" expressions
+            if (Regex.IsMatch(query, @"\b(in the past|over the past|during the past)\s*(\d+)?\s*(days?|weeks?|months?|years?)?\b", RegexOptions.IgnoreCase)) 
+            {
+                var match = Regex.Match(query, @"(in the past|over the past|during the past)\s*(\d+)?\s*(days?|weeks?|months?|years?)?", RegexOptions.IgnoreCase);
+                if (match.Groups[3].Success)
+                {
+                    var unit = match.Groups[3].Value.ToLower();
+                    if (unit.StartsWith("day")) return "this week";
+                    if (unit.StartsWith("week")) return "this month";
+                    if (unit.StartsWith("month")) return "this year";
+                }
+            }
+            
+            return "this month"; // Default to this month for most queries
         }
 
         /// <summary>
         /// Get date range based on period with enhanced support
+        /// Handles various time periods including quarters
         /// </summary>
         private (DateTime start, DateTime end) GetDateRange(string period)
         {
             var now = DateTime.UtcNow;
+            
+            // Calculate quarter boundaries
+            var currentQuarter = (now.Month - 1) / 3;
+            var quarterStartMonth = currentQuarter * 3 + 1;
+            var quarterStart = new DateTime(now.Year, quarterStartMonth, 1, 0, 0, 0, DateTimeKind.Utc);
+            
             return period switch
             {
                 "today" => (now.Date, now),
                 "yesterday" => (now.Date.AddDays(-1), now.Date.AddDays(-1).AddHours(23).AddMinutes(59).AddSeconds(59)),
                 "this week" => (now.AddDays(-(int)now.DayOfWeek), now),
-                "last week" => (now.AddDays(-(int)now.DayOfWeek - 7), now.AddDays(-(int)now.DayOfWeek)),
+                "last week" => (now.AddDays(-(int)now.DayOfWeek - 7), now.AddDays(-(int)now.DayOfWeek).AddTicks(-1)),
                 "this month" => (new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc), now),
                 "last month" => (new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-1), 
                                 new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddTicks(-1)),
+                "this quarter" => (quarterStart, now),
+                "last quarter" => (quarterStart.AddMonths(-3), quarterStart.AddTicks(-1)),
                 "this year" => (new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc), now),
                 "last year" => (new DateTime(now.Year - 1, 1, 1, 0, 0, 0, DateTimeKind.Utc), 
                                new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddTicks(-1)),
@@ -4503,25 +4984,95 @@ I use natural language and advanced calculations to help you make smart financia
         }
 
         /// <summary>
-        /// Extract category from query with enhanced matching and aliases
+        /// Extract category from query with enhanced matching and extensive aliases
+        /// Improved to recognize more variations and common phrasings
         /// </summary>
         private string ExtractCategory(string query)
         {
-            // Category mappings with aliases and variations
+            // Comprehensive category mappings with aliases and variations
             var categoryMap = new Dictionary<string, List<string>>
             {
-                ["groceries"] = new() { "grocery", "groceries", "supermarket", "food shopping", "grocery store", "market" },
-                ["food"] = new() { "food", "eating", "meals", "restaurant", "restaurants", "dining out", "takeout" },
-                ["dining"] = new() { "dining", "dine", "restaurant", "restaurants", "cafe", "café", "bistro", "eatery" },
-                ["transport"] = new() { "transport", "transportation", "travel", "commute", "gas", "fuel", "uber", "taxi", "bus", "train", "metro", "subway" },
-                ["entertainment"] = new() { "entertainment", "fun", "movies", "cinema", "theater", "theatre", "games", "gaming", "hobby", "hobbies", "leisure" },
-                ["bills"] = new() { "bills", "utilities", "electricity", "water", "gas bill", "internet", "phone", "phone bill", "utility", "utilities bill" },
-                ["shopping"] = new() { "shopping", "store", "stores", "retail", "purchase", "purchases", "buy", "buying", "mall" },
-                ["health"] = new() { "health", "medical", "medicine", "pharmacy", "doctor", "hospital", "clinic", "dental", "healthcare" },
-                ["housing"] = new() { "housing", "rent", "mortgage", "home", "apartment", "house", "accommodation", "living" },
-                ["education"] = new() { "education", "school", "tuition", "books", "course", "courses", "learning", "study" },
-                ["personal"] = new() { "personal", "care", "clothing", "clothes", "apparel", "beauty", "grooming" },
-                ["subscription"] = new() { "subscription", "subscriptions", "membership", "memberships", "netflix", "spotify", "streaming" }
+                ["groceries"] = new() { 
+                    "grocery", "groceries", "supermarket", "food shopping", "grocery store", "market",
+                    "costco", "walmart", "target", "aldi", "lidl", "whole foods", "trader joe",
+                    "kroger", "safeway", "publix", "food store", "grocery shopping"
+                },
+                ["food"] = new() { 
+                    "food", "eating", "meals", "restaurant", "restaurants", "dining out", "takeout",
+                    "take out", "delivery", "doordash", "uber eats", "grubhub", "lunch", "dinner",
+                    "breakfast", "brunch", "snacks", "fast food", "mcdonalds", "burger", "pizza",
+                    "sushi", "chinese", "mexican", "italian", "indian"
+                },
+                ["dining"] = new() { 
+                    "dining", "dine", "restaurant", "restaurants", "cafe", "café", "bistro", "eatery",
+                    "bar", "pub", "nightclub", "coffee", "starbucks", "dunkin", "eating out"
+                },
+                ["transport"] = new() { 
+                    "transport", "transportation", "travel", "commute", "gas", "fuel", "uber", "taxi",
+                    "bus", "train", "metro", "subway", "lyft", "car", "vehicle", "auto", "automobile",
+                    "parking", "toll", "tolls", "flight", "airplane", "airline", "airfare",
+                    "petrol", "diesel", "car maintenance", "car repair", "insurance"
+                },
+                ["entertainment"] = new() { 
+                    "entertainment", "fun", "movies", "cinema", "theater", "theatre", "games", "gaming",
+                    "hobby", "hobbies", "leisure", "concert", "show", "sports", "gym", "fitness",
+                    "vacation", "holiday", "trip", "party", "parties", "event", "events",
+                    "streaming", "music", "books", "reading"
+                },
+                ["bills"] = new() { 
+                    "bills", "utilities", "electricity", "water", "gas bill", "internet", "phone",
+                    "phone bill", "utility", "utilities bill", "electric", "power", "heating",
+                    "cooling", "ac", "air conditioning", "wifi", "broadband", "cable", "tv",
+                    "sewage", "trash", "garbage", "waste"
+                },
+                ["shopping"] = new() { 
+                    "shopping", "store", "stores", "retail", "purchase", "purchases", "buy", "buying",
+                    "mall", "amazon", "online shopping", "ebay", "etsy", "wish", "aliexpress",
+                    "electronics", "gadgets", "appliances", "furniture", "home goods", "decor"
+                },
+                ["health"] = new() { 
+                    "health", "medical", "medicine", "pharmacy", "doctor", "hospital", "clinic",
+                    "dental", "healthcare", "dentist", "eye", "vision", "optician", "prescription",
+                    "drugs", "medication", "therapy", "counseling", "mental health", "wellness",
+                    "gym", "fitness", "workout", "exercise", "supplements", "vitamins"
+                },
+                ["housing"] = new() { 
+                    "housing", "rent", "mortgage", "home", "apartment", "house", "accommodation",
+                    "living", "property", "real estate", "hoa", "condo", "lease", "landlord",
+                    "tenant", "home improvement", "renovation", "repair", "maintenance"
+                },
+                ["education"] = new() { 
+                    "education", "school", "tuition", "books", "course", "courses", "learning",
+                    "study", "college", "university", "training", "certification", "class",
+                    "classes", "lesson", "lessons", "udemy", "coursera", "skillshare"
+                },
+                ["personal"] = new() { 
+                    "personal", "care", "clothing", "clothes", "apparel", "beauty", "grooming",
+                    "haircut", "salon", "spa", "makeup", "cosmetics", "skincare", "fashion",
+                    "shoes", "accessories", "jewelry", "watch", "bag", "purse"
+                },
+                ["subscription"] = new() { 
+                    "subscription", "subscriptions", "membership", "memberships", "netflix",
+                    "spotify", "streaming", "hulu", "disney", "amazon prime", "apple music",
+                    "youtube premium", "hbo", "paramount", "peacock", "crunchyroll",
+                    "gym membership", "magazine", "newspaper", "software", "saas", "cloud"
+                },
+                ["insurance"] = new() {
+                    "insurance", "car insurance", "health insurance", "life insurance",
+                    "home insurance", "renters insurance", "policy", "premium", "coverage"
+                },
+                ["pets"] = new() {
+                    "pet", "pets", "dog", "cat", "vet", "veterinary", "pet food", "pet supplies",
+                    "grooming", "pet insurance", "animal"
+                },
+                ["gifts"] = new() {
+                    "gift", "gifts", "present", "presents", "birthday", "christmas", "holiday gift",
+                    "donation", "charity", "wedding gift"
+                },
+                ["childcare"] = new() {
+                    "childcare", "daycare", "babysitter", "nanny", "kids", "children", "baby",
+                    "diapers", "formula", "toys", "school supplies"
+                }
             };
 
             // Try exact matches first

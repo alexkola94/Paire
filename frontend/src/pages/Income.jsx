@@ -14,6 +14,7 @@ import SearchInput from '../components/SearchInput'
 import DatePicker from '../components/DatePicker'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import TransactionDetailModal from '../components/TransactionDetailModal'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './Income.css'
 
 /**
@@ -22,6 +23,7 @@ import './Income.css'
  */
 function Income() {
   const { t } = useTranslation()
+  const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
   // All incomes from API
   const [allIncomes, setAllIncomes] = useState([])
   // Incomes for current page (after filtering and pagination)
@@ -299,7 +301,7 @@ function Income() {
 
       {/* Search and Filters - Redesigned Grid Layout */}
       <div className="income-filters-grid">
-        <div className="search-span-full">
+        <div className="search-span-full" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <SearchInput
             onSearch={handleSearch}
             placeholder={t('income.searchPlaceholder')}
@@ -391,7 +393,7 @@ function Income() {
                 <div className="income-category">
                   {t(`categories.${(income.category || '').toLowerCase()}`)}
                 </div>
-                <div className="income-amount">
+                <div className={`income-amount ${isPrivate ? 'masked-number' : ''}`}>
                   +{formatCurrency(income.amount)}
                 </div>
               </div>

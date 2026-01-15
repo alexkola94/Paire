@@ -14,6 +14,7 @@ import FormSection from '../components/FormSection'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import { usePrivacyMode } from '../context/PrivacyModeContext'
 import './SavingsGoals.css'
 
 /**
@@ -23,6 +24,7 @@ import './SavingsGoals.css'
 function SavingsGoals() {
   const { t } = useTranslation()
   const formatCurrency = useCurrencyFormatter()
+  const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
   const [loading, setLoading] = useState(true)
   const [goals, setGoals] = useState([])
   const [summary, setSummary] = useState(null)
@@ -303,9 +305,11 @@ function SavingsGoals() {
             <FiTarget className="page-icon" />
             {t('savingsGoals.title')}
           </h1>
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            <FiPlus /> {t('savingsGoals.addGoal')}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+              <FiPlus /> {t('savingsGoals.addGoal')}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -331,8 +335,8 @@ function SavingsGoals() {
             </div>
             <div className="summary-content">
               <h3>{t('savingsGoals.totalSaved')}</h3>
-              <p className="summary-value">{formatCurrency(summary.totalCurrentAmount)}</p>
-              <p className="summary-detail">
+              <p className={`summary-value ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(summary.totalCurrentAmount)}</p>
+              <p className={`summary-detail ${isPrivate ? 'masked-number' : ''}`}>
                 {t('savingsGoals.of')} {formatCurrency(summary.totalTargetAmount)}
               </p>
             </div>
@@ -345,7 +349,7 @@ function SavingsGoals() {
             <div className="summary-content">
               <h3>{t('savingsGoals.overallProgress')}</h3>
               <p className="summary-value">{summary.overallProgress}%</p>
-              <p className="summary-detail">
+              <p className={`summary-detail ${isPrivate ? 'masked-number' : ''}`}>
                 {formatCurrency(summary.totalRemaining)} {t('savingsGoals.remaining')}
               </p>
             </div>
@@ -408,11 +412,11 @@ function SavingsGoals() {
                 <div className="goal-amount">
                   <div className="current-amount">
                     <span className="label">{t('savingsGoals.current')}</span>
-                    <span className="value">{formatCurrency(goal.currentAmount)}</span>
+                    <span className={`value ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(goal.currentAmount)}</span>
                   </div>
                   <div className="target-amount">
                     <span className="label">{t('savingsGoals.target')}</span>
-                    <span className="value">{formatCurrency(goal.targetAmount)}</span>
+                    <span className={`value ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(goal.targetAmount)}</span>
                   </div>
                 </div>
 

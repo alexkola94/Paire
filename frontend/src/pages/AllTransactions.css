@@ -415,3 +415,91 @@
     padding: var(--spacing-lg) var(--spacing-xl);
   }
 }
+
+/* ================================
+   View Toggle
+   ================================ */
+
+.page-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.view-toggle {
+  display: flex;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  gap: 4px;
+}
+
+.view-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.view-toggle-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--primary);
+}
+
+.view-toggle-btn.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.view-toggle-btn.active:hover {
+  background: var(--primary-dark);
+  color: white;
+}
+
+/* ================================
+   Timeline View Container
+   ================================ */
+
+.timeline-view-container {
+  padding: var(--spacing-md);
+  overflow: hidden;
+}
+
+.timeline-view-container .timeline-container {
+  margin: 0 auto;
+  max-width: 900px;
+}
+
+/* Mobile adjustments for view toggle */
+@media (max-width: 767px) {
+  .header-actions {
+    gap: var(--spacing-sm);
+  }
+
+  .view-toggle {
+    padding: 3px;
+  }
+
+  .view-toggle-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .timeline-view-container {
+    padding: var(--spacing-sm);
+  }
+}

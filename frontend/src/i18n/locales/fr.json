@@ -146,6 +146,14 @@
       "high": "Haute"
     }
   },
+  "timeline": {
+    "title": "Chronologie des Transactions",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "noTransactions": "Aucune transaction à afficher",
+    "income": "Revenus",
+    "expense": "Dépenses"
+  },
   "common": {
     "save": "Enregistrer",
     "saving": "Enregistrement...",

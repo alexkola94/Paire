@@ -101,6 +101,7 @@ namespace YouAndMeExpensesAPI.Controllers
                         BudgetAlertsEnabled = true,
                         BudgetAlertThreshold = 90,
                         SavingsMilestonesEnabled = true,
+                        PrivacyHideNumbers = false,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
@@ -144,6 +145,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     existing.BudgetAlertsEnabled = preferences.BudgetAlertsEnabled;
                     existing.BudgetAlertThreshold = preferences.BudgetAlertThreshold;
                     existing.SavingsMilestonesEnabled = preferences.SavingsMilestonesEnabled;
+                    existing.PrivacyHideNumbers = preferences.PrivacyHideNumbers;
                     existing.UpdatedAt = DateTime.UtcNow;
 
                     await _dbContext.SaveChangesAsync();
