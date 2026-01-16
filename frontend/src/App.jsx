@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense, lazy } from 'react'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import { authService } from './services/auth'
 import { sessionManager } from './services/sessionManager'
@@ -7,8 +7,13 @@ import { isTokenExpired } from './utils/tokenUtils'
 import { ThemeProvider } from './context/ThemeContext'
 import { AccessibilityProvider } from './context/AccessibilityContext'
 import { PrivacyModeProvider } from './context/PrivacyModeContext'
+import { TravelModeProvider, useTravelMode } from './travel/context/TravelModeContext'
 import LogoLoader from './components/LogoLoader'
+import AirplaneTransition from './components/AirplaneTransition'
 import { ToastProvider } from './components/Toast'
+
+// Lazy load TravelApp for code splitting
+const TravelApp = lazy(() => import('./travel/TravelApp'))
 
 // Lazy load pages for code splitting and faster initial load
 // Only load components when they're actually needed
@@ -53,6 +58,200 @@ function RedirectHandler() {
   // This component is kept for potential future use with GitHub Pages 404.html
   // but doesn't automatically redirect to prevent conflicts with normal navigation
   return null
+}
+
+/**
+ * App Content Component
+ * Conditionally renders Travel Mode or Main App based on travel mode state
+ */
+function AppContent({ session }) {
+  const {
+    isTravelMode,
+    isTransitioning,
+    transitionDirection,
+    completeTransition,
+    activeTrip,
+    pendingTrip
+  } = useTravelMode()
+
+  // Get destination for map background (use pending trip for takeoff, active for landing)
+  const transitionDestination = transitionDirection === 'takeoff'
+    ? pendingTrip || activeTrip
+    : null // No map on landing, going back to main app
+
+  const destination = transitionDestination ? {
+    latitude: transitionDestination.latitude,
+    longitude: transitionDestination.longitude,
+    name: transitionDestination.destination
+  } : null
+
+  // If in travel mode and authenticated, show TravelApp
+  if (isTravelMode && session) {
+    return (
+      <>
+        <AirplaneTransition
+          isVisible={isTransitioning}
+          direction={transitionDirection}
+          onComplete={completeTransition}
+          destination={destination}
+        />
+        <Suspense fallback={<LogoLoader size="large" fullScreen />}>
+          <TravelApp />
+        </Suspense>
+      </>
+    )
+  }
+
+  // Otherwise render the main app router
+  return (
+    <>
+      <AirplaneTransition
+        isVisible={isTransitioning}
+        direction={transitionDirection}
+        onComplete={completeTransition}
+        destination={destination}
+      />
+      <MainAppRouter session={session} />
+    </>
+  )
+}
+
+/**
+ * Main App Router Component
+ * Contains all the regular app routes
+ */
+function MainAppRouter({ session }) {
+  // Loading fallback component for Suspense
+  const LoadingFallback = () => (
+    <LogoLoader size="large" fullScreen />
+  )
+
+  return (
+    <Router basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {/* Handle GitHub Pages redirects */}
+      <RedirectHandler />
+      <CookieConsent />
+
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Public routes */}
+          <Route
+            path="/login"
+            element={!session ? <Login /> : <Navigate to="/dashboard" />}
+          />
+          <Route
+            path="/forgot-password"
+            element={!session ? <ForgotPassword /> : <Navigate to="/dashboard" />}
+          />
+          <Route
+            path="/confirm-email"
+            element={<EmailConfirmation />}
+          />
+          <Route
+            path="/reset-password"
+            element={<ResetPassword />}
+          />
+          <Route
+            path="/accept-invitation"
+            element={<AcceptInvitation />}
+          />
+          <Route
+            path="/bank-callback"
+            element={<BankCallback />}
+          />
+          <Route
+            path="/setup-2fa"
+            element={!session ? <Navigate to="/login" /> : <TwoFactorSetup />}
+          />
+          <Route
+            path="/privacy"
+            element={<PrivacyPolicy />}
+          />
+          {/* Landing page - shown to non-authenticated users */}
+          <Route
+            path="/"
+            element={
+              (() => {
+                // Check session state first
+                if (session) return <Navigate to="/dashboard" />
+
+                // Check if we're explicitly preventing auto-login (due to conflict)
+                if (sessionStorage.getItem('auth_prevent_autologin')) {
+                  return <Landing />
+                }
+
+                // Fallback: check sessionStorage directly (for race condition after login)
+                const token = sessionManager.getToken()
+                const user = sessionManager.getCurrentUser()
+                if (token && user) {
+                  // Session exists in storage but state hasn't updated yet
+                  // Trigger state update and redirect to dashboard
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('auth-storage-change'))
+                  }, 0)
+                  return <Navigate to="/dashboard" />
+                }
+                return <Landing />
+              })()
+            }
+          />
+
+          {/* Protected routes - Require authentication */}
+          {/* Check both session state and sessionStorage to avoid race conditions after login */}
+          <Route
+            element={
+              (() => {
+                // Check session state first
+                if (session) return <Layout />
+
+                // Check if we're explicitly preventing auto-login (due to conflict)
+                if (sessionStorage.getItem('auth_prevent_autologin')) {
+                  return <Navigate to="/login" />
+                }
+
+                // Fallback: check sessionStorage directly (for race condition after login)
+                const token = sessionManager.getToken()
+                const user = sessionManager.getCurrentUser()
+                if (token && user) {
+                  // Session exists in storage but state hasn't updated yet
+                  // Trigger state update and allow access
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('auth-storage-change'))
+                  }, 0)
+                  return <Layout />
+                }
+                return <Navigate to="/login" />
+              })()
+            }
+          >
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="expenses" element={<Expenses />} />
+            <Route path="income" element={<Income />} />
+            <Route path="transactions" element={<AllTransactions />} />
+            <Route path="loans" element={<Loans />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="budgets" element={<Budgets />} />
+            <Route path="savings-goals" element={<SavingsGoals />} />
+            <Route path="receipts" element={<Receipts />} />
+            <Route path="recurring-bills" element={<RecurringBills />} />
+            <Route path="shopping-lists" element={<ShoppingLists />} />
+            <Route path="economic-news" element={<EconomicNews />} />
+            <Route path="achievements" element={<Achievements />} />
+            <Route path="partnership" element={<Partnership />} />
+            <Route path="reminders" element={<ReminderSettings />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="currency-calculator" element={<CurrencyCalculator />} />
+          </Route>
+
+          {/* Catch all - redirect to landing or dashboard */}
+          <Route
+            path="*"
+            element={<Navigate to={session ? "/dashboard" : "/"} />}
+          />
+        </Routes>
+      </Suspense>
+    </Router>
+  )
 }
 
 /**
@@ -173,141 +372,16 @@ function App() {
   if (loading) {
     return <LogoLoader size="large" fullScreen />
   }
-  // Loading fallback component for Suspense
-  const LoadingFallback = () => (
-    <LogoLoader size="large" fullScreen />
-  )
 
   return (
     <ThemeProvider>
       <AccessibilityProvider>
         <PrivacyModeProvider>
-          <ToastProvider>
-            <Router basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            {/* Handle GitHub Pages redirects */}
-            <RedirectHandler />
-            <CookieConsent />
-
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
-                {/* Public routes */}
-                <Route
-                  path="/login"
-                  element={!session ? <Login /> : <Navigate to="/dashboard" />}
-                />
-                <Route
-                  path="/forgot-password"
-                  element={!session ? <ForgotPassword /> : <Navigate to="/dashboard" />}
-                />
-                <Route
-                  path="/confirm-email"
-                  element={<EmailConfirmation />}
-                />
-                <Route
-                  path="/reset-password"
-                  element={<ResetPassword />}
-                />
-                <Route
-                  path="/accept-invitation"
-                  element={<AcceptInvitation />}
-                />
-                <Route
-                  path="/bank-callback"
-                  element={<BankCallback />}
-                />
-                <Route
-                  path="/setup-2fa"
-                  element={!session ? <Navigate to="/login" /> : <TwoFactorSetup />}
-                />
-                <Route
-                  path="/privacy"
-                  element={<PrivacyPolicy />}
-                />
-                {/* Landing page - shown to non-authenticated users */}
-                <Route
-                  path="/"
-                  element={
-                    (() => {
-                      // Check session state first
-                      if (session) return <Navigate to="/dashboard" />
-
-                      // Check if we're explicitly preventing auto-login (due to conflict)
-                      if (sessionStorage.getItem('auth_prevent_autologin')) {
-                        return <Landing />
-                      }
-
-                      // Fallback: check sessionStorage directly (for race condition after login)
-                      const token = sessionManager.getToken()
-                      const user = sessionManager.getCurrentUser()
-                      if (token && user) {
-                        // Session exists in storage but state hasn't updated yet
-                        // Trigger state update and redirect to dashboard
-                        setTimeout(() => {
-                          window.dispatchEvent(new CustomEvent('auth-storage-change'))
-                        }, 0)
-                        return <Navigate to="/dashboard" />
-                      }
-                      return <Landing />
-                    })()
-                  }
-                />
-
-                {/* Protected routes - Require authentication */}
-                {/* Check both session state and sessionStorage to avoid race conditions after login */}
-                <Route
-                  element={
-                    (() => {
-                      // Check session state first
-                      if (session) return <Layout />
-
-                      // Check if we're explicitly preventing auto-login (due to conflict)
-                      if (sessionStorage.getItem('auth_prevent_autologin')) {
-                        return <Navigate to="/login" />
-                      }
-
-                      // Fallback: check sessionStorage directly (for race condition after login)
-                      const token = sessionManager.getToken()
-                      const user = sessionManager.getCurrentUser()
-                      if (token && user) {
-                        // Session exists in storage but state hasn't updated yet
-                        // Trigger state update and allow access
-                        setTimeout(() => {
-                          window.dispatchEvent(new CustomEvent('auth-storage-change'))
-                        }, 0)
-                        return <Layout />
-                      }
-                      return <Navigate to="/login" />
-                    })()
-                  }
-                >
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="expenses" element={<Expenses />} />
-                  <Route path="income" element={<Income />} />
-                  <Route path="transactions" element={<AllTransactions />} />
-                  <Route path="loans" element={<Loans />} />
-                  <Route path="analytics" element={<Analytics />} />
-                  <Route path="budgets" element={<Budgets />} />
-                  <Route path="savings-goals" element={<SavingsGoals />} />
-                  <Route path="receipts" element={<Receipts />} />
-                  <Route path="recurring-bills" element={<RecurringBills />} />
-                  <Route path="shopping-lists" element={<ShoppingLists />} />
-                  <Route path="economic-news" element={<EconomicNews />} />
-                  <Route path="achievements" element={<Achievements />} />
-                  <Route path="partnership" element={<Partnership />} />
-                  <Route path="reminders" element={<ReminderSettings />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="currency-calculator" element={<CurrencyCalculator />} />
-                </Route>
-
-                {/* Catch all - redirect to landing or dashboard */}
-                <Route
-                  path="*"
-                  element={<Navigate to={session ? "/dashboard" : "/"} />}
-                />
-              </Routes>
-            </Suspense>
-            </Router>
-          </ToastProvider>
+          <TravelModeProvider>
+            <ToastProvider>
+              <AppContent session={session} />
+            </ToastProvider>
+          </TravelModeProvider>
         </PrivacyModeProvider>
       </AccessibilityProvider>
     </ThemeProvider>

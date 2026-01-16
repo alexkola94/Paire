@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback, lazy, Suspense, memo } from '
 import { useTranslation } from 'react-i18next'
 
 import { useTheme } from '../context/ThemeContext'
+import { useTravelMode } from '../travel/context/TravelModeContext'
 import PageTransition from './PageTransition'
 import {
   FiHome,
@@ -29,6 +30,8 @@ import {
   FiImage,
   FiUpload
 } from 'react-icons/fi'
+import { RiFlightTakeoffLine, RiPlaneLine } from 'react-icons/ri'
+import { motion, AnimatePresence } from 'framer-motion'
 
 
 // Euro icon component to replace dollar sign - memoized to prevent re-renders
@@ -71,6 +74,7 @@ import packageJson from '../../package.json'
 function Layout() {
   const { t } = useTranslation()
   const { theme, toggleTheme } = useTheme()
+  const { enterTravelMode } = useTravelMode()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
@@ -318,6 +322,18 @@ function Layout() {
               <FiBell size={22} />
             </span>
 
+            {/* Travel Mode Button - Desktop Only */}
+            <span
+              className="header-icon-btn travel-airplane-btn desktop-only"
+              onClick={() => enterTravelMode()}
+              aria-label={t('travel.common.enterTravelMode', 'Travel Mode')}
+              title={t('travel.common.enterTravelMode', 'Travel Mode')}
+              role="button"
+              tabIndex={0}
+            >
+              <RiFlightTakeoffLine size={22} />
+            </span>
+
             {/* User Dropdown - Desktop Only */}
             <div className="user-menu desktop-only" ref={userMenuRef}>
               <span
@@ -477,6 +493,20 @@ function Layout() {
           {/* Mobile section divider for account */}
           <li className="mobile-section-divider mobile-only">
             <span className="section-label">{t('navigation.account')}</span>
+          </li>
+
+          {/* Travel Mode - Mobile */}
+          <li className="mobile-only">
+            <button
+              className="nav-link travel-mode-link"
+              onClick={() => {
+                enterTravelMode()
+                closeMobileMenu()
+              }}
+            >
+              <RiFlightTakeoffLine style={{ width: '20px', height: '20px' }} className="nav-icon" />
+              <span className="nav-label">{t('travel.common.enterTravelMode', 'Travel Mode')}</span>
+            </button>
           </li>
 
           {/* Mobile-only account items */}
@@ -640,7 +670,7 @@ function Layout() {
 
       {/* Import Bank Statements Modal */}
       {isImportOpen && (
-        <div 
+        <div
           className="import-modal-overlay"
           onClick={(e) => {
             // Close on overlay click

@@ -38,6 +38,13 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<SystemLog> SystemLogs { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
 
+        // Travel Mode DbSets
+        public DbSet<Trip> Trips { get; set; }
+        public DbSet<ItineraryEvent> ItineraryEvents { get; set; }
+        public DbSet<PackingItem> PackingItems { get; set; }
+        public DbSet<TravelDocument> TravelDocuments { get; set; }
+        public DbSet<TravelExpense> TravelExpenses { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -612,6 +619,167 @@ namespace YouAndMeExpensesAPI.Data
                 .OnDelete(DeleteBehavior.SetNull); // If history is deleted (reverted), we might want to cascade or handle manually. Revert logic should probably be manual delete of transaction.
                 // Actually for "Revert" we want to delete transactions. But safe default for DB is SetNull or Restrict.
                 // We'll handle deletion in the controller.
+
+            // ============================================
+            // TRIPS TABLE
+            // ============================================
+            modelBuilder.Entity<Trip>(entity =>
+            {
+                entity.ToTable("trips");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255);
+                entity.Property(e => e.Destination).HasColumnName("destination").HasMaxLength(255);
+                entity.Property(e => e.Country).HasColumnName("country").HasMaxLength(100);
+                entity.Property(e => e.Latitude).HasColumnName("latitude");
+                entity.Property(e => e.Longitude).HasColumnName("longitude");
+                entity.Property(e => e.StartDate).HasColumnName("start_date");
+                entity.Property(e => e.EndDate).HasColumnName("end_date");
+                entity.Property(e => e.Budget).HasColumnName("budget").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.BudgetCurrency).HasColumnName("budget_currency").HasMaxLength(10).HasDefaultValue("EUR");
+                entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(50).HasDefaultValue("planning");
+                entity.Property(e => e.CoverImage).HasColumnName("cover_image");
+                entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.StartDate);
+            });
+
+            // ============================================
+            // ITINERARY EVENTS TABLE
+            // ============================================
+            modelBuilder.Entity<ItineraryEvent>(entity =>
+            {
+                entity.ToTable("itinerary_events");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TripId).HasColumnName("trip_id").IsRequired();
+                entity.Property(e => e.Type).HasColumnName("type").HasMaxLength(50).HasDefaultValue("activity");
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255);
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.StartTime).HasColumnName("start_time").HasMaxLength(10);
+                entity.Property(e => e.EndTime).HasColumnName("end_time").HasMaxLength(10);
+                entity.Property(e => e.Location).HasColumnName("location").HasMaxLength(255);
+                entity.Property(e => e.Address).HasColumnName("address");
+                entity.Property(e => e.Latitude).HasColumnName("latitude");
+                entity.Property(e => e.Longitude).HasColumnName("longitude");
+                entity.Property(e => e.ConfirmationNumber).HasColumnName("confirmation_number").HasMaxLength(100);
+                entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.FlightNumber).HasColumnName("flight_number").HasMaxLength(20);
+                entity.Property(e => e.Airline).HasColumnName("airline").HasMaxLength(100);
+                entity.Property(e => e.DepartureAirport).HasColumnName("departure_airport").HasMaxLength(10);
+                entity.Property(e => e.ArrivalAirport).HasColumnName("arrival_airport").HasMaxLength(10);
+                entity.Property(e => e.CheckInTime).HasColumnName("check_in_time").HasMaxLength(10);
+                entity.Property(e => e.CheckOutTime).HasColumnName("check_out_time").HasMaxLength(10);
+                entity.Property(e => e.RoomType).HasColumnName("room_type").HasMaxLength(100);
+                entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(50).HasDefaultValue("confirmed");
+                entity.Property(e => e.ReminderMinutes).HasColumnName("reminder_minutes");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TripId);
+                entity.HasIndex(e => e.Date);
+                entity.HasIndex(e => new { e.TripId, e.Date });
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany(t => t.ItineraryEvents)
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // PACKING ITEMS TABLE
+            // ============================================
+            modelBuilder.Entity<PackingItem>(entity =>
+            {
+                entity.ToTable("packing_items");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TripId).HasColumnName("trip_id").IsRequired();
+                entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(50).HasDefaultValue("other");
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255);
+                entity.Property(e => e.Quantity).HasColumnName("quantity").HasDefaultValue(1);
+                entity.Property(e => e.IsChecked).HasColumnName("is_checked").HasDefaultValue(false);
+                entity.Property(e => e.IsEssential).HasColumnName("is_essential").HasDefaultValue(false);
+                entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TripId);
+                entity.HasIndex(e => new { e.TripId, e.Category });
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany(t => t.PackingItems)
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // TRAVEL DOCUMENTS TABLE
+            // ============================================
+            modelBuilder.Entity<TravelDocument>(entity =>
+            {
+                entity.ToTable("travel_documents");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TripId).HasColumnName("trip_id").IsRequired();
+                entity.Property(e => e.Type).HasColumnName("type").HasMaxLength(50).HasDefaultValue("other");
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255);
+                entity.Property(e => e.DocumentNumber).HasColumnName("document_number").HasMaxLength(100);
+                entity.Property(e => e.ExpiryDate).HasColumnName("expiry_date");
+                entity.Property(e => e.IssueDate).HasColumnName("issue_date");
+                entity.Property(e => e.IssuingCountry).HasColumnName("issuing_country").HasMaxLength(100);
+                entity.Property(e => e.FileUrl).HasColumnName("file_url");
+                entity.Property(e => e.FileThumbnail).HasColumnName("file_thumbnail");
+                entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TripId);
+                entity.HasIndex(e => new { e.TripId, e.Type });
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany(t => t.Documents)
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // TRAVEL EXPENSES TABLE
+            // ============================================
+            modelBuilder.Entity<TravelExpense>(entity =>
+            {
+                entity.ToTable("travel_expenses");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TripId).HasColumnName("trip_id").IsRequired();
+                entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(50).HasDefaultValue("other");
+                entity.Property(e => e.Amount).HasColumnName("amount").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Currency).HasColumnName("currency").HasMaxLength(10).HasDefaultValue("EUR");
+                entity.Property(e => e.AmountInBaseCurrency).HasColumnName("amount_in_base_currency").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.ExchangeRate).HasColumnName("exchange_rate").HasColumnType("decimal(18,6)").HasDefaultValue(1);
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.PaymentMethod).HasColumnName("payment_method").HasMaxLength(50);
+                entity.Property(e => e.ReceiptUrl).HasColumnName("receipt_url");
+                entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TripId);
+                entity.HasIndex(e => e.Date);
+                entity.HasIndex(e => new { e.TripId, e.Category });
+                entity.HasIndex(e => new { e.TripId, e.Date });
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany(t => t.Expenses)
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

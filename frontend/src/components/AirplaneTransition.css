@@ -1,0 +1,285 @@
+/* ================================
+   Airplane Transition Overlay
+   Mapbox background + realistic animations
+   ================================ */
+
+.airplane-transition-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #0a0a1a;
+}
+
+/* ================================
+   Map Background (Mapbox)
+   ================================ */
+
+.map-background {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.map-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.map-image.loaded {
+    opacity: 1;
+}
+
+/* Purple overlay to match travel app theme */
+.map-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+            rgba(88, 28, 135, 0.6) 0%,
+            rgba(45, 35, 100, 0.5) 40%,
+            rgba(20, 15, 40, 0.7) 100%);
+    mix-blend-mode: multiply;
+}
+
+/* Additional vignette effect */
+.map-background::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center,
+            transparent 0%,
+            transparent 40%,
+            rgba(10, 10, 26, 0.8) 100%);
+    pointer-events: none;
+}
+
+/* ================================
+   Sky Gradient Fallback
+   ================================ */
+
+.sky-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+            #0a0a1a 0%,
+            #1a1a3e 20%,
+            #2d2d6e 40%,
+            #5c4d8e 60%,
+            #8b6bae 75%,
+            #c9a0dc 90%,
+            #f0d0f0 100%);
+    background-size: 100% 200%;
+}
+
+.airplane-transition-overlay.takeoff .sky-gradient {
+    background-position: 0% 100%;
+}
+
+.airplane-transition-overlay.landing .sky-gradient {
+    background-position: 0% 0%;
+}
+
+/* ================================
+   Destination Label
+   ================================ */
+
+.destination-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    font-weight: 700;
+    color: white;
+    text-shadow:
+        0 0 40px rgba(168, 85, 247, 0.8),
+        0 4px 20px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 5;
+}
+
+@media (max-width: 600px) {
+    .destination-label {
+        font-size: 1.8rem;
+    }
+}
+
+/* ================================
+   Airplane Icon
+   ================================ */
+
+.airplane-icon-container {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.7));
+    z-index: 10;
+}
+
+.airplane-icon {
+    font-size: 6rem;
+    color: white;
+    filter: drop-shadow(0 4px 30px rgba(0, 0, 0, 0.5));
+}
+
+.airplane-icon.takeoff {
+    transform: scaleX(1);
+}
+
+.airplane-icon.landing {
+    transform: scaleX(-1);
+}
+
+/* Glow effect behind airplane */
+.airplane-glow {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle,
+            rgba(255, 255, 255, 0.5) 0%,
+            rgba(168, 85, 247, 0.4) 30%,
+            transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Engine exhaust glow */
+.engine-glow {
+    position: absolute;
+    left: -35px;
+    width: 50px;
+    height: 25px;
+    background: radial-gradient(ellipse at right,
+            rgba(255, 180, 80, 0.9) 0%,
+            rgba(255, 120, 50, 0.5) 50%,
+            transparent 100%);
+    border-radius: 50%;
+    filter: blur(5px);
+}
+
+.airplane-icon.landing+.airplane-glow+.engine-glow {
+    left: auto;
+    right: -35px;
+    background: radial-gradient(ellipse at left,
+            rgba(255, 180, 80, 0.9) 0%,
+            rgba(255, 120, 50, 0.5) 50%,
+            transparent 100%);
+}
+
+/* ================================
+   Speed Lines
+   ================================ */
+
+.speed-lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.speed-line {
+    position: absolute;
+    width: 120px;
+    height: 3px;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.7) 50%,
+            transparent 100%);
+    border-radius: 2px;
+    transform-origin: left center;
+}
+
+/* ================================
+   Decorative Clouds
+   ================================ */
+
+.transition-clouds {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 4;
+}
+
+.cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    filter: blur(50px);
+}
+
+.cloud-1 {
+    width: 400px;
+    height: 200px;
+    top: 8%;
+    left: 5%;
+}
+
+.cloud-2 {
+    width: 350px;
+    height: 180px;
+    top: 45%;
+    right: 10%;
+}
+
+.cloud-3 {
+    width: 300px;
+    height: 150px;
+    bottom: 20%;
+    left: 30%;
+}
+
+/* ================================
+   Status Text
+   ================================ */
+
+.transition-status {
+    position: absolute;
+    bottom: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-shadow: 0 2px 30px rgba(0, 0, 0, 0.7);
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.status-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-dots {
+    margin-left: 2px;
+}
+
+/* ================================
+   Reduced Motion
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .airplane-transition-overlay * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+[data-motion="reduced"] .airplane-transition-overlay * {
+    animation: none !important;
+    transition: none !important;
+}

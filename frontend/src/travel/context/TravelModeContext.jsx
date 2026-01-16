@@ -1,0 +1,266 @@
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import db from '../services/travelDb'
+import { tripService, processSyncQueue } from '../services/travelApi'
+
+const TravelModeContext = createContext()
+
+/**
+ * Travel Mode Provider
+ * Manages global travel mode state, active trip, and online/offline status
+ */
+export const TravelModeProvider = ({ children }) => {
+  // Initialize travel mode from localStorage
+  const [isTravelMode, setIsTravelMode] = useState(() => {
+    return localStorage.getItem('travelMode') === 'true'
+  })
+
+  // Active trip state
+  const [activeTrip, setActiveTrip] = useState(null)
+  const [tripLoading, setTripLoading] = useState(true)
+
+  // Online/offline status
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  // Sync status: 'idle' | 'syncing' | 'error'
+  const [syncStatus, setSyncStatus] = useState('idle')
+
+  // Transition animation state
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [transitionDirection, setTransitionDirection] = useState('takeoff') // 'takeoff' | 'landing'
+  const [pendingTrip, setPendingTrip] = useState(null)
+
+  // Persist travel mode state to localStorage
+  useEffect(() => {
+    localStorage.setItem('travelMode', isTravelMode)
+  }, [isTravelMode])
+
+  // Load active trip from API (online) or IndexedDB (offline) on mount
+  useEffect(() => {
+    const loadActiveTrip = async () => {
+      try {
+        const storedTripId = localStorage.getItem('activeTripId')
+        if (storedTripId) {
+          // Try to fetch from API first (if online)
+          if (navigator.onLine) {
+            try {
+              const trip = await tripService.getById(storedTripId)
+              if (trip) {
+                setActiveTrip(trip)
+                return
+              }
+            } catch (apiError) {
+              console.warn('Could not fetch trip from API, trying IndexedDB:', apiError)
+            }
+          }
+
+          // Fallback to IndexedDB (offline mode or API failed)
+          // IndexedDB uses auto-increment integers, API uses GUIDs
+          const numericId = parseInt(storedTripId)
+          const trip = await db.trips.get(isNaN(numericId) ? storedTripId : numericId)
+          if (trip) {
+            setActiveTrip(trip)
+          } else {
+            // Trip was deleted, clear stored ID
+            localStorage.removeItem('activeTripId')
+          }
+        } else {
+          // No stored trip ID, try to get the user's trips from API
+          if (navigator.onLine) {
+            try {
+              const trips = await tripService.getAll()
+              if (trips && trips.length > 0) {
+                // Set the most recent trip as active
+                const latestTrip = trips[0] // API returns ordered by StartDate desc
+                setActiveTrip(latestTrip)
+                localStorage.setItem('activeTripId', latestTrip.id)
+              }
+            } catch (apiError) {
+              console.warn('Could not fetch trips from API:', apiError)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading active trip:', error)
+      } finally {
+        setTripLoading(false)
+      }
+    }
+
+    if (isTravelMode) {
+      loadActiveTrip()
+    } else {
+      setTripLoading(false)
+    }
+  }, [isTravelMode])
+
+  // Online/offline event listeners with sync
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOnline(true)
+      // Trigger sync when coming back online
+      setSyncStatus('syncing')
+      try {
+        // Process any pending offline operations
+        await processSyncQueue()
+        // Refresh active trip data from server
+        if (activeTrip?.id) {
+          try {
+            const refreshedTrip = await tripService.getById(activeTrip.id)
+            if (refreshedTrip) {
+              setActiveTrip(refreshedTrip)
+            }
+          } catch (err) {
+            console.error('Error refreshing trip on reconnect:', err)
+          }
+        }
+        setSyncStatus('idle')
+      } catch (error) {
+        console.error('Sync error:', error)
+        setSyncStatus('error')
+        // Reset to idle after showing error briefly
+        setTimeout(() => setSyncStatus('idle'), 3000)
+      }
+    }
+
+    const handleOffline = () => {
+      setIsOnline(false)
+      setSyncStatus('idle')
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [activeTrip?.id])
+
+  /**
+   * Complete the transition animation and apply mode change
+   */
+  const completeTransition = useCallback(() => {
+    setIsTransitioning(false)
+
+    if (transitionDirection === 'takeoff') {
+      // Complete entering travel mode
+      setIsTravelMode(true)
+      if (pendingTrip) {
+        setActiveTrip(pendingTrip)
+        localStorage.setItem('activeTripId', pendingTrip.id)
+        setPendingTrip(null)
+      }
+    } else {
+      // Complete exiting travel mode
+      setIsTravelMode(false)
+    }
+  }, [transitionDirection, pendingTrip])
+
+  /**
+   * Enter travel mode with animation
+   * @param {Object|null} trip - Optional trip to set as active
+   */
+  const enterTravelMode = useCallback((trip = null) => {
+    if (isTransitioning) return
+
+    setTransitionDirection('takeoff')
+    setPendingTrip(trip)
+    setIsTransitioning(true)
+    // Mode change happens in completeTransition after animation
+  }, [isTransitioning])
+
+  /**
+   * Exit travel mode with animation
+   */
+  const exitTravelMode = useCallback(() => {
+    if (isTransitioning) return
+
+    setTransitionDirection('landing')
+    setIsTransitioning(true)
+    // Mode change happens in completeTransition after animation
+  }, [isTransitioning])
+
+  /**
+   * Select a trip as the active trip
+   * @param {Object} trip - Trip to set as active
+   */
+  const selectTrip = useCallback((trip) => {
+    setActiveTrip(trip)
+    if (trip?.id) {
+      localStorage.setItem('activeTripId', trip.id)
+    }
+  }, [])
+
+  /**
+   * Clear the active trip
+   */
+  const clearActiveTrip = useCallback(() => {
+    setActiveTrip(null)
+    localStorage.removeItem('activeTripId')
+  }, [])
+
+  /**
+   * Refresh the active trip from database
+   */
+  const refreshActiveTrip = useCallback(async () => {
+    if (!activeTrip?.id) return
+
+    try {
+      const trip = await db.trips.get(activeTrip.id)
+      if (trip) {
+        setActiveTrip(trip)
+      } else {
+        // Trip was deleted
+        clearActiveTrip()
+      }
+    } catch (error) {
+      console.error('Error refreshing active trip:', error)
+    }
+  }, [activeTrip?.id, clearActiveTrip])
+
+  const value = {
+    // Travel mode state
+    isTravelMode,
+    enterTravelMode,
+    exitTravelMode,
+
+    // Transition animation
+    isTransitioning,
+    transitionDirection,
+    completeTransition,
+
+    // Active trip
+    activeTrip,
+    tripLoading,
+    selectTrip,
+    clearActiveTrip,
+    refreshActiveTrip,
+
+    // Online status
+    isOnline,
+
+    // Sync status
+    syncStatus,
+    setSyncStatus
+  }
+
+  return (
+    <TravelModeContext.Provider value={value}>
+      {children}
+    </TravelModeContext.Provider>
+  )
+}
+
+/**
+ * Hook to access travel mode context
+ * @returns {Object} Travel mode context value
+ */
+export const useTravelMode = () => {
+  const context = useContext(TravelModeContext)
+  if (!context) {
+    throw new Error('useTravelMode must be used within a TravelModeProvider')
+  }
+  return context
+}
+
+export default TravelModeContext
