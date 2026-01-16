@@ -1,6 +1,4 @@
 import { memo, useState, useEffect } from 'react'
-import { Map, Marker, NavigationControl } from 'react-map-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
 import { useTravelMode } from '../context/TravelModeContext'
 import TravelHeader from './TravelHeader'
 import TravelNavigation from './TravelNavigation'
@@ -10,79 +8,68 @@ import '../styles/TravelLayout.css'
 
 // Mapbox configuration
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
-const MAPBOX_STYLE = 'mapbox://styles/mapbox/dark-v11' // Interactive style URL
+const MAPBOX_STYLE = 'dark-v11'
+
+const getMapboxStaticUrl = (lat, lon, zoom = 10) => {
+  if (!MAPBOX_TOKEN || !lat || !lon) return null
+  // Max resolution for free tier is 1280x1280
+  return `https://api.mapbox.com/styles/v1/mapbox/${MAPBOX_STYLE}/static/${lon},${lat},${zoom},0,0/1280x720?access_token=${MAPBOX_TOKEN}`
+}
 
 /**
  * Travel Layout Component
- * Full-screen container with interactive Mapbox background
- * Features "Immersive Mode" toggle to hide UI and explore map
+ * Full-screen container for travel mode with header and bottom navigation
+ * Features "Immersive Mode" toggle to hide UI (Static Map Version)
  */
 const TravelLayout = memo(({ children, activePage, onNavigate }) => {
   const { activeTrip, isOnline, syncStatus } = useTravelMode()
   const [showUI, setShowUI] = useState(true)
-  const [viewState, setViewState] = useState({
-    longitude: -0.1278, // Default London
-    latitude: 51.5074,
-    zoom: 10
-  })
+  const [mapLoaded, setMapLoaded] = useState(false)
 
-  // Update map view when trip changes
+  // Generate map URL from trip coordinates
+  const mapUrl = activeTrip?.latitude && activeTrip?.longitude
+    ? getMapboxStaticUrl(activeTrip.latitude, activeTrip.longitude, 10)
+    : null
+
+  // Reset map loaded state when trip changes
   useEffect(() => {
-    if (activeTrip?.latitude && activeTrip?.longitude) {
-      setViewState(prev => ({
-        ...prev,
-        longitude: activeTrip.longitude,
-        latitude: activeTrip.latitude,
-        zoom: 10
-      }))
-    }
-  }, [activeTrip?.id, activeTrip?.latitude, activeTrip?.longitude])
+    setMapLoaded(false)
+  }, [activeTrip?.id])
 
   return (
     <div className="travel-layout" data-offline={!isOnline}>
-      {/* Interactive Map Background */}
-      <div className={`travel-map-container ${!showUI ? 'interactive' : ''}`}>
-        {MAPBOX_TOKEN && (
-          <Map
-            {...viewState}
-            onMove={evt => setViewState(evt.viewState)}
-            style={{ width: '100%', height: '100%' }}
-            mapStyle={MAPBOX_STYLE}
-            mapboxAccessToken={MAPBOX_TOKEN}
-            // Disable interaction when UI is shown, enable when hidden
-            scrollZoom={!showUI}
-            dragPan={!showUI}
-            doubleClickZoom={!showUI}
-            touchZoomRotate={!showUI}
-            attributionControl={!showUI} // Hide attribution in background mode for cleaner look
-          >
-            {/* Show trip marker */}
-            {activeTrip?.latitude && activeTrip?.longitude && (
-              <Marker
-                longitude={activeTrip.longitude}
-                latitude={activeTrip.latitude}
-                anchor="bottom"
-              >
-                <div className="trip-marker-pin" />
-              </Marker>
-            )}
-
-            {/* Controls only visible in immersive mode */}
-            {!showUI && <NavigationControl position="top-right" />}
-          </Map>
-        )}
-
-        {/* Theme overlay - fades out when exploring */}
-        <div className={`map-bg-overlay ${!showUI ? 'hidden' : ''}`} />
-      </div>
+      {/* Mapbox Background */}
+      {mapUrl && (
+        <div
+          className={`travel-map-container ${!showUI ? 'interactive' : ''}`}
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: !showUI ? 100 : 0 }}
+        >
+          <img
+            src={mapUrl}
+            alt="Trip destination map"
+            className={`map-bg-image ${mapLoaded ? 'loaded' : ''}`}
+            onLoad={() => setMapLoaded(true)}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              // Add subtle drift animation if immersive
+              animation: !showUI ? 'mapDrift 60s ease-in-out infinite alternate' : 'none',
+              transform: !showUI ? 'scale(1.1)' : 'scale(1)'
+            }}
+          />
+          {/* Theme overlay - fades out when exploring */}
+          <div className={`map-bg-overlay ${!showUI ? 'hidden' : ''}`} />
+        </div>
+      )}
 
       {/* Immersive Mode Toggle */}
       <button
         className={`immersive-toggle ${!showUI ? 'active' : ''}`}
         onClick={() => setShowUI(!showUI)}
-        title={showUI ? "Hide items & Explore Map" : "Show items"}
+        title={showUI ? "Show items" : "Hide items & See Map"}
       >
-        {showUI ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+        {showUI ? <FiEye size={20} /> : <FiEyeOff size={20} />}
         {!showUI && <span className="toggle-label">Show Items</span>}
       </button>
 
