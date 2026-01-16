@@ -293,5 +293,10 @@
       "epic": "Épique",
       "legendary": "Légendaire"
     }
+  },
+  "recurringBills": {
+    "deleteAttachment": "Supprimer la pièce jointe?",
+    "confirmDeleteAttachment": "Êtes-vous sûr de vouloir supprimer cette pièce jointe? Cette action ne peut pas être annulée.",
+    "errorDeletingAttachment": "Échec de la suppression de la pièce jointe"
   }
 }

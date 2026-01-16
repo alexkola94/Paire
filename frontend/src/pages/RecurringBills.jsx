@@ -82,6 +82,7 @@ function RecurringBills() {
   const [formLoading, setFormLoading] = useState(false)
   const [unmarkModal, setUnmarkModal] = useState({ isOpen: false, bill: null })
   const [attachmentsModal, setAttachmentsModal] = useState({ isOpen: false, bill: null })
+  const [deleteAttachmentModal, setDeleteAttachmentModal] = useState({ isOpen: false, attachmentId: null, bill: null })
   const [pendingAttachments, setPendingAttachments] = useState([])
   const [animatingBill, setAnimatingBill] = useState({ id: null, type: null })
 
@@ -463,8 +464,11 @@ function RecurringBills() {
 
       setAttachmentsModal(prev => ({ ...prev, bill: updatedBill }))
 
-      // 3. Update Global List State
-      setBills(prevBills => prevBills.map(b => b.id === bill.id ? updatedBill : b))
+      // 3. Update React Query cache optimistically
+      queryClient.setQueryData(['recurringBills'], (oldBills) => {
+        if (!oldBills) return oldBills
+        return oldBills.map(b => b.id === bill.id ? updatedBill : b)
+      })
 
     } catch (error) {
       console.error('Error uploading attachment:', error)
@@ -472,11 +476,17 @@ function RecurringBills() {
     }
   }
 
-  const handleDeleteAttachment = async (attachmentId) => {
+  const handleDeleteAttachment = (attachmentId) => {
     const { bill } = attachmentsModal
     if (!bill) return
 
-    if (!window.confirm(t('common.confirmDelete') || "Are you sure?")) return
+    // Open confirmation modal
+    setDeleteAttachmentModal({ isOpen: true, attachmentId, bill })
+  }
+
+  const confirmDeleteAttachment = async () => {
+    const { attachmentId, bill } = deleteAttachmentModal
+    if (!bill || !attachmentId) return
 
     try {
       await recurringBillService.deleteAttachment(bill.id, attachmentId)
@@ -487,8 +497,14 @@ function RecurringBills() {
 
       setAttachmentsModal(prev => ({ ...prev, bill: updatedBill }))
 
-      // Update Global List State
-      setBills(prevBills => prevBills.map(b => b.id === bill.id ? updatedBill : b))
+      // Update React Query cache optimistically
+      queryClient.setQueryData(['recurringBills'], (oldBills) => {
+        if (!oldBills) return oldBills
+        return oldBills.map(b => b.id === bill.id ? updatedBill : b)
+      })
+
+      // Close modal
+      setDeleteAttachmentModal({ isOpen: false, attachmentId: null, bill: null })
 
     } catch (error) {
       console.error('Error deleting attachment:', error)
@@ -1404,6 +1420,18 @@ function RecurringBills() {
         variant="warning"
         loading={processingBillId === unmarkModal.bill?.id}
       />
+
+      {/* Delete Attachment Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteAttachmentModal.isOpen}
+        onClose={() => setDeleteAttachmentModal({ isOpen: false, attachmentId: null, bill: null })}
+        onConfirm={confirmDeleteAttachment}
+        title={t('recurringBills.deleteAttachment') || "Delete Attachment?"}
+        message={t('recurringBills.confirmDeleteAttachment') || "Are you sure you want to delete this attachment? This action cannot be undone."}
+        confirmText={t('common.delete')}
+        variant="danger"
+      />
+
       {/* Attachments Modal */}
       {attachmentsModal.isOpen && (
         <InternalBillAttachmentsModal

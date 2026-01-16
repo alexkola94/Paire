@@ -12,7 +12,10 @@
     "deleteTitle": "Διαγραφή Απόδειξης",
     "deleteMessage": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την απόδειξη; Η συναλλαγή θα παραμείνει.",
     "noReceipts": "Δεν βρέθηκαν αποδείξεις.",
-    "searchPlaceholder": "Αναζήτηση αποδείξεων..."
+    "searchPlaceholder": "Αναζήτηση αποδείξεων...",
+    "viewReceipt": "Προβολή Απόδειξης",
+    "clickToView": "Κάντε κλικ για προβολή",
+    "pdfDocument": "Έγγραφο PDF"
   },
   "auth": {
     "login": "Σύνδεση",
@@ -672,7 +675,9 @@
     "attachments": "Συνημμένα",
     "noAttachments": "Δεν υπάρχουν συνημμένα ακόμα",
     "errorUploading": "Αποτυχία μεταφόρτωσης συνημμένου",
-    "errorDeletingAttachment": "Αποτυχία διαγραφής συνημμένου"
+    "errorDeletingAttachment": "Αποτυχία διαγραφής συνημμένου",
+    "deleteAttachment": "Διαγραφή Συνημμένου;",
+    "confirmDeleteAttachment": "Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτό το συνημμένο; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
   },
   "shoppingLists": {
     "title": "Λίστες Αγορών",
