@@ -63,71 +63,53 @@
   flex-direction: column;
   height: 100%;
   position: relative;
-  /* Remove white background to allow glass effect */
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: var(--glass-border);
-  /* Animation */
-  animation: fadeInUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) backwards;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Staggered animation delays for the first 10 items */
-.expense-card:nth-child(1) {
-  animation-delay: 0.05s;
-}
-
-.expense-card:nth-child(2) {
-  animation-delay: 0.1s;
-}
-
-.expense-card:nth-child(3) {
-  animation-delay: 0.15s;
-}
-
-.expense-card:nth-child(4) {
-  animation-delay: 0.2s;
-}
-
-.expense-card:nth-child(5) {
-  animation-delay: 0.25s;
-}
-
-.expense-card:nth-child(6) {
-  animation-delay: 0.3s;
-}
-
-.expense-card:nth-child(7) {
-  animation-delay: 0.35s;
-}
-
-.expense-card:nth-child(8) {
-  animation-delay: 0.4s;
-}
-
-.expense-card:nth-child(9) {
-  animation-delay: 0.45s;
-}
-
-.expense-card:nth-child(10) {
-  animation-delay: 0.5s;
+  /* Enhanced glassmorphism with increased backdrop-blur saturation */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  /* Multi-layered box shadows for floating effect */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .expense-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px) scale(1.01);
+  /* Enhanced floating effect with deeper shadows */
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark theme adjustments */
+[data-theme='dark'] .expense-card {
+  background: rgba(15, 7, 26, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .expense-card:hover {
+  background: rgba(15, 7, 26, 0.5);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
 }
 
 .expense-header {
@@ -139,28 +121,53 @@
 
 .expense-category {
   font-weight: 700;
-  font-size: 1.1rem;
+  /* Fluid typography */
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
   color: var(--primary-dark);
   /* Darker color for better visibility */
   text-transform: capitalize;
+  letter-spacing: -0.01em;
 }
 
 .expense-amount {
   font-weight: 700;
-  font-size: 1.1rem;
+  /* Fluid typography */
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
   color: var(--text-primary);
   white-space: nowrap;
+}
+
+/* Privacy mode overrides for expense amounts */
+.expense-amount.masked-number {
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  background: none !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.6;
+}
+
+[data-theme='dark'] .expense-amount.masked-number {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.5;
+  letter-spacing: -0.01em;
 }
 
 .expense-description {
   color: var(--text-secondary);
   margin-bottom: var(--spacing-md);
   line-height: 1.6;
+  /* Fluid typography */
+  font-size: clamp(0.9375rem, 2vw, 1rem);
 }
 
 .expense-date {
   color: var(--text-light);
-  font-size: 0.875rem;
+  /* Fluid typography */
+  font-size: clamp(0.8125rem, 1.5vw, 0.875rem);
   margin-bottom: var(--spacing-md);
 }
 
@@ -209,24 +216,44 @@
 }
 
 .btn-icon {
-  background: var(--bg-tertiary);
+  /* Enhanced glassmorphism for action buttons */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border: none;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-sm);
+  border-radius: 12px; /* rounded-xl */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: var(--text-secondary);
   padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .btn-icon:hover {
-  background: var(--primary);
-  color: white;
-  transform: translateY(-2px);
+  background: rgba(139, 92, 246, 0.2);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  color: var(--primary);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+[data-theme='dark'] .btn-icon {
+  background: rgba(15, 7, 26, 0.3);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .btn-icon:hover {
+  background: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 .btn-icon.delete:hover {
@@ -278,7 +305,8 @@
   }
 
   .expense-amount {
-    font-size: 1.25rem;
+    /* Fluid typography for mobile */
+    font-size: clamp(1.125rem, 3vw, 1.25rem);
   }
 }
 

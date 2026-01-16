@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle, FiDatabase } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
@@ -304,7 +305,12 @@ function Profile() {
       )}
 
       {/* Personal Information */}
-      <div className="card">
+      <motion.div 
+        className="card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="card-header">
           <h2>{t('profile.personalInfo')}</h2>
           {!editingProfile && (
@@ -452,10 +458,15 @@ function Profile() {
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Language Settings */}
-      <div className="card">
+      <motion.div 
+        className="card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="card-header">
           <h2>
             <FiGlobe size={24} />
@@ -479,10 +490,15 @@ function Profile() {
             <span>Ελληνικά</span>
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Password Settings */}
-      <div className="card">
+      <motion.div 
+        className="card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="card-header">
           <h2>
             <FiLock size={24} />
@@ -567,7 +583,7 @@ function Profile() {
             </div>
           </form>
         )}
-      </div>
+      </motion.div>
 
       {/* Two-Factor Authentication */}
       <TwoFactorSetup
@@ -599,7 +615,12 @@ function Profile() {
       />
 
       {/* Legal Information */}
-      <div className="card">
+      <motion.div 
+        className="card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="card-header">
           <h2>
             <FiLock size={24} />
@@ -612,10 +633,15 @@ function Profile() {
             {t('legal.privacyPolicy')}
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {/* Data Management - Clear All Data */}
-      <div className="card data-management">
+      <motion.div 
+        className="card data-management"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="card-header">
           <h2>
             <FiDatabase size={24} />
@@ -657,7 +683,7 @@ function Profile() {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Clear Data Confirmation Modal */}
       {showClearDataModal && (

@@ -1,0 +1,38 @@
+---
+description: Apply the Paire "Harmonious Minimalist" design system to all UI components.
+globs: ["**/*.tsx", "**/*.css", "**/components/**"]
+alwaysApply: true
+---
+
+# Paire Design System: Harmonious Minimalist
+
+You are a Senior Product Designer & Frontend Engineer specializing in "Soft Tech" aesthetics. Your goal is to ensure all code matches the Paire signature style.
+
+## 1. Core Visual Language
+- **Glassmorphism:** Use translucent backgrounds with backdrop-blur. 
+  - Standard Card: `bg-white/10 backdrop-blur-md border border-white/20`.
+- **Soft UI Radii:** Never use sharp corners. 
+  - Components: `rounded-2xl` (16px) or `rounded-3xl` (24px).
+- **Breathability:** Prioritize high whitespace. Use `p-6` or `p-8` for containers. Use `gap-6` for layout grids.
+
+## 2. Signature Color Palette (Tailwind)
+- **Primary (Royal Amethyst):** `text-[#8B5CF6]` / `bg-[#8B5CF6]`. Use for active states and brand moments.
+- **Success (Vitality Green):** `text-[#10B981]`. Use for income, "On Track" status, and positive growth.
+- **Warning/Expense (Coral):** `text-[#EF4444]`. Use for spending and alerts.
+- **Neutral Structure:** Use a deep purple-tinted dark mode or off-white. 
+  - Background: `#F9FAFB` (Light) or `#0F071A` (Dark).
+
+## 3. Component Guidelines
+- **Cards:** Must have a subtle outer glow or soft shadow instead of heavy borders.
+- **Typography:** Use sans-serif (Inter or Geist). Headings should be `font-semibold` with tight letter-spacing (`tracking-tight`).
+- **Icons:** Use thin-stroke icons (Lucide/Phosphor). Always pair icons with generous padding.
+- **Progress Bars:** Use thick, rounded tracks with vibrant gradients (e.g., `from-[#10B981] to-[#34D399]`).
+
+## 4. Interaction & Tone
+- **Tone:** Empathetic and human. Use labels like "Savings Goal" instead of "Target Debt."
+- **Micro-interactions:** Add `transition-all duration-300 ease-in-out` to all hoverable elements.
+- **Feedback:** Use the "Waving Hand" or "Target" icons for AI assistant components.
+
+## 5. Constraints
+- DO NOT use standard shadcn/ui defaults without overriding the border-radius and colors.
+- DO NOT use high-contrast pure black/white; always use soft tints.

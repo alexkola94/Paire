@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import {
   FiTrendingUp,
   FiTrendingDown,
@@ -844,8 +845,32 @@ function Analytics() {
 
       {/* Summary Cards */}
       {analytics && (
-        <div className="summary-cards">
-          <div className="summary-card income-card">
+        <motion.div 
+          className="summary-cards"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
+          <motion.div 
+            className="summary-card income-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="card-icon">
               <FiTrendingUp size={32} />
             </div>
@@ -853,9 +878,22 @@ function Analytics() {
               <h3>{t('analytics.totalIncome')}</h3>
               <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(analytics.totalIncome)}</p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="summary-card expense-card">
+          <motion.div 
+            className="summary-card expense-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="card-icon">
               <FiTrendingDown size={32} />
             </div>
@@ -863,9 +901,22 @@ function Analytics() {
               <h3>{t('analytics.totalExpenses')}</h3>
               <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(analytics.totalExpenses)}</p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="summary-card balance-card">
+          <motion.div 
+            className="summary-card balance-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="card-icon">
               <span style={{ fontSize: '32px', fontWeight: 'bold' }}>€</span>
             </div>
@@ -875,9 +926,22 @@ function Analytics() {
                 {formatCurrency(analytics.balance)}
               </p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="summary-card average-card">
+          <motion.div 
+            className="summary-card average-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="card-icon">
               <FiActivity size={32} />
             </div>
@@ -885,8 +949,8 @@ function Analytics() {
               <h3>{t('analytics.avgDailySpending')}</h3>
               <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(analytics.averageDailySpending)}</p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
       {/* Charts Grid */}

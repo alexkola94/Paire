@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiMail, FiArrowLeft, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import './ForgotPassword.css'
@@ -55,7 +56,12 @@ function ForgotPassword() {
     return (
       <div className="forgot-password-page">
         <div className="forgot-password-container">
-          <div className="forgot-password-card">
+          <motion.div 
+            className="forgot-password-card"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          >
             {/* Mobile Logo */}
             <div className="forgot-password-logo-mobile">
               <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="60" height="60" />
@@ -66,7 +72,12 @@ function ForgotPassword() {
               <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="80" height="80" />
             </div>
 
-            <div className="forgot-password-content success">
+            <motion.div 
+              className="forgot-password-content success"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
               <FiCheckCircle size={64} />
               <h1>{t('auth.forgotPasswordSuccessTitle')}</h1>
               <p>{t('auth.forgotPasswordSuccessMessage')}</p>
@@ -80,8 +91,8 @@ function ForgotPassword() {
                   {t('auth.backToLogin')}
                 </button>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     )
@@ -91,23 +102,33 @@ function ForgotPassword() {
   return (
     <div className="forgot-password-page">
       <div className="forgot-password-container">
-        <div className="forgot-password-card">
+        <motion.div 
+          className="forgot-password-card"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+        >
           {/* Mobile Logo */}
           <div className="forgot-password-logo-mobile">
-            <img src="/paire-logo.svg" alt={t('app.title')} width="60" height="60" />
+            <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="60" height="60" />
           </div>
 
           {/* Desktop Logo */}
           <div className="forgot-password-logo">
-            <img src="/paire-logo.svg" alt={t('app.title')} width="80" height="80" />
+            <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="80" height="80" />
           </div>
 
           {/* Header */}
-          <div className="forgot-password-header">
+          <motion.div 
+            className="forgot-password-header"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             <FiMail size={48} />
             <h1>{t('auth.forgotPasswordTitle')}</h1>
             <p>{t('auth.forgotPasswordDescription')}</p>
-          </div>
+          </motion.div>
 
           {/* Error Message */}
           {error && (
@@ -118,7 +139,13 @@ function ForgotPassword() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="forgot-password-form">
+          <motion.form 
+            onSubmit={handleSubmit} 
+            className="forgot-password-form"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             <div className="form-group">
               <label htmlFor="email">
                 <FiMail size={18} />
@@ -149,9 +176,9 @@ function ForgotPassword() {
                 </>
               ) : (
                 t('auth.sendResetLink')
-              )}
+                )}
             </button>
-          </form>
+          </motion.form>
 
           {/* Footer Link */}
           <div className="forgot-password-footer">
@@ -160,7 +187,7 @@ function ForgotPassword() {
               {t('auth.backToLogin')}
             </Link>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

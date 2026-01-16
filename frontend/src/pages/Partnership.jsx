@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiUsers, FiUserPlus, FiUserX, FiMail, FiCalendar, FiTrendingUp, FiX } from 'react-icons/fi'
 import { partnershipService, profileService } from '../services/api'
 import { getStoredUser } from '../services/auth'
@@ -270,9 +271,35 @@ function Partnership() {
       )}
 
       {/* Current Partnerships List */}
-      <div className="partnerships-list">
+      <motion.div 
+        className="partnerships-list"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
         {partnerships.map(partnership => (
-          <div key={partnership.id} className="card partnership-card">
+          <motion.div 
+            key={partnership.id} 
+            className="card partnership-card"
+            variants={{
+              hidden: { opacity: 0, y: 20, scale: 0.95 },
+              visible: { 
+                opacity: 1, 
+                y: 0, 
+                scale: 1,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="partnership-header">
               <h2>{t('partnership.currentPartner')}</h2>
               <span className="partnership-status active">
@@ -329,7 +356,7 @@ function Partnership() {
                 {t('partnership.disconnect')}
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
 
         {partnerships.length === 0 && !showInviteForm && (
@@ -343,7 +370,7 @@ function Partnership() {
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Pending Invitations */}
       {pendingInvitations && pendingInvitations.length > 0 && (

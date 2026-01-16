@@ -1,7 +1,17 @@
 .reminder-settings-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--spacing-xl);
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .reminder-settings-header {
@@ -10,9 +20,28 @@
 }
 
 .reminder-settings-header h1 {
-  font-size: 2rem;
-  color: var(--text-primary);
-  margin-bottom: 10px;
+  /* Fluid typography */
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--spacing-sm);
+  /* Royal Amethyst mesh gradient */
+  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #C4B5FD 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
+  /* Fallback */
+  color: #8B5CF6;
+}
+
+[data-theme='dark'] .reminder-settings-header h1 {
+  background: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 50%, #DDD6FE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(167, 139, 250, 0.4));
+  color: #C4B5FD;
 }
 
 .reminder-settings-header .subtitle {
@@ -47,16 +76,47 @@
 }
 
 .reminder-settings-content {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
-  border: 1px solid var(--glass-border);
+  /* Multi-layered box shadows */
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    0 8px 32px rgba(0, 0, 0, 0.05),
+    0 4px 16px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+[data-theme='dark'] .reminder-settings-content {
+  background: rgba(15, 7, 26, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .settings-section {
-  border-bottom: 1px solid var(--bg-tertiary);
-  padding: 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-lg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-section:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .settings-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .settings-section:hover {
+  background: rgba(15, 7, 26, 0.2);
 }
 
 .settings-section:last-child {
@@ -68,9 +128,16 @@
 }
 
 .section-header h2 {
-  font-size: 1.3rem;
+  /* Fluid typography */
+  font-size: clamp(1.125rem, 2.5vw, 1.3rem);
+  font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  letter-spacing: -0.01em;
+}
+
+[data-theme='dark'] .section-header h2 {
+  color: #E5E7EB;
 }
 
 .setting-item {

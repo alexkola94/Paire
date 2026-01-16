@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiLock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import './ResetPassword.css'
@@ -79,12 +80,22 @@ function ResetPassword() {
     return (
       <div className="reset-password-page">
         <div className="reset-container">
-          <div className="reset-card">
+          <motion.div 
+            className="reset-card"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          >
             <div className="reset-logo">
               <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="80" height="80" />
             </div>
 
-            <div className="reset-content error">
+            <motion.div 
+              className="reset-content error"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
               <FiAlertCircle size={64} />
               <h1>Invalid Reset Link</h1>
               <p>This password reset link is invalid or has expired.</p>
@@ -95,8 +106,8 @@ function ResetPassword() {
               >
                 Back to Login
               </button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     )
@@ -107,18 +118,28 @@ function ResetPassword() {
     return (
       <div className="reset-password-page">
         <div className="reset-container">
-          <div className="reset-card">
+          <motion.div 
+            className="reset-card"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          >
             <div className="reset-logo">
               <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="80" height="80" />
             </div>
 
-            <div className="reset-content success">
+            <motion.div 
+              className="reset-content success"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
               <FiCheckCircle size={64} />
               <h1>Password Reset Successful!</h1>
               <p>Your password has been changed successfully.</p>
               <p className="redirect-message">Redirecting to login...</p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     )
@@ -128,29 +149,50 @@ function ResetPassword() {
   return (
     <div className="reset-password-page">
       <div className="reset-container">
-        <div className="reset-card">
+        <motion.div 
+          className="reset-card"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+        >
           {/* Logo */}
           <div className="reset-logo">
-            <img src="/paire-logo.svg" alt={t('app.title')} width="80" height="80" />
+            <img src={`${import.meta.env.BASE_URL}paire-logo.svg`} alt={t('app.title')} width="80" height="80" />
           </div>
 
           {/* Header */}
-          <div className="reset-header">
+          <motion.div 
+            className="reset-header"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             <FiLock size={48} />
             <h1>Reset Password</h1>
             <p>Enter your new password below</p>
-          </div>
+          </motion.div>
 
           {/* Error Message */}
           {error && (
-            <div className="alert alert-error">
+            <motion.div 
+              className="alert alert-error"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <FiAlertCircle size={18} />
               {error}
-            </div>
+            </motion.div>
           )}
 
           {/* Reset Form */}
-          <form onSubmit={handleSubmit} className="reset-form">
+          <motion.form 
+            onSubmit={handleSubmit} 
+            className="reset-form"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             <div className="form-group">
               <label htmlFor="newPassword">New Password</label>
               <div className="input-with-icon">
@@ -202,18 +244,23 @@ function ResetPassword() {
                 'Reset Password'
               )}
             </button>
-          </form>
+          </motion.form>
 
           {/* Footer Link */}
-          <div className="reset-footer">
+          <motion.div 
+            className="reset-footer"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             <button 
               onClick={() => navigate('/login')}
               className="link-button"
             >
               Back to Login
             </button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   )

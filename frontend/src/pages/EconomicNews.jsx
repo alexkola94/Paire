@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import {
   FiTrendingUp,
   FiTrendingDown,
@@ -211,10 +212,42 @@ function EconomicNews() {
     )
   }
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1]
+      }
+    }
+  }
+
   return (
-    <div className="economic-news-page">
+    <motion.div 
+      className="economic-news-page"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       {/* Header */}
-      <div className="economic-news-header">
+      <motion.div 
+        className="economic-news-header"
+        variants={itemVariants}
+      >
         <div className="header-content">
           <h1>{t('economicNews.title')}</h1>
           <p className="header-subtitle">{t('economicNews.subtitle')}</p>
@@ -228,11 +261,14 @@ function EconomicNews() {
           <FiRefreshCw size={18} className={refreshing ? 'spinning' : ''} />
           {t('economicNews.refresh')}
         </button>
-      </div>
+      </motion.div>
 
       {/* Last Updated Info - show if any data is available */}
       {(cpiData?.lastUpdated || foodPricesData?.lastUpdated || indicatorsData?.lastUpdated || newsData?.lastUpdated) && (
-        <div className="last-updated-info">
+        <motion.div 
+          className="last-updated-info"
+          variants={itemVariants}
+        >
           <FiInfo size={16} />
           <span>{t('economicNews.lastUpdated')}: {formatDate(
             cpiData?.lastUpdated ||
@@ -240,7 +276,7 @@ function EconomicNews() {
             indicatorsData?.lastUpdated ||
             newsData?.lastUpdated
           )}</span>
-        </div>
+        </motion.div>
       )}
 
       {/* CPI Section - renders as soon as data is available */}
@@ -256,7 +292,10 @@ function EconomicNews() {
           </div>
         </section>
       ) : cpiData && !cpiData.error ? (
-        <section className="economic-section cpi-section">
+        <motion.section 
+          className="economic-section cpi-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <FiBarChart2 size={24} className="section-icon" />
             <h2>{t('economicNews.cpi.title')}</h2>
@@ -281,7 +320,7 @@ function EconomicNews() {
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
       ) : errors.cpi ? (
         <div className="section-error">
           <FiAlertCircle size={16} />
@@ -303,14 +342,21 @@ function EconomicNews() {
         </section>
       ) : foodPricesData && !foodPricesData.error && foodPricesData.categories?.length > 0 ? (
 
-        <section className="economic-section food-prices-section">
+        <motion.section 
+          className="economic-section food-prices-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <FiShoppingBag size={24} className="section-icon" />
             <h2>{t('economicNews.foodPrices.title')}</h2>
           </div>
           <div className="food-prices-content">
             {foodPricesData.categories.map((category, index) => (
-              <div key={index} className="price-category-card">
+              <motion.div 
+                key={index} 
+                className="price-category-card"
+                variants={itemVariants}
+              >
                 <div className="category-header">
                   <h3>{category.name}</h3>
                   <div className="category-stats">
@@ -332,7 +378,7 @@ function EconomicNews() {
                     ))}
                   </div>
                 )}
-              </div>
+              </motion.div>
             ))}
             {foodPricesData.source && (
               <div className="data-source">
@@ -341,7 +387,7 @@ function EconomicNews() {
               </div>
             )}
           </div>
-        </section>
+        </motion.section>
       ) : errors.foodPrices ? (
         <div className="section-error">
           <FiAlertCircle size={16} />
@@ -365,14 +411,20 @@ function EconomicNews() {
           </div>
         </section>
       ) : indicatorsData && !indicatorsData.error ? (
-        <section className="economic-section indicators-section">
+        <motion.section 
+          className="economic-section indicators-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <FiActivity size={24} className="section-icon" />
             <h2>{t('economicNews.indicators.title')}</h2>
           </div>
           <div className="indicators-grid">
             {indicatorsData.gdp && !indicatorsData.gdp.error && (
-              <div className="indicator-card">
+              <motion.div 
+                className="indicator-card"
+                variants={itemVariants}
+              >
                 <div className="indicator-icon">
                   <FiDollarSign size={20} />
                 </div>
@@ -386,11 +438,14 @@ function EconomicNews() {
                     <div className="indicator-period">{indicatorsData.gdp.period}</div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {indicatorsData.unemployment && !indicatorsData.unemployment.error && (
-              <div className="indicator-card">
+              <motion.div 
+                className="indicator-card"
+                variants={itemVariants}
+              >
                 <div className="indicator-icon">
                   <FiUsers size={20} />
                 </div>
@@ -407,11 +462,14 @@ function EconomicNews() {
                     <div className="indicator-period">{indicatorsData.unemployment.period}</div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {indicatorsData.inflation && !indicatorsData.inflation.error && (
-              <div className="indicator-card">
+              <motion.div 
+                className="indicator-card"
+                variants={itemVariants}
+              >
                 <div className="indicator-icon">
                   <FiTrendingUp size={20} />
                 </div>
@@ -428,11 +486,14 @@ function EconomicNews() {
                     <div className="indicator-period">{indicatorsData.inflation.period}</div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {indicatorsData.householdIncome && !indicatorsData.householdIncome.error && (
-              <div className="indicator-card">
+              <motion.div 
+                className="indicator-card"
+                variants={itemVariants}
+              >
                 <div className="indicator-icon">
                   <FiDollarSign size={20} />
                 </div>
@@ -449,7 +510,7 @@ function EconomicNews() {
                     <div className="indicator-period">{indicatorsData.householdIncome.period}</div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
           {indicatorsData.source && (
@@ -458,7 +519,7 @@ function EconomicNews() {
               <span>{t('economicNews.source')}: {indicatorsData.source}</span>
             </div>
           )}
-        </section>
+        </motion.section>
       ) : errors.indicators ? (
         <div className="section-error">
           <FiAlertCircle size={16} />
@@ -481,7 +542,10 @@ function EconomicNews() {
           </div>
         </section>
       ) : newsData && !newsData.error && newsData.articles?.length > 0 ? (
-        <section className="economic-section news-section">
+        <motion.section 
+          className="economic-section news-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <FiFileText size={24} className="section-icon" />
             <h2>{t('economicNews.news.title')}</h2>
@@ -489,7 +553,11 @@ function EconomicNews() {
           <div className="news-content">
             <div className="news-grid">
               {newsData.articles.map((article, index) => (
-                <article key={index} className="news-card">
+                <motion.article 
+                  key={index} 
+                  className="news-card"
+                  variants={itemVariants}
+                >
                   {article.imageUrl && (
                     <div className="news-image">
                       <img
@@ -527,7 +595,7 @@ function EconomicNews() {
                       <FiExternalLink size={14} />
                     </a>
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
             {newsData.source && (
@@ -537,7 +605,7 @@ function EconomicNews() {
               </div>
             )}
           </div>
-        </section>
+        </motion.section>
       ) : errors.news ? (
         <div className="section-error">
           <FiAlertCircle size={16} />
@@ -546,34 +614,43 @@ function EconomicNews() {
       ) : null}
 
       {/* Data Source Links */}
-      <section className="economic-section links-section">
+      <motion.section 
+        className="economic-section links-section"
+        variants={itemVariants}
+      >
         <div className="section-header">
           <FiExternalLink size={24} className="section-icon" />
           <h2>{t('economicNews.links.title')}</h2>
         </div>
         <div className="links-content">
-          <a
+          <motion.a
             href="https://ec.europa.eu/eurostat"
             target="_blank"
             rel="noopener noreferrer"
             className="external-link"
+            variants={itemVariants}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             <span>Eurostat (European Statistics)</span>
             <FiExternalLink size={16} />
-          </a>
-          <a
+          </motion.a>
+          <motion.a
             href="https://www.statistics.gr"
             target="_blank"
             rel="noopener noreferrer"
             className="external-link"
+            variants={itemVariants}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             <span>ELSTAT (Hellenic Statistical Authority)</span>
             <FiExternalLink size={16} />
-          </a>
+          </motion.a>
         </div>
-      </section>
+      </motion.section>
 
-    </div>
+    </motion.div>
   )
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { reminderService } from '../services/api';
 import './ReminderSettings.css';
 
@@ -96,22 +97,69 @@ function ReminderSettings() {
     );
   }
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1]
+      }
+    }
+  }
+
   return (
-    <div className="reminder-settings-container">
-      <div className="reminder-settings-header">
+    <motion.div 
+      className="reminder-settings-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div 
+        className="reminder-settings-header"
+        variants={itemVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <h1>{t('reminders.title')}</h1>
         <p className="subtitle">{t('reminders.subtitle')}</p>
-      </div>
+      </motion.div>
 
       {message.text && (
-        <div className={`message message-${message.type}`}>
+        <motion.div 
+          className={`message message-${message.type}`}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           {message.text}
-        </div>
+        </motion.div>
       )}
 
-      <div className="reminder-settings-content">
+      <motion.div 
+        className="reminder-settings-content"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Master Toggle */}
-        <div className="settings-section">
+        <motion.div 
+          className="settings-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <h2>📧 {t('reminders.emailNotifications')}</h2>
           </div>
@@ -127,10 +175,13 @@ function ReminderSettings() {
             </label>
             <p className="setting-description">{t('reminders.emailDescription')}</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Bill Reminders */}
-        <div className="settings-section">
+        <motion.div 
+          className="settings-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <h2>💰 {t('reminders.billReminders')}</h2>
           </div>
@@ -162,10 +213,13 @@ function ReminderSettings() {
               {t('reminders.days')}
             </label>
           </div>
-        </div>
+        </motion.div>
 
         {/* Loan Reminders */}
-        <div className="settings-section">
+        <motion.div 
+          className="settings-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <h2>🏦 {t('reminders.loanReminders')}</h2>
           </div>
@@ -197,10 +251,13 @@ function ReminderSettings() {
               {t('reminders.days')}
             </label>
           </div>
-        </div>
+        </motion.div>
 
         {/* Budget Alerts */}
-        <div className="settings-section">
+        <motion.div 
+          className="settings-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <h2>📊 {t('reminders.budgetAlerts')}</h2>
           </div>
@@ -233,10 +290,13 @@ function ReminderSettings() {
               %
             </label>
           </div>
-        </div>
+        </motion.div>
 
         {/* Savings Goals */}
-        <div className="settings-section">
+        <motion.div 
+          className="settings-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <h2>🎯 {t('reminders.savingsGoals')}</h2>
           </div>
@@ -253,10 +313,13 @@ function ReminderSettings() {
             </label>
             <p className="setting-description">{t('reminders.savingsDescription')}</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Test Reminders Section */}
-        <div className="settings-section">
+        <motion.div 
+          className="settings-section"
+          variants={itemVariants}
+        >
           <div className="section-header">
             <h2>🧪 {t('reminders.testReminders')}</h2>
           </div>
@@ -271,10 +334,13 @@ function ReminderSettings() {
               {testingReminders ? t('reminders.testingReminders') : t('reminders.testReminders')}
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Action Buttons */}
-        <div className="settings-actions">
+        <motion.div 
+          className="settings-actions"
+          variants={itemVariants}
+        >
           <button
             onClick={handleSave}
             disabled={saving}
@@ -282,9 +348,9 @@ function ReminderSettings() {
           >
             {saving ? t('common.saving') : t('common.save')}
           </button>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
 

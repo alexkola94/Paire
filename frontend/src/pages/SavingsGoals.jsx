@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import {
   FiTarget, FiPlus, FiEdit, FiTrash2, FiTrendingUp,
   FiCalendar, FiCheckCircle, FiArrowUp, FiArrowDown
@@ -315,8 +316,32 @@ function SavingsGoals() {
 
       {/* Summary Cards */}
       {summary && (
-        <div className="summary-grid">
-          <div className="summary-card">
+        <motion.div 
+          className="summary-grid"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
+          <motion.div 
+            className="summary-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="summary-icon total">
               <FiTarget />
             </div>
@@ -327,9 +352,22 @@ function SavingsGoals() {
                 {summary.activeGoals} {t('savingsGoals.active')} · {summary.achievedGoals} {t('savingsGoals.achieved')}
               </p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="summary-card">
+          <motion.div 
+            className="summary-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="summary-icon saved">
               <span style={{ fontSize: '24px', fontWeight: 'bold' }}>€</span>
             </div>
@@ -340,9 +378,22 @@ function SavingsGoals() {
                 {t('savingsGoals.of')} {formatCurrency(summary.totalTargetAmount)}
               </p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="summary-card">
+          <motion.div 
+            className="summary-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="summary-icon progress">
               <FiTrendingUp />
             </div>
@@ -353,12 +404,23 @@ function SavingsGoals() {
                 {formatCurrency(summary.totalRemaining)} {t('savingsGoals.remaining')}
               </p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
       {/* Goals Grid */}
-      <div className="goals-grid">
+      <motion.div 
+        className="goals-grid"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
         {goals.length === 0 ? (
           <div className="empty-state">
             <FiTarget size={64} />
@@ -376,10 +438,22 @@ function SavingsGoals() {
             const icon = goal.icon || getCategoryIcon(goal.category)
 
             return (
-              <div
+              <motion.div
                 key={goal.id}
                 className={`goal - card ${goal.isAchieved ? 'achieved' : ''} `}
                 style={{ borderLeftColor: goal.color || priorityColor }}
+                variants={{
+                  hidden: { opacity: 0, y: 20, scale: 0.95 },
+                  visible: { 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1,
+                    transition: {
+                      duration: 0.5,
+                      ease: [0.4, 0, 0.2, 1]
+                    }
+                  }
+                }}
               >
                 <div className="goal-header">
                   <div className="goal-icon" style={{ backgroundColor: `${goal.color} 20` }}>
@@ -421,14 +495,18 @@ function SavingsGoals() {
                 </div>
 
                 <div className="progress-container">
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${progress}% `,
-                        backgroundColor: goal.color || priorityColor
-                      }}
-                    />
+                  <div className="progress-bar-wrapper">
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width: `${progress}% `,
+                          backgroundColor: goal.color || priorityColor
+                        }}
+                      >
+                        <span className="progress-euro">€</span>
+                      </div>
+                    </div>
                   </div>
                   <span className="progress-text">{progress.toFixed(1)}%</span>
                 </div>
@@ -514,11 +592,11 @@ function SavingsGoals() {
                     <p>{goal.notes}</p>
                   </div>
                 )}
-              </div>
+              </motion.div>
             )
           })
         )}
-      </div>
+      </motion.div>
 
       {/* Goal Form Modal (Portal) */}
       <Modal

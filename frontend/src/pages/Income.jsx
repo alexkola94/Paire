@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiX, FiDownload } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
@@ -379,15 +380,38 @@ function Income() {
           <p>{t('common.noResults', 'No income found matching your search.')}</p>
         </div>
       ) : (
-        <div className="income-grid">
+        <motion.div 
+          className="income-grid"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.08
+              }
+            }
+          }}
+        >
           {displayedIncomes.map((income) => (
-            <div 
+            <motion.div 
               key={income.id} 
               className="income-card card clickable"
               onClick={() => setDetailModal(income)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && setDetailModal(income)}
+              variants={{
+                hidden: { opacity: 0, y: 20, scale: 0.95 },
+                visible: { 
+                  opacity: 1, 
+                  y: 0, 
+                  scale: 1,
+                  transition: {
+                    duration: 0.5,
+                    ease: [0.4, 0, 0.2, 1]
+                  }
+                }
+              }}
             >
               <div className="income-header">
                 <div className="income-category">
@@ -453,9 +477,9 @@ function Income() {
                   <FiTrash2 size={18} />
                 </button>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Pagination Controls */}

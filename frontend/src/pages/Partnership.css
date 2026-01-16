@@ -6,6 +6,13 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+.partnership-page .page-header h1 {
+  /* Fluid typography */
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 .partnership-page .card {
   margin-bottom: var(--spacing-xl);
 }
@@ -15,8 +22,50 @@
    ================================ */
 
 .partnership-card {
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
-  border: 2px solid var(--primary);
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  /* Multi-layered box shadows */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.partnership-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+[data-theme='dark'] .partnership-card {
+  background: rgba(15, 7, 26, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+[data-theme='dark'] .partnership-card:hover {
+  background: rgba(15, 7, 26, 0.5);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 .partnership-header {
@@ -29,6 +78,10 @@
 .partnership-header h2 {
   color: var(--primary);
   margin: 0;
+  /* Fluid typography */
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .partnership-status {
@@ -92,9 +145,12 @@
 }
 
 .partner-details h3 {
-  font-size: 1.5rem;
+  /* Fluid typography */
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
   margin-bottom: var(--spacing-sm);
   color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .partner-meta {
@@ -212,12 +268,40 @@
    Benefits Card
    ================================ */
 
+.benefits-card {
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+[data-theme='dark'] .benefits-card {
+  background: rgba(15, 7, 26, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
 .benefits-card h2 {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   color: var(--primary);
   margin-bottom: var(--spacing-lg);
+  /* Fluid typography */
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .benefits-list {
@@ -234,9 +318,24 @@
   align-items: flex-start;
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
-  background: var(--bg-tertiary);
+  /* Glassmorphic background */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-md);
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+[data-theme='dark'] .benefits-list li {
+  background: rgba(15, 7, 26, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .benefits-list li:hover {

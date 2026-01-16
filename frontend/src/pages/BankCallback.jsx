@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import LogoLoader from '../components/LogoLoader'
 import './BankCallback.css'
 
@@ -104,35 +105,110 @@ function BankCallback() {
     processCallback()
   }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1]
+      }
+    }
+  }
+
   return (
     <div className="bank-callback-page">
-      <div className="bank-callback-content">
+      <motion.div 
+        className="bank-callback-content"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         {status === 'processing' && (
-          <>
-            <LogoLoader size="medium" />
-            <h2>{t('profile.openBanking.callback.processing', 'Processing Authorization...')}</h2>
-            <p>{t('profile.openBanking.callback.processingMessage', 'Please wait while we complete your bank connection.')}</p>
-          </>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <LogoLoader size="medium" />
+            </motion.div>
+            <motion.h2 variants={itemVariants}>
+              {t('profile.openBanking.callback.processing', 'Processing Authorization...')}
+            </motion.h2>
+            <motion.p variants={itemVariants}>
+              {t('profile.openBanking.callback.processingMessage', 'Please wait while we complete your bank connection.')}
+            </motion.p>
+          </motion.div>
         )}
 
         {status === 'success' && (
-          <>
-            <div className="success-icon">✓</div>
-            <h2>{t('common.success', 'Success!')}</h2>
-            <p>{message}</p>
-            <p className="closing-message">{t('profile.openBanking.callback.closing', 'This window will close automatically...')}</p>
-          </>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div 
+              className="success-icon"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3, type: 'spring', stiffness: 200 }}
+            >
+              ✓
+            </motion.div>
+            <motion.h2 variants={itemVariants}>{t('common.success', 'Success!')}</motion.h2>
+            <motion.p variants={itemVariants}>{message}</motion.p>
+            <motion.p 
+              className="closing-message"
+              variants={itemVariants}
+            >
+              {t('profile.openBanking.callback.closing', 'This window will close automatically...')}
+            </motion.p>
+          </motion.div>
         )}
 
         {status === 'error' && (
-          <>
-            <div className="error-icon">✗</div>
-            <h2>{t('common.error', 'Error')}</h2>
-            <p>{message}</p>
-            <p className="closing-message">{t('profile.openBanking.callback.closing', 'This window will close automatically...')}</p>
-          </>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div 
+              className="error-icon"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3, type: 'spring', stiffness: 200 }}
+            >
+              ✗
+            </motion.div>
+            <motion.h2 variants={itemVariants}>{t('common.error', 'Error')}</motion.h2>
+            <motion.p variants={itemVariants}>{message}</motion.p>
+            <motion.p 
+              className="closing-message"
+              variants={itemVariants}
+            >
+              {t('profile.openBanking.callback.closing', 'This window will close automatically...')}
+            </motion.p>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }

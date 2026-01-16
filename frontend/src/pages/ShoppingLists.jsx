@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import {
   FiShoppingCart, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiSquare, FiCheckSquare, FiPackage, FiList, FiUpload, FiX
@@ -862,11 +863,33 @@ function ShoppingLists() {
               </div>
             ) : (
               <>
-                <div className="lists-grid">
+                <motion.div 
+                  className="lists-grid"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    visible: {
+                      transition: {
+                        staggerChildren: 0.05
+                      }
+                    }
+                  }}
+                >
                   {displayedActiveLists.map(list => (
-                    <div
+                    <motion.div
                       key={list.id}
                       className={`list-card ${selectedList?.list.id === list.id ? 'selected' : ''}`}
+                      variants={{
+                        hidden: { opacity: 0, x: -20 },
+                        visible: { 
+                          opacity: 1, 
+                          x: 0,
+                          transition: {
+                            duration: 0.4,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                        }
+                      }}
                       onClick={() => {
                         // Toggle: if already selected, deselect it; otherwise, select it
                         if (selectedList?.list.id === list.id) {
@@ -920,9 +943,9 @@ function ShoppingLists() {
                           </span>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
@@ -957,11 +980,33 @@ function ShoppingLists() {
           {completedLists.length > 0 && (
             <div className="lists-section completed-section">
               <h3>{t('shoppingLists.completedLists')} ({completedLists.length})</h3>
-              <div className="lists-grid">
+              <motion.div 
+                className="lists-grid"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.05
+                    }
+                  }
+                }}
+              >
                 {completedLists.map(list => (
-                  <div
+                  <motion.div
                     key={list.id}
                     className="list-card completed"
+                    variants={{
+                      hidden: { opacity: 0, x: -20 },
+                      visible: { 
+                        opacity: 1, 
+                        x: 0,
+                        transition: {
+                          duration: 0.4,
+                          ease: [0.4, 0, 0.2, 1]
+                        }
+                      }
+                    }}
                     onClick={() => {
                       // Toggle: if already selected, deselect it; otherwise, select it
                       if (selectedList?.list.id === list.id) {
@@ -980,9 +1025,9 @@ function ShoppingLists() {
                         <span>{formatCurrency(list.actualTotal)}</span>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </div>
           )}
         </div>

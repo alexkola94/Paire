@@ -120,11 +120,16 @@
 
 .all-transactions-page .page-header h1 {
   margin-bottom: var(--spacing-sm);
+  /* Fluid typography for responsive scaling */
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .all-transactions-page .page-subtitle {
   color: var(--text-secondary);
-  font-size: 1.0625rem;
+  /* Fluid typography */
+  font-size: clamp(0.9375rem, 2vw, 1.0625rem);
 }
 
 /* ================================
@@ -133,6 +138,31 @@
 
 .transactions-container {
   margin-bottom: var(--spacing-xl);
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px;
+  padding: 1.5rem;
+  /* Multi-layered shadows */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='dark'] .transactions-container {
+  background: rgba(15, 7, 26, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* ================================
@@ -150,16 +180,75 @@
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-md);
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  transition: var(--transition);
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border-radius: 16px; /* rounded-2xl */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 3px solid transparent;
+  /* Subtle shadow for depth */
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 1px 4px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .transaction-item:hover {
-  background: var(--secondary);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   transform: translateX(4px);
-  box-shadow: var(--shadow-sm);
+  /* Enhanced shadow on hover */
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.25) inset;
+}
+
+[data-theme='dark'] .transaction-item {
+  background: rgba(15, 7, 26, 0.3);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 1px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .transaction-item:hover {
+  background: rgba(15, 7, 26, 0.5);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+/* Dark theme hover state - ensure text remains visible */
+[data-theme='dark'] .transaction-item:hover .transaction-details h4 {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme='dark'] .transaction-item:hover .transaction-date {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme='dark'] .transaction-item:hover .added-by {
+  background: rgba(139, 92, 246, 0.2);
+  color: rgba(139, 92, 246, 0.9);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+[data-theme='dark'] .transaction-item:hover .transaction-amount {
+  opacity: 1;
+  filter: brightness(1.1);
+}
+
+[data-theme='dark'] .transaction-item:hover .transaction-amount.income {
+  filter: drop-shadow(0 1px 2px rgba(16, 185, 129, 0.4)) brightness(1.2);
+}
+
+[data-theme='dark'] .transaction-item:hover .transaction-amount.expense {
+  color: rgba(239, 68, 68, 0.95);
+  filter: brightness(1.1);
 }
 
 .transaction-item.income {
@@ -181,8 +270,13 @@
 }
 
 .transaction-item.income .transaction-icon {
-  background: var(--success);
-  color: var(--success-dark);
+  /* Mesh gradient for income icons */
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.8), transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(52, 211, 153, 0.9), transparent 50%),
+    linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .transaction-item.expense .transaction-icon {
@@ -236,7 +330,8 @@
 }
 
 .transaction-details h4 {
-  font-size: 1rem;
+  /* Fluid typography */
+  font-size: clamp(0.9375rem, 2vw, 1rem);
   font-weight: 600;
   margin-bottom: var(--spacing-xs);
   /* white-space: nowrap; Removed to allow wrapping */
@@ -247,10 +342,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   word-break: break-word;
+  letter-spacing: -0.01em;
 }
 
 .transaction-date {
-  font-size: 0.875rem;
+  /* Fluid typography */
+  font-size: clamp(0.8125rem, 1.5vw, 0.875rem);
   color: var(--text-light);
   margin: 0;
 }
@@ -277,17 +374,46 @@
 }
 
 .transaction-amount {
-  font-size: 1.125rem;
+  /* Fluid typography */
+  font-size: clamp(1rem, 2.5vw, 1.125rem);
   font-weight: 700;
   white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
 .transaction-amount.income {
-  color: var(--success-dark);
+  /* Mesh gradient for income amounts */
+  background: linear-gradient(135deg, #10B981 0%, #34D399 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 1px 2px rgba(16, 185, 129, 0.2));
 }
 
 .transaction-amount.expense {
   color: var(--error-dark);
+}
+
+/* Privacy mode overrides for transaction amounts */
+.transaction-amount.masked-number,
+.transaction-amount.income.masked-number,
+.transaction-amount.expense.masked-number {
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  background: none !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.6;
+}
+
+[data-theme='dark'] .transaction-amount.masked-number,
+[data-theme='dark'] .transaction-amount.income.masked-number,
+[data-theme='dark'] .transaction-amount.expense.masked-number {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.5;
 }
 
 /* ================================

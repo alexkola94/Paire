@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import {
     FiDollarSign,
     FiUsers,
@@ -146,18 +147,43 @@ function Landing() {
 
             {/* Hero Section */}
             <section className="landing-hero">
-                <div className="hero-content">
-                    <div className="hero-badge">
+                <motion.div 
+                    className="hero-content"
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                >
+                    <motion.div 
+                        className="hero-badge"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                    >
                         <FiShield size={14} />
                         <span>{t('landing.hero.badge')}</span>
-                    </div>
-                    <h1 className="hero-title">
+                    </motion.div>
+                    <motion.h1 
+                        className="hero-title"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                    >
                         {t('landing.hero.title')}
-                    </h1>
-                    <p className="hero-subtitle">
+                    </motion.h1>
+                    <motion.p 
+                        className="hero-subtitle"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                    >
                         {t('landing.hero.subtitle')}
-                    </p>
-                    <div className="hero-actions">
+                    </motion.p>
+                    <motion.div 
+                        className="hero-actions"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.5 }}
+                    >
                         <Link to="/login?mode=signup" className="btn-hero-primary">
                             {t('landing.hero.getStarted')}
                             <FiArrowRight />
@@ -165,8 +191,13 @@ function Landing() {
                         <Link to="/login" className="btn-hero-secondary">
                             {t('landing.hero.login')}
                         </Link>
-                    </div>
-                    <div className="hero-trust">
+                    </motion.div>
+                    <motion.div 
+                        className="hero-trust"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.6, delay: 0.6 }}
+                    >
                         <div className="trust-item">
                             <FiCheck className="trust-check" />
                             <span>{t('landing.hero.trust1')}</span>
@@ -179,10 +210,20 @@ function Landing() {
                             <FiCheck className="trust-check" />
                             <span>{t('landing.hero.trust3')}</span>
                         </div>
-                    </div>
-                </div>
-                <div className="hero-visual">
-                    <div className="hero-phone">
+                    </motion.div>
+                </motion.div>
+                <motion.div 
+                    className="hero-visual"
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                >
+                    <motion.div 
+                        className="hero-phone"
+                        initial={{ opacity: 0, scale: 0.9, rotateY: -15 }}
+                        animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                        transition={{ duration: 0.8, delay: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                    >
                         <div className="phone-frame">
                             <div className="phone-screen">
                                 <div className="mock-header">
@@ -217,53 +258,133 @@ function Landing() {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="hero-floating-card card-1">
+                    </motion.div>
+                    <motion.div 
+                        className="hero-floating-card card-1"
+                        initial={{ opacity: 0, x: 20, y: -20 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.8, ease: [0.4, 0, 0.2, 1] }}
+                    >
                         <FiPieChart className="floating-icon" />
                         <span>Analytics</span>
-                    </div>
-                    <div className="hero-floating-card card-2">
+                    </motion.div>
+                    <motion.div 
+                        className="hero-floating-card card-2"
+                        initial={{ opacity: 0, x: -20, y: 20 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.9, ease: [0.4, 0, 0.2, 1] }}
+                    >
                         <FiUsers className="floating-icon" />
                         <span>Partnership</span>
-                    </div>
-                    <div className="hero-floating-card card-3">
+                    </motion.div>
+                    <motion.div 
+                        className="hero-floating-card card-3"
+                        initial={{ opacity: 0, x: 20, y: 20 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        transition={{ duration: 0.6, delay: 1, ease: [0.4, 0, 0.2, 1] }}
+                    >
                         <FiTarget className="floating-icon" />
                         <span>Goals</span>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             </section>
 
             {/* Features Section */}
             <section className="landing-features" id="features">
                 <div className="section-container">
-                    <div className="section-header">
+                    <motion.div 
+                        className="section-header"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                    >
                         <h2 className="section-title">{t('landing.features.title')}</h2>
                         <p className="section-subtitle">{t('landing.features.subtitle')}</p>
-                    </div>
-                    <div className="features-grid">
+                    </motion.div>
+                    <motion.div 
+                        className="features-grid"
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={{
+                            visible: {
+                                transition: {
+                                    staggerChildren: 0.1
+                                }
+                            }
+                        }}
+                    >
                         {features.map((feature, index) => (
-                            <div key={index} className={`feature-card ${feature.gradient}`}>
+                            <motion.div 
+                                key={index} 
+                                className={`feature-card ${feature.gradient}`}
+                                variants={{
+                                    hidden: { opacity: 0, y: 30, scale: 0.95 },
+                                    visible: { 
+                                        opacity: 1, 
+                                        y: 0, 
+                                        scale: 1,
+                                        transition: {
+                                            duration: 0.4,
+                                            ease: [0.4, 0, 0.2, 1]
+                                        }
+                                    }
+                                }}
+                            >
                                 <div className="feature-icon">
                                     {feature.icon}
                                 </div>
                                 <h3 className="feature-title">{feature.title}</h3>
                                 <p className="feature-description">{feature.description}</p>
-                            </div>
+                            </motion.div>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* How It Works Section */}
             <section className="landing-steps">
                 <div className="section-container">
-                    <div className="section-header">
+                    <motion.div 
+                        className="section-header"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                    >
                         <h2 className="section-title">{t('landing.howItWorks.title')}</h2>
                         <p className="section-subtitle">{t('landing.howItWorks.subtitle')}</p>
-                    </div>
-                    <div className="steps-grid">
+                    </motion.div>
+                    <motion.div 
+                        className="steps-grid"
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={{
+                            visible: {
+                                transition: {
+                                    staggerChildren: 0.15
+                                }
+                            }
+                        }}
+                    >
                         {steps.map((step, index) => (
-                            <div key={index} className="step-card">
+                            <motion.div 
+                                key={index} 
+                                className="step-card"
+                                variants={{
+                                    hidden: { opacity: 0, x: -30 },
+                                    visible: { 
+                                        opacity: 1, 
+                                        x: 0,
+                                        transition: {
+                                            duration: 0.5,
+                                            ease: [0.4, 0, 0.2, 1]
+                                        }
+                                    }
+                                }}
+                            >
                                 <div className="step-number">{step.number}</div>
                                 <div className="step-icon">{step.icon}</div>
                                 <h3 className="step-title">{step.title}</h3>
@@ -273,37 +394,113 @@ function Landing() {
                                         <FiArrowRight />
                                     </div>
                                 )}
-                            </div>
+                            </motion.div>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* Stats Section */}
             <section className="landing-stats">
                 <div className="section-container">
-                    <div className="stats-grid">
-                        <div className="stat-card">
+                    <motion.div 
+                        className="stats-grid"
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={{
+                            visible: {
+                                transition: {
+                                    staggerChildren: 0.1
+                                }
+                            }
+                        }}
+                    >
+                        <motion.div 
+                            className="stat-card"
+                            variants={{
+                                hidden: { opacity: 0, scale: 0.8 },
+                                visible: { 
+                                    opacity: 1, 
+                                    scale: 1,
+                                    transition: {
+                                        duration: 0.4,
+                                        ease: [0.4, 0, 0.2, 1]
+                                    }
+                                }
+                            }}
+                        >
                             <div className="stat-number">{stats.formattedUsers}</div>
                             <div className="stat-label">{t('landing.stats.users')}</div>
-                        </div>
-                        <div className="stat-card">
+                        </motion.div>
+                        <motion.div 
+                            className="stat-card"
+                            variants={{
+                                hidden: { opacity: 0, scale: 0.8 },
+                                visible: { 
+                                    opacity: 1, 
+                                    scale: 1,
+                                    transition: {
+                                        duration: 0.4,
+                                        ease: [0.4, 0, 0.2, 1]
+                                    }
+                                }
+                            }}
+                        >
                             <div className="stat-number">{stats.formattedTransactions}</div>
                             <div className="stat-label">{t('landing.stats.transactions')}</div>
-                        </div>
-                        <div className="stat-card">
+                        </motion.div>
+                        <motion.div 
+                            className="stat-card"
+                            variants={{
+                                hidden: { opacity: 0, scale: 0.8 },
+                                visible: { 
+                                    opacity: 1, 
+                                    scale: 1,
+                                    transition: {
+                                        duration: 0.4,
+                                        ease: [0.4, 0, 0.2, 1]
+                                    }
+                                }
+                            }}
+                        >
                             <div className="stat-number">{stats.formattedMoneySaved}</div>
                             <div className="stat-label">{t('landing.stats.saved')}</div>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* Mobile App Preview */}
             <section className="landing-mobile">
                 <div className="section-container">
-                    <div className="mobile-content">
-                        <div className="mobile-text">
+                    <motion.div 
+                        className="mobile-content"
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={{
+                            visible: {
+                                transition: {
+                                    staggerChildren: 0.15
+                                }
+                            }
+                        }}
+                    >
+                        <motion.div 
+                            className="mobile-text"
+                            variants={{
+                                hidden: { opacity: 0, x: -30 },
+                                visible: { 
+                                    opacity: 1, 
+                                    x: 0,
+                                    transition: {
+                                        duration: 0.5,
+                                        ease: [0.4, 0, 0.2, 1]
+                                    }
+                                }
+                            }}
+                        >
                             <h2 className="section-title">{t('landing.mobile.title')}</h2>
                             <p className="section-subtitle">{t('landing.mobile.subtitle')}</p>
                             <ul className="mobile-features">
@@ -324,25 +521,44 @@ function Landing() {
                                 <FiSmartphone />
                                 <span>{t('landing.mobile.pwa')}</span>
                             </div>
-                        </div>
-                        <div className="mobile-preview">
+                        </motion.div>
+                        <motion.div 
+                            className="mobile-preview"
+                            variants={{
+                                hidden: { opacity: 0, x: 30 },
+                                visible: { 
+                                    opacity: 1, 
+                                    x: 0,
+                                    transition: {
+                                        duration: 0.5,
+                                        ease: [0.4, 0, 0.2, 1]
+                                    }
+                                }
+                            }}
+                        >
                             <div className="preview-glow"></div>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* CTA Section */}
             <section className="landing-cta">
                 <div className="cta-container">
-                    <div className="cta-content">
+                    <motion.div 
+                        className="cta-content"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                    >
                         <h2 className="cta-title">{t('landing.cta.title')}</h2>
                         <p className="cta-subtitle">{t('landing.cta.subtitle')}</p>
                         <Link to="/login?mode=signup" className="cta-button">
                             {t('landing.cta.button')}
                             <FiArrowRight />
                         </Link>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 

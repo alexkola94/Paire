@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import { sessionManager } from '../services/sessionManager'
@@ -310,9 +311,19 @@ function Login() {
 
   return (
     <div className="login-page">
-      <div className="login-container">
+      <motion.div 
+        className="login-container"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      >
         {/* Mobile Branding - shown on mobile only */}
-        <div className="login-branding-mobile">
+        <motion.div 
+          className="login-branding-mobile"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           <img
             src={`${import.meta.env.BASE_URL}paire-logo.svg`}
             alt="Paire Logo"
@@ -322,11 +333,21 @@ function Login() {
           />
           <h1>{t('app.title')}</h1>
           <p>{t('app.tagline')}</p>
-        </div>
+        </motion.div>
 
         {/* Left side - Branding (Desktop/Tablet) */}
-        <div className="login-branding">
-          <div className="branding-content">
+        <motion.div 
+          className="login-branding"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <motion.div 
+            className="branding-content"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             <img
               src={`${import.meta.env.BASE_URL}paire-logo.svg`}
               alt="Paire Logo"
@@ -336,15 +357,44 @@ function Login() {
             />
             <h1>{t('app.title')}</h1>
             <p>{t('app.tagline')}</p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Right side - Form */}
-        <div className="login-form-container">
-          <div className="login-form-wrapper">
-            <h2 className="form-title">
+        <motion.div 
+          className="login-form-container"
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <motion.div 
+            className="login-form-wrapper"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.1
+                }
+              }
+            }}
+          >
+            <motion.h2 
+              className="form-title"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { 
+                  opacity: 1, 
+                  y: 0,
+                  transition: {
+                    duration: 0.4,
+                    ease: [0.4, 0, 0.2, 1]
+                  }
+                }
+              }}
+            >
               {isSignUp ? t('auth.createAccount') : t('auth.welcomeBack')}
-            </h2>
+            </motion.h2>
 
             {/* Error/Success Messages */}
             {error && (
@@ -359,9 +409,34 @@ function Login() {
             )}
 
             {/* Login/Signup Form */}
-            <form onSubmit={handleSubmit} className="login-form">
+            <motion.form 
+              onSubmit={handleSubmit} 
+              className="login-form"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.08
+                  }
+                }
+              }}
+            >
               {/* Email Input */}
-              <div className="form-group">
+              <motion.div 
+                className="form-group"
+                variants={{
+                  hidden: { opacity: 0, x: -20 },
+                  visible: { 
+                    opacity: 1, 
+                    x: 0,
+                    transition: {
+                      duration: 0.4,
+                      ease: [0.4, 0, 0.2, 1]
+                    }
+                  }
+                }}
+              >
                 <label htmlFor="email">
                   <FiMail size={18} />
                   {t('auth.email')}
@@ -376,10 +451,23 @@ function Login() {
                   required
                   autoComplete="email"
                 />
-              </div>
+              </motion.div>
 
               {/* Password Input */}
-              <div className="form-group">
+              <motion.div 
+                className="form-group"
+                variants={{
+                  hidden: { opacity: 0, x: -20 },
+                  visible: { 
+                    opacity: 1, 
+                    x: 0,
+                    transition: {
+                      duration: 0.4,
+                      ease: [0.4, 0, 0.2, 1]
+                    }
+                  }
+                }}
+              >
                 <label htmlFor="password">
                   <FiLock size={18} />
                   {t('auth.password')}
@@ -404,12 +492,25 @@ function Login() {
                     {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Confirm Password (Sign Up only) */}
               {isSignUp && (
                 <>
-                  <div className="form-group">
+                  <motion.div 
+                    className="form-group"
+                    variants={{
+                      hidden: { opacity: 0, x: -20 },
+                      visible: { 
+                        opacity: 1, 
+                        x: 0,
+                        transition: {
+                          duration: 0.4,
+                          ease: [0.4, 0, 0.2, 1]
+                        }
+                      }
+                    }}
+                  >
                     <label htmlFor="confirmPassword">
                       <FiLock size={18} />
                       {t('auth.confirmPassword')}
@@ -434,9 +535,22 @@ function Login() {
                         {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="form-group checkbox-group">
+                  <motion.div 
+                    className="form-group checkbox-group"
+                    variants={{
+                      hidden: { opacity: 0, x: -20 },
+                      visible: { 
+                        opacity: 1, 
+                        x: 0,
+                        transition: {
+                          duration: 0.4,
+                          ease: [0.4, 0, 0.2, 1]
+                        }
+                      }
+                    }}
+                  >
                     <label className="checkbox-label" htmlFor="emailNotificationsEnabled">
                       <input
                         type="checkbox"
@@ -450,13 +564,26 @@ function Login() {
                         {t('auth.enableEmailNotifications') || 'Receive email notifications'}
                       </span>
                     </label>
-                  </div>
+                  </motion.div>
                 </>
               )}
 
               {/* Remember Me Checkbox */}
               {!isSignUp && (
-                <div className="form-group remember-me-container">
+                <motion.div 
+                  className="form-group remember-me-container"
+                  variants={{
+                    hidden: { opacity: 0, x: -20 },
+                    visible: { 
+                      opacity: 1, 
+                      x: 0,
+                      transition: {
+                        duration: 0.4,
+                        ease: [0.4, 0, 0.2, 1]
+                      }
+                    }
+                  }}
+                >
                   <label className="checkbox-label" htmlFor="rememberMe">
                     <input
                       type="checkbox"
@@ -473,11 +600,22 @@ function Login() {
                       {t('auth.forgotPassword')}
                     </Link>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Submit Button */}
-              <button
+              <motion.button
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { 
+                    opacity: 1, 
+                    y: 0,
+                    transition: {
+                      duration: 0.4,
+                      ease: [0.4, 0, 0.2, 1]
+                    }
+                  }
+                }}
                 type="submit"
                 className="btn btn-primary btn-block"
                 disabled={loading}
@@ -490,11 +628,16 @@ function Login() {
                 ) : (
                   isSignUp ? t('auth.signup') : t('auth.login')
                 )}
-              </button>
-            </form>
+              </motion.button>
+            </motion.form>
 
             {/* Toggle Sign In/Sign Up */}
-            <div className="form-footer">
+            <motion.div 
+              className="form-footer"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+            >
               <p>
                 {isSignUp
                   ? t('auth.alreadyHaveAccount')
@@ -508,16 +651,16 @@ function Login() {
               >
                 {isSignUp ? t('auth.login') : t('auth.signup')}
               </button>
-            </div>
+            </motion.div>
 
-            <div className="login-footer-links" style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.85rem' }}>
-              <Link to="/privacy" className="text-secondary" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
+            <div className="login-footer-links">
+              <Link to="/privacy">
                 {t('legal.privacyPolicy')}
               </Link>
             </div>
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

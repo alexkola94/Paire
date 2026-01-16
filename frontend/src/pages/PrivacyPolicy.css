@@ -1,11 +1,40 @@
 .privacy-container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 2rem;
-    background-color: var(--card-bg, #ffffff);
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: var(--spacing-xl);
+    /* Enhanced glassmorphism */
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 24px; /* rounded-3xl */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* Multi-layered box shadows */
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.1),
+        0 8px 32px rgba(0, 0, 0, 0.05),
+        0 4px 16px rgba(0, 0, 0, 0.02),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
     color: var(--text-primary, #333333);
+    animation: fadeIn 0.5s ease-out;
+}
+
+[data-theme='dark'] .privacy-container {
+    background: rgba(15, 7, 26, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        0 4px 16px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .privacy-header {
@@ -15,9 +44,28 @@
 }
 
 .privacy-header h1 {
-    font-size: 2rem;
+    /* Fluid typography */
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
     margin-bottom: 0.5rem;
-    color: var(--primary-color, #0066cc);
+    /* Royal Amethyst mesh gradient */
+    background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #C4B5FD 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
+    /* Fallback */
+    color: #8B5CF6;
+}
+
+[data-theme='dark'] .privacy-header h1 {
+    background: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 50%, #DDD6FE 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 8px rgba(167, 139, 250, 0.4));
+    color: #C4B5FD;
 }
 
 .privacy-date {
@@ -27,12 +75,46 @@
 
 .privacy-section {
     margin-bottom: 2rem;
+    padding: var(--spacing-lg);
+    /* Glassmorphic section cards */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    border-radius: 16px; /* rounded-2xl */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.privacy-section:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(139, 92, 246, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(139, 92, 246, 0.1) inset;
+}
+
+[data-theme='dark'] .privacy-section {
+    background: rgba(15, 7, 26, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .privacy-section:hover {
+    background: rgba(15, 7, 26, 0.3);
+    border-color: rgba(167, 139, 250, 0.2);
 }
 
 .privacy-section h2 {
-    font-size: 1.5rem;
+    /* Fluid typography */
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
+    font-weight: 700;
     margin-bottom: 1rem;
     color: var(--text-primary, #333333);
+    letter-spacing: -0.01em;
+}
+
+[data-theme='dark'] .privacy-section h2 {
+    color: #E5E7EB;
 }
 
 .privacy-section p {
@@ -53,15 +135,32 @@
 }
 
 .privacy-back-link {
-    display: inline-block;
-    margin-bottom: 1rem;
-    color: var(--primary-color, #0066cc);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-lg);
+    color: #8B5CF6;
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .privacy-back-link:hover {
-    text-decoration: underline;
+    color: #A78BFA;
+    background: rgba(139, 92, 246, 0.1);
+    transform: translateX(-4px);
+    text-decoration: none;
+}
+
+[data-theme='dark'] .privacy-back-link {
+    color: #A78BFA;
+}
+
+[data-theme='dark'] .privacy-back-link:hover {
+    color: #C4B5FD;
+    background: rgba(167, 139, 250, 0.15);
 }
 
 @media (max-width: 768px) {

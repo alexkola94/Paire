@@ -56,15 +56,44 @@
   gap: var(--spacing-lg);
   padding: var(--spacing-md);
   /* Mobile: Smaller padding */
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  /* Multi-layered box shadows */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .summary-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='dark'] .summary-card {
+  background: rgba(15, 7, 26, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+[data-theme='dark'] .summary-card:hover {
+  background: rgba(15, 7, 26, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .summary-icon {
@@ -109,8 +138,8 @@
 }
 
 .summary-value {
-  font-size: 1.75rem;
-  /* Mobile: Slightly smaller */
+  /* Fluid typography */
+  font-size: clamp(1.5rem, 3vw, 1.75rem);
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
@@ -142,11 +171,14 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  font-size: 1.25rem;
+  /* Fluid typography */
+  font-size: clamp(1.125rem, 2.5vw, 1.25rem);
   color: var(--text-primary);
   margin: 0;
   padding-bottom: var(--spacing-md);
   border-bottom: 2px solid var(--bg-tertiary);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .overdue-section .section-title {
@@ -170,10 +202,19 @@
 
 .bill-card {
   padding: var(--spacing-xl);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  /* Multi-layered box shadows */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 4px solid var(--primary);
   position: relative;
   overflow: hidden;
@@ -192,12 +233,38 @@
 }
 
 .bill-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(139, 92, 246, 0.3);
 }
 
 .bill-card:hover::before {
   opacity: 1;
+}
+
+[data-theme='dark'] .bill-card {
+  background: rgba(15, 7, 26, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+[data-theme='dark'] .bill-card:hover {
+  background: rgba(15, 7, 26, 0.5);
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 .bill-card.overdue {
@@ -243,8 +310,11 @@
 
 .bill-info h3 {
   margin: 0 0 var(--spacing-xs) 0;
-  font-size: 1.25rem;
+  /* Fluid typography */
+  font-size: clamp(1.125rem, 2.5vw, 1.25rem);
   color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -286,12 +356,28 @@
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: var(--bg-tertiary);
+  /* Glassmorphic background */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-md);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.03),
+    0 2px 8px rgba(0, 0, 0, 0.01);
+}
+
+[data-theme='dark'] .bill-amount {
+  background: rgba(15, 7, 26, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .bill-amount .amount {
-  font-size: 1.5rem;
+  /* Fluid typography */
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
   font-weight: 700;
   color: var(--text-primary);
 }

@@ -19,6 +19,10 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  /* Fluid typography */
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 /* ================================
@@ -68,16 +72,54 @@
 
 .budget-card {
   padding: var(--spacing-xl);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
+  /* Enhanced glassmorphism with increased backdrop-blur saturation */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  /* Multi-layered box shadows for floating effect */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 4px solid var(--primary);
+  position: relative;
+  overflow: hidden;
 }
 
 .budget-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-6px) scale(1.01);
+  /* Enhanced floating effect with deeper shadows */
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+[data-theme='dark'] .budget-card {
+  background: rgba(15, 7, 26, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+[data-theme='dark'] .budget-card:hover {
+  background: rgba(15, 7, 26, 0.5);
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 .budget-card.over-budget {
@@ -95,7 +137,10 @@
 .budget-category h3 {
   margin: 0 0 var(--spacing-xs) 0;
   color: var(--text-primary);
-  font-size: 1.25rem;
+  /* Fluid typography */
+  font-size: clamp(1.125rem, 2.5vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .budget-period {
@@ -149,8 +194,23 @@
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: var(--bg-tertiary);
+  /* Glassmorphic background */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-md);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.03),
+    0 2px 8px rgba(0, 0, 0, 0.01);
+}
+
+[data-theme='dark'] .budget-amounts {
+  background: rgba(15, 7, 26, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .amount-item {
@@ -169,7 +229,8 @@
 }
 
 .amount-item .amount {
-  font-size: 1.125rem;
+  /* Fluid typography */
+  font-size: clamp(1rem, 2vw, 1.125rem);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -179,11 +240,44 @@
 }
 
 .amount-item .amount.positive {
-  color: var(--success-dark);
+  /* Mesh gradient for positive amounts */
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.8), transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(52, 211, 153, 0.9), transparent 50%),
+    linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--success-dark); /* Fallback */
+  filter: drop-shadow(0 1px 2px rgba(16, 185, 129, 0.3));
 }
 
 .amount-item .amount.negative {
   color: var(--error-dark);
+}
+
+/* Privacy mode overrides for budget amounts */
+.amount-item .amount.masked-number,
+.amount-item .amount.positive.masked-number,
+.amount-item .amount.negative.masked-number,
+.amount-item .amount.over.masked-number {
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  background: none !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.6;
+}
+
+[data-theme='dark'] .amount-item .amount.masked-number,
+[data-theme='dark'] .amount-item .amount.positive.masked-number,
+[data-theme='dark'] .amount-item .amount.negative.masked-number,
+[data-theme='dark'] .amount-item .amount.over.masked-number {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.5;
 }
 
 /* ================================
@@ -204,7 +298,8 @@
 .progress-header>span:first-child {
   font-weight: 700;
   color: var(--text-primary);
-  font-size: 1.0625rem;
+  /* Fluid typography */
+  font-size: clamp(1rem, 2vw, 1.0625rem);
 }
 
 .status {
@@ -218,14 +313,36 @@
 }
 
 .status.on-track {
-  background: var(--success-light);
+  /* Glassmorphic status badge */
+  background: rgba(16, 185, 129, 0.15);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   color: var(--success-dark);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .status.over {
-  background: var(--error-light);
+  /* Glassmorphic status badge for over budget */
+  background: rgba(239, 68, 68, 0.15);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   color: var(--error-dark);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
   animation: pulse 2s infinite;
+}
+
+[data-theme='dark'] .status.on-track {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+[data-theme='dark'] .status.over {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 @keyframes pulse {
@@ -240,30 +357,157 @@
   }
 }
 
-/* Progress Bar */
-.progress-bar {
+/* Progress Bar Wrapper - Contains euro sign and bar */
+.progress-bar-wrapper {
   width: 100%;
-  height: 12px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  position: relative;
 }
 
+/* Progress Bar - Neumorphic Soft UI Style */
+.progress-bar {
+  width: 100%;
+  height: 20px; /* Thick, pill-shaped track */
+  /* Neumorphic track - soft UI with depth */
+  background: #E5E7EB; /* Light gray base */
+  border-radius: 999px; /* Fully rounded, pill-shaped */
+  overflow: visible; /* Allow euro sign to be visible */
+  position: relative;
+  /* Soft UI depth effect - inset shadows for recessed look */
+  box-shadow: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.08),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(0, 0, 0, 0.05);
+  border: none;
+}
+
+/* Progress Fill - Contains the moving euro sign */
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--success) 0%, var(--success-dark) 100%);
-  border-radius: var(--radius-full);
-  /* Removed transition for static progress bar based on percentage */
   position: relative;
+  overflow: visible; /* Allow euro sign to extend beyond fill */
+  border-radius: 999px; /* Fully rounded to match track */
+  /* Vibrant Vitality Green gradient - smooth transition */
+  background: linear-gradient(90deg, #10B981 0%, #34D399 50%, #6EE7B7 100%);
+  /* Subtle outer glow for depth */
+  box-shadow: 
+    0 2px 8px rgba(16, 185, 129, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  /* Static - no animation */
 }
+
+.progress-fill.over {
+  /* Vibrant Coral gradient for over-budget - smooth transition */
+  background: linear-gradient(90deg, #EF4444 0%, #F87171 50%, #FCA5A5 100%);
+  box-shadow: 
+    0 2px 8px rgba(239, 68, 68, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  /* Static - no animation */
+}
+
+/* Euro Sign - Moves with progress */
+.progress-euro {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) translateX(50%);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+  /* Nice styling - subtle shadow and glow */
+  text-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 4px rgba(0, 0, 0, 0.2);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  /* Small circular background for better visibility */
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hide euro sign when progress is 0 or very small */
+.progress-fill[style*="width: 0%"] .progress-euro,
+.progress-fill[style*="width: 0.0%"] .progress-euro {
+  opacity: 0;
+  transform: translateY(-50%) translateX(50%) scale(0.5);
+}
+
+/* Show euro sign with nice animation when progress appears */
+.progress-fill[style*="width"]:not([style*="width: 0%"]) .progress-euro {
+  opacity: 1;
+  animation: euroPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes euroPopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) translateX(50%) scale(0.5);
+  }
+  50% {
+    transform: translateY(-50%) translateX(50%) scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) translateX(50%) scale(1);
+  }
+}
+
+/* Hover effect on progress bar */
+.progress-bar-wrapper:hover .progress-euro {
+  transform: translateY(-50%) translateX(50%) scale(1.15);
+  box-shadow: 
+    0 3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+[data-theme='dark'] .progress-bar {
+  background: #1F2937; /* Darker gray base for dark theme */
+  box-shadow: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.3),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .progress-euro {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='dark'] .progress-bar {
+  background: #1F2937; /* Darker gray base for dark theme */
+  box-shadow: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.3),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Progress Fill styles are now above with euro sign */
 
 .progress-fill::after {
   content: none;
 }
 
 .progress-fill.over {
-  background: linear-gradient(90deg, var(--error) 0%, var(--error-dark) 100%);
+  /* Vibrant Coral gradient for over-budget - smooth transition */
+  background: linear-gradient(90deg, #EF4444 0%, #F87171 50%, #FCA5A5 100%);
+  box-shadow: 
+    0 2px 8px rgba(239, 68, 68, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  /* Static - no animation */
 }
 
 /* ================================

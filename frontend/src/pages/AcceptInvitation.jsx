@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { partnershipService } from '../services/api'
 import { getStoredUser } from '../services/auth'
 import { FiCheckCircle, FiLoader } from 'react-icons/fi'
@@ -102,25 +103,79 @@ function AcceptInvitation() {
     }
   }
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1]
+      }
+    }
+  }
+
   // Show loading state while redirecting
   return (
     <div className="accept-invitation-container">
-      <div className="accept-invitation-card">
+      <motion.div 
+        className="accept-invitation-card"
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      >
         {status === 'success' ? (
-          <>
-            <FiCheckCircle className="status-icon success" />
-            <h1>Partnership Accepted!</h1>
-            <p>{message}</p>
-            <p className="redirect-message">Redirecting to partnership page...</p>
-          </>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <FiCheckCircle className="status-icon success" />
+            </motion.div>
+            <motion.h1 variants={itemVariants}>Partnership Accepted!</motion.h1>
+            <motion.p variants={itemVariants}>{message}</motion.p>
+            <motion.p 
+              className="redirect-message"
+              variants={itemVariants}
+            >
+              Redirecting to partnership page...
+            </motion.p>
+          </motion.div>
         ) : (
-          <>
-            <FiLoader className="loading-spinner" />
-            <h2>Redirecting to login...</h2>
-            <p>Please log in to accept the partnership invitation.</p>
-          </>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div
+              initial={{ opacity: 0, rotate: -180 }}
+              animate={{ opacity: 1, rotate: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <FiLoader className="loading-spinner" />
+            </motion.div>
+            <motion.h2 variants={itemVariants}>Redirecting to login...</motion.h2>
+            <motion.p variants={itemVariants}>Please log in to accept the partnership invitation.</motion.p>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }

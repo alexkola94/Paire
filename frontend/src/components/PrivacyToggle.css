@@ -176,17 +176,54 @@
    Global class for hiding financial amounts
    ============================================ */
 
-/* Blur effect for hidden numbers */
-.masked-number {
-    filter: blur(8px);
-    user-select: none;
-    pointer-events: none;
+/* Blur effect for hidden numbers - High specificity to override gradient text */
+.masked-number,
+.amount.masked-number,
+.transaction-amount.masked-number,
+.amount-value.masked-number,
+.summary-value.masked-number,
+.summary-detail.masked-number,
+.category-amount.masked-number,
+.stat-value.masked-number,
+.expense-amount.masked-number,
+.income-amount.masked-number,
+.timeline-card-amount.masked-number,
+.budget-values.masked-number,
+.saving-values.masked-number {
+    /* Override any background-clip to ensure blur works */
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    background: none !important;
+    color: var(--text-primary) !important;
+    /* Strong blur to hide numbers */
+    filter: blur(12px) !important;
+    user-select: none !important;
+    pointer-events: none !important;
     transition: filter 0.3s ease;
+    /* Ensure it's visible but blurred */
+    opacity: 0.6;
 }
 
 /* Remove blur on hover for quick peek (optional) */
-.masked-number:hover {
-    filter: blur(4px);
+.masked-number:hover,
+.amount.masked-number:hover,
+.transaction-amount.masked-number:hover {
+    filter: blur(6px) !important;
+    opacity: 0.8;
+}
+
+/* Dark theme adjustments */
+[data-theme='dark'] .masked-number,
+[data-theme='dark'] .amount.masked-number,
+[data-theme='dark'] .transaction-amount.masked-number,
+[data-theme='dark'] .amount-value.masked-number,
+[data-theme='dark'] .summary-value.masked-number,
+[data-theme='dark'] .summary-detail.masked-number {
+    -webkit-text-fill-color: var(--text-primary) !important;
+    color: var(--text-primary) !important;
+    filter: blur(12px) !important;
+    opacity: 0.5;
 }
 
 /* Alternative: Replace with dots/asterisks instead of blur */

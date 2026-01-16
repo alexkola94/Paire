@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import {
   FiAward, FiStar, FiTarget, FiTrendingDown, FiTrendingUp,
   FiUsers, FiCalendar, FiCheckCircle, FiLock
@@ -199,16 +200,39 @@ function Achievements() {
       </div>
 
       {/* Achievements Grid */}
-      <div className="achievements-grid">
+      <motion.div 
+        className="achievements-grid"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
         {filteredAchievements.map((item) => {
           const achievement = item.achievement
           const isUnlocked = item.isUnlocked
           const progress = item.progress || 0
 
           return (
-            <div
+            <motion.div
               key={achievement.id}
               className={`achievement-card ${isUnlocked ? 'unlocked' : 'locked'} ${getRarityColor(achievement.rarity)}`}
+              variants={{
+                hidden: { opacity: 0, y: 20, scale: 0.95 },
+                visible: { 
+                  opacity: 1, 
+                  y: 0, 
+                  scale: 1,
+                  transition: {
+                    duration: 0.5,
+                    ease: [0.4, 0, 0.2, 1]
+                  }
+                }
+              }}
             >
               <div className="achievement-icon-wrapper">
                 {isUnlocked ? (
@@ -247,11 +271,15 @@ function Achievements() {
                       <span>{t('common.progress', 'Progress')}</span>
                       <span>{Math.round(progress)}%</span>
                     </div>
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{ width: `${progress}%` }}
-                      ></div>
+                    <div className="progress-bar-wrapper">
+                      <div className="progress-bar">
+                        <div
+                          className="progress-fill"
+                          style={{ width: `${progress}%` }}
+                        >
+                          <span className="progress-euro">€</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -263,10 +291,10 @@ function Achievements() {
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           )
         })}
-      </div>
+      </motion.div>
 
       {filteredAchievements.length === 0 && (
         <div className="achievements-empty">

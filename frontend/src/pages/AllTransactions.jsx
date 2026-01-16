@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
   FiTrendingUp,
   FiTrendingDown,
@@ -365,21 +366,51 @@ function AllTransactions() {
         </div>
       ) : (
         /* List View */
-        <div className="card transactions-container">
-          <div className="transactions-list">
+        <motion.div 
+          className="card transactions-container"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+        >
+          <motion.div 
+            className="transactions-list"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.05
+                }
+              }
+            }}
+          >
             {displayedTransactions.map((transaction) => (
-              <TransactionItem
+              <motion.div
                 key={transaction.id}
-                transaction={transaction}
-                formatCurrency={formatCurrency}
-                t={t}
-                onEdit={() => openEditForm(transaction)}
-                onDelete={() => openDeleteModal(transaction.id)}
-                onClick={() => setDetailModal(transaction)}
-                isPrivate={isPrivate}
-              />
+                variants={{
+                  hidden: { opacity: 0, x: -10 },
+                  visible: { 
+                    opacity: 1, 
+                    x: 0,
+                    transition: {
+                      duration: 0.4,
+                      ease: [0.4, 0, 0.2, 1]
+                    }
+                  }
+                }}
+              >
+                <TransactionItem
+                  transaction={transaction}
+                  formatCurrency={formatCurrency}
+                  t={t}
+                  onEdit={() => openEditForm(transaction)}
+                  onDelete={() => openDeleteModal(transaction.id)}
+                  onClick={() => setDetailModal(transaction)}
+                  isPrivate={isPrivate}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
@@ -409,7 +440,7 @@ function AllTransactions() {
               </button>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Edit Form Modal */}

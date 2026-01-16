@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { currencyService } from '../services/api'
 import { FiRefreshCw, FiArrowRight, FiInfo, FiTrendingUp } from 'react-icons/fi'
 import LogoLoader from '../components/LogoLoader'
@@ -86,14 +87,53 @@ export default function CurrencyCalculator() {
         return <LogoLoader fullScreen />
     }
 
+    // Animation variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2
+            }
+        }
+    }
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.5,
+                ease: [0.4, 0, 0.2, 1]
+            }
+        }
+    }
+
     return (
-        <div className="currency-calculator-page">
-            <div className="currency-header">
+        <motion.div 
+            className="currency-calculator-page"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
+            <motion.div 
+                className="currency-header"
+                variants={itemVariants}
+                initial="hidden"
+                animate="visible"
+            >
                 <h1>{t('currencyCalculator.title')}</h1>
                 <p>{t('currencyCalculator.subtitle')}</p>
-            </div>
+            </motion.div>
 
-            <div className="currency-converter-card">
+            <motion.div 
+                className="currency-converter-card"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+            >
                 <form onSubmit={handleConvert} className="converter-form">
 
                     <div className="input-group">
@@ -183,7 +223,12 @@ export default function CurrencyCalculator() {
                 )}
 
                 {result && (
-                    <div className="result-container">
+                    <motion.div 
+                        className="result-container"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                    >
                         <div className="result-from">
                             {Number(amount).toLocaleString()} {currencies[fromCurrency]} =
                         </div>
@@ -194,32 +239,51 @@ export default function CurrencyCalculator() {
                             <FiInfo size={16} />
                             {t('currencyCalculator.rateInfo', { from: fromCurrency, rate: (result / amount).toFixed(4), to: toCurrency })}
                         </div>
-                    </div>
+                    </motion.div>
                 )}
-            </div>
+            </motion.div>
 
             {popularRates && (
-                <div className="popular-currencies">
-                    <div className="popular-header">
-                        <FiTrendingUp size={24} color="#6366f1" />
+                <motion.div 
+                    className="popular-currencies"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                    <motion.div 
+                        className="popular-header"
+                        variants={itemVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        <FiTrendingUp size={24} color="#8B5CF6" />
                         <span>{t('currencyCalculator.popularRates', { currency: fromCurrency })}</span>
-                    </div>
-                    <div className="rates-grid">
+                    </motion.div>
+                    <motion.div 
+                        className="rates-grid"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
                         {Object.entries(popularRates)
                             .filter(([code]) => ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY'].includes(code) && code !== fromCurrency)
                             .slice(0, 8)
                             .map(([code, rate]) => (
-                                <div key={code} className="rate-card">
+                                <motion.div 
+                                    key={code} 
+                                    className="rate-card"
+                                    variants={itemVariants}
+                                >
                                     <div className="rate-header">
                                         <span className="currency-code">{code}</span>
                                         <span className="rate-value">{Number(rate).toFixed(4)}</span>
                                     </div>
                                     <div className="rate-name">{currencies[code]}</div>
-                                </div>
+                                </motion.div>
                             ))}
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
-        </div>
+        </motion.div>
     )
 }

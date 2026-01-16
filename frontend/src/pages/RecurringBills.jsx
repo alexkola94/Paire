@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { CATEGORIES } from '../constants/categories'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
@@ -749,8 +750,32 @@ function RecurringBills() {
 
       {/* Summary Cards */}
       {summary && (
-        <div className="summary-grid">
-          <div className="summary-card">
+        <motion.div 
+          className="summary-grid"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
+          <motion.div 
+            className="summary-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="summary-icon total">
               <FiRepeat />
             </div>
@@ -761,9 +786,22 @@ function RecurringBills() {
                 {summary.inactiveBills} {t('recurringBills.inactive')}
               </p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="summary-card">
+          <motion.div 
+            className="summary-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="summary-icon monthly">
               <span style={{ fontSize: '24px', fontWeight: 'bold' }}>€</span>
             </div>
@@ -776,9 +814,22 @@ function RecurringBills() {
                 {t('recurringBills.monthlyTotal')}: {formatCurrency(summary.totalMonthlyAmount)}
               </p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="summary-card">
+          <motion.div 
+            className="summary-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="summary-icon upcoming" style={{ background: 'var(--info-color-light)', color: 'var(--info-color)' }}>
               <FiCalendar />
             </div>
@@ -789,9 +840,22 @@ function RecurringBills() {
                 {t('recurringBills.forecast') || "Projected"}
               </p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="summary-card">
+          <motion.div 
+            className="summary-card"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { 
+                opacity: 1, 
+                y: 0,
+                transition: {
+                  duration: 0.5,
+                  ease: [0.4, 0, 0.2, 1]
+                }
+              }
+            }}
+          >
             <div className="summary-icon upcoming">
               <FiClock />
             </div>
@@ -802,8 +866,8 @@ function RecurringBills() {
                 {summary.overdueBills} {t('recurringBills.overdue')}
               </p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
       {/* Calendar View */}
@@ -829,10 +893,34 @@ function RecurringBills() {
             <h2 className="section-title">
               <FiAlertCircle /> {t('recurringBills.overdueBills')} ({overdueBills.length})
             </h2>
-            <div className="bills-grid">
+            <motion.div 
+              className="bills-grid"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: {
+                  transition: {
+                    staggerChildren: 0.05
+                  }
+                }
+              }}
+            >
               {overdueBills.map(bill => (
-                <BillCard
+                <motion.div
                   key={bill.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0,
+                      transition: {
+                        duration: 0.4,
+                        ease: [0.4, 0, 0.2, 1]
+                      }
+                    }
+                  }}
+                >
+                  <BillCard
                   bill={bill}
                   onEdit={handleEdit}
                   onDelete={openDeleteModal}
@@ -849,8 +937,9 @@ function RecurringBills() {
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                   isPrivate={isPrivate}
                 />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -860,10 +949,34 @@ function RecurringBills() {
             <h2 className="section-title">
               <FiClock /> {t('recurringBills.dueThisMonth') || "Due This Month"} ({dueThisMonthBills.length})
             </h2>
-            <div className="bills-grid">
+            <motion.div 
+              className="bills-grid"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: {
+                  transition: {
+                    staggerChildren: 0.05
+                  }
+                }
+              }}
+            >
               {dueThisMonthBills.map(bill => (
-                <BillCard
+                <motion.div
                   key={bill.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0,
+                      transition: {
+                        duration: 0.4,
+                        ease: [0.4, 0, 0.2, 1]
+                      }
+                    }
+                  }}
+                >
+                  <BillCard
                   bill={bill}
                   onEdit={handleEdit}
                   onDelete={openDeleteModal}
@@ -880,8 +993,9 @@ function RecurringBills() {
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                   isPrivate={isPrivate}
                 />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -891,10 +1005,35 @@ function RecurringBills() {
             <h2 className="section-title" style={{ color: 'var(--success-color)' }}>
               <FiCheck /> {t('recurringBills.paidThisMonth') || "Paid This Month"} ({paidThisMonthBills.length})
             </h2>
-            <div className="bills-grid" style={{ opacity: 0.8 }}>
+            <motion.div 
+              className="bills-grid" 
+              style={{ opacity: 0.8 }}
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: {
+                  transition: {
+                    staggerChildren: 0.05
+                  }
+                }
+              }}
+            >
               {paidThisMonthBills.map(bill => (
-                <BillCard
+                <motion.div
                   key={bill.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0,
+                      transition: {
+                        duration: 0.4,
+                        ease: [0.4, 0, 0.2, 1]
+                      }
+                    }
+                  }}
+                >
+                  <BillCard
                   bill={bill}
                   onEdit={handleEdit}
                   onDelete={openDeleteModal}
@@ -911,8 +1050,9 @@ function RecurringBills() {
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                   isPrivate={isPrivate}
                 />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -922,10 +1062,34 @@ function RecurringBills() {
             <h2 className="section-title">
               <FiCalendar /> {t('recurringBills.futureBills') || "Upcoming & Future"} ({futureBills.length})
             </h2>
-            <div className="bills-grid">
+            <motion.div 
+              className="bills-grid"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: {
+                  transition: {
+                    staggerChildren: 0.05
+                  }
+                }
+              }}
+            >
               {displayedLaterBills.map(bill => (
-                <BillCard
+                <motion.div
                   key={bill.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0,
+                      transition: {
+                        duration: 0.4,
+                        ease: [0.4, 0, 0.2, 1]
+                      }
+                    }
+                  }}
+                >
+                  <BillCard
                   bill={bill}
                   onEdit={handleEdit}
                   onDelete={openDeleteModal}
@@ -942,8 +1106,9 @@ function RecurringBills() {
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                   isPrivate={isPrivate}
                 />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (

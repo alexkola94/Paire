@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiTrash2, FiSearch, FiZoomIn, FiDownload, FiX } from 'react-icons/fi'
 import { transactionService, recurringBillService } from '../services/api'
 import { ALL_CATEGORIES } from '../constants/categories'
@@ -222,9 +223,34 @@ function Receipts() {
                     <p>{t('receipts.noReceipts', 'No receipts found.')}</p>
                 </div>
             ) : (
-                <div className="receipts-grid">
+                <motion.div 
+                  className="receipts-grid"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    visible: {
+                      transition: {
+                        staggerChildren: 0.05
+                      }
+                    }
+                  }}
+                >
                     {filteredReceipts.map(receipt => (
-                        <div key={receipt.id} className="card receipt-card">
+                        <motion.div 
+                          key={receipt.id} 
+                          className="card receipt-card"
+                          variants={{
+                            hidden: { opacity: 0, scale: 0.9 },
+                            visible: { 
+                              opacity: 1, 
+                              scale: 1,
+                              transition: {
+                                duration: 0.4,
+                                ease: [0.4, 0, 0.2, 1]
+                              }
+                            }
+                          }}
+                        >
                             <div className="receipt-image-container" onClick={() => setViewModal(receipt)}>
                                 {receipt.attachmentUrl && receipt.attachmentUrl.toLowerCase().endsWith('.pdf') ? (
                                     <div className="pdf-placeholder">
@@ -285,9 +311,9 @@ function Receipts() {
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
-                </div>
+                </motion.div>
             )}
 
             {/* Delete Modal */}

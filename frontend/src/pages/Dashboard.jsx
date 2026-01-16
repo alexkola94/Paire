@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
   FiTrendingUp,
   FiTrendingDown,
@@ -401,9 +402,34 @@ function Dashboard() {
         </div>
 
       {/* Summary Cards */}
-      <div className="summary-cards">
+      <motion.div 
+        className="summary-cards"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
         {/* Income Card */}
-        <div className="summary-card income-card glass-card">
+        <motion.div 
+          className="summary-card income-card glass-card"
+          variants={{
+            hidden: { opacity: 0, y: 20, scale: 0.95 },
+            visible: { 
+              opacity: 1, 
+              y: 0, 
+              scale: 1,
+              transition: {
+                duration: 0.5,
+                ease: [0.4, 0, 0.2, 1]
+              }
+            }
+          }}
+        >
           <div className="card-icon">
             <FiTrendingUp size={32} />
           </div>
@@ -413,10 +439,24 @@ function Dashboard() {
               <CountUpAnimation value={displayedSummary.income} formatter={formatCurrency} />
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Expenses Card */}
-        <div className="summary-card expense-card glass-card">
+        <motion.div 
+          className="summary-card expense-card glass-card"
+          variants={{
+            hidden: { opacity: 0, y: 20, scale: 0.95 },
+            visible: { 
+              opacity: 1, 
+              y: 0, 
+              scale: 1,
+              transition: {
+                duration: 0.5,
+                ease: [0.4, 0, 0.2, 1]
+              }
+            }
+          }}
+        >
           <div className="card-icon">
             <FiTrendingDown size={32} />
           </div>
@@ -426,10 +466,24 @@ function Dashboard() {
               <CountUpAnimation value={displayedSummary.expenses} formatter={formatCurrency} />
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Balance Card */}
-        <div className="summary-card balance-card glass-card">
+        <motion.div 
+          className="summary-card balance-card glass-card"
+          variants={{
+            hidden: { opacity: 0, y: 20, scale: 0.95 },
+            visible: { 
+              opacity: 1, 
+              y: 0, 
+              scale: 1,
+              transition: {
+                duration: 0.5,
+                ease: [0.4, 0, 0.2, 1]
+              }
+            }
+          }}
+        >
           <div className="card-icon">
             <span style={{ fontSize: '32px', fontWeight: 'bold' }}>€</span>
           </div>
@@ -439,11 +493,17 @@ function Dashboard() {
               <CountUpAnimation value={displayedSummary.balance} formatter={formatCurrency} />
             </p>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Budget Progress Section - Phase 4 Feature */}
-      <div className="budget-section glass-card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+      <motion.div 
+        className="budget-section glass-card" 
+        style={{ padding: '1.25rem', marginBottom: '1.5rem' }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FiTarget /> {t('navigation.budgets')}
@@ -492,10 +552,16 @@ function Dashboard() {
             {t('budgets.noBudgets') || "No active budgets. Create one to track spending!"}
           </p>
         )}
-      </div>
+      </motion.div>
 
       {/* Saving Goals Section */}
-      <div className="saving-goals-section glass-card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+      <motion.div 
+        className="saving-goals-section glass-card" 
+        style={{ padding: '1.25rem', marginBottom: '1.5rem' }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FiPieChart /> {t('dashboard.savingGoals', 'Saving Goals')}
@@ -522,32 +588,77 @@ function Dashboard() {
             {t('dashboard.noSavingGoals', "Start saving for your dreams! Create a goal.")}
           </p>
         )}
-      </div>
+      </motion.div>
 
-      <div className="quick-access-section" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-        <Link
-          to="/currency-calculator"
-          className="quick-access-btn"
+      <motion.div 
+        className="quick-access-section" 
+        style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, x: -20 },
+            visible: { 
+              opacity: 1, 
+              x: 0,
+              transition: {
+                duration: 0.5,
+                ease: [0.4, 0, 0.2, 1]
+              }
+            }
+          }}
         >
-          <div className="quick-access-icon">
-            €
-          </div>
-          <span>{t('navigation.currencyCalculator')}</span>
-        </Link>
+          <Link
+            to="/currency-calculator"
+            className="quick-access-btn"
+          >
+            <div className="quick-access-icon">
+              €
+            </div>
+            <span>{t('navigation.currencyCalculator')}</span>
+          </Link>
+        </motion.div>
 
-        <Link
-          to="/economic-news"
-          className="quick-access-btn"
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, x: -20 },
+            visible: { 
+              opacity: 1, 
+              x: 0,
+              transition: {
+                duration: 0.5,
+                ease: [0.4, 0, 0.2, 1]
+              }
+            }
+          }}
         >
-          <div className="quick-access-icon">
-            <FiFileText size={20} />
-          </div>
-          <span>{t('navigation.economicNews')}</span>
-        </Link>
-      </div>
+          <Link
+            to="/economic-news"
+            className="quick-access-btn"
+          >
+            <div className="quick-access-icon">
+              <FiFileText size={20} />
+            </div>
+            <span>{t('navigation.economicNews')}</span>
+          </Link>
+        </motion.div>
+      </motion.div>
 
       {/* Recent Transactions */}
-      <div className="card recent-transactions glass-card">
+      <motion.div 
+        className="card recent-transactions glass-card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="card-header flex-between">
           <h2>{t('dashboard.recentTransactions')}</h2>
           <Link to="/transactions" className="view-all-link">
@@ -572,24 +683,49 @@ function Dashboard() {
           </div>
         ) : (
           <>
-            <div className="transactions-list">
+            <motion.div 
+              className="transactions-list"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: {
+                  transition: {
+                    staggerChildren: 0.05
+                  }
+                }
+              }}
+            >
               {displayedTransactions.length > 0 ? (
-                displayedTransactions.map((transaction) => (
-                  <TransactionItem
+                displayedTransactions.map((transaction, index) => (
+                  <motion.div
                     key={transaction.id}
-                    transaction={transaction}
-                    formatCurrency={formatCurrency}
-                    t={t}
-                    onClick={() => setDetailModal(transaction)}
-                    isPrivate={isPrivate}
-                  />
+                    variants={{
+                      hidden: { opacity: 0, x: -10 },
+                      visible: { 
+                        opacity: 1, 
+                        x: 0,
+                        transition: {
+                          duration: 0.4,
+                          ease: [0.4, 0, 0.2, 1]
+                        }
+                      }
+                    }}
+                  >
+                    <TransactionItem
+                      transaction={transaction}
+                      formatCurrency={formatCurrency}
+                      t={t}
+                      onClick={() => setDetailModal(transaction)}
+                      isPrivate={isPrivate}
+                    />
+                  </motion.div>
                 ))
               ) : (
                 <p style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   {t('common.noDataFound', 'No transactions found for this filter.')}
                 </p>
               )}
-            </div>
+            </motion.div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
@@ -619,7 +755,7 @@ function Dashboard() {
             )}
           </>
         )}
-      </div>
+      </motion.div>
       </div> {/* End dashboard-content */}
 
       {/* Transaction Detail Modal */}

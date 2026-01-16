@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiZoomIn, FiDownload, FiX } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
@@ -532,15 +533,38 @@ function Expenses() {
           <p>{t('common.noResults', 'No expenses found matching your search.')}</p>
         </div>
       ) : (
-        <div className="expenses-grid">
+        <motion.div 
+          className="expenses-grid"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.08
+              }
+            }
+          }}
+        >
           {displayedExpenses.map((expense) => (
-            <div 
+            <motion.div 
               key={expense.id} 
               className="expense-card card clickable"
               onClick={() => setDetailModal(expense)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && setDetailModal(expense)}
+              variants={{
+                hidden: { opacity: 0, y: 20, scale: 0.95 },
+                visible: { 
+                  opacity: 1, 
+                  y: 0, 
+                  scale: 1,
+                  transition: {
+                    duration: 0.5,
+                    ease: [0.4, 0, 0.2, 1]
+                  }
+                }
+              }}
             >
               <div className="expense-header">
                 <div className="expense-category">
@@ -606,9 +630,9 @@ function Expenses() {
                   <FiTrash2 size={18} />
                 </button>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Pagination Controls */}

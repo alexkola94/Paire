@@ -308,23 +308,45 @@ const BankStatementImport = ({ onImportSuccess }) => {
           padding: 1rem;
         }
         .drop-zone {
-          border: 2px dashed var(--text-light);
-          border-radius: 12px;
+          border: 2px dashed rgba(139, 92, 246, 0.3);
+          border-radius: 24px;
           padding: 2rem;
           text-align: center;
           cursor: pointer;
-          transition: all 0.2s;
-          background: var(--bg-secondary);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          /* Enhanced glassmorphism */
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          /* Multi-layered box shadows */
+          box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.08),
+            0 4px 16px rgba(0, 0, 0, 0.04),
+            0 2px 8px rgba(0, 0, 0, 0.02),
+            0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+        }
+        [data-theme='dark'] .drop-zone {
+          background: rgba(15, 7, 26, 0.4);
+          border-color: rgba(139, 92, 246, 0.2);
+          box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.2),
+            0 4px 16px rgba(0, 0, 0, 0.1),
+            0 2px 8px rgba(0, 0, 0, 0.05),
+            0 0 0 1px rgba(255, 255, 255, 0.02) inset;
         }
         .drop-zone:hover, .drop-zone.drag-over {
-          border-color: var(--success);
-          background: var(--bg-secondary);
-          opacity: 0.9;
+          border-color: #8B5CF6;
+          transform: translateY(-4px);
+          box-shadow: 
+            0 16px 48px rgba(139, 92, 246, 0.2),
+            0 8px 24px rgba(139, 92, 246, 0.15),
+            0 4px 12px rgba(139, 92, 246, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.3) inset;
         }
         .drop-zone.has-file {
           border-style: solid;
-          border-color: var(--success);
-          background: var(--bg-secondary);
+          border-color: #10B981;
+          background: rgba(16, 185, 129, 0.1);
         }
         .upload-icon {
           color: var(--text-light);
@@ -385,14 +407,24 @@ const BankStatementImport = ({ onImportSuccess }) => {
           border-radius: 8px;
         }
         .import-result.success {
-          background-color: rgba(46, 204, 113, 0.15);
-          border: 1px solid var(--success);
-          color: var(--success-dark);
+          /* Enhanced glassmorphism with Vitality Green */
+          background: rgba(16, 185, 129, 0.15);
+          backdrop-filter: blur(10px) saturate(180%);
+          -webkit-backdrop-filter: blur(10px) saturate(180%);
+          border: 1px solid rgba(16, 185, 129, 0.3);
+          border-radius: 16px;
+          color: #10B981;
+          box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
         }
         .import-result.error {
-          background-color: rgba(231, 76, 60, 0.15);
-          border: 1px solid var(--error);
-          color: var(--error);
+          /* Enhanced glassmorphism with Coral */
+          background: rgba(239, 68, 68, 0.15);
+          backdrop-filter: blur(10px) saturate(180%);
+          -webkit-backdrop-filter: blur(10px) saturate(180%);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 16px;
+          color: #EF4444;
+          box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
         }
         .result-content {
           display: flex;
@@ -460,10 +492,23 @@ const BankStatementImport = ({ onImportSuccess }) => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: var(--bg-tertiary);
+          /* Enhanced glassmorphism */
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px) saturate(180%);
+          -webkit-backdrop-filter: blur(10px) saturate(180%);
           padding: 0.8rem;
-          border-radius: 8px;
-          border: 1px solid var(--glass-border);
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        [data-theme='dark'] .history-item {
+          background: rgba(15, 7, 26, 0.3);
+          border-color: rgba(255, 255, 255, 0.05);
+        }
+        .history-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+          border-color: rgba(139, 92, 246, 0.3);
         }
 
         .history-info {
@@ -493,19 +538,25 @@ const BankStatementImport = ({ onImportSuccess }) => {
           align-items: center;
           gap: 6px;
           padding: 6px 12px;
-          background: var(--bg-secondary);
-          border: 1px solid var(--error-dark);
-          color: var(--error);
-          border-radius: 6px;
+          /* Enhanced glassmorphism */
+          background: rgba(239, 68, 68, 0.1);
+          backdrop-filter: blur(10px) saturate(180%);
+          -webkit-backdrop-filter: blur(10px) saturate(180%);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #EF4444;
+          border-radius: 12px;
           cursor: pointer;
           font-size: 0.85rem;
-          transition: all 0.2s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
         }
 
         .revert-btn:hover {
-          background: var(--error);
+          background: linear-gradient(135deg, #EF4444 0%, #F87171 50%, #FCA5A5 100%);
           color: white;
-          border-color: var(--error);
+          border-color: #EF4444;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
       `}</style>
         </div>

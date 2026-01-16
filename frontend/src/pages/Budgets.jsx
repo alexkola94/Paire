@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { CATEGORIES } from '../constants/categories'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiTarget, FiPlus, FiEdit, FiTrash2, FiSave, FiX, FiAlertCircle, FiCheckCircle } from 'react-icons/fi'
 import { budgetService, transactionService } from '../services/api'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -362,7 +363,18 @@ function Budgets() {
           </button>
         </div>
       ) : (
-        <div className="budgets-grid">
+        <motion.div 
+          className="budgets-grid"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
           {budgets.map((budget) => {
             const spent = calculateSpent(budget.category)
             const remaining = budget.amount - spent
@@ -370,7 +382,22 @@ function Budgets() {
             const isOverBudget = spent > budget.amount
 
             return (
-              <div key={budget.id} className={`budget-card card ${isOverBudget ? 'over-budget' : ''}`}>
+              <motion.div 
+                key={budget.id} 
+                className={`budget-card card ${isOverBudget ? 'over-budget' : ''}`}
+                variants={{
+                  hidden: { opacity: 0, y: 20, scale: 0.95 },
+                  visible: { 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1,
+                    transition: {
+                      duration: 0.5,
+                      ease: [0.4, 0, 0.2, 1]
+                    }
+                  }
+                }}
+              >
                 <div className="budget-header">
                   <div className="budget-category">
                     <h3>{t(`categories.${(budget.category || '').toLowerCase()}`)}</h3>
@@ -429,18 +456,22 @@ function Budgets() {
                       </span>
                     )}
                   </div>
-                  <div className="progress-bar">
-                    <div
-                      className={`progress-fill ${isOverBudget ? 'over' : ''}`}
-                      style={{ width: `${Math.min(progress, 100)}%` }}
-                    />
+                  <div className="progress-bar-wrapper">
+                    <div className="progress-bar">
+                      <div
+                        className={`progress-fill ${isOverBudget ? 'over' : ''}`}
+                        style={{ width: `${Math.min(progress, 100)}%` }}
+                      >
+                        <span className="progress-euro">€</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* Delete Confirmation Modal */}

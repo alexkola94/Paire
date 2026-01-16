@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDown, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { loanService, loanPaymentService } from '../services/api'
 import { format } from 'date-fns'
@@ -563,14 +564,40 @@ function Loans() {
           </button>
         </div>
       ) : (
-        <div className="loans-grid">
+        <motion.div 
+          className="loans-grid"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
           {displayedLoans.map((loan) => {
             // Handle both camelCase and snake_case property names
             const isGiven = (loan.lentBy || loan.lent_by) === 'Me'
             const partyName = isGiven ? (loan.borrowedBy || loan.borrowed_by) : (loan.lentBy || loan.lent_by)
 
             return (
-              <div key={loan.id} className={`loan-card card ${isGiven ? 'given' : 'received'}`}>
+              <motion.div 
+                key={loan.id} 
+                className={`loan-card card ${isGiven ? 'given' : 'received'}`}
+                variants={{
+                  hidden: { opacity: 0, y: 20, scale: 0.95 },
+                  visible: { 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1,
+                    transition: {
+                      duration: 0.5,
+                      ease: [0.4, 0, 0.2, 1]
+                    }
+                  }
+                }}
+              >
                 <div className="loan-header">
                   <div className="loan-type-badge">
                     {isGiven ? t('loans.moneyLentShort') : t('loans.moneyBorrowedShort')}
@@ -653,10 +680,10 @@ function Loans() {
                     <FiTrash2 size={18} />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* Pagination Controls */}
