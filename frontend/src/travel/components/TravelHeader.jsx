@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { FiRefreshCw, FiMapPin, FiCalendar } from 'react-icons/fi'
 import { RiPlaneLine } from 'react-icons/ri'
 import { useTravelMode } from '../context/TravelModeContext'
+import TripSelector from './TripSelector'
 import '../styles/TravelLayout.css'
 
 /**
@@ -111,29 +112,9 @@ const TravelHeader = memo(({ trip, syncStatus }) => {
           </motion.span>
         </motion.button>
 
-        {/* Trip info - center */}
+        {/* Trip selector - center */}
         <div className="travel-header-info">
-          {trip ? (
-            <>
-              <h1 className="trip-name">{trip.name || trip.destination}</h1>
-              <div className="trip-meta">
-                {trip.destination && (
-                  <span className="trip-destination">
-                    <FiMapPin size={14} />
-                    {trip.destination}
-                  </span>
-                )}
-                {dateRange && (
-                  <span className="trip-dates">
-                    <FiCalendar size={14} />
-                    {dateRange}
-                  </span>
-                )}
-              </div>
-            </>
-          ) : (
-            <h1 className="trip-name">{t('travel.common.noTrip', 'No Trip Selected')}</h1>
-          )}
+          <TripSelector />
         </div>
 
         {/* Sync status indicator */}

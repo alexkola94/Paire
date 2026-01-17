@@ -13,6 +13,7 @@ import {
 import { useTravelMode } from '../context/TravelModeContext'
 import { travelExpenseService, packingService, itineraryService } from '../services/travelApi'
 import TripSetupWizard from '../components/TripSetupWizard'
+import ConfirmationModal from '../../components/ConfirmationModal'
 import '../styles/TravelHome.css'
 
 // Gentle animation variants - slower, smoother for calm feeling
@@ -45,13 +46,29 @@ const cardVariants = {
  */
 const TravelHome = ({ trip, onNavigate }) => {
   const { t } = useTranslation()
-  const { selectTrip } = useTravelMode()
+  const { selectTrip, loadTrips } = useTravelMode()
   const [showSetup, setShowSetup] = useState(false)
+  const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [budgetSummary, setBudgetSummary] = useState(null)
   const [packingProgress, setPackingProgress] = useState(null)
   const [upcomingCount, setUpcomingCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [newTrip, setNewTrip] = useState(null)
+  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false)
+
+  // Listen for create trip event from TripSelector
+  useEffect(() => {
+    const handleCreateTrip = () => {
+      setIsCreatingNew(true)
+      setShowSetup(true)
+    }
+
+    window.addEventListener('travel:create-trip', handleCreateTrip)
+    return () => {
+      window.removeEventListener('travel:create-trip', handleCreateTrip)
+    }
+  }, [])
 
   // Get time-based greeting
   const getGreeting = useCallback(() => {
@@ -127,10 +144,40 @@ const TravelHome = ({ trip, onNavigate }) => {
   const countdown = getDaysCountdown()
 
   // Handle trip creation
-  const handleTripCreated = async (newTrip) => {
-    selectTrip(newTrip)
+  const handleTripCreated = async (createdTrip) => {
     setShowSetup(false)
+    setIsCreatingNew(false)
+    
+    // Refresh trips list to include the new trip
+    await loadTrips()
+    
+    // If there's already an active trip, ask user if they want to switch
+    if (trip?.id) {
+      setNewTrip(createdTrip)
+      setShowSwitchConfirm(true)
+    } else {
+      // No active trip, automatically switch to the new one
+      selectTrip(createdTrip)
+    }
   }
+
+  // Handle switch confirmation
+  const handleSwitchToNewTrip = useCallback(() => {
+    if (newTrip) {
+      selectTrip(newTrip)
+    }
+    setNewTrip(null)
+    setShowSwitchConfirm(false)
+  }, [newTrip, selectTrip])
+
+  // Handle keep current trip
+  const handleKeepCurrentTrip = useCallback(() => {
+    // Ensure we keep the current trip active and refresh trips list
+    setNewTrip(null)
+    setShowSwitchConfirm(false)
+    // Refresh trips list to ensure it includes the new trip
+    loadTrips().catch(err => console.error('Error refreshing trips:', err))
+  }, [loadTrips])
 
   // If no trip, show a calming create trip prompt
   if (!trip && !loading) {
@@ -149,7 +196,10 @@ const TravelHome = ({ trip, onNavigate }) => {
           <p>{t('travel.home.noTripDescription', 'Start planning your journey')}</p>
           <motion.button
             className="travel-btn calm-btn"
-            onClick={() => setShowSetup(true)}
+            onClick={() => {
+              setIsCreatingNew(true)
+              setShowSetup(true)
+            }}
             whileTap={{ scale: 0.98 }}
           >
             <FiPlus size={18} />
@@ -177,13 +227,30 @@ const TravelHome = ({ trip, onNavigate }) => {
       {/* Greeting - calm, personal touch */}
       <motion.div className="greeting-section" variants={cardVariants}>
         <span className="greeting-text">{getGreeting()}</span>
-        <button
-          className="edit-trip-btn"
-          onClick={() => setShowSetup(true)}
-          aria-label={t('travel.home.editTrip', 'Edit Trip')}
-        >
-          <FiEdit3 size={16} />
-        </button>
+        <div className="greeting-actions">
+          <button
+            className="create-trip-btn"
+            onClick={() => {
+              setIsCreatingNew(true)
+              setShowSetup(true)
+            }}
+            aria-label={t('travel.trips.selector.createNew', 'Create New Trip')}
+            title={t('travel.trips.selector.createNew', 'Create New Trip')}
+          >
+            <FiPlus size={16} />
+          </button>
+          <button
+            className="edit-trip-btn"
+            onClick={() => {
+              setIsCreatingNew(false)
+              setShowSetup(true)
+            }}
+            aria-label={t('travel.home.editTrip', 'Edit Trip')}
+            title={t('travel.home.editTrip', 'Edit Trip')}
+          >
+            <FiEdit3 size={16} />
+          </button>
+        </div>
       </motion.div>
 
       {/* Main Focus: Countdown - simple, centered */}
@@ -332,11 +399,26 @@ const TravelHome = ({ trip, onNavigate }) => {
       {/* Trip Setup Wizard Modal */}
       {showSetup && (
         <TripSetupWizard
-          trip={trip}
-          onClose={() => setShowSetup(false)}
+          trip={isCreatingNew ? null : trip}
+          onClose={() => {
+            setShowSetup(false)
+            setIsCreatingNew(false)
+          }}
           onSave={handleTripCreated}
         />
       )}
+
+      {/* Switch Trip Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showSwitchConfirm}
+        onClose={handleKeepCurrentTrip}
+        onConfirm={handleSwitchToNewTrip}
+        title={t('travel.trips.switchConfirm.title', 'Trip Created')}
+        message={t('travel.trips.switchConfirm.message', 'Switch to this trip now?')}
+        confirmText={t('travel.trips.switchConfirm.switch', 'Switch')}
+        cancelText={t('travel.trips.switchConfirm.keepCurrent', 'Keep Current')}
+        variant="default"
+      />
     </motion.div>
   )
 }

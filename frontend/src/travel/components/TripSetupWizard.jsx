@@ -13,35 +13,24 @@ import {
   FiCreditCard,
   FiList
 } from 'react-icons/fi'
-import { tripService } from '../services/travelApi'
-import { budgetService } from '../../services/api'
+import { tripService, geocodingService } from '../services/travelApi'
+import { budgetService, savingsGoalService } from '../../services/api'
 import { createTrip } from '../services/travelDb'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import '../styles/TripSetupWizard.css'
 
-// Geocoding service using Nominatim (OpenStreetMap)
+// Geocoding service using backend proxy to avoid CORS issues
 const geocodeDestination = async (query) => {
   if (!query || query.length < 3) return []
 
   try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
-      {
-        headers: {
-          'User-Agent': 'TravelCommandCenter/1.0'
-        }
-      }
-    )
-
-    if (!response.ok) return []
-
-    const results = await response.json()
+    const results = await geocodingService.search(query, 5)
     return results.map(r => ({
-      name: r.display_name.split(',')[0],
-      fullName: r.display_name,
-      country: r.address?.country || '',
-      latitude: parseFloat(r.lat),
-      longitude: parseFloat(r.lon)
+      name: r.name || r.fullName?.split(',')[0] || '',
+      fullName: r.fullName || r.name || '',
+      country: r.country || '',
+      latitude: r.latitude || 0,
+      longitude: r.longitude || 0
     }))
   } catch (error) {
     console.error('Geocoding error:', error)
@@ -87,14 +76,46 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
 
-  // Load existing budgets on mount
+  // Load existing budgets and saving goals on mount
+  // Uses the same fetching pattern as SavingsGoals.jsx
   useEffect(() => {
     const loadBudgets = async () => {
       try {
-        const budgets = await budgetService.getAll()
-        setAvailableBudgets(budgets || [])
+        // Fetch both budgets and saving goals in parallel (same pattern as SavingsGoals.jsx)
+        const [budgets, savingGoals] = await Promise.all([
+          budgetService.getAll().catch(() => []),
+          savingsGoalService.getAll().catch(() => [])
+        ])
+
+        // Normalize budgets (already in correct format)
+        const normalizedBudgets = (budgets || []).map(b => ({
+          id: b.id,
+          category: b.category,
+          amount: b.amount,
+          period: b.period,
+          type: 'budget' // Mark as budget
+        }))
+
+        // Normalize saving goals - preserve all original properties from SavingsGoals.jsx
+        const normalizedGoals = (savingGoals || []).map(goal => ({
+          // Preserve all original saving goal properties
+          ...goal,
+          // Add normalized fields for compatibility with budget structure
+          category: goal.name, // Use name as category for display
+          amount: goal.targetAmount, // Use targetAmount as the budget amount
+          period: 'one-time', // Saving goals are typically one-time
+          type: 'savingGoal' // Mark as saving goal
+        }))
+
+        // Merge budgets and saving goals, sort by category name
+        const merged = [...normalizedBudgets, ...normalizedGoals].sort((a, b) => 
+          a.category.localeCompare(b.category)
+        )
+
+        setAvailableBudgets(merged)
       } catch (err) {
-        console.error('Error loading budgets:', err)
+        console.error('Error loading budgets and saving goals:', err)
+        setAvailableBudgets([])
       }
     }
     loadBudgets()
@@ -218,11 +239,14 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
           // Continue without linking, but warn? For now, we proceed.
         }
       } else if (budgetMode === 'existing' && selectedBudgetId) {
-        // Link to existing budget
+        // Link to existing budget or saving goal
         const selectedBudget = availableBudgets.find(b => b.id === selectedBudgetId)
         if (selectedBudget) {
-          finalBudget = selectedBudget.amount // Update trip budget to match selected
+          // Use targetAmount for saving goals, amount for budgets
+          finalBudget = selectedBudget.targetAmount || selectedBudget.amount
           linkedBudgetId = selectedBudget.id
+          // Note: If it's a saving goal, we're just using its target amount as the trip budget
+          // The backend may need to handle this differently, but for now we treat them the same
         }
       }
 
@@ -275,9 +299,21 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
               </div>
 
               {searchResults.length > 0 && (
-                <ul className="search-results">
+                <ul className="search-results" role="listbox">
                   {searchResults.map((result, index) => (
-                    <li key={index} onClick={() => selectDestination(result)}>
+                    <li 
+                      key={index} 
+                      onClick={() => selectDestination(result)}
+                      onTouchStart={(e) => {
+                        // Prevent double-tap zoom on mobile
+                        e.currentTarget.style.backgroundColor = 'rgba(142, 68, 173, 0.1)'
+                      }}
+                      onTouchEnd={(e) => {
+                        e.currentTarget.style.backgroundColor = ''
+                        selectDestination(result)
+                      }}
+                      role="option"
+                    >
                       <FiMapPin />
                       <div className="result-text">
                         <span className="result-name">{result.name}</span>
@@ -364,13 +400,13 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                 className={`mode-btn ${budgetMode === 'new' ? 'active' : ''}`}
                 onClick={() => setBudgetMode('new')}
               >
-                <FiDollarSign /> {t('wizard.newBudget', 'Create New')}
+                <FiDollarSign /> <span>{t('wizard.newBudget', 'Create New')}</span>
               </button>
               <button
                 className={`mode-btn ${budgetMode === 'existing' ? 'active' : ''}`}
                 onClick={() => setBudgetMode('existing')}
               >
-                <FiList /> {t('wizard.existingBudget', 'Use Existing')}
+                <FiList /> <span>{t('wizard.existingBudget', 'Use Existing')}</span>
               </button>
             </div>
 
@@ -426,7 +462,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                   <label>{t('wizard.selectBudget', 'Select a Budget')}</label>
                   <div className="budget-list">
                     {availableBudgets.length === 0 ? (
-                      <div className="no-budgets-msg">No existing budgets found.</div>
+                      <div className="no-budgets-msg">{t('wizard.noBudgets', 'No existing budgets or saving goals found.')}</div>
                     ) : (
                       <select
                         value={selectedBudgetId}
@@ -434,11 +470,17 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                         className="budget-select"
                       >
                         <option value="">-- {t('wizard.selectBudget', 'Select a Budget')} --</option>
-                        {availableBudgets.map(b => (
-                          <option key={b.id} value={b.id}>
-                            {b.category} ({new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(b.amount)})
-                          </option>
-                        ))}
+                        {availableBudgets.map(b => {
+                          const displayName = b.type === 'savingGoal' 
+                            ? `${b.icon || '🎯'} ${b.category}`
+                            : b.category
+                          const amount = b.amount || b.targetAmount || 0
+                          return (
+                            <option key={b.id} value={b.id}>
+                              {displayName} ({new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(amount)})
+                            </option>
+                          )
+                        })}
                       </select>
                     )}
                   </div>
@@ -458,7 +500,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
   }
 
   return (
-    <div className="wizard-overlay" onClick={onClose}>
+    <div className="wizard-overlay">
       <motion.div
         className="wizard-modal"
         onClick={(e) => e.stopPropagation()}
@@ -523,7 +565,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
 
           {step < 3 ? (
             <button className="wizard-btn primary" onClick={nextStep}>
-              {t('common.next', 'Next')}
+              <span>{t('common.next', 'Next')}</span>
               <FiChevronRight />
             </button>
           ) : (
@@ -532,7 +574,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
               onClick={handleSave}
               disabled={saving}
             >
-              {saving ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
+              <span>{saving ? t('common.saving', 'Saving...') : t('common.save', 'Save')}</span>
               {!saving && <FiCheck />}
             </button>
           )}

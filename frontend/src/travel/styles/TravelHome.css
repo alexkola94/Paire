@@ -92,23 +92,40 @@
   color: var(--text-secondary);
 }
 
+.greeting-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.create-trip-btn,
 .edit-trip-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
 }
 
+.create-trip-btn:hover,
 .edit-trip-btn:hover {
-  background: rgba(142, 68, 173, 0.08);
+  background: rgba(142, 68, 173, 0.12);
+  border-color: rgba(142, 68, 173, 0.2);
   color: var(--primary);
+  transform: scale(1.05);
+}
+
+.create-trip-btn:active,
+.edit-trip-btn:active {
+  transform: scale(0.95);
 }
 
 /* ================================

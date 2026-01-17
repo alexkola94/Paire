@@ -445,6 +445,42 @@
         "atm": "Cajero Automático",
         "pharmacy": "Farmacia"
       }
+    },
+    "wizard": {
+      "title": "Planifica tu Viaje",
+      "step": "Paso {{current}} de {{total}}",
+      "next": "Siguiente",
+      "back": "Atrás",
+      "create": "Crear Viaje",
+      "creating": "Creando...",
+      "selectDestination": "Por favor selecciona un destino",
+      "selectDates": "Por favor selecciona las fechas de inicio y fin",
+      "budgetType": "Tipo de Presupuesto",
+      "existingBudget": "Usar Existente",
+      "newBudget": "Crear Nuevo",
+      "selectBudget": "Seleccionar un presupuesto",
+      "createBudgetCategory": "Nombre del Presupuesto",
+      "budgetAmount": "Presupuesto Total",
+      "available": "Disponible",
+      "noBudgets": "No se encontraron presupuestos o metas de ahorro."
+    },
+    "trips": {
+      "selector": {
+        "title": "Seleccionar Viaje",
+        "noTrips": "Aún no hay viajes",
+        "createNew": "Crear Nuevo Viaje"
+      },
+      "switchConfirm": {
+        "title": "Viaje Creado",
+        "message": "¿Cambiar a este viaje ahora?",
+        "switch": "Cambiar",
+        "keepCurrent": "Mantener Actual"
+      },
+      "status": {
+        "upcoming": "Próximo",
+        "active": "Activo",
+        "completed": "Completado"
+      }
     }
   }
 }

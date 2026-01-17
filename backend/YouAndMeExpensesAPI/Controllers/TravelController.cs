@@ -46,6 +46,72 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         // ========================================
+        // GEOCODING
+        // ========================================
+
+        /// <summary>
+        /// Search for locations using Nominatim (OpenStreetMap)
+        /// Proxies requests to avoid CORS issues, especially on mobile
+        /// </summary>
+        [HttpGet("geocode")]
+        public async Task<IActionResult> GeocodeLocation([FromQuery] string q, [FromQuery] int limit = 5)
+        {
+            if (string.IsNullOrWhiteSpace(q) || q.Length < 3)
+            {
+                return BadRequest(new { message = "Query must be at least 3 characters" });
+            }
+
+            try
+            {
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "TravelCommandCenter/1.0");
+                
+                var url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(q)}&format=json&limit={limit}&addressdetails=1";
+                var response = await httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Nominatim API returned {StatusCode} for query: {Query}", 
+                        response.StatusCode, q);
+                    return StatusCode((int)response.StatusCode, 
+                        new { message = "Geocoding service unavailable" });
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var results = System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(content);
+
+                // Transform results to match frontend expectations
+                var transformedResults = results?.Select(r => new
+                {
+                    name = r.TryGetProperty("display_name", out var displayName) 
+                        ? displayName.GetString()?.Split(',')[0] ?? ""
+                        : "",
+                    fullName = r.TryGetProperty("display_name", out var fullName)
+                        ? fullName.GetString() ?? ""
+                        : "",
+                    country = r.TryGetProperty("address", out var address) && address.ValueKind == System.Text.Json.JsonValueKind.Object
+                        ? address.TryGetProperty("country", out var country) 
+                            ? country.GetString() ?? ""
+                            : ""
+                        : "",
+                    latitude = r.TryGetProperty("lat", out var lat)
+                        ? double.TryParse(lat.GetString(), out var latVal) ? latVal : 0.0
+                        : 0.0,
+                    longitude = r.TryGetProperty("lon", out var lon)
+                        ? double.TryParse(lon.GetString(), out var lonVal) ? lonVal : 0.0
+                        : 0.0
+                }).ToList() ?? new List<object>();
+
+                return Ok(transformedResults);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error geocoding location: {Query}", q);
+                return StatusCode(500, new { message = "Error geocoding location" });
+            }
+        }
+
+        // ========================================
         // TRIPS
         // ========================================
 

@@ -120,7 +120,7 @@ export default function QuickAccessWidget({ editMode }) {
 
             {/* Route Selector Modal */}
             {showSelector && (
-                <div className="route-selector-overlay" onClick={() => setShowSelector(false)}>
+                <div className="route-selector-overlay">
                     <div className="route-selector-modal" onClick={e => e.stopPropagation()}>
                         <div className="route-selector-header">
                             <h3>{t('dashboard.selectShortcuts', 'Select Shortcuts')}</h3>

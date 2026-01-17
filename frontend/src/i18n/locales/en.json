@@ -1441,12 +1441,31 @@
       "selectDestination": "Please select a destination",
       "selectDates": "Please select both start and end dates",
       "budgetType": "Budget Type",
-      "existingBudget": "Existing Budget",
-      "newBudget": "Create New Budget",
+      "existingBudget": "Use Existing",
+      "newBudget": "Create New",
       "selectBudget": "Select a budget",
       "createBudgetCategory": "Budget Name",
-      "budgetAmount": "Budget Amount",
-      "available": "Available"
+      "budgetAmount": "Total Budget",
+      "available": "Available",
+      "noBudgets": "No existing budgets or saving goals found."
+    },
+    "trips": {
+      "selector": {
+        "title": "Select Trip",
+        "noTrips": "No trips yet",
+        "createNew": "Create New Trip"
+      },
+      "switchConfirm": {
+        "title": "Trip Created",
+        "message": "Switch to this trip now?",
+        "switch": "Switch",
+        "keepCurrent": "Keep Current"
+      },
+      "status": {
+        "upcoming": "Upcoming",
+        "active": "Active",
+        "completed": "Completed"
+      }
     }
   }
 }

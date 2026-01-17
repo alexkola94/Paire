@@ -252,10 +252,25 @@ export const tripService = {
   async getAll() {
     try {
       const trips = await apiRequest('/api/travel/trips')
-      // Cache in IndexedDB
-      await db.trips.clear()
+      // Cache in IndexedDB - use bulkPut instead of clear+bulkAdd to preserve existing trips
       if (Array.isArray(trips)) {
-        await db.trips.bulkAdd(trips.map(t => ({ ...t, _synced: true })))
+        // Get existing trips from IndexedDB to preserve any unsynced local trips
+        const existingTrips = await db.trips.toArray()
+        const existingTripIds = new Set(existingTrips.map(t => t.id))
+        
+        // Remove trips from IndexedDB that are no longer in the server response
+        // (but only if they're synced - don't delete unsynced local trips)
+        const serverTripIds = new Set(trips.map(t => t.id))
+        const tripsToDelete = existingTrips.filter(t => 
+          t._synced && !serverTripIds.has(t.id)
+        )
+        if (tripsToDelete.length > 0) {
+          await db.trips.bulkDelete(tripsToDelete.map(t => t.id))
+        }
+        
+        // Add or update trips from server
+        const tripsToStore = trips.map(t => ({ ...t, _synced: true }))
+        await db.trips.bulkPut(tripsToStore)
       }
       return trips
     } catch (error) {
@@ -692,11 +707,39 @@ export const travelExpenseService = {
   }
 }
 
+// ========================================
+// Geocoding Service
+// ========================================
+
+export const geocodingService = {
+  /**
+   * Search for locations using backend geocoding endpoint
+   * Proxies Nominatim requests to avoid CORS issues, especially on mobile
+   */
+  async search(query, limit = 5) {
+    if (!query || query.length < 3) return []
+
+    try {
+      const results = await apiRequest(`/api/travel/geocode?q=${encodeURIComponent(query)}&limit=${limit}`)
+      return results || []
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        // Return empty array when offline - geocoding requires online connection
+        console.warn('Geocoding unavailable offline')
+        return []
+      }
+      console.error('Geocoding error:', error)
+      return []
+    }
+  }
+}
+
 export default {
   tripService,
   itineraryService,
   packingService,
   documentService,
   travelExpenseService,
+  geocodingService,
   processSyncQueue
 }

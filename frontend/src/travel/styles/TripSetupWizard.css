@@ -174,6 +174,11 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--bg-secondary);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 10;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .search-results li {
@@ -183,10 +188,14 @@
   padding: var(--spacing-md);
   cursor: pointer;
   transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  min-height: 48px; /* Better touch target on mobile */
 }
 
-.search-results li:hover {
-  background: rgba(142, 68, 173, 0.05);
+.search-results li:hover,
+.search-results li:active {
+  background: rgba(142, 68, 173, 0.1);
 }
 
 .search-results li:not(:last-child) {
@@ -242,6 +251,56 @@
   margin-top: var(--spacing-md);
 }
 
+/* Budget Mode Toggle */
+.budget-mode-toggle {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xs);
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  white-space: nowrap;
+}
+
+.mode-btn span {
+  display: inline-block;
+}
+
+.mode-btn.active {
+  background: var(--primary-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.mode-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.mode-btn svg {
+  flex-shrink: 0;
+}
+
 /* Budget row */
 .budget-row {
   display: grid;
@@ -272,6 +331,72 @@
   margin-top: var(--spacing-md);
 }
 
+/* Budget Selection Section */
+.budget-selection-section {
+  margin-top: var(--spacing-md);
+}
+
+.budget-list {
+  width: 100%;
+}
+
+.budget-select {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+}
+
+.budget-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.no-budgets-msg {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--glass-border);
+}
+
+/* Budget Form Section */
+.budget-form-section {
+  margin-top: var(--spacing-md);
+}
+
+.budget-input-group,
+.currency-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .input-icon {
+  position: absolute;
+  left: var(--spacing-md);
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-with-icon input {
+  padding-left: 44px;
+}
+
 /* Error */
 .wizard-error {
   margin-top: var(--spacing-md);
@@ -295,14 +420,19 @@
 .wizard-btn {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  justify-content: center;
+  gap: var(--spacing-xs);
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-md);
   font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease-in-out;
   min-height: 48px;
+}
+
+.wizard-btn svg {
+  flex-shrink: 0;
 }
 
 .wizard-btn.primary {
@@ -348,5 +478,41 @@
   .dates-row,
   .budget-row {
     grid-template-columns: 1fr;
+  }
+
+  .budget-mode-toggle {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .mode-btn {
+    width: 100%;
+    padding: var(--spacing-sm);
+  }
+
+  .wizard-btn {
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.875rem;
+  }
+
+  /* Mobile search improvements */
+  .destination-search input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 44px;
+  }
+
+  .search-results {
+    max-height: 250px;
+    margin-top: var(--spacing-xs);
+  }
+
+  .search-results li {
+    padding: var(--spacing-md);
+    min-height: 56px; /* Larger touch target on mobile */
+  }
+
+  .wizard-content {
+    padding: var(--spacing-md);
   }
 }

@@ -10,7 +10,7 @@ const AccessibilitySettings = ({ isOpen, onClose }) => {
     if (!isOpen) return null
 
     return (
-        <div className="accessibility-modal-overlay" onClick={onClose}>
+        <div className="accessibility-modal-overlay">
             <div
                 className="accessibility-modal card glass-card"
                 onClick={e => e.stopPropagation()}

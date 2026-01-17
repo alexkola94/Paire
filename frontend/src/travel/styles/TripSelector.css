@@ -1,0 +1,376 @@
+/* ================================
+   Trip Selector Styles
+   Paire Design System - Glassmorphism & Smooth Transitions
+   ================================ */
+
+.trip-selector {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Selector Button */
+.trip-selector-button {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem; /* rounded-2xl */
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.trip-selector-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.trip-selector-button:active {
+  transform: translateY(0);
+}
+
+.trip-selector-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.trip-selector-button-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.trip-selector-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-selector-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.trip-selector-destination,
+.trip-selector-dates {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.trip-selector-chevron {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: color 0.3s ease-in-out;
+}
+
+.trip-selector-button:hover .trip-selector-chevron {
+  color: var(--primary);
+}
+
+/* Dropdown */
+.trip-selector-dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-xs));
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem; /* rounded-2xl */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  z-index: 300;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 100px; /* Ensure dropdown has minimum height */
+  display: block !important; /* Force display */
+  visibility: visible !important; /* Force visibility */
+  opacity: 1 !important; /* Force opacity */
+}
+
+/* Dark theme adjustments */
+[data-theme='dark'] .trip-selector-button,
+[data-theme='dark'] .trip-selector-dropdown {
+  background: rgba(15, 7, 26, 0.8);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme='dark'] .trip-selector-button:hover {
+  background: rgba(15, 7, 26, 0.9);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Loading State */
+.trip-selector-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.trip-selector-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty State */
+.trip-selector-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Trip List */
+.trip-selector-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.trip-selector-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  text-align: left;
+  color: var(--text-primary);
+  margin: 0;
+  display: block;
+}
+
+.trip-selector-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.trip-selector-item.active {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.trip-selector-item.active:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.trip-selector-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.trip-selector-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.trip-selector-item-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-selector-item-check {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.trip-selector-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.trip-selector-item-destination,
+.trip-selector-item-dates {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.trip-selector-item-status {
+  padding: 2px 8px;
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trip-selector-item-status.upcoming {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--primary);
+}
+
+.trip-selector-item-status.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981; /* Vitality Green */
+}
+
+.trip-selector-item-status.completed {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--text-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .trip-selector {
+    max-width: 100%;
+  }
+
+  .trip-selector-button {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .trip-selector-name {
+    font-size: 0.8125rem;
+  }
+
+  .trip-selector-meta {
+    font-size: 0.7rem;
+    gap: var(--spacing-xs);
+  }
+
+  .trip-selector-dropdown {
+    max-height: 300px;
+  }
+
+  .trip-selector-item {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .trip-selector-item-name {
+    font-size: 0.8125rem;
+  }
+
+  .trip-selector-item-meta {
+    font-size: 0.7rem;
+    gap: var(--spacing-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .trip-selector-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .trip-selector-item-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* Footer with Create New Trip button */
+.trip-selector-footer {
+  padding: var(--spacing-xs);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: var(--spacing-xs);
+}
+
+.trip-selector-create-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 0.75rem;
+  color: var(--primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.trip-selector-create-btn:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+}
+
+.trip-selector-create-btn:active {
+  transform: translateY(0);
+}
+
+/* Smooth scrollbar styling */
+.trip-selector-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trip-selector-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.trip-selector-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 3px;
+}
+
+.trip-selector-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* Focus states for accessibility */
+.trip-selector-button:focus-visible,
+.trip-selector-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

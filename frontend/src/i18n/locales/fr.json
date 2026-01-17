@@ -445,6 +445,42 @@
         "atm": "Distributeur",
         "pharmacy": "Pharmacie"
       }
+    },
+    "wizard": {
+      "title": "Planifiez votre Voyage",
+      "step": "Étape {{current}} sur {{total}}",
+      "next": "Suivant",
+      "back": "Retour",
+      "create": "Créer un Voyage",
+      "creating": "Création...",
+      "selectDestination": "Veuillez sélectionner une destination",
+      "selectDates": "Veuillez sélectionner les dates de début et de fin",
+      "budgetType": "Type de Budget",
+      "existingBudget": "Utiliser l'Existant",
+      "newBudget": "Créer Nouveau",
+      "selectBudget": "Sélectionner un budget",
+      "createBudgetCategory": "Nom du Budget",
+      "budgetAmount": "Budget Total",
+      "available": "Disponible",
+      "noBudgets": "Aucun budget ou objectif d'épargne trouvé."
+    },
+    "trips": {
+      "selector": {
+        "title": "Sélectionner un Voyage",
+        "noTrips": "Aucun voyage pour le moment",
+        "createNew": "Créer un Nouveau Voyage"
+      },
+      "switchConfirm": {
+        "title": "Voyage Créé",
+        "message": "Passer à ce voyage maintenant ?",
+        "switch": "Changer",
+        "keepCurrent": "Garder l'Actuel"
+      },
+      "status": {
+        "upcoming": "À Venir",
+        "active": "Actif",
+        "completed": "Terminé"
+      }
     }
   }
 }

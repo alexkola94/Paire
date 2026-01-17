@@ -156,7 +156,7 @@ const DatePicker = ({
 
             {isOpen && ReactDOM.createPortal(
                 <>
-                    <div className="date-picker-backdrop" onClick={() => setIsOpen(false)} />
+                    <div className="date-picker-backdrop" />
                     <div
                         className="calendar-popup"
                         style={{

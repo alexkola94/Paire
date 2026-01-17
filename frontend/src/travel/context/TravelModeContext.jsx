@@ -19,6 +19,10 @@ export const TravelModeProvider = ({ children }) => {
   const [activeTrip, setActiveTrip] = useState(null)
   const [tripLoading, setTripLoading] = useState(true)
 
+  // Trips list state
+  const [trips, setTrips] = useState([])
+  const [tripsLoading, setTripsLoading] = useState(false)
+
   // Online/offline status
   const [isOnline, setIsOnline] = useState(navigator.onLine)
 
@@ -87,10 +91,58 @@ export const TravelModeProvider = ({ children }) => {
     localStorage.setItem('discoveryMode', isDiscoveryMode)
   }, [isDiscoveryMode])
 
+  /**
+   * Load all trips for the current user
+   * Fetches from API (online) or IndexedDB (offline)
+   */
+  const loadTrips = useCallback(async () => {
+    setTripsLoading(true)
+    try {
+      if (navigator.onLine) {
+        try {
+          const allTrips = await tripService.getAll()
+          if (Array.isArray(allTrips)) {
+            setTrips(allTrips)
+            return
+          }
+        } catch (apiError) {
+          console.warn('Could not fetch trips from API, trying IndexedDB:', apiError)
+        }
+      }
+
+      // Fallback to IndexedDB (offline mode or API failed)
+      const cachedTrips = await db.trips.toArray()
+      setTrips(cachedTrips || [])
+    } catch (error) {
+      console.error('Error loading trips:', error)
+      setTrips([])
+    } finally {
+      setTripsLoading(false)
+    }
+  }, [])
+
   // Load active trip from API (online) or IndexedDB (offline) on mount
   useEffect(() => {
     const loadActiveTrip = async () => {
       try {
+        // Load trips list first and get the result
+        let allTrips = []
+        if (navigator.onLine) {
+          try {
+            allTrips = await tripService.getAll()
+            if (Array.isArray(allTrips)) {
+              setTrips(allTrips)
+            }
+          } catch (apiError) {
+            console.warn('Could not fetch trips from API, trying IndexedDB:', apiError)
+            allTrips = await db.trips.toArray()
+            setTrips(allTrips || [])
+          }
+        } else {
+          allTrips = await db.trips.toArray()
+          setTrips(allTrips || [])
+        }
+
         const storedTripId = localStorage.getItem('activeTripId')
         if (storedTripId) {
           // Try to fetch from API first (if online)
@@ -115,21 +167,20 @@ export const TravelModeProvider = ({ children }) => {
           } else {
             // Trip was deleted, clear stored ID
             localStorage.removeItem('activeTripId')
+            // Try to set most recent trip as active from trips list
+            if (allTrips && allTrips.length > 0) {
+              const latestTrip = allTrips[0]
+              setActiveTrip(latestTrip)
+              localStorage.setItem('activeTripId', latestTrip.id)
+            }
           }
         } else {
-          // No stored trip ID, try to get the user's trips from API
-          if (navigator.onLine) {
-            try {
-              const trips = await tripService.getAll()
-              if (trips && trips.length > 0) {
-                // Set the most recent trip as active
-                const latestTrip = trips[0] // API returns ordered by StartDate desc
-                setActiveTrip(latestTrip)
-                localStorage.setItem('activeTripId', latestTrip.id)
-              }
-            } catch (apiError) {
-              console.warn('Could not fetch trips from API:', apiError)
-            }
+          // No stored trip ID, use trips list to set most recent as active
+          if (allTrips && allTrips.length > 0) {
+            // Set the most recent trip as active (API returns ordered by StartDate desc)
+            const latestTrip = allTrips[0]
+            setActiveTrip(latestTrip)
+            localStorage.setItem('activeTripId', latestTrip.id)
           }
         }
       } catch (error) {
@@ -139,8 +190,12 @@ export const TravelModeProvider = ({ children }) => {
       }
     }
 
-    loadActiveTrip()
-  }, [isTravelMode])
+    if (isTravelMode) {
+      loadActiveTrip()
+      // Also ensure trips list is loaded
+      loadTrips()
+    }
+  }, [isTravelMode, loadTrips])
 
   // Online/offline event listeners with sync
   useEffect(() => {
@@ -162,6 +217,8 @@ export const TravelModeProvider = ({ children }) => {
             console.error('Error refreshing trip on reconnect:', err)
           }
         }
+        // Refresh trips list
+        await loadTrips()
         setSyncStatus('idle')
       } catch (error) {
         console.error('Sync error:', error)
@@ -234,11 +291,14 @@ export const TravelModeProvider = ({ children }) => {
    * @param {Object} trip - Trip to set as active
    */
   const selectTrip = useCallback((trip) => {
+    if (!trip) return
     setActiveTrip(trip)
     if (trip?.id) {
       localStorage.setItem('activeTripId', trip.id)
+      // Refresh trips list to ensure it's up to date (don't await to avoid blocking)
+      loadTrips().catch(err => console.error('Error refreshing trips after selection:', err))
     }
-  }, [])
+  }, [loadTrips])
 
   /**
    * Clear the active trip
@@ -357,6 +417,11 @@ export const TravelModeProvider = ({ children }) => {
     selectTrip,
     clearActiveTrip,
     refreshActiveTrip,
+
+    // Trips list
+    trips,
+    tripsLoading,
+    loadTrips,
 
     // Discovery mode
     isDiscoveryMode,
