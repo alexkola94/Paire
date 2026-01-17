@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useModalRegistration } from '../../context/ModalContext'
 import {
   FiPlus,
   FiDollarSign,
@@ -276,6 +277,10 @@ const BudgetPage = ({ trip }) => {
 // Add Expense Modal Component
 const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
   const { t } = useTranslation()
+  
+  // Register modal to hide bottom navigation
+  useModalRegistration(true)
+  
   const [formData, setFormData] = useState({
     category: 'food',
     amount: '',

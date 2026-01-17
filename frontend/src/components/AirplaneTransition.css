@@ -12,6 +12,10 @@
     justify-content: center;
     overflow: hidden;
     background: #0a0a1a;
+    /* Optimize for mobile performance */
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
 }
 
 /* ================================
@@ -248,6 +252,7 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
+    flex-direction: column;
     align-items: center;
     color: white;
     font-size: 1.5rem;
@@ -256,6 +261,93 @@
     text-shadow: 0 2px 30px rgba(0, 0, 0, 0.7);
     white-space: nowrap;
     z-index: 10;
+    transition: all 0.3s ease;
+    overflow: visible;
+    max-height: none;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .transition-status {
+        bottom: calc(20% + env(safe-area-inset-bottom, 0px));
+        left: 0 !important;
+        right: 0 !important;
+        font-size: 1rem;
+        letter-spacing: 0.04em;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        padding-left: 24px;
+        padding-right: 24px;
+        box-sizing: border-box;
+        overflow: hidden;
+        max-height: none;
+        /* Ensure text doesn't get cut off */
+        min-height: auto;
+        /* Smooth transitions for responsive changes */
+        transition: all 0.3s ease-in-out;
+    }
+
+    .transition-status.mobile {
+        min-height: auto;
+        overflow: hidden;
+        overflow-wrap: break-word;
+        /* Additional mobile-specific spacing */
+        padding-top: 8px;
+    }
+
+    .transition-status.mobile > div {
+        max-width: 100% !important;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        box-sizing: border-box;
+    }
+
+    .airplane-transition-overlay {
+        overflow: visible;
+    }
+
+    .airplane-icon-container.mobile {
+        filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.5));
+    }
+
+    /* Reduce map blur on mobile for better performance */
+    .map-layer {
+        will-change: transform, opacity;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+    }
+
+    /* Optimize speed lines */
+    .speed-line {
+        width: 80px;
+        height: 2px;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 375px) {
+    .transition-status {
+        bottom: calc(18% + env(safe-area-inset-bottom, 0px));
+        font-size: 0.85rem;
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        max-width: 100% !important;
+        width: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
+
+    .transition-status.mobile > div {
+        font-size: 0.8rem !important;
+        letter-spacing: 0.5px !important;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
 }
 
 .status-text {

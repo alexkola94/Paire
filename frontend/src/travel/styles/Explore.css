@@ -443,6 +443,206 @@
   max-width: 280px;
 }
 
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .explore-page {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .explore-section {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .today-weather {
+    padding: 0.75rem 0;
+  }
+
+  .today-weather-main {
+    gap: 1rem;
+  }
+
+  .today-weather-main .today-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .today-temp .temp-high {
+    font-size: 2.5rem;
+  }
+
+  .today-temp .temp-low {
+    font-size: 1rem;
+  }
+
+  .today-desc {
+    font-size: 1rem;
+  }
+
+  .today-location {
+    font-size: 0.75rem;
+  }
+
+  .forecast-toggle {
+    padding: 0.625rem;
+    font-size: 0.75rem;
+    min-height: 44px; /* Touch-friendly */
+  }
+
+  .forecast-day {
+    padding: 0.625rem 0;
+  }
+
+  .forecast-day .day-name {
+    font-size: 0.8rem;
+    min-width: 60px;
+  }
+
+  .forecast-temps {
+    gap: 0.5rem;
+    min-width: 70px;
+  }
+
+  .forecast-temps .temp-high,
+  .forecast-temps .temp-low {
+    font-size: 0.85rem;
+  }
+
+  .poi-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .poi-categories {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .poi-category-btn {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.75rem;
+    min-height: 44px; /* Touch-friendly */
+    flex: 1;
+    min-width: calc(50% - 0.25rem);
+  }
+
+  .poi-card {
+    padding: 0.875rem 1rem;
+    min-height: 44px; /* Touch-friendly */
+  }
+
+  .poi-name {
+    font-size: 0.875rem;
+  }
+
+  .poi-distance {
+    font-size: 0.7rem;
+  }
+
+  .essentials-grid {
+    gap: 1rem;
+  }
+
+  .explore-card {
+    padding: 1rem;
+  }
+
+  .card-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .card-title h3 {
+    font-size: 1rem;
+  }
+
+  .card-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .phrase-item {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .phrase-key {
+    font-size: 0.85rem;
+  }
+
+  .phrase-value {
+    font-size: 0.9rem;
+  }
+
+  .view-more-btn {
+    padding: 0.625rem;
+    font-size: 0.8rem;
+    min-height: 44px; /* Touch-friendly */
+  }
+
+  .emergency-item {
+    padding: 0.625rem 0.875rem;
+    min-height: 44px; /* Touch-friendly */
+  }
+
+  .emergency-item .label {
+    font-size: 0.85rem;
+  }
+
+  .emergency-item .number {
+    font-size: 1rem;
+  }
+
+  .poi-search-trigger {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.875rem;
+    min-height: 44px; /* Touch-friendly */
+  }
+}
+
+@media (max-width: 480px) {
+  .explore-page {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .explore-section {
+    padding: 0.875rem;
+    border-radius: 14px;
+  }
+
+  .today-temp .temp-high {
+    font-size: 2rem;
+  }
+
+  .today-weather-main {
+    gap: 0.75rem;
+  }
+
+  .today-weather-main .today-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .poi-category-btn {
+    min-width: calc(50% - 0.25rem);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+  }
+
+  .poi-category-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .essentials-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Responsive */
 @media (min-width: 768px) {
   .explore-section {

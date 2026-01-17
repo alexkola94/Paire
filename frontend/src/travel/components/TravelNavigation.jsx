@@ -9,6 +9,7 @@ import {
   FiFolder,
   FiCompass
 } from 'react-icons/fi'
+import { useModal } from '../../context/ModalContext'
 import '../styles/TravelLayout.css'
 
 // Navigation items configuration
@@ -27,9 +28,10 @@ const navItems = [
  */
 const TravelNavigation = memo(({ activePage, onNavigate }) => {
   const { t } = useTranslation()
+  const { hasOpenModals } = useModal()
 
   return (
-    <nav className="travel-nav">
+    <nav className={`travel-nav ${hasOpenModals ? 'hidden' : ''}`}>
       <div className="travel-nav-container">
         {navItems.map((item, index) => {
           const isActive = activePage === item.id

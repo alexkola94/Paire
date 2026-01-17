@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { RiPlaneFill } from 'react-icons/ri'
 import './AirplaneTransition.css'
 
@@ -23,24 +24,44 @@ const AirplaneTransition = memo(({
     onComplete,
     destination = null
 }) => {
+    const { t } = useTranslation()
     const isTakeoff = direction === 'takeoff'
-    // Slower duration for smoother feel
-    const duration = 3.0
+    
+    // Detect mobile screen size
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.innerWidth <= 768
+        }
+        return false
+    })
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768)
+        }
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    // Shorter duration on mobile for better UX
+    const duration = isMobile ? 2.0 : 3.0
     const [orbitLoaded, setOrbitLoaded] = useState(false)
     const [localLoaded, setLocalLoaded] = useState(false)
 
-    // Map Layers
+    // Map Layers - Use smaller images on mobile for better performance
     // Orbit: Start Closer (Zoom 4) to bridge the gap to Zoom 11
     const hasCoords = destination?.latitude && destination?.longitude
+    const mapWidth = isMobile ? 640 : 1280
+    const mapHeight = isMobile ? 360 : 720
 
     const orbitUrl = getMapboxStaticUrl(
         hasCoords ? destination.latitude : 0,
         hasCoords ? destination.longitude : 0,
-        4, 1280, 720
+        4, mapWidth, mapHeight
     )
 
     const localUrl = hasCoords
-        ? getMapboxStaticUrl(destination.latitude, destination.longitude, 11, 1280, 720)
+        ? getMapboxStaticUrl(destination.latitude, destination.longitude, 11, mapWidth, mapHeight)
         : null
 
     // Smooth ease-in-out-cubic equivalent or custom bezier
@@ -199,9 +220,9 @@ const AirplaneTransition = memo(({
                         {!orbitUrl && <div className="sky-gradient" />}
                     </div>
 
-                    {/* Speed Lines */}
+                    {/* Speed Lines - Fewer on mobile for better performance */}
                     <div className="speed-lines" style={{ zIndex: 3 }}>
-                        {[...Array(6)].map((_, i) => (
+                        {[...Array(isMobile ? 4 : 6)].map((_, i) => (
                             <motion.div
                                 key={i}
                                 className="speed-line"
@@ -222,45 +243,104 @@ const AirplaneTransition = memo(({
                         ))}
                     </div>
 
-                    {/* Plane */}
+                    {/* Plane - Smaller on mobile */}
                     <motion.div
-                        className="airplane-icon-container"
+                        className={`airplane-icon-container ${isMobile ? 'mobile' : ''}`}
                         variants={airplaneVariants}
-                        style={{ position: 'absolute', zIndex: 100, width: '120px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ 
+                            position: 'absolute', 
+                            zIndex: 100, 
+                            width: isMobile ? '80px' : '120px', 
+                            height: isMobile ? '80px' : '120px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                        }}
                     >
                         <motion.div className="plane-shadow" variants={shadowVariants} style={{ position: 'absolute', zIndex: -1 }}>
-                            <RiPlaneFill size={80} style={{ color: 'rgba(0,0,0,0.5)', transform: 'rotate(45deg) scaleY(0.5)' }} />
+                            <RiPlaneFill size={isMobile ? 50 : 80} style={{ color: 'rgba(0,0,0,0.5)', transform: 'rotate(45deg) scaleY(0.5)' }} />
                         </motion.div>
 
                         <motion.div className="plane-body" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}>
-                            <RiPlaneFill size={80} style={{ color: 'white' }} />
+                            <RiPlaneFill size={isMobile ? 50 : 80} style={{ color: 'white' }} />
                             <motion.div
                                 className="engine-fire"
-                                animate={{ opacity: [0.7, 1, 0.7], height: ['20px', '25px', '20px'] }}
+                                animate={{ opacity: [0.7, 1, 0.7], height: isMobile ? ['12px', '15px', '12px'] : ['20px', '25px', '20px'] }}
                                 transition={{ duration: 0.1, repeat: Infinity }}
                                 style={{
-                                    position: 'absolute', top: '50%', left: isTakeoff ? '-15px' : 'auto', right: isTakeoff ? 'auto' : '-15px',
-                                    width: '30px', background: 'cyan', filter: 'blur(5px)', borderRadius: '50%', mixBlendMode: 'screen'
+                                    position: 'absolute', 
+                                    top: '50%', 
+                                    left: isTakeoff ? (isMobile ? '-10px' : '-15px') : 'auto', 
+                                    right: isTakeoff ? 'auto' : (isMobile ? '-10px' : '-15px'),
+                                    width: isMobile ? '20px' : '30px', 
+                                    background: 'cyan', 
+                                    filter: 'blur(5px)', 
+                                    borderRadius: '50%', 
+                                    mixBlendMode: 'screen'
                                 }}
                             />
                         </motion.div>
                     </motion.div>
 
-                    {/* Text */}
+                    {/* Text - Responsive sizing with improved mobile spacing */}
                     <motion.div
-                        className="transition-status"
+                        className={`transition-status ${isMobile ? 'mobile' : ''}`}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1, transition: { delay: 0.5, duration: 1 } }}
                         style={{
-                            position: 'absolute', bottom: '15%', width: '100%', textAlign: 'center',
-                            zIndex: 50, color: 'white', textShadow: '0 4px 20px black'
+                            position: 'absolute', 
+                            bottom: isMobile ? 'calc(20% + env(safe-area-inset-bottom, 0px))' : '15%', 
+                            left: 0,
+                            right: 0,
+                            width: '100%', 
+                            maxWidth: '100%',
+                            textAlign: 'center',
+                            zIndex: 50, 
+                            color: 'white', 
+                            textShadow: '0 4px 20px rgba(0, 0, 0, 0.8)',
+                            paddingLeft: isMobile ? '24px' : '0',
+                            paddingRight: isMobile ? '24px' : '0',
+                            paddingBottom: isMobile ? 'calc(24px + env(safe-area-inset-bottom, 0px))' : '0',
+                            boxSizing: 'border-box',
+                            overflow: 'hidden',
+                            overflowWrap: 'break-word',
+                            transition: 'all 0.3s ease-in-out'
                         }}
                     >
-                        <div style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '8px', textTransform: 'uppercase' }}>
-                            {isTakeoff ? 'Ascending' : 'Descending'}
+                        <div style={{ 
+                            fontSize: isMobile ? '0.9rem' : '2rem', 
+                            fontWeight: 800, 
+                            letterSpacing: isMobile ? '1px' : '8px', 
+                            textTransform: 'uppercase',
+                            lineHeight: 1.2,
+                            marginBottom: destination?.name ? (isMobile ? '6px' : '8px') : '0',
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word',
+                            hyphens: 'auto',
+                            maxWidth: '100%',
+                            paddingLeft: isMobile ? '8px' : '0',
+                            paddingRight: isMobile ? '8px' : '0',
+                            boxSizing: 'border-box',
+                            transition: 'all 0.3s ease-in-out'
+                        }}>
+                            {isTakeoff ? t('travel.common.ascending') : t('travel.common.descending')}
                         </div>
                         {destination?.name && (
-                            <div style={{ fontSize: '1rem', fontWeight: 300, opacity: 0.8, marginTop: '8px', letterSpacing: '2px' }}>
+                            <div style={{ 
+                                fontSize: isMobile ? '0.7rem' : '1rem', 
+                                fontWeight: 300, 
+                                opacity: 0.85, 
+                                letterSpacing: isMobile ? '1px' : '2px',
+                                lineHeight: 1.4,
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word',
+                                hyphens: 'auto',
+                                maxWidth: '100%',
+                                paddingLeft: isMobile ? '8px' : '0',
+                                paddingRight: isMobile ? '8px' : '0',
+                                boxSizing: 'border-box',
+                                transition: 'all 0.3s ease-in-out'
+                            }}>
                                 {destination.name}
                             </div>
                         )}

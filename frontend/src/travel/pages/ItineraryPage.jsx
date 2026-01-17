@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useModalRegistration } from '../../context/ModalContext'
 import {
   FiPlus,
   FiCalendar,
@@ -350,6 +351,10 @@ const EventCard = ({ event, onEdit, onDelete }) => {
 // Event Form Modal Component
 const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
   const { t } = useTranslation()
+  
+  // Register modal to hide bottom navigation
+  useModalRegistration(true)
+  
   const [formData, setFormData] = useState({
     type: event?.type || 'activity',
     name: event?.name || '',

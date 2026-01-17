@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import db from '../services/travelDb'
 import { tripService, processSyncQueue } from '../services/travelApi'
+import { sessionManager } from '../../services/sessionManager'
 
 const TravelModeContext = createContext()
 
@@ -38,10 +39,47 @@ export const TravelModeProvider = ({ children }) => {
 
   // Scroll positions preservation for Discovery Mode
   const scrollPositionsRef = useRef({})
+  
+  // Track previous session state to detect login
+  const previousSessionRef = useRef(null)
 
   // Persist travel mode state to localStorage
   useEffect(() => {
     localStorage.setItem('travelMode', isTravelMode)
+  }, [isTravelMode])
+
+  // Reset travel mode to false when user logs in
+  useEffect(() => {
+    const handleAuthChange = () => {
+      // Small delay to ensure sessionStorage is written
+      setTimeout(() => {
+        const token = sessionManager.getToken()
+        const user = sessionManager.getCurrentUser()
+        const hasSession = !!(token && user)
+        const hadSession = previousSessionRef.current
+
+        // If transitioning from no session to session (login), reset travel mode
+        if (!hadSession && hasSession && isTravelMode) {
+          setIsTravelMode(false)
+          setIsDiscoveryMode(false)
+        }
+
+        // Update previous session state
+        previousSessionRef.current = hasSession
+      }, 100)
+    }
+
+    // Check initial session state
+    const token = sessionManager.getToken()
+    const user = sessionManager.getCurrentUser()
+    previousSessionRef.current = !!(token && user)
+
+    // Listen for auth changes (login/logout)
+    window.addEventListener('auth-storage-change', handleAuthChange)
+
+    return () => {
+      window.removeEventListener('auth-storage-change', handleAuthChange)
+    }
   }, [isTravelMode])
 
   // Persist discovery mode state to localStorage

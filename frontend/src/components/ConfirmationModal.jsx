@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { FiAlertTriangle, FiX } from 'react-icons/fi'
+import { useModalRegistration } from '../context/ModalContext'
 import './ConfirmationModal.css'
 
 /**
@@ -24,6 +25,9 @@ function ConfirmationModal({
   loading = false
 }) {
   const { t } = useTranslation()
+
+  // Register modal to hide bottom navigation on mobile
+  useModalRegistration(isOpen)
 
   // Handle Escape key and body scroll lock
   useEffect(() => {

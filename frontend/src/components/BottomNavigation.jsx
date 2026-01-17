@@ -10,12 +10,14 @@ import {
 import { memo, useState, useEffect } from 'react'
 import './BottomNavigation.css'
 import { useTranslation } from 'react-i18next'
+import { useModal } from '../context/ModalContext'
 
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
 
 const BottomNavigation = () => {
     const { t } = useTranslation()
+    const { hasOpenModals } = useModal()
     const [showFabMenu, setShowFabMenu] = useState(false)
     const [avatarUrl, setAvatarUrl] = useState(null)
     const [avatarError, setAvatarError] = useState(false)
@@ -40,7 +42,7 @@ const BottomNavigation = () => {
     }, [])
 
     return (
-        <nav className="bottom-nav">
+        <nav className={`bottom-nav ${hasOpenModals ? 'hidden' : ''}`}>
             <div className="bottom-nav-container">
                 <NavLink to="/dashboard" className="nav-item">
                     <div className="icon-container">

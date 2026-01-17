@@ -165,17 +165,22 @@ export const fetchPOIsMultipleCategories = async (categoryIds, lat, lon) => {
  * @returns {Promise<Array>} Array of POIs
  */
 export const searchPOIs = async (query, lat, lon) => {
+  if (!query || query.trim().length < 2) {
+    return []
+  }
+
   if (!MAPBOX_TOKEN) {
     console.warn('Mapbox token not configured, falling back to Overpass')
     return searchPOIsOverpass(query, lat, lon)
   }
 
   try {
-    const url = new URL('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(query) + '.json')
+    // First try with POI types for better results
+    const url = new URL('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(query.trim()) + '.json')
     url.searchParams.append('access_token', MAPBOX_TOKEN)
     url.searchParams.append('proximity', `${lon},${lat}`)
-    url.searchParams.append('types', 'poi')
-    url.searchParams.append('limit', '10')
+    url.searchParams.append('types', 'poi,address,place')
+    url.searchParams.append('limit', '15')
 
     const response = await fetch(url.toString())
     if (!response.ok) {
@@ -183,9 +188,29 @@ export const searchPOIs = async (query, lat, lon) => {
     }
 
     const data = await response.json()
-    return parseMapboxResults(data.features || [])
+    const results = parseMapboxResults(data.features || [])
+    
+    // If we got results, return them
+    if (results.length > 0) {
+      return results
+    }
+
+    // If no POI results, try broader search without type restriction
+    const broaderUrl = new URL('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(query.trim()) + '.json')
+    broaderUrl.searchParams.append('access_token', MAPBOX_TOKEN)
+    broaderUrl.searchParams.append('proximity', `${lon},${lat}`)
+    broaderUrl.searchParams.append('limit', '10')
+
+    const broaderResponse = await fetch(broaderUrl.toString())
+    if (!broaderResponse.ok) {
+      throw new Error(`Mapbox Search API error: ${broaderResponse.status}`)
+    }
+
+    const broaderData = await broaderResponse.json()
+    return parseMapboxResults(broaderData.features || [])
   } catch (error) {
     console.error('Error searching Mapbox:', error)
+    // Fallback to Overpass
     return searchPOIsOverpass(query, lat, lon)
   }
 }
@@ -196,20 +221,23 @@ export const searchPOIs = async (query, lat, lon) => {
  * @returns {Array} Normalized POI array
  */
 const parseMapboxResults = (features) => {
-  return features.map(feature => ({
-    id: `mapbox-${feature.id}`,
-    poiId: `mapbox-${feature.id}`,
-    name: feature.text || feature.place_name?.split(',')[0] || 'Unnamed',
-    category: mapMapboxCategoryToId(feature.properties?.category),
-    latitude: feature.center?.[1],
-    longitude: feature.center?.[0],
-    address: feature.place_name || '',
-    phone: '',
-    website: '',
-    openingHours: '',
-    source: 'mapbox',
-    properties: feature.properties || {}
-  }))
+  return features
+    .filter(feature => feature.center && feature.center.length >= 2) // Ensure valid coordinates
+    .map(feature => ({
+      id: `mapbox-${feature.id}`,
+      poiId: `mapbox-${feature.id}`,
+      name: feature.text || feature.place_name?.split(',')[0] || 'Unnamed',
+      category: mapMapboxCategoryToId(feature.properties?.category),
+      latitude: feature.center[1],
+      longitude: feature.center[0],
+      address: feature.place_name || '',
+      phone: feature.properties?.phone || '',
+      website: feature.properties?.website || '',
+      openingHours: '',
+      source: 'mapbox',
+      properties: feature.properties || {}
+    }))
+    .filter(poi => poi.name !== 'Unnamed' && poi.latitude && poi.longitude) // Filter out invalid results
 }
 
 /**
@@ -247,13 +275,21 @@ const mapMapboxCategoryToId = (mapboxCategory) => {
  * @returns {Promise<Array>} Array of POIs
  */
 const searchPOIsOverpass = async (query, lat, lon) => {
+  if (!query || query.trim().length < 2) {
+    return []
+  }
+
   const radius = DISCOVERY_MAP_CONFIG.poiRadius
+  // Escape special characters for Overpass regex
+  const escapedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const overpassQuery = `
     [out:json][timeout:25];
     (
-      node["name"~"${query}",i](around:${radius},${lat},${lon});
+      node["name"~"${escapedQuery}",i](around:${radius},${lat},${lon});
+      way["name"~"${escapedQuery}",i](around:${radius},${lat},${lon});
+      relation["name"~"${escapedQuery}",i](around:${radius},${lat},${lon});
     );
-    out body;
+    out center;
   `
 
   try {
@@ -270,7 +306,20 @@ const searchPOIsOverpass = async (query, lat, lon) => {
     }
 
     const data = await response.json()
-    return parseOverpassResults(data.elements || [], 'attraction')
+    // Parse results and handle different element types (node, way, relation)
+    const elements = (data.elements || []).map(element => {
+      // For ways and relations, use center coordinates
+      if (element.type === 'way' || element.type === 'relation') {
+        return {
+          ...element,
+          lat: element.center?.lat || element.lat,
+          lon: element.center?.lon || element.lon
+        }
+      }
+      return element
+    })
+    
+    return parseOverpassResults(elements, 'attraction')
   } catch (error) {
     console.error('Error searching Overpass:', error)
     return []

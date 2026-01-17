@@ -254,6 +254,7 @@
   border-bottom: var(--glass-border);
   padding: var(--spacing-sm) var(--spacing-md);
   min-height: 60px;
+  overflow: hidden;
 }
 
 [data-theme='dark'] .travel-header {
@@ -264,28 +265,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xs);
   max-width: 1400px;
   margin: 0 auto;
+  min-width: 0;
 }
 
 /* Exit button with airplane */
 .travel-exit-btn {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: linear-gradient(135deg, rgba(142, 68, 173, 0.15), rgba(142, 68, 173, 0.08));
   border: 1px solid rgba(142, 68, 173, 0.25);
   border-radius: var(--radius-md);
   color: var(--primary);
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-height: 44px;
+  min-height: 36px;
   position: relative;
   overflow: visible;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .travel-exit-btn:hover {
@@ -331,40 +335,51 @@
   flex: 1;
   text-align: center;
   min-width: 0;
+  overflow: hidden;
+  padding: 0 var(--spacing-xs);
 }
 
 .trip-name {
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.3;
 }
 
 .trip-meta {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xs);
   margin-top: 2px;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--text-secondary);
+  flex-wrap: wrap;
+  line-height: 1.2;
 }
 
 .trip-destination,
 .trip-dates {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Header actions - right */
 .travel-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
 }
 
 .sync-indicator {
@@ -469,35 +484,50 @@
   border-top: var(--glass-border);
   z-index: 200;
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5px);
+  /* Smooth slide animation */
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme='dark'] .travel-nav {
   background: rgba(15, 7, 26, 0.9);
 }
 
+.travel-nav.hidden {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
 .travel-nav-container {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
   max-width: 600px;
   margin: 0 auto;
-  padding: var(--spacing-xs) 0;
+  padding: var(--spacing-xs) var(--spacing-xs);
+  gap: 2px;
 }
 
 .travel-nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-xs) 2px;
   background: transparent;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  min-width: 50px;
+  flex: 1;
+  min-width: 0;
   min-height: 48px;
+  max-width: 100%;
 }
 
 .travel-nav-item:hover {
@@ -532,6 +562,12 @@
   font-size: 0.625rem;
   font-weight: 500;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  width: 100%;
+  text-align: center;
+  line-height: 1.2;
 }
 
 /* ================================
@@ -689,9 +725,95 @@
    Responsive Adjustments
    ================================ */
 
+/* Mobile optimizations for Greek text */
+@media (max-width: 480px) {
+  .travel-header {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    min-height: 50px;
+  }
+
+  .travel-header-content {
+    gap: 4px;
+    min-height: 50px;
+  }
+
+  .travel-exit-btn {
+    padding: 6px 8px;
+    font-size: 0.6875rem;
+    gap: 4px;
+    min-height: 32px;
+  }
+
+  .travel-exit-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .trip-name {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  .trip-meta {
+    font-size: 0.625rem;
+    gap: 6px;
+    margin-top: 1px;
+  }
+
+  .trip-destination,
+  .trip-dates {
+    gap: 2px;
+    max-width: 120px;
+  }
+
+  .trip-destination svg,
+  .trip-dates svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  .trip-status-badge {
+    font-size: 0.625rem;
+    padding: 2px 6px;
+    line-height: 1.2;
+  }
+
+  .sync-indicator {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sync-indicator svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .travel-header-actions {
+    gap: 4px;
+  }
+}
+
 @media (min-width: 768px) {
   .travel-header {
     padding: var(--spacing-md) var(--spacing-lg);
+    min-height: 60px;
+  }
+
+  .travel-header-content {
+    gap: var(--spacing-md);
+  }
+
+  .travel-exit-btn {
+    font-size: 0.875rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: 44px;
+    gap: var(--spacing-sm);
+  }
+
+  .travel-exit-btn {
+    font-size: 0.875rem;
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   .travel-content {
@@ -704,20 +826,50 @@
 
   .trip-meta {
     font-size: 0.8125rem;
+    gap: var(--spacing-md);
+  }
+
+  .travel-nav-item {
+    padding: var(--spacing-xs) 1px;
+    min-height: 52px;
   }
 
   .travel-nav-item .nav-label {
-    font-size: 0.6875rem;
+    font-size: 0.6rem;
+    line-height: 1.1;
+  }
+}
+
+/* Very small screens - further reduce font size */
+@media (max-width: 360px) {
+  .travel-nav-container {
+    padding: var(--spacing-xs) 1px;
+    gap: 1px;
+  }
+
+  .travel-nav-item {
+    padding: var(--spacing-xs) 0;
+    min-height: 50px;
+  }
+
+  .travel-nav-item .nav-label {
+    font-size: 0.55rem;
+    line-height: 1;
   }
 }
 
 @media (min-width: 1024px) {
   .travel-nav-container {
     max-width: 700px;
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 
   .travel-nav-item {
-    min-width: 80px;
+    padding: var(--spacing-xs) var(--spacing-xs);
+  }
+
+  .travel-nav-item .nav-label {
+    font-size: 0.6875rem;
   }
 }
 

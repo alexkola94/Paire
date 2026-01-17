@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useModalRegistration } from '../../context/ModalContext'
 import {
   FiX,
   FiMapPin,
@@ -12,7 +13,8 @@ import {
   FiCreditCard,
   FiList
 } from 'react-icons/fi'
-import { tripService, budgetService } from '../services/travelApi'
+import { tripService } from '../services/travelApi'
+import { budgetService } from '../../services/api'
 import { createTrip } from '../services/travelDb'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import '../styles/TripSetupWizard.css'
@@ -53,6 +55,10 @@ const geocodeDestination = async (query) => {
  */
 const TripSetupWizard = ({ trip, onClose, onSave }) => {
   const { t } = useTranslation()
+  
+  // Register modal to hide bottom navigation and explore button
+  useModalRegistration(true)
+  
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)

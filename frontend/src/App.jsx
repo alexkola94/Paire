@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect, useRef, Suspense, lazy } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import { authService } from './services/auth'
 import { sessionManager } from './services/sessionManager'
@@ -7,6 +8,7 @@ import { isTokenExpired } from './utils/tokenUtils'
 import { ThemeProvider } from './context/ThemeContext'
 import { AccessibilityProvider } from './context/AccessibilityContext'
 import { PrivacyModeProvider } from './context/PrivacyModeContext'
+import { ModalProvider } from './context/ModalContext'
 import { TravelModeProvider, useTravelMode } from './travel/context/TravelModeContext'
 import LogoLoader from './components/LogoLoader'
 import AirplaneTransition from './components/AirplaneTransition'
@@ -85,24 +87,19 @@ function AppContent({ session }) {
     name: transitionDestination.destination
   } : null
 
-  // If in travel mode and authenticated, show TravelApp
-  if (isTravelMode && session) {
-    return (
-      <>
-        <AirplaneTransition
-          isVisible={isTransitioning}
-          direction={transitionDirection}
-          onComplete={completeTransition}
-          destination={destination}
-        />
-        <Suspense fallback={<LogoLoader size="large" fullScreen />}>
-          <TravelApp />
-        </Suspense>
-      </>
-    )
+  // Content transition variants for smooth fade
+  const contentVariants = {
+    initial: { opacity: 0 },
+    animate: { 
+      opacity: 1,
+      transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
+    },
+    exit: { 
+      opacity: 0,
+      transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] }
+    }
   }
 
-  // Otherwise render the main app router
   return (
     <>
       <AirplaneTransition
@@ -111,7 +108,33 @@ function AppContent({ session }) {
         onComplete={completeTransition}
         destination={destination}
       />
-      <MainAppRouter session={session} />
+      <AnimatePresence mode="wait">
+        {isTravelMode && session ? (
+          <motion.div
+            key="travel-app"
+            variants={contentVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            style={{ width: '100%', height: '100%' }}
+          >
+            <Suspense fallback={<LogoLoader size="large" fullScreen />}>
+              <TravelApp />
+            </Suspense>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="main-app"
+            variants={contentVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            style={{ width: '100%', height: '100%' }}
+          >
+            <MainAppRouter session={session} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }
@@ -377,11 +400,13 @@ function App() {
     <ThemeProvider>
       <AccessibilityProvider>
         <PrivacyModeProvider>
-          <TravelModeProvider>
-            <ToastProvider>
-              <AppContent session={session} />
-            </ToastProvider>
-          </TravelModeProvider>
+          <ModalProvider>
+            <TravelModeProvider>
+              <ToastProvider>
+                <AppContent session={session} />
+              </ToastProvider>
+            </TravelModeProvider>
+          </ModalProvider>
         </PrivacyModeProvider>
       </AccessibilityProvider>
     </ThemeProvider>

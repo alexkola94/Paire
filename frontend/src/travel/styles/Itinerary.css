@@ -357,19 +357,17 @@
   margin: 0 0 var(--spacing-lg) 0;
 }
 
-/* Modal Overlay - Fixed Centered */
+/* Modal Overlay */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
   padding: var(--spacing-md);
 }
 
@@ -378,20 +376,263 @@
   border-radius: var(--radius-xl);
   width: 100%;
   max-width: 500px;
-  max-height: 85vh;
+  max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
 }
 
-@media (max-width: 480px) {
+.event-form-modal form {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .itinerary-page {
+    padding: var(--spacing-md);
+    margin: var(--spacing-xs);
+    border-radius: 16px;
+  }
+
+  .itinerary-header .section-title {
+    font-size: 1.125rem;
+  }
+
+  .itinerary-header .add-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .day-events {
+    padding-left: calc(28px + var(--spacing-md));
+    margin-left: 14px;
+  }
+
+  .event-timeline-dot {
+    left: calc(-14px - var(--spacing-md) - 5px);
+    width: 8px;
+    height: 8px;
+  }
+
+  .event-card {
+    padding: var(--spacing-sm);
+  }
+
+  .event-actions {
+    position: static;
+    opacity: 1;
+    margin-top: var(--spacing-xs);
+    justify-content: flex-end;
+  }
+
+  .event-action-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
   .modal-overlay {
-    padding: 0;
     align-items: flex-end;
+    padding: 0;
   }
 
   .event-form-modal {
-    max-height: 90vh;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 90vh;
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .event-form-modal .modal-header {
+    padding: var(--spacing-md);
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    z-index: 10;
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .event-form-modal .modal-header h3 {
+    font-size: 1.125rem;
+  }
+
+  .event-form-modal .modal-close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .event-form-modal form {
+    padding: var(--spacing-md);
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .event-form-modal .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .event-form-modal label {
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .event-form-modal input,
+  .event-form-modal select,
+  .event-form-modal textarea {
+    padding: var(--spacing-md);
+    font-size: 16px; /* Prevents zoom on iOS */
+    min-height: 80px; /* Textarea should be taller */
+    box-sizing: border-box;
+    resize: vertical;
+  }
+
+  .event-form-modal .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .type-selector {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-xs);
+  }
+
+  .type-option {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    min-height: 64px;
+    gap: 4px;
+  }
+
+  .type-option svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .type-option span {
+    font-size: 0.625rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .event-form-modal .modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+    padding: var(--spacing-md);
+    margin: var(--spacing-md) calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1);
+    border-top: 1px solid var(--glass-border);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    display: flex;
+    gap: var(--spacing-md);
+  }
+
+  .event-form-modal .cancel-btn,
+  .event-form-modal .travel-btn {
+    min-height: 44px;
+    font-size: 1rem;
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .itinerary-page {
+    padding: var(--spacing-sm);
+    margin: var(--spacing-xs);
+    border-radius: 14px;
+  }
+
+  .itinerary-header {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .itinerary-header .section-title {
+    font-size: 1rem;
+  }
+
+  .day-header {
+    gap: var(--spacing-sm);
+  }
+
+  .day-marker {
+    width: 32px;
+    height: 32px;
+  }
+
+  .day-number {
+    font-size: 0.75rem;
+  }
+
+  .day-label {
+    font-size: 0.875rem;
+  }
+
+  .day-date {
+    font-size: 0.75rem;
+  }
+
+  .add-day-event {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .event-form-modal {
+    max-height: 95vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .event-form-modal .modal-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .event-form-modal .modal-header h3 {
+    font-size: 1rem;
+  }
+
+  .event-form-modal form {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .event-form-modal .form-group {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .type-selector {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .type-option {
+    padding: 8px 4px;
+    min-height: 60px;
+  }
+
+  .type-option svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .type-option span {
+    font-size: 0.6rem;
+  }
+
+  .event-form-modal .modal-footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: var(--spacing-sm) calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1);
+    gap: var(--spacing-sm);
   }
 }
 
@@ -401,6 +642,28 @@
   justify-content: space-between;
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.event-form-modal .modal-close {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 44px; /* Touch-friendly */
+  min-height: 44px;
+}
+
+.event-form-modal .modal-close:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .event-form-modal .modal-header h3 {
@@ -424,7 +687,8 @@
 }
 
 .event-form-modal input,
-.event-form-modal select {
+.event-form-modal select,
+.event-form-modal textarea {
   width: 100%;
   padding: var(--spacing-md);
   border: 1px solid var(--glass-border);
@@ -432,9 +696,22 @@
   font-size: 1rem;
   background: var(--bg-primary);
   color: var(--text-primary);
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px; /* Touch-friendly minimum height */
+  box-sizing: border-box;
+  transition: all 0.3s ease;
 }
 
-.event-form-modal input:focus {
+.event-form-modal textarea {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.event-form-modal input:focus,
+.event-form-modal select:focus,
+.event-form-modal textarea:focus {
   outline: none;
   border-color: var(--primary);
 }
@@ -443,6 +720,12 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+  .event-form-modal .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Type Selector */
@@ -454,7 +737,13 @@
 
 @media (min-width: 480px) {
   .type-selector {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .type-selector {
+    grid-template-columns: repeat(6, 1fr);
   }
 }
 
@@ -469,6 +758,8 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 60px; /* Touch-friendly minimum height */
+  justify-content: center;
 }
 
 .type-option span {
@@ -491,6 +782,7 @@
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--glass-border);
   margin-top: var(--spacing-md);
+  flex-shrink: 0;
 }
 
 .event-form-modal .cancel-btn {
@@ -501,10 +793,16 @@
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   cursor: pointer;
+  min-height: 44px; /* Touch-friendly minimum height */
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
 .event-form-modal .travel-btn {
   flex: 1;
+  min-height: 44px; /* Touch-friendly minimum height */
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
 /* Responsive */

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { FiX } from 'react-icons/fi';
+import { useModalRegistration } from '../context/ModalContext';
 import './Modal.css';
 
 /**
@@ -15,6 +16,9 @@ const Modal = ({
     className = '',
     showCloseButton = true
 }) => {
+    // Register modal to hide bottom navigation on mobile
+    useModalRegistration(isOpen);
+
     // Handle Escape key to close
     useEffect(() => {
         const handleKeyDown = (e) => {

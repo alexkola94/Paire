@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useModalRegistration } from '../../context/ModalContext'
 import {
   FiPlus,
   FiCheck,
@@ -370,6 +371,9 @@ const AddItemModal = ({ onClose, onSave }) => {
     quantity: 1,
     isEssential: false
   })
+
+  // Register modal to hide bottom navigation
+  useModalRegistration(true)
 
   const handleSubmit = (e) => {
     e.preventDefault()

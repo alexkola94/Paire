@@ -3,6 +3,7 @@ import { memo, useState, useEffect, Suspense, lazy, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTravelMode } from '../context/TravelModeContext'
 import { useTheme } from '../../context/ThemeContext'
+import { useModal } from '../../context/ModalContext'
 import TravelHeader from './TravelHeader'
 import TravelNavigation from './TravelNavigation'
 import OfflineIndicator from './common/OfflineIndicator'
@@ -95,6 +96,7 @@ const discoveryLayerVariants = {
 const TravelLayout = memo(({ children, activePage, onNavigate }) => {
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const { hasOpenModals } = useModal()
   const {
     activeTrip,
     isOnline,
@@ -253,7 +255,7 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
       </AnimatePresence>
 
       {/* Discovery Mode Toggle Button - Fixed Position (Home Only or Active Mode) */}
-      {canEnterDiscovery && !selectedPOI && (activePage === 'home' || isDiscoveryMode) && (
+      {canEnterDiscovery && !selectedPOI && (activePage === 'home' || isDiscoveryMode) && !hasOpenModals && (
         <motion.button
           className={`immersive-toggle ${isDiscoveryMode ? 'active' : ''}`}
           onClick={handleToggleClick}
@@ -292,7 +294,7 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
               {children}
 
               {/* Static Explore Button for non-home pages */}
-              {canEnterDiscovery && activePage !== 'home' && (
+              {canEnterDiscovery && activePage !== 'home' && !hasOpenModals && (
                 <div className="static-explore-container">
                   <motion.button
                     className="immersive-toggle static"

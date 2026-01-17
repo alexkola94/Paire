@@ -1146,7 +1146,15 @@
       "offline": "Offline - Data will sync when online",
       "syncing": "Syncing...",
       "syncComplete": "Sync complete",
-      "syncError": "Sync failed"
+      "syncError": "Sync failed",
+      "viewAll": "View all",
+      "createTrip": "Create Trip",
+      "save": "Save",
+      "cancel": "Cancel",
+      "add": "Add",
+      "saving": "Saving...",
+      "ascending": "Ascending",
+      "descending": "Descending"
     },
     "nav": {
       "home": "Home",
@@ -1276,6 +1284,11 @@
       "category": "Category",
       "quantity": "Qty",
       "markEssential": "Mark as essential",
+      "rainWarn": "Rain predicted! ☔",
+      "coldWarn": "It looks cold! ❄️",
+      "hotWarn": "Heatwave ahead! ☀️",
+      "beachWarn": "Beach time! 🏖️",
+      "weatherTip": "We found some essential items for this weather.",
       "categories": {
         "clothing": "Clothing",
         "toiletries": "Toiletries",
@@ -1320,6 +1333,7 @@
     },
     "explore": {
       "title": "Explore",
+      "essentials": "Travel Essentials",
       "noTrip": "No Trip Selected",
       "createTripFirst": "Create a trip to explore your destination",
       "noLocation": "Location Not Set",
@@ -1327,9 +1341,12 @@
       "weatherTitle": "Weather",
       "loadingWeather": "Loading weather...",
       "weatherError": "Unable to load weather",
+      "hideForecast": "Hide forecast",
+      "showForecast": "See 7-day forecast",
       "today": "Today",
       "tomorrow": "Tomorrow",
-      "nearby": "Nearby Places",
+      "nearby": "What are you looking for?",
+      "findPlaces": "Find nearby places",
       "loadingPlaces": "Finding places...",
       "noPois": "No places found nearby",
       "tryAnother": "Try another category",
@@ -1361,7 +1378,11 @@
         "snow": "Snow",
         "heavySnow": "Heavy snow",
         "thunderstorm": "Thunderstorm",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
+        "sunny": "Sunny",
+        "cloudy": "Cloudy",
+        "rainy": "Rainy",
+        "snowy": "Snowy"
       },
       "tip": {
         "checkWeather": "Check weather before outdoor activities",
@@ -1369,28 +1390,6 @@
         "localCurrency": "Locate ATMs for local currency",
         "emergency": "Note nearby hospitals for emergencies"
       }
-    },
-    "explore": {
-      "essentials": "Travel Essentials",
-      "hideForecast": "Hide forecast",
-      "showForecast": "See 7-day forecast",
-      "findPlaces": "Find nearby places",
-      "nearby": "What are you looking for?",
-      "unnamed": "Unnamed",
-      "noPois": "No places found nearby",
-      "weatherError": "Unable to load weather",
-      "weather": {
-        "sunny": "Sunny",
-        "cloudy": "Cloudy",
-        "rainy": "Rainy",
-        "snowy": "Snowy"
-      },
-      "today": "Today",
-      "tomorrow": "Tomorrow",
-      "noTrip": "No Trip Selected",
-      "createTripFirst": "Create a trip to explore your destination",
-      "noLocation": "Location Not Set",
-      "setLocation": "Set your destination to see weather and places"
     },
     "emergency": {
       "title": "Emergency Info",
@@ -1412,33 +1411,25 @@
       "how_much": "How much?",
       "bill": "The bill"
     },
-    "packing": {
-      "progress": "Packing Progress",
-      "items": "items",
-      "addItem": "Add Item",
-      "addSuggestions": "Smart Suggestions",
-      "emptyTitle": "Your packing list is empty",
-      "emptyDescription": "Add items manually or use smart suggestions",
-      "itemName": "Item Name",
-      "itemNamePlaceholder": "e.g., T-shirt, Toothbrush",
-      "category": "Category",
-      "quantity": "Qty",
-      "markEssential": "Mark as essential",
-      "rainWarn": "Rain predicted! ☔",
-      "coldWarn": "It looks cold! ❄️",
-      "hotWarn": "Heatwave ahead! ☀️",
-      "beachWarn": "Beach time! 🏖️",
-      "weatherTip": "We found some essential items for this weather.",
-      "noTrip": "No Trip Selected",
-      "createTripFirst": "Create a trip to start your packing list"
-    },
-    "common": {
-      "viewAll": "View all",
-      "createTrip": "Create Trip",
-      "save": "Save",
-      "cancel": "Cancel",
-      "add": "Add",
-      "saving": "Saving..."
+    "discovery": {
+      "enter": "Enter Discovery Mode",
+      "exitMap": "Exit Discovery Mode",
+      "explore": "Explore",
+      "fromCenter": "from trip",
+      "getDirections": "Get Directions",
+      "unpinFromTrip": "Pinned",
+      "pinning": "Pinning...",
+      "pinToTrip": "Hold to Pin",
+      "pinHint": "Long press \"Hold to Pin\" to add this place to your trip",
+      "searchPlaceholder": "Search places...",
+      "categories": {
+        "foodDrink": "Food & Drink",
+        "attractions": "Attractions",
+        "shopping": "Shopping",
+        "transit": "Transit",
+        "atm": "ATM",
+        "pharmacy": "Pharmacy"
+      }
     },
     "wizard": {
       "title": "Plan Your Trip",

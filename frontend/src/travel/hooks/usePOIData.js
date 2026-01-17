@@ -127,12 +127,16 @@ const usePOIData = () => {
   const search = useCallback(async (query) => {
     setSearchQuery(query)
 
-    if (!query || query.length < 2) {
+    // Clear results if query is empty or too short
+    if (!query || query.trim().length < 2) {
       setSearchResults([])
+      setLoading(false)
       return
     }
 
     if (!activeTrip?.latitude || !activeTrip?.longitude) {
+      console.warn('Cannot search: No trip location available')
+      setSearchResults([])
       return
     }
 
@@ -141,7 +145,7 @@ const usePOIData = () => {
 
     try {
       const results = await searchPOIs(
-        query,
+        query.trim(),
         activeTrip.latitude,
         activeTrip.longitude
       )
@@ -157,10 +161,15 @@ const usePOIData = () => {
         )
       }))
 
+      // Sort by distance
+      resultsWithDistance.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
+
+      console.log(`Search for "${query}" returned ${resultsWithDistance.length} results`)
       setSearchResults(resultsWithDistance)
     } catch (err) {
       console.error('Error searching POIs:', err)
       setError('Search failed. Please try again.')
+      setSearchResults([])
     } finally {
       setLoading(false)
     }

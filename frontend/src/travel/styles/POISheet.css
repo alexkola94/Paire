@@ -181,6 +181,14 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 52px;
+  min-width: 0; /* Allow button to shrink */
+}
+
+.poi-action-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .poi-action-btn.primary {
@@ -250,6 +258,132 @@
 
   .poi-sheet-name {
     font-size: 1.75rem;
+  }
+}
+
+/* ================================
+   Light Theme Adjustments
+   ================================ */
+
+.travel-layout:not([data-theme='dark']) .poi-sheet-backdrop {
+  background: rgba(45, 41, 38, 0.3);
+  backdrop-filter: blur(4px);
+}
+
+.travel-layout:not([data-theme='dark']) .poi-sheet {
+  background: linear-gradient(180deg,
+      rgba(255, 253, 250, 0.98) 0%,
+      rgba(255, 250, 245, 0.99) 100%);
+  border: 1px solid rgba(199, 149, 109, 0.2);
+  border-bottom: none;
+  box-shadow: 0 -8px 40px rgba(139, 108, 74, 0.15);
+}
+
+.travel-layout:not([data-theme='dark']) .handle-bar {
+  background: rgba(199, 149, 109, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .poi-sheet-close {
+  background: rgba(199, 149, 109, 0.1);
+  color: #5c534a;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-sheet-close:hover {
+  background: rgba(199, 149, 109, 0.2);
+  color: #2d2926;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-category-badge {
+  background: rgba(199, 149, 109, 0.12);
+  border: 1px solid var(--badge-color, rgba(199, 149, 109, 0.3));
+  color: var(--badge-color, #c7956d);
+}
+
+.travel-layout:not([data-theme='dark']) .poi-sheet-name {
+  color: #2d2926;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-sheet-distance {
+  color: #c7956d;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-detail-row {
+  background: rgba(199, 149, 109, 0.06);
+  color: #5c534a;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-detail-row svg {
+  color: #8a8279;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-detail-row.clickable:hover {
+  background: rgba(199, 149, 109, 0.12);
+  color: #2d2926;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-action-btn.secondary {
+  background: rgba(199, 149, 109, 0.1);
+  border: 1px solid rgba(199, 149, 109, 0.25);
+  color: #5c534a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-action-btn.secondary:hover {
+  background: rgba(199, 149, 109, 0.15);
+  border-color: rgba(199, 149, 109, 0.35);
+  color: #2d2926;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-action-btn.secondary.pinned {
+  background: rgba(46, 204, 113, 0.15);
+  border-color: rgba(46, 204, 113, 0.4);
+  color: #27ae60;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-action-btn.secondary.pinning {
+  background: rgba(46, 204, 113, 0.2);
+  border-color: rgba(46, 204, 113, 0.5);
+  color: #27ae60;
+}
+
+.travel-layout:not([data-theme='dark']) .poi-pin-hint {
+  color: #8a8279;
+}
+
+/* Mobile adjustments for light theme */
+@media (max-width: 768px) {
+  .travel-layout:not([data-theme='dark']) .poi-action-btn.secondary {
+    font-size: 0.8rem;
+    padding: 14px 8px;
+    min-width: 0;
+  }
+
+  .travel-layout:not([data-theme='dark']) .poi-action-btn.secondary span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  /* Ensure buttons don't overflow on mobile */
+  .poi-sheet-actions {
+    gap: 6px;
+  }
+
+  .poi-action-btn {
+    padding: 14px 10px;
+    font-size: 0.8rem;
+  }
+
+  .poi-action-btn.primary {
+    flex: 1.2; /* Give primary button slightly more space */
+  }
+
+  .poi-action-btn.secondary {
+    flex: 1;
+    min-width: 80px; /* Minimum width to prevent too much truncation */
   }
 }
 
