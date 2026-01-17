@@ -8,9 +8,11 @@ import {
   FiDollarSign,
   FiCheck,
   FiChevronRight,
-  FiChevronLeft
+  FiChevronLeft,
+  FiCreditCard,
+  FiList
 } from 'react-icons/fi'
-import { tripService } from '../services/travelApi'
+import { tripService, budgetService } from '../services/travelApi'
 import { createTrip } from '../services/travelDb'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import '../styles/TripSetupWizard.css'
@@ -55,6 +57,11 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
+  // Budget selection state
+  const [availableBudgets, setAvailableBudgets] = useState([])
+  const [budgetMode, setBudgetMode] = useState('new') // 'new' or 'existing'
+  const [selectedBudgetId, setSelectedBudgetId] = useState('')
+
   // Form state
   const [formData, setFormData] = useState({
     name: trip?.name || '',
@@ -65,6 +72,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
     startDate: trip?.startDate || '',
     endDate: trip?.endDate || '',
     budget: trip?.budget || '',
+    budgetCategory: trip?.name || '', // Name for new budget
     budgetCurrency: trip?.budgetCurrency || 'EUR'
   })
 
@@ -72,6 +80,26 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
   const [searchQuery, setSearchQuery] = useState(trip?.destination || '')
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
+
+  // Load existing budgets on mount
+  useEffect(() => {
+    const loadBudgets = async () => {
+      try {
+        const budgets = await budgetService.getAll()
+        setAvailableBudgets(budgets || [])
+      } catch (err) {
+        console.error('Error loading budgets:', err)
+      }
+    }
+    loadBudgets()
+  }, [])
+
+  // Auto-fill budget category name with trip name
+  useEffect(() => {
+    if (budgetMode === 'new' && !formData.budgetCategory && formData.name) {
+      setFormData(prev => ({ ...prev, budgetCategory: formData.name }))
+    }
+  }, [formData.name, budgetMode])
 
   // Debounced destination search
   useEffect(() => {
@@ -127,6 +155,16 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
           return false
         }
         break
+      case 3:
+        if (budgetMode === 'new' && formData.budget && !formData.budgetCategory) {
+          setError(t('travel.setup.errors.budgetCategoryRequired', 'Please name your budget'))
+          return false
+        }
+        if (budgetMode === 'existing' && !selectedBudgetId) {
+          setError(t('wizard.selectBudget', 'Please select a budget'))
+          return false
+        }
+        break
       default:
         break
     }
@@ -154,10 +192,39 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
     setError(null)
 
     try {
+      let finalBudget = parseFloat(formData.budget) || 0
+      let linkedBudgetId = null
+
+      // Handle Budget Creation/Selection
+      if (budgetMode === 'new' && finalBudget > 0) {
+        // Create new budget via API
+        try {
+          const newBudget = await budgetService.create({
+            category: formData.budgetCategory || formData.name || formData.destination,
+            amount: finalBudget,
+            startDate: formData.startDate,
+            endDate: formData.endDate,
+            period: 'monthly' // Default for trips usually falls within months
+          })
+          linkedBudgetId = newBudget.id
+        } catch (err) {
+          console.error('Failed to create linked budget:', err)
+          // Continue without linking, but warn? For now, we proceed.
+        }
+      } else if (budgetMode === 'existing' && selectedBudgetId) {
+        // Link to existing budget
+        const selectedBudget = availableBudgets.find(b => b.id === selectedBudgetId)
+        if (selectedBudget) {
+          finalBudget = selectedBudget.amount // Update trip budget to match selected
+          linkedBudgetId = selectedBudget.id
+        }
+      }
+
       const tripData = {
         ...formData,
         name: formData.name || formData.destination,
-        budget: parseFloat(formData.budget) || 0
+        budget: finalBudget,
+        linkedBudgetId // Optional field if your backend supports it, otherwise just budget amount
       }
 
       let savedTrip
@@ -282,39 +349,96 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
           <div className="wizard-step">
             <h3>{t('travel.setup.step3.title', 'Set your budget')}</h3>
             <p className="step-description">
-              {t('travel.setup.step3.description', 'Optional: Set a total budget for your trip')}
+              {t('travel.setup.step3.description', 'Link an existing budget or create a new one')}
             </p>
 
-            <div className="budget-row">
-              <div className="form-group budget-input-group">
-                <label>{t('travel.trip.budget', 'Total Budget')}</label>
-                <div className="budget-input">
-                  <FiDollarSign />
-                  <input
-                    type="number"
-                    value={formData.budget}
-                    onChange={(e) => handleChange('budget', e.target.value)}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
+            {/* Budget Mode Toggle */}
+            <div className="budget-mode-toggle">
+              <button
+                className={`mode-btn ${budgetMode === 'new' ? 'active' : ''}`}
+                onClick={() => setBudgetMode('new')}
+              >
+                <FiDollarSign /> {t('wizard.newBudget', 'Create New')}
+              </button>
+              <button
+                className={`mode-btn ${budgetMode === 'existing' ? 'active' : ''}`}
+                onClick={() => setBudgetMode('existing')}
+              >
+                <FiList /> {t('wizard.existingBudget', 'Use Existing')}
+              </button>
+            </div>
+
+            {budgetMode === 'new' ? (
+              <div className="budget-form-section">
+                <div className="budget-row">
+                  <div className="form-group budget-input-group">
+                    <label>{t('wizard.budgetAmount', 'Total Budget')}</label>
+                    <div className="budget-input">
+                      <FiDollarSign />
+                      <input
+                        type="number"
+                        value={formData.budget}
+                        onChange={(e) => handleChange('budget', e.target.value)}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group currency-group">
+                    <label>{t('travel.trip.currency', 'Currency')}</label>
+                    <select
+                      value={formData.budgetCurrency}
+                      onChange={(e) => handleChange('budgetCurrency', e.target.value)}
+                    >
+                      {TRAVEL_CURRENCIES.map(currency => (
+                        <option key={currency.code} value={currency.code}>
+                          {currency.code} ({currency.symbol})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>{t('wizard.createBudgetCategory', 'Budget Name')}</label>
+                  <div className="input-with-icon">
+                    <FiCreditCard className="input-icon" />
+                    <input
+                      type="text"
+                      value={formData.budgetCategory}
+                      onChange={(e) => handleChange('budgetCategory', e.target.value)}
+                      placeholder={t('travel.setup.step1.namePlaceholder', 'e.g., Summer Trip')}
+                    />
+                  </div>
                 </div>
               </div>
-
-              <div className="form-group currency-group">
-                <label>{t('travel.trip.currency', 'Currency')}</label>
-                <select
-                  value={formData.budgetCurrency}
-                  onChange={(e) => handleChange('budgetCurrency', e.target.value)}
-                >
-                  {TRAVEL_CURRENCIES.map(currency => (
-                    <option key={currency.code} value={currency.code}>
-                      {currency.code} ({currency.symbol})
-                    </option>
-                  ))}
-                </select>
+            ) : (
+              <div className="budget-selection-section">
+                <div className="form-group">
+                  <label>{t('wizard.selectBudget', 'Select a Budget')}</label>
+                  <div className="budget-list">
+                    {availableBudgets.length === 0 ? (
+                      <div className="no-budgets-msg">No existing budgets found.</div>
+                    ) : (
+                      <select
+                        value={selectedBudgetId}
+                        onChange={(e) => setSelectedBudgetId(e.target.value)}
+                        className="budget-select"
+                      >
+                        <option value="">-- {t('wizard.selectBudget', 'Select a Budget')} --</option>
+                        {availableBudgets.map(b => (
+                          <option key={b.id} value={b.id}>
+                            {b.category} ({new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(b.amount)})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="skip-hint">
               {t('travel.setup.step3.skipHint', 'You can skip this step and set a budget later')}

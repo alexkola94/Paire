@@ -1069,6 +1069,10 @@
       "shopping": {
         "title": "Shopping Lists",
         "description": "Plan and share shopping lists with your partner. Check off items in real-time together."
+      },
+      "travel": {
+        "title": "Travel Mode",
+        "description": "Plan trips, track travel expenses separately, and manage packing lists and itineraries."
       }
     },
     "howItWorks": {
@@ -1320,7 +1324,7 @@
       "createTripFirst": "Create a trip to explore your destination",
       "noLocation": "Location Not Set",
       "setLocation": "Set your destination location to see weather and nearby places",
-      "weather": "Weather",
+      "weatherTitle": "Weather",
       "loadingWeather": "Loading weather...",
       "weatherError": "Unable to load weather",
       "today": "Today",
@@ -1366,6 +1370,76 @@
         "emergency": "Note nearby hospitals for emergencies"
       }
     },
+    "explore": {
+      "essentials": "Travel Essentials",
+      "hideForecast": "Hide forecast",
+      "showForecast": "See 7-day forecast",
+      "findPlaces": "Find nearby places",
+      "nearby": "What are you looking for?",
+      "unnamed": "Unnamed",
+      "noPois": "No places found nearby",
+      "weatherError": "Unable to load weather",
+      "weather": {
+        "sunny": "Sunny",
+        "cloudy": "Cloudy",
+        "rainy": "Rainy",
+        "snowy": "Snowy"
+      },
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "noTrip": "No Trip Selected",
+      "createTripFirst": "Create a trip to explore your destination",
+      "noLocation": "Location Not Set",
+      "setLocation": "Set your destination to see weather and places"
+    },
+    "emergency": {
+      "title": "Emergency Info",
+      "police": "Police",
+      "ambulance": "Ambulance",
+      "fire": "Fire",
+      "note": "Tap numbers to call immediately"
+    },
+    "phrasebook": {
+      "title": "Local Lingo",
+      "language": "{{lang}} Essentials",
+      "hello": "Hello",
+      "thank_you": "Thank you",
+      "yes": "Yes",
+      "no": "No",
+      "help": "Help",
+      "bathroom": "Bathroom",
+      "water": "Water",
+      "how_much": "How much?",
+      "bill": "The bill"
+    },
+    "packing": {
+      "progress": "Packing Progress",
+      "items": "items",
+      "addItem": "Add Item",
+      "addSuggestions": "Smart Suggestions",
+      "emptyTitle": "Your packing list is empty",
+      "emptyDescription": "Add items manually or use smart suggestions",
+      "itemName": "Item Name",
+      "itemNamePlaceholder": "e.g., T-shirt, Toothbrush",
+      "category": "Category",
+      "quantity": "Qty",
+      "markEssential": "Mark as essential",
+      "rainWarn": "Rain predicted! ☔",
+      "coldWarn": "It looks cold! ❄️",
+      "hotWarn": "Heatwave ahead! ☀️",
+      "beachWarn": "Beach time! 🏖️",
+      "weatherTip": "We found some essential items for this weather.",
+      "noTrip": "No Trip Selected",
+      "createTripFirst": "Create a trip to start your packing list"
+    },
+    "common": {
+      "viewAll": "View all",
+      "createTrip": "Create Trip",
+      "save": "Save",
+      "cancel": "Cancel",
+      "add": "Add",
+      "saving": "Saving..."
+    },
     "wizard": {
       "title": "Plan Your Trip",
       "step": "Step {{current}} of {{total}}",
@@ -1374,7 +1448,14 @@
       "create": "Create Trip",
       "creating": "Creating...",
       "selectDestination": "Please select a destination",
-      "selectDates": "Please select both start and end dates"
+      "selectDates": "Please select both start and end dates",
+      "budgetType": "Budget Type",
+      "existingBudget": "Existing Budget",
+      "newBudget": "Create New Budget",
+      "selectBudget": "Select a budget",
+      "createBudgetCategory": "Budget Name",
+      "budgetAmount": "Budget Amount",
+      "available": "Available"
     }
   }
 }

@@ -74,10 +74,10 @@ function AppContent({ session }) {
     pendingTrip
   } = useTravelMode()
 
-  // Get destination for map background (use pending trip for takeoff, active for landing)
+  // Get destination for map background (use pending trip for takeoff, Athens for landing)
   const transitionDestination = transitionDirection === 'takeoff'
     ? pendingTrip || activeTrip
-    : null // No map on landing, going back to main app
+    : { latitude: 37.9838, longitude: 23.7275, destination: 'Athens, Greece' }
 
   const destination = transitionDestination ? {
     latitude: transitionDestination.latitude,

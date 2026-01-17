@@ -74,13 +74,14 @@ import packageJson from '../../package.json'
 function Layout() {
   const { t } = useTranslation()
   const { theme, toggleTheme } = useTheme()
-  const { enterTravelMode } = useTravelMode()
+  const { enterTravelMode, transitionDirection } = useTravelMode()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [avatarError, setAvatarError] = useState(false)
+  const [isFlying, setIsFlying] = useState(false)
 
   const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false)
   const [isImportOpen, setIsImportOpen] = useState(false)
@@ -113,6 +114,15 @@ function Layout() {
 
 
   // Memoize handlers with useCallback to prevent unnecessary re-renders
+  const handleTravelClick = useCallback(() => {
+    setIsFlying(true)
+    setTimeout(() => {
+      enterTravelMode()
+      // Reset after a delay to ensure clean state if returning
+      setTimeout(() => setIsFlying(false), 500)
+    }, 800)
+  }, [enterTravelMode])
+
   const handleLogout = useCallback(async () => {
     try {
       await authService.signOut()
@@ -322,18 +332,6 @@ function Layout() {
               <FiBell size={22} />
             </span>
 
-            {/* Travel Mode Button - Desktop Only */}
-            <span
-              className="header-icon-btn travel-airplane-btn desktop-only"
-              onClick={() => enterTravelMode()}
-              aria-label={t('travel.common.enterTravelMode', 'Travel Mode')}
-              title={t('travel.common.enterTravelMode', 'Travel Mode')}
-              role="button"
-              tabIndex={0}
-            >
-              <RiFlightTakeoffLine size={22} />
-            </span>
-
             {/* User Dropdown - Desktop Only */}
             <div className="user-menu desktop-only" ref={userMenuRef}>
               <span
@@ -355,6 +353,40 @@ function Layout() {
                   <FiUser size={22} />
                 )}
               </span>
+
+              {/* Travel Mode Button (Animated) */}
+              <motion.span
+                className="header-icon-btn travel-airplane-btn"
+                onClick={handleTravelClick}
+                aria-label={t('travel.common.enterTravelMode', 'Travel Mode')}
+                title={t('travel.common.enterTravelMode', 'Travel Mode')}
+                role="button"
+                tabIndex={0}
+                style={{ marginLeft: '12px' }}
+                layout
+              >
+                <motion.div
+                  initial={transitionDirection === 'landing' ? {
+                    x: 300,
+                    y: -150,
+                    opacity: 0,
+                    scale: 0.5,
+                    rotate: -30
+                  } : false}
+                  animate={isFlying ? {
+                    x: 400,
+                    y: -200,
+                    opacity: 0,
+                    scale: 0.5,
+                    rotate: -30
+                  } : {
+                    x: 0, y: 0, opacity: 1, scale: 1, rotate: 0
+                  }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                >
+                  <RiFlightTakeoffLine size={22} />
+                </motion.div>
+              </motion.span>
 
               {userMenuOpen && (
                 <div className="user-menu-dropdown">

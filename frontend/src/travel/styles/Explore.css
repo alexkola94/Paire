@@ -458,3 +458,242 @@
     height: 64px;
   }
 }
+
+/* =========================================
+   Travel Essentials (Emergency & Phrasebook)
+   ========================================= */
+
+.essentials-section {
+  background: linear-gradient(145deg,
+      rgba(30, 25, 45, 0.95) 0%,
+      rgba(20, 18, 35, 0.98) 100%);
+}
+
+.essentials-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 640px) {
+  .essentials-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Card Common Styles */
+.explore-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.explore-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-icon.error-bg {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.card-icon.primary-bg {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+.card-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.card-subtitle {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Emergency Card Specifics */
+.emergency-numbers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: auto;
+}
+
+.emergency-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.emergency-item:hover {
+  background: rgba(239, 68, 68, 0.15);
+  transform: translateX(2px);
+}
+
+.emergency-item .label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.emergency-item .number {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.5px;
+}
+
+.emergency-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Phrasebook Card Specifics */
+.phrasebook-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.phrase-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.phrase-item:last-child {
+  border-bottom: none;
+}
+
+.phrase-key {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.phrase-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.view-more-btn {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-more-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Light Mode Support */
+@media (prefers-color-scheme: light) {
+  /* This is just a helper, the app likely uses a class .light-mode or data-theme */
+}
+
+/* App-specific Light Mode overrides based on CSS Variables if available */
+[data-theme='light'] .explore-section,
+[data-theme='light'] .essentials-section,
+[data-theme='light'] .poi-section {
+  background: linear-gradient(145deg, #ffffff 0%, #f3f4f6 100%);
+  border-color: rgba(168, 85, 247, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .explore-card {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='light'] .card-title h3,
+[data-theme='light'] .today-temp .temp-high,
+[data-theme='light'] .today-desc,
+[data-theme='light'] .forecast-temps .temp-high,
+[data-theme='light'] .poi-name,
+[data-theme='light'] .phrase-value {
+  color: #1f2937;
+}
+
+[data-theme='light'] .card-subtitle,
+[data-theme='light'] .today-temp .temp-low,
+[data-theme='light'] .today-location,
+[data-theme='light'] .forecast-day .day-name,
+[data-theme='light'] .phrase-key {
+  color: #6b7280;
+}
+
+[data-theme='light'] .emergency-item {
+  background: #fef2f2;
+  border-color: #fee2e2;
+}
+
+[data-theme='light'] .emergency-item .label {
+  color: #ef4444;
+}
+
+[data-theme='light'] .view-more-btn {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #4b5563;
+}
+
+[data-theme='light'] .view-more-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}

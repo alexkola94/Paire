@@ -13,7 +13,8 @@ import {
     FiCheck,
     FiTrendingUp,
     FiShield,
-    FiSmartphone
+    FiSmartphone,
+    FiMap
 } from 'react-icons/fi'
 import { publicStatsService } from '../services/api'
 import './Landing.css'
@@ -86,6 +87,12 @@ function Landing() {
             title: t('landing.features.shopping.title'),
             description: t('landing.features.shopping.description'),
             gradient: 'gradient-6'
+        },
+        {
+            icon: <FiMap />,
+            title: t('landing.features.travel.title'),
+            description: t('landing.features.travel.description'),
+            gradient: 'gradient-7'
         }
     ]
 
@@ -147,13 +154,13 @@ function Landing() {
 
             {/* Hero Section */}
             <section className="landing-hero">
-                <motion.div 
+                <motion.div
                     className="hero-content"
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
                 >
-                    <motion.div 
+                    <motion.div
                         className="hero-badge"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -162,7 +169,7 @@ function Landing() {
                         <FiShield size={14} />
                         <span>{t('landing.hero.badge')}</span>
                     </motion.div>
-                    <motion.h1 
+                    <motion.h1
                         className="hero-title"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -170,7 +177,7 @@ function Landing() {
                     >
                         {t('landing.hero.title')}
                     </motion.h1>
-                    <motion.p 
+                    <motion.p
                         className="hero-subtitle"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -178,7 +185,7 @@ function Landing() {
                     >
                         {t('landing.hero.subtitle')}
                     </motion.p>
-                    <motion.div 
+                    <motion.div
                         className="hero-actions"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -192,7 +199,7 @@ function Landing() {
                             {t('landing.hero.login')}
                         </Link>
                     </motion.div>
-                    <motion.div 
+                    <motion.div
                         className="hero-trust"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -212,13 +219,13 @@ function Landing() {
                         </div>
                     </motion.div>
                 </motion.div>
-                <motion.div 
+                <motion.div
                     className="hero-visual"
                     initial={{ opacity: 0, x: 30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, delay: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 >
-                    <motion.div 
+                    <motion.div
                         className="hero-phone"
                         initial={{ opacity: 0, scale: 0.9, rotateY: -15 }}
                         animate={{ opacity: 1, scale: 1, rotateY: 0 }}
@@ -259,7 +266,7 @@ function Landing() {
                             </div>
                         </div>
                     </motion.div>
-                    <motion.div 
+                    <motion.div
                         className="hero-floating-card card-1"
                         initial={{ opacity: 0, x: 20, y: -20 }}
                         animate={{ opacity: 1, x: 0, y: 0 }}
@@ -268,7 +275,7 @@ function Landing() {
                         <FiPieChart className="floating-icon" />
                         <span>Analytics</span>
                     </motion.div>
-                    <motion.div 
+                    <motion.div
                         className="hero-floating-card card-2"
                         initial={{ opacity: 0, x: -20, y: 20 }}
                         animate={{ opacity: 1, x: 0, y: 0 }}
@@ -277,7 +284,7 @@ function Landing() {
                         <FiUsers className="floating-icon" />
                         <span>Partnership</span>
                     </motion.div>
-                    <motion.div 
+                    <motion.div
                         className="hero-floating-card card-3"
                         initial={{ opacity: 0, x: 20, y: 20 }}
                         animate={{ opacity: 1, x: 0, y: 0 }}
@@ -292,7 +299,7 @@ function Landing() {
             {/* Features Section */}
             <section className="landing-features" id="features">
                 <div className="section-container">
-                    <motion.div 
+                    <motion.div
                         className="section-header"
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -302,7 +309,7 @@ function Landing() {
                         <h2 className="section-title">{t('landing.features.title')}</h2>
                         <p className="section-subtitle">{t('landing.features.subtitle')}</p>
                     </motion.div>
-                    <motion.div 
+                    <motion.div
                         className="features-grid"
                         initial="hidden"
                         whileInView="visible"
@@ -316,14 +323,14 @@ function Landing() {
                         }}
                     >
                         {features.map((feature, index) => (
-                            <motion.div 
-                                key={index} 
+                            <motion.div
+                                key={index}
                                 className={`feature-card ${feature.gradient}`}
                                 variants={{
                                     hidden: { opacity: 0, y: 30, scale: 0.95 },
-                                    visible: { 
-                                        opacity: 1, 
-                                        y: 0, 
+                                    visible: {
+                                        opacity: 1,
+                                        y: 0,
                                         scale: 1,
                                         transition: {
                                             duration: 0.4,
@@ -346,7 +353,7 @@ function Landing() {
             {/* How It Works Section */}
             <section className="landing-steps">
                 <div className="section-container">
-                    <motion.div 
+                    <motion.div
                         className="section-header"
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -356,7 +363,7 @@ function Landing() {
                         <h2 className="section-title">{t('landing.howItWorks.title')}</h2>
                         <p className="section-subtitle">{t('landing.howItWorks.subtitle')}</p>
                     </motion.div>
-                    <motion.div 
+                    <motion.div
                         className="steps-grid"
                         initial="hidden"
                         whileInView="visible"
@@ -370,13 +377,13 @@ function Landing() {
                         }}
                     >
                         {steps.map((step, index) => (
-                            <motion.div 
-                                key={index} 
+                            <motion.div
+                                key={index}
                                 className="step-card"
                                 variants={{
                                     hidden: { opacity: 0, x: -30 },
-                                    visible: { 
-                                        opacity: 1, 
+                                    visible: {
+                                        opacity: 1,
                                         x: 0,
                                         transition: {
                                             duration: 0.5,
@@ -403,7 +410,7 @@ function Landing() {
             {/* Stats Section */}
             <section className="landing-stats">
                 <div className="section-container">
-                    <motion.div 
+                    <motion.div
                         className="stats-grid"
                         initial="hidden"
                         whileInView="visible"
@@ -416,12 +423,12 @@ function Landing() {
                             }
                         }}
                     >
-                        <motion.div 
+                        <motion.div
                             className="stat-card"
                             variants={{
                                 hidden: { opacity: 0, scale: 0.8 },
-                                visible: { 
-                                    opacity: 1, 
+                                visible: {
+                                    opacity: 1,
                                     scale: 1,
                                     transition: {
                                         duration: 0.4,
@@ -433,12 +440,12 @@ function Landing() {
                             <div className="stat-number">{stats.formattedUsers}</div>
                             <div className="stat-label">{t('landing.stats.users')}</div>
                         </motion.div>
-                        <motion.div 
+                        <motion.div
                             className="stat-card"
                             variants={{
                                 hidden: { opacity: 0, scale: 0.8 },
-                                visible: { 
-                                    opacity: 1, 
+                                visible: {
+                                    opacity: 1,
                                     scale: 1,
                                     transition: {
                                         duration: 0.4,
@@ -450,12 +457,12 @@ function Landing() {
                             <div className="stat-number">{stats.formattedTransactions}</div>
                             <div className="stat-label">{t('landing.stats.transactions')}</div>
                         </motion.div>
-                        <motion.div 
+                        <motion.div
                             className="stat-card"
                             variants={{
                                 hidden: { opacity: 0, scale: 0.8 },
-                                visible: { 
-                                    opacity: 1, 
+                                visible: {
+                                    opacity: 1,
                                     scale: 1,
                                     transition: {
                                         duration: 0.4,
@@ -474,7 +481,7 @@ function Landing() {
             {/* Mobile App Preview */}
             <section className="landing-mobile">
                 <div className="section-container">
-                    <motion.div 
+                    <motion.div
                         className="mobile-content"
                         initial="hidden"
                         whileInView="visible"
@@ -487,12 +494,12 @@ function Landing() {
                             }
                         }}
                     >
-                        <motion.div 
+                        <motion.div
                             className="mobile-text"
                             variants={{
                                 hidden: { opacity: 0, x: -30 },
-                                visible: { 
-                                    opacity: 1, 
+                                visible: {
+                                    opacity: 1,
                                     x: 0,
                                     transition: {
                                         duration: 0.5,
@@ -522,12 +529,12 @@ function Landing() {
                                 <span>{t('landing.mobile.pwa')}</span>
                             </div>
                         </motion.div>
-                        <motion.div 
+                        <motion.div
                             className="mobile-preview"
                             variants={{
                                 hidden: { opacity: 0, x: 30 },
-                                visible: { 
-                                    opacity: 1, 
+                                visible: {
+                                    opacity: 1,
                                     x: 0,
                                     transition: {
                                         duration: 0.5,
@@ -545,7 +552,7 @@ function Landing() {
             {/* CTA Section */}
             <section className="landing-cta">
                 <div className="cta-container">
-                    <motion.div 
+                    <motion.div
                         className="cta-content"
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}

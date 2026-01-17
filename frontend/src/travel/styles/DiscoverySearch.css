@@ -1,0 +1,145 @@
+/* ================================
+   Discovery Search Styles
+   ================================ */
+
+.discovery-search {
+  position: fixed;
+  top: 90px;
+  /* More spacing below fixed header */
+  left: 16px;
+  right: 16px;
+  z-index: 150;
+  width: auto;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  pointer-events: none;
+  /* Let clicks pass through container */
+}
+
+/* Search Input Wrapper */
+.discovery-search-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: rgba(15, 7, 26, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  padding: 0 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  /* Re-enable clicks */
+}
+
+/* ... existing styles ... */
+
+/* Category Chips */
+.discovery-category-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  /* Prevent wrapping on mobile */
+  overflow-x: auto;
+  /* Enable horizontal scroll */
+  padding: 4px;
+  /* Space for shadow */
+  gap: 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  pointer-events: auto;
+  /* Re-enable clicks */
+  -webkit-overflow-scrolling: touch;
+  margin-left: -4px;
+  /* Offset padding */
+  width: calc(100% + 8px);
+  /* Account for padding */
+}
+
+.discovery-category-chip {
+  flex-shrink: 0;
+  /* Don't shrink chips */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(15, 7, 26, 0.85);
+  /* Slightly more opaque */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  color: rgba(255, 255, 255, 0.8);
+
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.discovery-category-chip:hover {
+  background: rgba(var(--chip-color), 0.15);
+  border-color: var(--chip-color);
+  color: white;
+}
+
+.discovery-category-chip.active {
+  background: var(--chip-gradient);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.discovery-category-chip svg {
+  flex-shrink: 0;
+}
+
+/* ================================
+   Responsive Adjustments
+   ================================ */
+
+@media (min-width: 768px) {
+  .discovery-search {
+    top: 84px;
+    left: 24px;
+    max-width: 450px;
+  }
+
+  .discovery-search-input-wrapper {
+    border-radius: 32px;
+  }
+
+  .discovery-search-input {
+    height: 52px;
+    font-size: 1rem;
+  }
+
+  .discovery-category-chip {
+    padding: 10px 18px;
+    font-size: 0.875rem;
+  }
+}
+
+/* ================================
+   Reduced Motion
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .discovery-search-input-wrapper,
+  .discovery-category-chip {
+    transition: none;
+  }
+
+  .search-loading-spinner {
+    animation: none;
+    border-color: var(--primary, #a855f7);
+  }
+}

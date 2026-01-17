@@ -7,7 +7,9 @@ import {
   FiTrash2,
   FiPackage,
   FiX,
-  FiZap
+  FiZap,
+  FiChevronDown,
+  FiChevronUp
 } from 'react-icons/fi'
 import { packingService } from '../services/travelApi'
 import { PACKING_CATEGORIES } from '../utils/travelConstants'
@@ -25,27 +27,76 @@ const PackingPage = ({ trip }) => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [activeCategory, setActiveCategory] = useState(null)
+  const [collapsedCategories, setCollapsedCategories] = useState(() => {
+    const initial = {}
+    Object.keys(PACKING_CATEGORIES).forEach(key => {
+      initial[key] = true
+    })
+    return initial
+  })
 
-  // Load packing items
+  // Load packing items and weather
   useEffect(() => {
-    const loadItems = async () => {
+    const loadData = async () => {
       if (!trip?.id) {
         setLoading(false)
         return
       }
 
       try {
+        // Load items
         const data = await packingService.getByTrip(trip.id)
         setItems(data || [])
+
+        // Load weather for smart suggestions (if location set)
+        if (trip.latitude && trip.longitude) {
+          fetchWeather(trip)
+        }
       } catch (error) {
-        console.error('Error loading packing items:', error)
+        console.error('Error loading data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    loadItems()
-  }, [trip?.id])
+    loadData()
+  }, [trip?.id, trip?.latitude, trip?.longitude])
+
+  // Fetch weather for suggestions
+  const [weatherCondition, setWeatherCondition] = useState(null)
+
+  const fetchWeather = async (tripData) => {
+    try {
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${tripData.latitude}&longitude=${tripData.longitude}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`
+      )
+      if (response.ok) {
+        const data = await response.json()
+        analyzeWeather(data)
+      }
+    } catch (err) {
+      console.error('Weather fetch failed', err)
+    }
+  }
+
+  const analyzeWeather = (data) => {
+    if (!data.daily) return
+
+    // Simple analysis
+    const maxTemps = data.daily.temperature_2m_max
+    const codes = data.daily.weathercode
+
+    const avgMax = maxTemps.reduce((a, b) => a + b, 0) / maxTemps.length
+    const hasRain = codes.some(c => c >= 51 && c <= 67 || c >= 80 && c <= 82)
+    const hasSnow = codes.some(c => c >= 71 && c <= 77 || c >= 85 && c <= 86)
+
+    if (hasSnow || avgMax < 5) setWeatherCondition('cold')
+    else if (hasRain) setWeatherCondition('rainy')
+    else if (avgMax > 28) setWeatherCondition('hot')
+    else if (trip.destination?.toLowerCase().includes('beach')) setWeatherCondition('beach')
+    else setWeatherCondition(null)
+  }
+
 
   // Group items by category
   const groupedItems = items.reduce((acc, item) => {
@@ -92,12 +143,15 @@ const PackingPage = ({ trip }) => {
   }
 
   // Add suggested items
-  const handleAddSuggestions = async () => {
-    const suggestions = generatePackingSuggestions(trip)
+  const handleAddSuggestions = async (weatherOverride = null) => {
+    const weather = weatherOverride || weatherCondition
+    const suggestions = generatePackingSuggestions(trip, { weather })
     const existingNames = new Set(items.map(i => i.name.toLowerCase()))
     const newSuggestions = suggestions.filter(s => !existingNames.has(s.name.toLowerCase()))
 
     try {
+      if (newSuggestions.length === 0) return
+
       const created = await packingService.bulkCreate(trip.id, newSuggestions.slice(0, 20))
       setItems(prev => [...prev, ...created])
       setShowSuggestions(false)
@@ -106,7 +160,16 @@ const PackingPage = ({ trip }) => {
     }
   }
 
+  // Toggle category collapse... (keep existing)
+  const toggleCategory = (categoryKey) => {
+    setCollapsedCategories(prev => ({
+      ...prev,
+      [categoryKey]: !prev[categoryKey]
+    }))
+  }
+
   if (!trip) {
+    // ... (keep existing)
     return (
       <div className="packing-page empty-state">
         <FiPackage size={48} />
@@ -124,6 +187,7 @@ const PackingPage = ({ trip }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
+        {/* ... (keep existing progress bar) */}
         <div className="progress-header">
           <div className="progress-info">
             <span className="progress-label">{t('travel.packing.progress', 'Packing Progress')}</span>
@@ -141,6 +205,34 @@ const PackingPage = ({ trip }) => {
         </div>
       </motion.div>
 
+      {/* Weather Suggestion Card */}
+      {weatherCondition && (
+        <motion.div
+          className="weather-suggestion-card"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+        >
+          <div className="suggestion-icon">
+            <FiZap />
+          </div>
+          <div className="suggestion-content">
+            <h4>
+              {weatherCondition === 'rainy' && t('travel.packing.rainWarn', 'Rain predicted! ☔')}
+              {weatherCondition === 'cold' && t('travel.packing.coldWarn', 'It looks cold! ❄️')}
+              {weatherCondition === 'hot' && t('travel.packing.hotWarn', 'Heatwave ahead! ☀️')}
+              {weatherCondition === 'beach' && t('travel.packing.beachWarn', 'Beach time! 🏖️')}
+            </h4>
+            <p>{t('travel.packing.weatherTip', 'We found some essential items for this weather.')}</p>
+          </div>
+          <button
+            className="add-suggestion-btn"
+            onClick={() => handleAddSuggestions(weatherCondition)}
+          >
+            {t('travel.common.add', 'Add Items')}
+          </button>
+        </motion.div>
+      )}
+
       {/* Quick Actions */}
       <div className="packing-actions">
         <button className="action-btn primary" onClick={() => setShowAddModal(true)}>
@@ -148,7 +240,7 @@ const PackingPage = ({ trip }) => {
           {t('travel.packing.addItem', 'Add Item')}
         </button>
         {items.length === 0 && (
-          <button className="action-btn secondary" onClick={handleAddSuggestions}>
+          <button className="action-btn secondary" onClick={() => handleAddSuggestions()}>
             <FiZap size={18} />
             {t('travel.packing.addSuggestions', 'Smart Suggestions')}
           </button>
@@ -172,7 +264,7 @@ const PackingPage = ({ trip }) => {
             >
               <div
                 className="category-header"
-                onClick={() => setActiveCategory(activeCategory === key ? null : key)}
+                onClick={() => toggleCategory(key)}
               >
                 <div className="category-info">
                   <span className="category-name" style={{ color: category.color }}>
@@ -182,21 +274,24 @@ const PackingPage = ({ trip }) => {
                     {checkedCount}/{categoryItems.length}
                   </span>
                 </div>
-                <div className="category-progress">
-                  <div
-                    className="category-progress-fill"
-                    style={{
-                      width: categoryItems.length > 0
-                        ? `${(checkedCount / categoryItems.length) * 100}%`
-                        : '0%',
-                      background: category.color
-                    }}
-                  />
+                <div className="category-actions">
+                  <div className="category-progress">
+                    <div
+                      className="category-progress-fill"
+                      style={{
+                        width: categoryItems.length > 0
+                          ? `${(checkedCount / categoryItems.length) * 100}%`
+                          : '0%',
+                        background: category.color
+                      }}
+                    />
+                  </div>
+                  {collapsedCategories[key] ? <FiChevronUp /> : <FiChevronDown />}
                 </div>
               </div>
 
               <AnimatePresence>
-                {categoryItems.length > 0 && (
+                {!collapsedCategories[key] && categoryItems.length > 0 && (
                   <motion.div
                     className="category-items"
                     initial={{ height: 0, opacity: 0 }}

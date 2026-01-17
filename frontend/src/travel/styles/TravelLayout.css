@@ -6,11 +6,14 @@
 .travel-layout {
   min-height: 100vh;
   min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
   position: relative;
-  overflow-x: hidden;
+  overflow: hidden;
+  /* Prevent page-level scrollbar */
 }
 
 .travel-layout[data-offline="true"] {
@@ -25,7 +28,18 @@
   position: fixed;
   inset: 0;
   z-index: 0;
+  width: 100%;
+  height: 100%;
   transition: all 0.5s ease;
+}
+
+/* Ensure map fills its container completely */
+.travel-map-container>*,
+.travel-map-container .mapboxgl-map,
+.travel-map-container .mapboxgl-canvas-container,
+.travel-map-container .mapboxgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* When interactive (UI hidden), map is full brightness */
@@ -69,13 +83,37 @@
   background: linear-gradient(180deg,
       rgba(15, 7, 26, 0.8) 0%,
       rgba(15, 7, 26, 0.4) 30%,
-      rgba(15, 7, 26, 0.4) 70%,
-      rgba(15, 7, 26, 0.9) 100%);
+      rgba(15, 7, 26, 0.3) 70%,
+      rgba(15, 7, 26, 0.4) 100%);
   transition: opacity 0.5s ease;
 }
 
 .map-bg-overlay.hidden {
   opacity: 0;
+}
+
+/* Static map fallback for lazy loading and main background */
+.static-map-fallback,
+.travel-map-container .map-bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.static-map-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+
+/* Discovery Mode Layout Adjustments */
+.travel-layout[data-discovery="true"] {
+  overflow: hidden;
+}
+
+.travel-layout[data-discovery="true"] .travel-map-container {
+  z-index: 0;
 }
 
 /* ================================
@@ -103,41 +141,70 @@
   bottom: 100px;
   /* Above nav bar */
   right: 20px;
-  z-index: 1000;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(15, 7, 26, 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 175;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 24px;
+  background: linear-gradient(135deg,
+      rgba(168, 85, 247, 0.95) 0%,
+      rgba(139, 92, 246, 0.95) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 24px rgba(168, 85, 247, 0.4);
+  font-weight: 500;
 }
 
 .immersive-toggle:hover {
-  background: var(--primary);
-  transform: scale(1.1);
+  transform: scale(1.05);
+  box-shadow: 0 6px 28px rgba(168, 85, 247, 0.5);
 }
 
 .immersive-toggle.active {
-  width: auto;
-  padding: 0 16px;
-  border-radius: 22px;
-  background: var(--primary);
   bottom: 30px;
-  /* Move down when UI is hidden */
-  gap: 8px;
+  /* Near bottom of screen in Discovery Mode */
+  background: rgba(15, 7, 26, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.immersive-toggle.active:hover {
+  background: rgba(25, 17, 40, 0.95);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5);
 }
 
 .toggle-label {
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.8125rem;
+  font-weight: 600;
   white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* Static explore button for non-home pages */
+.static-explore-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0 1rem;
+  width: 100%;
+}
+
+.immersive-toggle.static {
+  position: static;
+  transform: none;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
+  margin: 0;
+}
+
+.immersive-toggle.static:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
 }
 
 /* Ensure content appears above background */
@@ -176,9 +243,11 @@
    ================================ */
 
 .travel-header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 200;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -333,14 +402,43 @@
    ================================ */
 
 .travel-main {
+  position: relative;
+  z-index: 10;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  padding-top: 80px;
+  /* Account for fixed header with extra spacing */
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  /* Thin scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
+}
+
+/* Custom scrollbar for Chrome, Safari and Opera */
+.travel-main::-webkit-scrollbar {
+  width: 6px;
+}
+
+.travel-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.travel-main::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 3px;
+}
+
+.travel-main::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
 }
 
 .travel-content {
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: var(--spacing-md);
 }
@@ -369,7 +467,7 @@
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: var(--glass-border);
-  z-index: 100;
+  z-index: 200;
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5px);
 }
 

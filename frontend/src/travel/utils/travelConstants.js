@@ -7,37 +7,37 @@
 export const PACKING_CATEGORIES = {
   clothing: {
     id: 'clothing',
-    label: 'travel.packing.categories.clothing',
+    label: 'packing.categories.clothing',
     icon: 'FiShirt',
     color: '#8e44ad'
   },
   toiletries: {
     id: 'toiletries',
-    label: 'travel.packing.categories.toiletries',
+    label: 'packing.categories.toiletries',
     icon: 'FiDroplet',
     color: '#3498db'
   },
   electronics: {
     id: 'electronics',
-    label: 'travel.packing.categories.electronics',
+    label: 'packing.categories.electronics',
     icon: 'FiSmartphone',
     color: '#e74c3c'
   },
   documents: {
     id: 'documents',
-    label: 'travel.packing.categories.documents',
+    label: 'packing.categories.documents',
     icon: 'FiFileText',
     color: '#2ecc71'
   },
   medications: {
     id: 'medications',
-    label: 'travel.packing.categories.medications',
+    label: 'packing.categories.medications',
     icon: 'FiHeart',
     color: '#e91e63'
   },
   other: {
     id: 'other',
-    label: 'travel.packing.categories.other',
+    label: 'packing.categories.other',
     icon: 'FiPackage',
     color: '#95a5a6'
   }
@@ -47,37 +47,37 @@ export const PACKING_CATEGORIES = {
 export const BUDGET_CATEGORIES = {
   accommodation: {
     id: 'accommodation',
-    label: 'travel.budget.categories.accommodation',
+    label: 'budget.categories.accommodation',
     icon: 'FiHome',
     color: '#8e44ad'
   },
   transport: {
     id: 'transport',
-    label: 'travel.budget.categories.transport',
+    label: 'budget.categories.transport',
     icon: 'FiNavigation',
     color: '#3498db'
   },
   food: {
     id: 'food',
-    label: 'travel.budget.categories.food',
+    label: 'budget.categories.food',
     icon: 'FiCoffee',
     color: '#e67e22'
   },
   activities: {
     id: 'activities',
-    label: 'travel.budget.categories.activities',
+    label: 'budget.categories.activities',
     icon: 'FiCamera',
     color: '#2ecc71'
   },
   shopping: {
     id: 'shopping',
-    label: 'travel.budget.categories.shopping',
+    label: 'budget.categories.shopping',
     icon: 'FiShoppingBag',
     color: '#e74c3c'
   },
   other: {
     id: 'other',
-    label: 'travel.budget.categories.other',
+    label: 'budget.categories.other',
     icon: 'FiMoreHorizontal',
     color: '#95a5a6'
   }
@@ -87,37 +87,37 @@ export const BUDGET_CATEGORIES = {
 export const ITINERARY_TYPES = {
   flight: {
     id: 'flight',
-    label: 'travel.itinerary.types.flight',
+    label: 'itinerary.types.flight',
     icon: 'FiNavigation2',
     color: '#3498db'
   },
   hotel: {
     id: 'hotel',
-    label: 'travel.itinerary.types.hotel',
+    label: 'itinerary.types.hotel',
     icon: 'FiHome',
     color: '#8e44ad'
   },
   activity: {
     id: 'activity',
-    label: 'travel.itinerary.types.activity',
+    label: 'itinerary.types.activity',
     icon: 'FiStar',
     color: '#f1c40f'
   },
   transit: {
     id: 'transit',
-    label: 'travel.itinerary.types.transit',
+    label: 'itinerary.types.transit',
     icon: 'FiTruck',
     color: '#2ecc71'
   },
   restaurant: {
     id: 'restaurant',
-    label: 'travel.itinerary.types.restaurant',
+    label: 'itinerary.types.restaurant',
     icon: 'FiCoffee',
     color: '#e67e22'
   },
   other: {
     id: 'other',
-    label: 'travel.itinerary.types.other',
+    label: 'itinerary.types.other',
     icon: 'FiMapPin',
     color: '#95a5a6'
   }
@@ -127,37 +127,37 @@ export const ITINERARY_TYPES = {
 export const DOCUMENT_TYPES = {
   passport: {
     id: 'passport',
-    label: 'travel.documents.types.passport',
+    label: 'documents.types.passport',
     icon: 'FiBook',
     color: '#1a237e'
   },
   visa: {
     id: 'visa',
-    label: 'travel.documents.types.visa',
+    label: 'documents.types.visa',
     icon: 'FiCreditCard',
     color: '#4a148c'
   },
   booking: {
     id: 'booking',
-    label: 'travel.documents.types.booking',
+    label: 'documents.types.booking',
     icon: 'FiCalendar',
     color: '#00695c'
   },
   insurance: {
     id: 'insurance',
-    label: 'travel.documents.types.insurance',
+    label: 'documents.types.insurance',
     icon: 'FiShield',
     color: '#bf360c'
   },
   ticket: {
     id: 'ticket',
-    label: 'travel.documents.types.ticket',
+    label: 'documents.types.ticket',
     icon: 'FiTag',
     color: '#0277bd'
   },
   other: {
     id: 'other',
-    label: 'travel.documents.types.other',
+    label: 'documents.types.other',
     icon: 'FiFile',
     color: '#546e7a'
   }
@@ -167,17 +167,17 @@ export const DOCUMENT_TYPES = {
 export const TRIP_STATUS = {
   planning: {
     id: 'planning',
-    label: 'travel.trip.planning',
+    label: 'trip.planning',
     color: '#f1c40f'
   },
   active: {
     id: 'active',
-    label: 'travel.trip.active',
+    label: 'trip.active',
     color: '#2ecc71'
   },
   completed: {
     id: 'completed',
-    label: 'travel.trip.completed',
+    label: 'trip.completed',
     color: '#95a5a6'
   }
 }
@@ -186,37 +186,37 @@ export const TRIP_STATUS = {
 export const POI_CATEGORIES = {
   restaurant: {
     id: 'restaurant',
-    label: 'travel.explore.poi.restaurant',
+    label: 'explore.poi.restaurant',
     icon: 'FiCoffee',
     osmTag: 'restaurant'
   },
   attraction: {
     id: 'attraction',
-    label: 'travel.explore.poi.attraction',
+    label: 'explore.poi.attraction',
     icon: 'FiCamera',
     osmTag: 'attraction'
   },
   shopping: {
     id: 'shopping',
-    label: 'travel.explore.poi.shopping',
+    label: 'explore.poi.shopping',
     icon: 'FiShoppingBag',
     osmTag: 'supermarket'
   },
   hospital: {
     id: 'hospital',
-    label: 'travel.explore.poi.hospital',
+    label: 'explore.poi.hospital',
     icon: 'FiActivity',
     osmTag: 'hospital'
   },
   atm: {
     id: 'atm',
-    label: 'travel.explore.poi.atm',
+    label: 'explore.poi.atm',
     icon: 'FiDollarSign',
     osmTag: 'atm'
   },
   pharmacy: {
     id: 'pharmacy',
-    label: 'travel.explore.poi.pharmacy',
+    label: 'explore.poi.pharmacy',
     icon: 'FiHeart',
     osmTag: 'pharmacy'
   }
@@ -264,12 +264,12 @@ export const TRAVEL_CURRENCIES = [
 
 // Navigation items for travel bottom nav
 export const TRAVEL_NAV_ITEMS = [
-  { id: 'home', icon: 'FiHome', label: 'travel.nav.home' },
-  { id: 'budget', icon: 'FiDollarSign', label: 'travel.nav.budget' },
-  { id: 'itinerary', icon: 'FiCalendar', label: 'travel.nav.itinerary' },
-  { id: 'packing', icon: 'FiCheckSquare', label: 'travel.nav.packing' },
-  { id: 'documents', icon: 'FiFolder', label: 'travel.nav.documents' },
-  { id: 'explore', icon: 'FiCompass', label: 'travel.nav.explore' }
+  { id: 'home', icon: 'FiHome', label: 'nav.home' },
+  { id: 'budget', icon: 'FiDollarSign', label: 'nav.budget' },
+  { id: 'itinerary', icon: 'FiCalendar', label: 'nav.itinerary' },
+  { id: 'packing', icon: 'FiCheckSquare', label: 'nav.packing' },
+  { id: 'documents', icon: 'FiFolder', label: 'nav.documents' },
+  { id: 'explore', icon: 'FiCompass', label: 'nav.explore' }
 ]
 
 // Cache TTL values (in milliseconds)
@@ -278,4 +278,79 @@ export const CACHE_TTL = {
   flights: 15 * 60 * 1000, // 15 minutes
   poi: 24 * 60 * 60 * 1000, // 24 hours
   currency: 60 * 60 * 1000 // 1 hour
+}
+
+// Discovery Mode POI categories for map markers
+export const DISCOVERY_POI_CATEGORIES = [
+  {
+    id: 'restaurant',
+    icon: 'FiCoffee',
+    label: 'discovery.categories.foodDrink',
+    fallbackLabel: 'Food & Drink',
+    color: '#e67e22',
+    gradient: 'linear-gradient(135deg, #e67e22 0%, #d35400 100%)',
+    osmTags: ['restaurant', 'cafe', 'bar', 'fast_food']
+  },
+  {
+    id: 'attraction',
+    icon: 'FiCamera',
+    label: 'discovery.categories.attractions',
+    fallbackLabel: 'Attractions',
+    color: '#f1c40f',
+    gradient: 'linear-gradient(135deg, #f1c40f 0%, #f39c12 100%)',
+    osmTags: ['attraction', 'museum', 'artwork', 'viewpoint']
+  },
+  {
+    id: 'shopping',
+    icon: 'FiShoppingBag',
+    label: 'discovery.categories.shopping',
+    fallbackLabel: 'Shopping',
+    color: '#e74c3c',
+    gradient: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+    osmTags: ['supermarket', 'mall', 'marketplace', 'convenience']
+  },
+  {
+    id: 'transit',
+    icon: 'FiBus',
+    label: 'discovery.categories.transit',
+    fallbackLabel: 'Transit',
+    color: '#3498db',
+    gradient: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+    osmTags: ['bus_station', 'subway_entrance', 'tram_stop', 'taxi']
+  },
+  {
+    id: 'atm',
+    icon: 'FiDollarSign',
+    label: 'discovery.categories.atm',
+    fallbackLabel: 'ATM',
+    color: '#2ecc71',
+    gradient: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
+    osmTags: ['atm', 'bank']
+  },
+  {
+    id: 'pharmacy',
+    icon: 'FiHeart',
+    label: 'discovery.categories.pharmacy',
+    fallbackLabel: 'Pharmacy',
+    color: '#e91e63',
+    gradient: 'linear-gradient(135deg, #e91e63 0%, #c2185b 100%)',
+    osmTags: ['pharmacy', 'hospital', 'clinic']
+  }
+]
+
+// Mapbox map style options
+export const MAP_STYLES = {
+  muted: 'mapbox://styles/mapbox/dark-v11',
+  detailed: 'mapbox://styles/mapbox/streets-v12',
+  satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
+  outdoors: 'mapbox://styles/mapbox/outdoors-v12'
+}
+
+// Default map configuration for Discovery Mode
+export const DISCOVERY_MAP_CONFIG = {
+  defaultZoom: 13,
+  minZoom: 3,
+  maxZoom: 20,
+  poiRadius: 2000, // meters for POI search radius
+  markerClusterRadius: 50 // pixels for marker clustering
 }

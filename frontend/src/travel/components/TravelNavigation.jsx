@@ -31,7 +31,7 @@ const TravelNavigation = memo(({ activePage, onNavigate }) => {
   return (
     <nav className="travel-nav">
       <div className="travel-nav-container">
-        {navItems.map((item) => {
+        {navItems.map((item, index) => {
           const isActive = activePage === item.id
           const Icon = item.icon
 
@@ -43,6 +43,14 @@ const TravelNavigation = memo(({ activePage, onNavigate }) => {
               whileTap={{ scale: 0.9 }}
               aria-label={t(item.label)}
               aria-current={isActive ? 'page' : undefined}
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{
+                delay: index * 0.1 + 0.2, // Slight delay to start after header
+                type: "spring",
+                stiffness: 260,
+                damping: 20
+              }}
             >
               <div className="nav-icon-wrapper">
                 <Icon size={22} />

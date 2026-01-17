@@ -6,7 +6,7 @@ import Dexie from 'dexie'
  */
 const db = new Dexie('TravelCommandCenter')
 
-// Define database schema
+// Define database schema - Version 1
 db.version(1).stores({
   // Trips table - supports single active trip, prepared for multiple trips
   // Indexes: id (auto), userId, status, startDate, endDate, destination, createdAt
@@ -36,6 +36,21 @@ db.version(1).stores({
   // Sync queue for offline operations
   // Stores pending CRUD operations to sync when back online
   syncQueue: '++id, action, table, timestamp, status'
+})
+
+// Version 2 - Add pinnedPOIs table for Discovery Mode
+db.version(2).stores({
+  trips: '++id, userId, status, startDate, endDate, destination, createdAt, _synced',
+  itineraryEvents: '++id, tripId, type, date, startTime, [tripId+date], _synced',
+  packingItems: '++id, tripId, category, name, isChecked, [tripId+category], _synced',
+  documents: '++id, tripId, type, name, expiryDate, [tripId+type], _synced',
+  travelExpenses: '++id, tripId, category, amount, currency, date, [tripId+category], [tripId+date], _synced',
+  apiCache: '++id, key, data, timestamp, ttl',
+  syncQueue: '++id, action, table, timestamp, status',
+
+  // Pinned POIs from Discovery Mode - saved places for the trip
+  // Indexes: id (auto), tripId, poiId (unique external identifier), category, createdAt
+  pinnedPOIs: '++id, tripId, poiId, category, [tripId+category], createdAt'
 })
 
 /**
@@ -232,6 +247,90 @@ export const clearExpiredCache = async () => {
     }
   } catch (error) {
     console.error('Error clearing expired cache:', error)
+  }
+}
+
+/**
+ * Pinned POI model factory
+ * @param {Object} data - POI data from discovery
+ * @returns {Object} Pinned POI object with defaults
+ */
+export const createPinnedPOI = (data = {}) => ({
+  tripId: data.tripId,
+  poiId: data.poiId || data.id || '', // External POI identifier
+  name: data.name || '',
+  category: data.category || 'other',
+  latitude: data.latitude || data.lat || null,
+  longitude: data.longitude || data.lon || null,
+  address: data.address || '',
+  phone: data.phone || '',
+  website: data.website || '',
+  openingHours: data.openingHours || '',
+  rating: data.rating || null,
+  notes: data.notes || '',
+  source: data.source || 'overpass', // 'overpass' | 'mapbox' | 'manual'
+  createdAt: data.createdAt || new Date().toISOString()
+})
+
+/**
+ * Get pinned POIs for a trip
+ * @param {number|string} tripId - Trip ID
+ * @returns {Promise<Array>} Array of pinned POIs
+ */
+export const getPinnedPOIs = async (tripId) => {
+  try {
+    return await db.pinnedPOIs.where('tripId').equals(tripId).toArray()
+  } catch (error) {
+    console.error('Error getting pinned POIs:', error)
+    return []
+  }
+}
+
+/**
+ * Add a pinned POI
+ * @param {Object} poi - POI data
+ * @returns {Promise<number>} New POI ID
+ */
+export const addPinnedPOI = async (poi) => {
+  try {
+    const pinnedPOI = createPinnedPOI(poi)
+    return await db.pinnedPOIs.add(pinnedPOI)
+  } catch (error) {
+    console.error('Error adding pinned POI:', error)
+    throw error
+  }
+}
+
+/**
+ * Remove a pinned POI
+ * @param {number} id - Pinned POI ID
+ */
+export const removePinnedPOI = async (id) => {
+  try {
+    await db.pinnedPOIs.delete(id)
+  } catch (error) {
+    console.error('Error removing pinned POI:', error)
+    throw error
+  }
+}
+
+/**
+ * Check if a POI is already pinned
+ * @param {number|string} tripId - Trip ID
+ * @param {string} poiId - External POI ID
+ * @returns {Promise<boolean>} True if pinned
+ */
+export const isPOIPinned = async (tripId, poiId) => {
+  try {
+    const existing = await db.pinnedPOIs
+      .where('[tripId+poiId]')
+      .equals([tripId, poiId])
+      .first()
+    return Boolean(existing)
+  } catch (error) {
+    // Fallback if compound index doesn't work
+    const pois = await db.pinnedPOIs.where('tripId').equals(tripId).toArray()
+    return pois.some(p => p.poiId === poiId)
   }
 }
 

@@ -118,7 +118,7 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     /* Multi-layered box shadows */
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.2),
         0 4px 16px rgba(0, 0, 0, 0.1),
         0 0 0 1px rgba(255, 255, 255, 0.05) inset;
@@ -131,7 +131,7 @@
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid rgba(139, 92, 246, 0.1);
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.08),
         0 4px 16px rgba(0, 0, 0, 0.04),
         0 0 0 1px rgba(255, 255, 255, 0.2) inset;
@@ -201,10 +201,11 @@
     color: white !important;
     font-weight: 600;
     padding: 0.625rem 1.25rem;
-    border-radius: 12px; /* rounded-2xl */
+    border-radius: 12px;
+    /* rounded-2xl */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* Multi-layered shadows */
-    box-shadow: 
+    box-shadow:
         0 4px 15px rgba(139, 92, 246, 0.3),
         0 2px 8px rgba(139, 92, 246, 0.2),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -212,7 +213,7 @@
 
 .nav-btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 
+    box-shadow:
         0 6px 20px rgba(139, 92, 246, 0.4),
         0 4px 12px rgba(139, 92, 246, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.15) inset;
@@ -311,10 +312,11 @@
     /* Fluid typography */
     font-size: clamp(1rem, 2vw, 1.125rem);
     padding: 1rem 2rem;
-    border-radius: 16px; /* rounded-2xl */
+    border-radius: 16px;
+    /* rounded-2xl */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* Multi-layered shadows */
-    box-shadow: 
+    box-shadow:
         0 8px 30px rgba(139, 92, 246, 0.4),
         0 4px 16px rgba(139, 92, 246, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -322,7 +324,7 @@
 
 .btn-hero-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 
+    box-shadow:
         0 12px 40px rgba(139, 92, 246, 0.5),
         0 6px 20px rgba(139, 92, 246, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.15) inset;
@@ -547,9 +549,10 @@
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px; /* rounded-2xl */
+    border-radius: 16px;
+    /* rounded-2xl */
     /* Multi-layered box shadows */
-    box-shadow: 
+    box-shadow:
         0 10px 40px rgba(0, 0, 0, 0.3),
         0 4px 16px rgba(0, 0, 0, 0.2),
         0 0 0 1px rgba(255, 255, 255, 0.05) inset;
@@ -561,7 +564,7 @@
 .hero-floating-card:hover {
     transform: translateY(-4px) scale(1.05);
     border-color: rgba(139, 92, 246, 0.3);
-    box-shadow: 
+    box-shadow:
         0 16px 48px rgba(139, 92, 246, 0.25),
         0 8px 24px rgba(139, 92, 246, 0.15),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -573,7 +576,7 @@
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-color: rgba(139, 92, 246, 0.2);
-    box-shadow: 
+    box-shadow:
         0 10px 40px rgba(0, 0, 0, 0.08),
         0 4px 16px rgba(0, 0, 0, 0.04),
         0 0 0 1px rgba(255, 255, 255, 0.2) inset;
@@ -685,11 +688,12 @@
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px; /* rounded-3xl */
+    border-radius: 24px;
+    /* rounded-3xl */
     padding: 2rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* Multi-layered box shadows */
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.2),
         0 4px 16px rgba(0, 0, 0, 0.1),
         0 2px 8px rgba(0, 0, 0, 0.05),
@@ -702,7 +706,7 @@
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-color: rgba(139, 92, 246, 0.1);
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.08),
         0 4px 16px rgba(0, 0, 0, 0.04),
         0 2px 8px rgba(0, 0, 0, 0.02),
@@ -712,7 +716,7 @@
 .feature-card:hover {
     transform: translateY(-8px) scale(1.02);
     border-color: rgba(139, 92, 246, 0.3);
-    box-shadow: 
+    box-shadow:
         0 20px 50px rgba(139, 92, 246, 0.25),
         0 12px 32px rgba(139, 92, 246, 0.15),
         0 4px 16px rgba(139, 92, 246, 0.1),
@@ -764,6 +768,12 @@
 .gradient-6 .feature-icon {
     background: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
     color: white;
+}
+
+.gradient-7 .feature-icon {
+    background: linear-gradient(135deg, #00cec9 0%, #81ecec 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(0, 206, 201, 0.3);
 }
 
 .feature-title {
@@ -900,10 +910,11 @@
     background: rgba(15, 7, 26, 0.4);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-radius: 24px; /* rounded-3xl */
+    border-radius: 24px;
+    /* rounded-3xl */
     border: 1px solid rgba(139, 92, 246, 0.2);
     /* Multi-layered box shadows */
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.2),
         0 4px 16px rgba(0, 0, 0, 0.1),
         0 0 0 1px rgba(139, 92, 246, 0.1) inset;
@@ -913,7 +924,7 @@
 .stat-card:hover {
     transform: translateY(-4px) scale(1.02);
     border-color: rgba(139, 92, 246, 0.3);
-    box-shadow: 
+    box-shadow:
         0 16px 48px rgba(139, 92, 246, 0.2),
         0 8px 24px rgba(139, 92, 246, 0.15),
         0 0 0 1px rgba(139, 92, 246, 0.2) inset;
@@ -925,7 +936,7 @@
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-color: rgba(139, 92, 246, 0.15);
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.08),
         0 4px 16px rgba(0, 0, 0, 0.04),
         0 0 0 1px rgba(255, 255, 255, 0.2) inset;
@@ -1069,9 +1080,10 @@
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(139, 92, 246, 0.3);
-    border-radius: 24px; /* rounded-3xl */
+    border-radius: 24px;
+    /* rounded-3xl */
     /* Multi-layered box shadows */
-    box-shadow: 
+    box-shadow:
         0 20px 60px rgba(139, 92, 246, 0.2),
         0 8px 32px rgba(139, 92, 246, 0.15),
         0 0 0 1px rgba(255, 255, 255, 0.05) inset;
@@ -1083,7 +1095,7 @@
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    box-shadow: 
+    box-shadow:
         0 20px 60px rgba(0, 0, 0, 0.08),
         0 8px 32px rgba(0, 0, 0, 0.04),
         0 0 0 1px rgba(255, 255, 255, 0.2) inset;
@@ -1125,10 +1137,11 @@
     /* Fluid typography */
     font-size: clamp(1rem, 2vw, 1.125rem);
     padding: 1.125rem 2.5rem;
-    border-radius: 16px; /* rounded-2xl */
+    border-radius: 16px;
+    /* rounded-2xl */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* Multi-layered shadows */
-    box-shadow: 
+    box-shadow:
         0 8px 30px rgba(139, 92, 246, 0.4),
         0 4px 16px rgba(139, 92, 246, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -1136,7 +1149,7 @@
 
 .cta-button:hover {
     transform: translateY(-3px);
-    box-shadow: 
+    box-shadow:
         0 12px 40px rgba(139, 92, 246, 0.5),
         0 6px 20px rgba(139, 92, 246, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.15) inset;

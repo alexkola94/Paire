@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import db from '../services/travelDb'
 import { tripService, processSyncQueue } from '../services/travelApi'
 
@@ -6,7 +6,7 @@ const TravelModeContext = createContext()
 
 /**
  * Travel Mode Provider
- * Manages global travel mode state, active trip, and online/offline status
+ * Manages global travel mode state, active trip, discovery mode, and online/offline status
  */
 export const TravelModeProvider = ({ children }) => {
   // Initialize travel mode from localStorage
@@ -29,10 +29,25 @@ export const TravelModeProvider = ({ children }) => {
   const [transitionDirection, setTransitionDirection] = useState('takeoff') // 'takeoff' | 'landing'
   const [pendingTrip, setPendingTrip] = useState(null)
 
+  // Discovery Mode state
+  const [isDiscoveryMode, setIsDiscoveryMode] = useState(() => {
+    return localStorage.getItem('discoveryMode') === 'true'
+  })
+  const [selectedPOI, setSelectedPOI] = useState(null)
+  const [mapViewState, setMapViewState] = useState(null)
+
+  // Scroll positions preservation for Discovery Mode
+  const scrollPositionsRef = useRef({})
+
   // Persist travel mode state to localStorage
   useEffect(() => {
     localStorage.setItem('travelMode', isTravelMode)
   }, [isTravelMode])
+
+  // Persist discovery mode state to localStorage
+  useEffect(() => {
+    localStorage.setItem('discoveryMode', isDiscoveryMode)
+  }, [isDiscoveryMode])
 
   // Load active trip from API (online) or IndexedDB (offline) on mount
   useEffect(() => {
@@ -86,11 +101,7 @@ export const TravelModeProvider = ({ children }) => {
       }
     }
 
-    if (isTravelMode) {
-      loadActiveTrip()
-    } else {
-      setTripLoading(false)
-    }
+    loadActiveTrip()
   }, [isTravelMode])
 
   // Online/offline event listeners with sync
@@ -218,6 +229,79 @@ export const TravelModeProvider = ({ children }) => {
     }
   }, [activeTrip?.id, clearActiveTrip])
 
+  /**
+   * Enter Discovery Mode
+   * Preserves scroll positions and activates interactive map
+   */
+  const enterDiscoveryMode = useCallback(() => {
+    // Preserve scroll positions before entering
+    scrollPositionsRef.current = {
+      main: document.querySelector('.travel-main')?.scrollTop || 0,
+      content: document.querySelector('.travel-content')?.scrollTop || 0,
+      window: window.scrollY
+    }
+
+    // Initialize map view state from active trip coordinates
+    if (activeTrip?.latitude && activeTrip?.longitude) {
+      setMapViewState({
+        latitude: activeTrip.latitude,
+        longitude: activeTrip.longitude,
+        zoom: 13,
+        pitch: 0,
+        bearing: 0
+      })
+    }
+
+    setIsDiscoveryMode(true)
+  }, [activeTrip?.latitude, activeTrip?.longitude])
+
+  /**
+   * Exit Discovery Mode
+   * Restores scroll positions and returns to standard UI
+   */
+  const exitDiscoveryMode = useCallback(() => {
+    setIsDiscoveryMode(false)
+    setSelectedPOI(null)
+
+    // Restore scroll positions after a brief delay for DOM to update
+    requestAnimationFrame(() => {
+      const positions = scrollPositionsRef.current
+      const mainEl = document.querySelector('.travel-main')
+      const contentEl = document.querySelector('.travel-content')
+
+      if (mainEl && positions.main) {
+        mainEl.scrollTop = positions.main
+      }
+      if (contentEl && positions.content) {
+        contentEl.scrollTop = positions.content
+      }
+      if (positions.window) {
+        window.scrollTo(0, positions.window)
+      }
+    })
+  }, [])
+
+  /**
+   * Select a POI to show in detail sheet
+   */
+  const selectPOI = useCallback((poi) => {
+    setSelectedPOI(poi)
+  }, [])
+
+  /**
+   * Clear selected POI
+   */
+  const clearSelectedPOI = useCallback(() => {
+    setSelectedPOI(null)
+  }, [])
+
+  /**
+   * Update map view state (from map interactions)
+   */
+  const updateMapViewState = useCallback((viewState) => {
+    setMapViewState(viewState)
+  }, [])
+
   const value = {
     // Travel mode state
     isTravelMode,
@@ -235,6 +319,16 @@ export const TravelModeProvider = ({ children }) => {
     selectTrip,
     clearActiveTrip,
     refreshActiveTrip,
+
+    // Discovery mode
+    isDiscoveryMode,
+    enterDiscoveryMode,
+    exitDiscoveryMode,
+    selectedPOI,
+    selectPOI,
+    clearSelectedPOI,
+    mapViewState,
+    updateMapViewState,
 
     // Online status
     isOnline,

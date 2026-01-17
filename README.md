@@ -28,6 +28,7 @@ A comprehensive expense tracking and financial management platform for couples.
 - ✅ **Analytics** - Comprehensive financial insights and trends
 
 ### 🎯 **NEW! Advanced Planning Features**
+- ✅ **Travel Mode** - Plan trips, track separate budgets, and manage itineraries
 - ✅ **Savings Goals** - Set and track multiple savings goals with visual progress
 - ✅ **Recurring Bills** - Manage subscriptions and recurring payments
 - ✅ **Loan Payment Tracking** - Track individual loan payments with principal/interest breakdown
@@ -117,18 +118,19 @@ npm run dev
 
 ### **Main Features:**
 1. **Dashboard** (`/dashboard`) - Financial overview with charts
-2. **Analytics** (`/analytics`) - Detailed insights and trends
-3. **Expenses** (`/expenses`) - Track spending
-4. **Income** (`/income`) - Track earnings
-5. **Loans** (`/loans`) - Manage loans with payment tracking
-6. **Budgets** (`/budgets`) - Set and monitor budgets
-7. **Savings Goals** (`/savings-goals`) - 🆕 Track savings progress
-8. **Recurring Bills** (`/recurring-bills`) - 🆕 Manage subscriptions
-9. **Shopping Lists** (`/shopping-lists`) - 🆕 Organize shopping
-10. **Economic News** (`/economic-news`) - 🆕 Greece economic data & indicators
-11. **Partnership** (`/partnership`) - Connect with your partner
-12. **Reminders** (`/reminders`) - Configure notifications
-13. **Profile** (`/profile`) - Manage your account
+2. **Travel Mode** (`/travel`) - 🆕 Full featured travel planner & expense tracker
+3. **Analytics** (`/analytics`) - Detailed insights and trends
+4. **Expenses** (`/expenses`) - Track spending
+5. **Income** (`/income`) - Track earnings
+6. **Loans** (`/loans`) - Manage loans with payment tracking
+7. **Budgets** (`/budgets`) - Set and monitor budgets
+8. **Savings Goals** (`/savings-goals`) - 🆕 Track savings progress
+9. **Recurring Bills** (`/recurring-bills`) - 🆕 Manage subscriptions
+10. **Shopping Lists** (`/shopping-lists`) - 🆕 Organize shopping
+11. **Economic News** (`/economic-news`) - 🆕 Greece economic data & indicators
+12. **Partnership** (`/partnership`) - Connect with your partner
+13. **Reminders** (`/reminders`) - Configure notifications
+14. **Profile** (`/profile`) - Manage your account
 
 ---
 

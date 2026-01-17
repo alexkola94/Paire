@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { FiRefreshCw, FiMapPin, FiCalendar } from 'react-icons/fi'
@@ -50,6 +50,17 @@ const TravelHeader = memo(({ trip, syncStatus }) => {
     }
   }
 
+  const [isExiting, setIsExiting] = useState(false)
+
+  const handleExit = useCallback(() => {
+    setIsExiting(true)
+    setTimeout(() => {
+      exitTravelMode()
+    }, 800)
+  }, [exitTravelMode])
+
+  // ... (existing helper functions)
+
   const tripStatus = getTripStatus()
   const dateRange = formatDateRange()
 
@@ -57,14 +68,48 @@ const TravelHeader = memo(({ trip, syncStatus }) => {
     <header className="travel-header">
       <div className="travel-header-content">
         {/* Exit button */}
-        <button
+        <motion.button
           className="travel-exit-btn"
-          onClick={exitTravelMode}
+          onClick={handleExit}
           aria-label={t('travel.common.exitTravelMode', 'Exit Travel Mode')}
+          layout
         >
-          <RiPlaneLine size={22} className="airplane-in-flight" />
-          <span className="exit-text">{t('travel.common.exitTravelMode', 'Exit')}</span>
-        </button>
+          <motion.div
+            style={{ display: 'inline-flex', zIndex: 10, position: 'relative' }}
+            initial={{ x: -250, y: -80, scale: 0.5, opacity: 0 }}
+            animate={isExiting ? {
+              x: -400,
+              y: -150,
+              opacity: 0,
+              scale: 0.5,
+              rotate: -25,
+              transition: { duration: 1.0, ease: "easeInOut" }
+            } : {
+              x: 0,
+              y: 0,
+              opacity: 1,
+              scale: 1,
+              rotate: 0,
+              transition: { type: "spring", stiffness: 100, damping: 15, delay: 0.3 }
+            }}
+          >
+            <motion.div
+              animate={isExiting ? { rotateY: 180 } : { rotateY: 0 }}
+              style={{ display: 'inline-flex' }}
+            >
+              <RiPlaneLine size={22} className="airplane-in-flight" />
+            </motion.div>
+          </motion.div>
+
+          <motion.span
+            className="exit-text"
+            animate={isExiting ? { opacity: 0, maxWidth: 0, marginLeft: 0 } : { opacity: 1, maxWidth: 100, marginLeft: 8 }}
+            style={{ overflow: 'hidden', whiteSpace: 'nowrap', display: 'inline-block' }}
+            transition={{ duration: 0.4 }}
+          >
+            {t('travel.common.exitTravelMode', 'Exit')}
+          </motion.span>
+        </motion.button>
 
         {/* Trip info - center */}
         <div className="travel-header-info">

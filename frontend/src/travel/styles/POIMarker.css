@@ -1,0 +1,148 @@
+/* ================================
+   POI Marker Styles
+   ================================ */
+
+.poi-marker-wrapper {
+  position: relative;
+  cursor: pointer;
+  /* Offset so the pin point is at the marker location */
+  transform: translate(-50%, -100%);
+}
+
+/* Pin Shape */
+.poi-marker-pin {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+.poi-marker-icon {
+  transform: rotate(45deg);
+  color: white;
+}
+
+/* Shadow */
+.poi-marker-shadow {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  filter: blur(2px);
+  z-index: 1;
+}
+
+/* Pinned Indicator */
+.poi-pinned-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: #2ecc71;
+  border: 2px solid white;
+  border-radius: 50%;
+  z-index: 3;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Selection Pulse */
+.poi-marker-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  z-index: 0;
+}
+
+/* States */
+.poi-marker-wrapper.selected .poi-marker-pin {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.poi-marker-wrapper.pinned .poi-marker-pin {
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3),
+              0 0 0 2px rgba(46, 204, 113, 0.5);
+}
+
+/* Hover Animation */
+.poi-marker-wrapper:hover .poi-marker-shadow {
+  transform: translateX(-50%) scale(1.2);
+  opacity: 0.6;
+}
+
+/* Size Variations */
+.poi-marker-wrapper.small .poi-marker-pin {
+  width: 24px;
+  height: 24px;
+}
+
+.poi-marker-wrapper.small .poi-marker-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.poi-marker-wrapper.large .poi-marker-pin {
+  width: 40px;
+  height: 40px;
+}
+
+.poi-marker-wrapper.large .poi-marker-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* ================================
+   Cluster Marker (future use)
+   ================================ */
+
+.poi-cluster-marker {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%);
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.poi-cluster-marker:hover {
+  transform: scale(1.1);
+}
+
+/* ================================
+   Reduced Motion
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .poi-marker-wrapper,
+  .poi-marker-shadow,
+  .poi-cluster-marker {
+    transition: none;
+  }
+
+  .poi-marker-pulse {
+    display: none;
+  }
+}

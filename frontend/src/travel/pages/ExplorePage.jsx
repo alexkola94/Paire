@@ -18,6 +18,9 @@ import {
   FiSearch
 } from 'react-icons/fi'
 import { WEATHER_CODES, POI_CATEGORIES } from '../utils/travelConstants'
+import { getDestinationInfo } from '../utils/travelData'
+import EmergencyCard from '../components/explore/EmergencyCard'
+import PhrasebookCard from '../components/explore/PhrasebookCard'
 import '../styles/Explore.css'
 
 // Weather icon mapping
@@ -292,6 +295,21 @@ const ExplorePage = ({ trip }) => {
         ) : null}
       </section>
 
+      {/* Travel Essentials - Emergency & Lingo */}
+      {
+        trip?.destination && (
+          <section className="explore-section essentials-section">
+            <div className="section-header">
+              <h3>{t('travel.explore.essentials', 'Travel Essentials')}</h3>
+            </div>
+            <div className="essentials-grid">
+              <EmergencyCard data={getDestinationInfo(trip.destination)} />
+              <PhrasebookCard data={getDestinationInfo(trip.destination)} />
+            </div>
+          </section>
+        )
+      }
+
       {/* POI Section - On-demand, not overwhelming */}
       <section className="explore-section poi-section">
         {!showPOISearch ? (
@@ -392,7 +410,7 @@ const ExplorePage = ({ trip }) => {
           </>
         )}
       </section>
-    </motion.div>
+    </motion.div >
   )
 }
 
