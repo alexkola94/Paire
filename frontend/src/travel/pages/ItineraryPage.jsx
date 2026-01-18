@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
@@ -351,10 +352,10 @@ const EventCard = ({ event, onEdit, onDelete }) => {
 // Event Form Modal Component
 const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
   const { t } = useTranslation()
-  
+
   // Register modal to hide bottom navigation
   useModalRegistration(true)
-  
+
   const [formData, setFormData] = useState({
     type: event?.type || 'activity',
     name: event?.name || '',
@@ -373,14 +374,18 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
     checkOutTime: event?.checkOutTime || '',
     notes: event?.notes || ''
   })
+  const [saving, setSaving] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.name.trim()) return
-    onSave(formData)
+
+    setSaving(true)
+    await onSave(formData)
+    setSaving(false)
   }
 
-  return (
+  return createPortal(
     <motion.div
       className="modal-overlay"
       initial={{ opacity: 0 }}
@@ -554,13 +559,14 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
             <button type="button" className="cancel-btn" onClick={onClose}>
               {t('common.cancel', 'Cancel')}
             </button>
-            <button type="submit" className="travel-btn">
-              {event ? t('common.save', 'Save') : t('common.add', 'Add')}
+            <button type="submit" className="travel-btn" disabled={saving}>
+              {saving ? t('common.saving', 'Saving...') : (event ? t('common.save', 'Save') : t('common.add', 'Add'))}
             </button>
           </div>
         </form>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   )
 }
 

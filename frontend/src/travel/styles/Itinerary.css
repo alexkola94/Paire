@@ -362,26 +362,39 @@
   position: fixed;
   inset: 0;
   z-index: 3000;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  padding: var(--spacing-md);
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .modal-overlay {
+    align-items: center;
+    padding: var(--spacing-lg);
+  }
 }
 
 .event-form-modal {
   background: var(--bg-secondary);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   width: 100%;
-  max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .event-form-modal {
+    max-width: 500px;
+    border-radius: var(--radius-xl);
+  }
 }
 
 .event-form-modal form {
@@ -438,20 +451,6 @@
     min-height: 32px;
   }
 
-  .modal-overlay {
-    align-items: flex-end;
-    padding: 0;
-  }
-
-  .event-form-modal {
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    max-height: 90vh;
-    width: 100%;
-    max-width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
   .event-form-modal .modal-header {
     padding: var(--spacing-md);
     position: sticky;
@@ -492,8 +491,10 @@
   .event-form-modal select,
   .event-form-modal textarea {
     padding: var(--spacing-md);
-    font-size: 16px; /* Prevents zoom on iOS */
-    min-height: 80px; /* Textarea should be taller */
+    font-size: 16px;
+    /* Prevents zoom on iOS */
+    min-height: 80px;
+    /* Textarea should be taller */
     box-sizing: border-box;
     resize: vertical;
   }
@@ -657,7 +658,8 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 44px; /* Touch-friendly */
+  min-width: 44px;
+  /* Touch-friendly */
   min-height: 44px;
 }
 
@@ -698,7 +700,8 @@
   color: var(--text-primary);
   -webkit-appearance: none;
   appearance: none;
-  min-height: 44px; /* Touch-friendly minimum height */
+  min-height: 44px;
+  /* Touch-friendly minimum height */
   box-sizing: border-box;
   transition: all 0.3s ease;
 }
@@ -758,7 +761,8 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
-  min-height: 60px; /* Touch-friendly minimum height */
+  min-height: 60px;
+  /* Touch-friendly minimum height */
   justify-content: center;
 }
 
@@ -793,14 +797,16 @@
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   cursor: pointer;
-  min-height: 44px; /* Touch-friendly minimum height */
+  min-height: 44px;
+  /* Touch-friendly minimum height */
   font-size: 1rem;
   transition: all 0.3s ease;
 }
 
 .event-form-modal .travel-btn {
   flex: 1;
-  min-height: 44px; /* Touch-friendly minimum height */
+  min-height: 44px;
+  /* Touch-friendly minimum height */
   font-size: 1rem;
   transition: all 0.3s ease;
 }
