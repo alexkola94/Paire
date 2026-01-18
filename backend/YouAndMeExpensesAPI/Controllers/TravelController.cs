@@ -80,8 +80,14 @@ namespace YouAndMeExpensesAPI.Controllers
                 var content = await response.Content.ReadAsStringAsync();
                 var results = System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(content);
 
+                // If no results, return empty list (avoids null + anonymous-type issues)
+                if (results == null || results.Count == 0)
+                {
+                    return Ok(new List<object>());
+                }
+
                 // Transform results to match frontend expectations
-                var transformedResults = results?.Select(r => new
+                var transformedResults = results.Select(r => new
                 {
                     name = r.TryGetProperty("display_name", out var displayName) 
                         ? displayName.GetString()?.Split(',')[0] ?? ""
@@ -100,7 +106,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     longitude = r.TryGetProperty("lon", out var lon)
                         ? double.TryParse(lon.GetString(), out var lonVal) ? lonVal : 0.0
                         : 0.0
-                }).ToList() ?? new List<object>();
+                }).ToList();
 
                 return Ok(transformedResults);
             }
