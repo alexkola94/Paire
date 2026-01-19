@@ -94,25 +94,63 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
 
                 // Transform results to match frontend expectations
-                var transformedResults = results.Select(r => new
+                var transformedResults = results.Select(r =>
                 {
-                    name = r.TryGetProperty("display_name", out var displayName) 
-                        ? displayName.GetString()?.Split(',')[0] ?? ""
-                        : "",
-                    fullName = r.TryGetProperty("display_name", out var fullName)
-                        ? fullName.GetString() ?? ""
-                        : "",
-                    country = r.TryGetProperty("address", out var address) && address.ValueKind == System.Text.Json.JsonValueKind.Object
-                        ? address.TryGetProperty("country", out var country) 
-                            ? country.GetString() ?? ""
-                            : ""
-                        : "",
-                    latitude = r.TryGetProperty("lat", out var lat)
-                        ? double.TryParse(lat.GetString(), out var latVal) ? latVal : 0.0
-                        : 0.0,
-                    longitude = r.TryGetProperty("lon", out var lon)
-                        ? double.TryParse(lon.GetString(), out var lonVal) ? lonVal : 0.0
-                        : 0.0
+                    // Extract display_name once
+                    string displayName = r.TryGetProperty("display_name", out var displayNameElement)
+                        ? displayNameElement.GetString() ?? string.Empty
+                        : string.Empty;
+
+                    // Extract address object (may contain city/town/etc.)
+                    System.Text.Json.JsonElement addressElement;
+                    string cityName = string.Empty;
+                    string countryName = string.Empty;
+
+                    if (r.TryGetProperty("address", out addressElement) && addressElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    {
+                        // Prefer city-level components over street names
+                        if (addressElement.TryGetProperty("city", out var city))
+                        {
+                            cityName = city.GetString() ?? string.Empty;
+                        }
+                        else if (addressElement.TryGetProperty("town", out var town))
+                        {
+                            cityName = town.GetString() ?? string.Empty;
+                        }
+                        else if (addressElement.TryGetProperty("village", out var village))
+                        {
+                            cityName = village.GetString() ?? string.Empty;
+                        }
+                        else if (addressElement.TryGetProperty("hamlet", out var hamlet))
+                        {
+                            cityName = hamlet.GetString() ?? string.Empty;
+                        }
+
+                        // Country
+                        if (addressElement.TryGetProperty("country", out var country))
+                        {
+                            countryName = country.GetString() ?? string.Empty;
+                        }
+                    }
+
+                    // Fallback: if we couldn't determine a city-level name, use the first part of display_name
+                    if (string.IsNullOrWhiteSpace(cityName) && !string.IsNullOrWhiteSpace(displayName))
+                    {
+                        cityName = displayName.Split(',')[0].Trim();
+                    }
+
+                    return new
+                    {
+                        name = cityName,
+                        fullName = displayName,
+                        country = countryName,
+                        latitude = r.TryGetProperty("lat", out var lat)
+                            ? double.TryParse(lat.GetString(), out var latVal) ? latVal : 0.0
+                            : 0.0,
+                        longitude = r.TryGetProperty("lon", out var lon)
+                            ? double.TryParse(lon.GetString(), out var lonVal) ? lonVal : 0.0
+                            : 0.0
+                    };
                 }).ToList();
 
                 return Ok(transformedResults);
@@ -121,6 +159,218 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 _logger.LogError(ex, "Error geocoding location: {Query}", q);
                 return StatusCode(500, new { message = "Error geocoding location" });
+            }
+        }
+
+        // ========================================
+        // TRAVEL ADVISORY (RISK SCORES)
+        // ========================================
+
+        /// <summary>
+        /// Get travel advisory / risk score for a given country.
+        /// Proxies the Travel-Advisory.info API to avoid CORS issues and to keep
+        /// external API details away from the frontend.
+        /// </summary>
+        /// <param name="countryCode">
+        /// ISO country code (2-letter like \"US\" or 3-letter like \"USA\").
+        /// </param>
+        [HttpGet("advisory/{countryCode}")]
+        public async Task<IActionResult> GetTravelAdvisory(string countryCode)
+        {
+            if (string.IsNullOrWhiteSpace(countryCode))
+            {
+                return BadRequest(new { message = "Country code is required" });
+            }
+
+            try
+            {
+                // Normalise to upper-case, Travel-Advisory supports 2 or 3 letter codes.
+                var normalizedCode = countryCode.Trim().ToUpperInvariant();
+
+                // In some development environments (corporate VPNs, SSL interception, etc.)
+                // the external Travel-Advisory certificate chain may fail validation with a
+                // RemoteCertificateNameMismatch error. To keep the feature working locally
+                // without weakening production security, we relax certificate validation
+                // ONLY when running in Development.
+                //
+                // IMPORTANT: Production continues to use the default, fully validated handler.
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+                var handler = new HttpClientHandler();
+                
+                // Follow redirects (301, 302, etc.) automatically
+                handler.AllowAutoRedirect = true;
+
+                if (string.Equals(environment, "Development", StringComparison.OrdinalIgnoreCase))
+                {
+                    handler.ServerCertificateCustomValidationCallback =
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                }
+
+                using var httpClient = new HttpClient(handler);
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "YouMeExpenses-TravelAdvisory/1.0");
+                httpClient.Timeout = TimeSpan.FromSeconds(10); // 10 second timeout
+
+                // Travel-Advisory.info pattern: https://www.travel-advisory.info/api?countrycode=US
+                var url = $"https://www.travel-advisory.info/api?countrycode={Uri.EscapeDataString(normalizedCode)}";
+                
+                _logger.LogInformation("Fetching travel advisory from {Url} for country {CountryCode}", url, normalizedCode);
+                
+                var response = await httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Travel-Advisory API returned {StatusCode} {StatusText} for country {CountryCode}. Response URL: {ResponseUrl}",
+                        response.StatusCode, response.ReasonPhrase, normalizedCode, response.RequestMessage?.RequestUri);
+                    return StatusCode((int)response.StatusCode, new { message = "Advisory service unavailable" });
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Check if response is actually JSON (might be HTML if redirected incorrectly)
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
+                if (!contentType.Contains("json", StringComparison.OrdinalIgnoreCase) && 
+                    !content.TrimStart().StartsWith("{") && 
+                    !content.TrimStart().StartsWith("["))
+                {
+                    _logger.LogWarning("Travel-Advisory API returned non-JSON content (Content-Type: {ContentType}) for country {CountryCode}. Content preview: {Preview}",
+                        contentType, normalizedCode, content.Length > 200 ? content.Substring(0, 200) : content);
+                    return Ok(new { countryCode = normalizedCode, hasData = false, message = "Invalid response format from advisory service" });
+                }
+
+                // Parse JSON in a very defensive way to avoid tight coupling to external schema.
+                System.Text.Json.JsonDocument doc;
+                try
+                {
+                    doc = System.Text.Json.JsonDocument.Parse(content);
+                }
+                catch (System.Text.Json.JsonException ex)
+                {
+                    _logger.LogError(ex, "Failed to parse Travel-Advisory API JSON response for country {CountryCode}. Content: {Content}",
+                        normalizedCode, content.Length > 500 ? content.Substring(0, 500) : content);
+                    return Ok(new { countryCode = normalizedCode, hasData = false, message = "Failed to parse advisory response" });
+                }
+
+                using (doc)
+                {
+                    var root = doc.RootElement;
+
+                // Default structure according to Travel-Advisory.info docs:
+                // {
+                //   "data": {
+                //     "US": {
+                //       "iso_alpha2": "US",
+                //       "name": "United States",
+                //       "advisory": {
+                //         "score": 2.5,
+                //         "sources_active": 7,
+                //         "message": "...",
+                //         "updated": "2024-01-01 00:00:00+00:00"
+                //       }
+                //     }
+                //   },
+                //   "status": { ... }
+                // }
+
+                if (!root.TryGetProperty("data", out var dataElement) || dataElement.ValueKind != System.Text.Json.JsonValueKind.Object)
+                {
+                    _logger.LogWarning("Travel-Advisory API response missing 'data' for country {CountryCode}", normalizedCode);
+                    return Ok(new { countryCode = normalizedCode, hasData = false });
+                }
+
+                System.Text.Json.JsonElement countryElement = default;
+                bool foundCountry = false;
+
+                // Try direct lookup by code first, then fall back to first element.
+                if (dataElement.TryGetProperty(normalizedCode, out var directCountry))
+                {
+                    countryElement = directCountry;
+                    foundCountry = true;
+                }
+                else
+                {
+                    foreach (var property in dataElement.EnumerateObject())
+                    {
+                        countryElement = property.Value;
+                        foundCountry = true;
+                        break;
+                    }
+                }
+
+                if (!foundCountry)
+                {
+                    return Ok(new { countryCode = normalizedCode, hasData = false });
+                }
+
+                string name = countryElement.TryGetProperty("name", out var nameElement)
+                    ? nameElement.GetString() ?? normalizedCode
+                    : normalizedCode;
+
+                string iso2 = countryElement.TryGetProperty("iso_alpha2", out var iso2Element)
+                    ? iso2Element.GetString() ?? normalizedCode
+                    : normalizedCode;
+
+                double score = 0;
+                string message = string.Empty;
+                string updated = string.Empty;
+                int sourcesActive = 0;
+
+                if (countryElement.TryGetProperty("advisory", out var advisoryElement) &&
+                    advisoryElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    if (advisoryElement.TryGetProperty("score", out var scoreElement) &&
+                        scoreElement.TryGetDouble(out var s))
+                    {
+                        score = s;
+                    }
+
+                    if (advisoryElement.TryGetProperty("message", out var messageElement))
+                    {
+                        message = messageElement.GetString() ?? string.Empty;
+                    }
+
+                    if (advisoryElement.TryGetProperty("updated", out var updatedElement))
+                    {
+                        updated = updatedElement.GetString() ?? string.Empty;
+                    }
+
+                    if (advisoryElement.TryGetProperty("sources_active", out var sourcesElement) &&
+                        sourcesElement.TryGetInt32(out var src))
+                    {
+                        sourcesActive = src;
+                    }
+                }
+
+                // Map numeric score to a simple qualitative level for the frontend.
+                // These thresholds can be adjusted later without breaking API shape.
+                string level = score switch
+                {
+                    >= 4.0 => "critical",
+                    >= 3.0 => "high",
+                    >= 2.0 => "medium",
+                    > 0.0 => "low",
+                    _ => "unknown"
+                };
+
+                var result = new
+                {
+                    countryCode = iso2,
+                    countryName = name,
+                    score,
+                    level,
+                    message,
+                    updated,
+                    sourcesActive,
+                    hasData = true
+                };
+
+                return Ok(result);
+                } // End using (doc) block
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching travel advisory for country {CountryCode}", countryCode);
+                return StatusCode(500, new { message = "Error fetching travel advisory" });
             }
         }
 
@@ -235,6 +485,11 @@ namespace YouAndMeExpensesAPI.Controllers
             trip.EndDate = ToUtc(trip.EndDate);
             trip.CreatedAt = DateTime.UtcNow;
             trip.UpdatedAt = DateTime.UtcNow;
+            // Ensure trip type is always set for backward compatibility
+            if (string.IsNullOrWhiteSpace(trip.TripType))
+            {
+                trip.TripType = "single";
+            }
 
             _context.Trips.Add(trip);
             await _context.SaveChangesAsync();
@@ -271,6 +526,10 @@ namespace YouAndMeExpensesAPI.Controllers
             trip.Status = updates.Status;
             trip.CoverImage = updates.CoverImage;
             trip.Notes = updates.Notes;
+            // Allow client to switch between single and multi-city modes
+            trip.TripType = string.IsNullOrWhiteSpace(updates.TripType)
+                ? trip.TripType
+                : updates.TripType;
             trip.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -295,6 +554,176 @@ namespace YouAndMeExpensesAPI.Controllers
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("User {UserId} deleted trip {TripId}", userId, id);
+
+            return NoContent();
+        }
+
+        // ========================================
+        // TRIP CITIES (MULTI-CITY TRIPS)
+        // ========================================
+
+        /// <summary>
+        /// Get all cities for a trip in route order.
+        /// </summary>
+        [HttpGet("trips/{tripId}/cities")]
+        public async Task<ActionResult<IEnumerable<TripCity>>> GetTripCities(Guid tripId)
+        {
+            var userId = GetUserId();
+
+            var tripExists = await _context.Trips
+                .AnyAsync(t => t.Id == tripId && t.UserId == userId);
+
+            if (!tripExists)
+                return NotFound("Trip not found");
+
+            var cities = await _context.TripCities
+                .Where(c => c.TripId == tripId)
+                .OrderBy(c => c.OrderIndex)
+                .ToListAsync();
+
+            return Ok(cities);
+        }
+
+        /// <summary>
+        /// Create a city for a trip.
+        /// </summary>
+        [HttpPost("trips/{tripId}/cities")]
+        public async Task<ActionResult<TripCity>> CreateTripCity(Guid tripId, [FromBody] TripCity city)
+        {
+            var userId = GetUserId();
+
+            var tripExists = await _context.Trips
+                .AnyAsync(t => t.Id == tripId && t.UserId == userId);
+
+            if (!tripExists)
+                return NotFound("Trip not found");
+
+            city.Id = Guid.NewGuid();
+            city.TripId = tripId;
+            city.StartDate = ToUtc(city.StartDate);
+            city.EndDate = ToUtc(city.EndDate);
+            city.CreatedAt = DateTime.UtcNow;
+            city.UpdatedAt = DateTime.UtcNow;
+
+            // If order index is not set, append to the end of the route
+            if (city.OrderIndex <= 0)
+            {
+                var maxOrder = await _context.TripCities
+                    .Where(c => c.TripId == tripId)
+                    .Select(c => (int?)c.OrderIndex)
+                    .MaxAsync() ?? -1;
+
+                city.OrderIndex = maxOrder + 1;
+            }
+
+            _context.TripCities.Add(city);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetTripCities), new { tripId }, city);
+        }
+
+        /// <summary>
+        /// Update a city within a trip.
+        /// </summary>
+        [HttpPut("trips/{tripId}/cities/{cityId}")]
+        public async Task<ActionResult<TripCity>> UpdateTripCity(Guid tripId, Guid cityId, [FromBody] TripCity updates)
+        {
+            var userId = GetUserId();
+
+            var tripExists = await _context.Trips
+                .AnyAsync(t => t.Id == tripId && t.UserId == userId);
+
+            if (!tripExists)
+                return NotFound("Trip not found");
+
+            var city = await _context.TripCities
+                .FirstOrDefaultAsync(c => c.Id == cityId && c.TripId == tripId);
+
+            if (city == null)
+                return NotFound("City not found");
+
+            city.Name = updates.Name;
+            city.Country = updates.Country;
+            city.Latitude = updates.Latitude;
+            city.Longitude = updates.Longitude;
+            city.StartDate = ToUtc(updates.StartDate);
+            city.EndDate = ToUtc(updates.EndDate);
+
+            // Only update order index if explicitly provided (>= 0)
+            if (updates.OrderIndex >= 0)
+            {
+                city.OrderIndex = updates.OrderIndex;
+            }
+
+            city.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(city);
+        }
+
+        /// <summary>
+        /// Reorder cities within a trip by providing the new ordered list of IDs.
+        /// </summary>
+        [HttpPost("trips/{tripId}/cities/reorder")]
+        public async Task<IActionResult> ReorderTripCities(Guid tripId, [FromBody] List<Guid> orderedCityIds)
+        {
+            var userId = GetUserId();
+
+            var tripExists = await _context.Trips
+                .AnyAsync(t => t.Id == tripId && t.UserId == userId);
+
+            if (!tripExists)
+                return NotFound("Trip not found");
+
+            if (orderedCityIds == null || orderedCityIds.Count == 0)
+            {
+                return BadRequest("City order list cannot be empty");
+            }
+
+            var cities = await _context.TripCities
+                .Where(c => c.TripId == tripId)
+                .ToListAsync();
+
+            var cityLookup = cities.ToDictionary(c => c.Id, c => c);
+
+            for (var index = 0; index < orderedCityIds.Count; index++)
+            {
+                var id = orderedCityIds[index];
+                if (cityLookup.TryGetValue(id, out var city))
+                {
+                    city.OrderIndex = index;
+                    city.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Delete a city from a trip.
+        /// </summary>
+        [HttpDelete("trips/{tripId}/cities/{cityId}")]
+        public async Task<IActionResult> DeleteTripCity(Guid tripId, Guid cityId)
+        {
+            var userId = GetUserId();
+
+            var tripExists = await _context.Trips
+                .AnyAsync(t => t.Id == tripId && t.UserId == userId);
+
+            if (!tripExists)
+                return NotFound("Trip not found");
+
+            var city = await _context.TripCities
+                .FirstOrDefaultAsync(c => c.Id == cityId && c.TripId == tripId);
+
+            if (city == null)
+                return NotFound("City not found");
+
+            _context.TripCities.Remove(city);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }

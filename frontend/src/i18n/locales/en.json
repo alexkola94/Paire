@@ -1154,7 +1154,8 @@
       "add": "Add",
       "saving": "Saving...",
       "ascending": "Ascending",
-      "descending": "Descending"
+      "descending": "Descending",
+      "loadingTripView": "Loading your trip view..."
     },
     "nav": {
       "home": "Home",
@@ -1187,23 +1188,71 @@
       "step1Description": "Enter your destination",
       "step2Title": "When?",
       "step2Description": "Select your travel dates",
+      "step2": {
+        "selectDeparture": "Select departure date",
+        "selectReturn": "Select return date",
+        "duration": "{{days}} days"
+      },
       "step3Title": "Budget",
       "step3Description": "Set your travel budget (optional)"
     },
     "home": {
       "welcome": "Welcome to Travel Mode",
-      "noTripTitle": "No Trip Yet",
-      "noTripDescription": "Create your first trip to get started",
+      "noTripTitle": "Where to next?",
+      "noTripDescription": "Start planning your journey",
+      "greetingMorning": "Good morning",
+      "greetingAfternoon": "Good afternoon",
+      "greetingEvening": "Good evening",
       "countdown": "Trip in {{days}} days",
       "countdownToday": "Trip starts today!",
       "countdownActive": "Day {{current}} of {{total}}",
+      "daysToGo": "{{days}} days to go",
+      "daysRemaining": "{{days}} days remaining",
+      "tripCompleted": "Trip completed",
+      "inCity": "in {{city}}",
+      "nextCity": "Next: {{city}}",
+      "cityProgress": "City {{current}} of {{total}}",
+      "cities": "cities",
+      "days": "days",
+      "tripRoute": "Trip Route",
+      "current": "Current",
+      "next": "Next",
       "quickStats": "Quick Stats",
       "budgetUsed": "Budget Used",
       "itemsPacked": "Items Packed",
       "daysPlanned": "Days Planned",
       "upcomingEvents": "Upcoming",
       "viewAll": "View All",
-      "noUpcomingEvents": "No upcoming events"
+      "noUpcomingEvents": "No upcoming events",
+      "editTrip": "Edit Trip",
+      "deleteTrip": "Delete Trip",
+      "deleteTripTitle": "Delete this trip?",
+      "deleteTripMessage": "This will permanently delete this trip and all related data.",
+      "packing": "Packing",
+      "startPacking": "Start your list",
+      "budget": "Budget",
+      "setBudget": "Set your budget",
+      "remaining": "remaining",
+      "itinerary": "Itinerary",
+      "eventsPlanned": "events planned",
+      "planActivities": "Plan your activities",
+      "encourageCountdown": "Take your time preparing. You've got this.",
+      "encourageActive": "Enjoy every moment of your journey.",
+      "encourageCompleted": "Hope you had a wonderful trip!"
+    },
+    "advisory": {
+      "riskLevel": {
+        "low": "Low risk",
+        "medium": "Medium risk",
+        "high": "High risk",
+        "critical": "Critical risk",
+        "unknown": "Risk level unknown"
+      },
+      "lastUpdated": "Last updated {{date}}",
+      "sources": "{{count}} advisory sources",
+      "scoreLabel": "Risk score",
+      "genericMessage": "Check official guidance before you travel.",
+      "unknownCountry": "Unknown country"
     },
     "budget": {
       "title": "Budget",
@@ -1222,6 +1271,7 @@
       "description": "Description",
       "descriptionPlaceholder": "What was this for?",
       "date": "Date",
+      "selectDate": "Select date",
       "categories": {
         "accommodation": "Accommodation",
         "transport": "Transport",
@@ -1246,6 +1296,7 @@
       "eventName": "Name",
       "eventNamePlaceholder": "e.g., Visit the Louvre",
       "date": "Date",
+      "selectDate": "Select date",
       "startTime": "Start Time",
       "endTime": "End Time",
       "location": "Location",
@@ -1317,6 +1368,7 @@
       "documentNumber": "Document/Reference Number",
       "numberPlaceholder": "Optional",
       "expiryDate": "Expiry Date",
+      "selectExpiryDate": "Select expiry date",
       "notes": "Notes",
       "notesPlaceholder": "Additional details...",
       "expires": "Expires",
@@ -1344,6 +1396,10 @@
           "originPlaceholder": "e.g., Greece",
           "destinationCountry": "Destination country",
           "destinationPlaceholder": "e.g., Japan",
+          "destinationCountries": "Destination countries",
+          "addCountry": "Add country",
+          "addCountryPrompt": "Enter country name:",
+          "multiCityHint": "This is a multi-city trip. Add or remove countries as needed.",
           "providerLabel": "Send this question to",
           "providerHint": "Opens in a new tab with your question prefilled.",
           "promptPreview": "Preview of the question we will send",
@@ -1359,7 +1415,11 @@
             "line4": "- Essential documents required for entry",
             "line5": "- Recommended / nice-to-have documents",
             "line6": "- Any country-specific visa rules, transit rules, or passport validity rules I should know.",
-            "line7": "Answer in a concise, traveler-friendly checklist."
+            "line6MultiCountry": "- Any country-specific visa rules, transit rules, passport validity rules, and cross-border travel requirements I should know for traveling between these countries.",
+            "line7": "Answer in a concise, traveler-friendly checklist.",
+            "tripNameSentence": " for a trip called \"{{tripName}}\"",
+            "destinationsTwo": "{{country1}} and {{country2}}",
+            "destinationsMultiple": "{{countries}}, and {{lastCountry}}"
           },
           "provider": {
             "chatgpt": "ChatGPT",
@@ -1458,6 +1518,7 @@
       "explore": "Explore",
       "fromCenter": "from trip",
       "getDirections": "Get Directions",
+      "seeDetails": "See details in Google Maps",
       "unpinFromTrip": "Pinned",
       "pinning": "Pinning...",
       "pinToTrip": "Hold to Pin",
@@ -1507,6 +1568,46 @@
         "active": "Active",
         "completed": "Completed"
       }
+    },
+    "multiCity": {
+      "createTrip": "Create Multi-City Trip",
+      "editTrip": "Edit Multi-City Trip",
+      "deleteTrip": "Delete Trip",
+      "confirmDelete": "Delete this trip and all its cities? This cannot be undone.",
+      "step1": {
+        "title": "Select Cities",
+        "description": "Click on the map to add cities to your trip",
+        "tripName": "Trip Name (optional)",
+        "namePlaceholder": "e.g., European Adventure",
+        "selectedCities": "Selected Cities",
+        "calculatingRoutes": "Calculating best routes...",
+        "totalDistance": "Total Trip Distance"
+      },
+      "step2": {
+        "title": "Set Dates",
+        "description": "Set arrival and departure dates for each city",
+        "arrival": "Arrival",
+        "departure": "Departure",
+        "selectArrival": "Select arrival date",
+        "selectDeparture": "Select departure date"
+      },
+      "errors": {
+        "minCities": "Please select at least 2 cities",
+        "cityDateRequired": "Please set arrival date for {{city}}",
+        "dateOrder": "City dates must be in order",
+        "deleteFailed": "Failed to delete trip. Please try again."
+      },
+      "saveSuccess": {
+        "title": "Trip Saved Successfully!",
+        "message": "Your multi-city trip has been saved.",
+        "editMore": "Edit More"
+      }
+    },
+    "micrography": {
+      "title": "Trip Route",
+      "expand": "Expand map",
+      "expandedTitle": "Trip Route",
+      "more": "more"
     }
   }
 }

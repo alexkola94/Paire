@@ -398,6 +398,33 @@ export const getDirectionsUrl = (poi, origin = null) => {
 }
 
 /**
+ * Get Google Maps place details URL for a POI
+ * Goal: mimic what happens when a user types the place name in Google Maps,
+ * so we get the left info panel + marker (with Popular times when available).
+ *
+ * @param {Object} poi - POI object with optional name/coordinates
+ * @returns {string} Google Maps place details/search URL
+ */
+export const getPlaceDetailsUrl = (poi) => {
+  if (!poi) return 'https://www.google.com/maps'
+
+  // 1) Best case: search by name only (same as user typing it in Maps search bar)
+  //    This is what typically opens the full place card with busy times.
+  if (poi.name) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(poi.name)}`
+  }
+
+  // 2) Fallback: search by coordinates – will drop a pin but might not show full card
+  if (poi.latitude && poi.longitude) {
+    const query = `${poi.latitude},${poi.longitude}`
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+  }
+
+  // 3) Safe default – plain Google Maps
+  return 'https://www.google.com/maps'
+}
+
+/**
  * Calculate distance between two coordinates using Haversine formula
  * @param {number} lat1 - First latitude
  * @param {number} lon1 - First longitude
@@ -418,6 +445,84 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
 }
 
 /**
+ * Get route directions between two points using Mapbox Directions API.
+ * Returns realistic route geometry (following roads) and distance in km.
+ * Falls back to straight-line (Haversine) distance when Directions are unavailable.
+ *
+ * @param {number} lat1 - Origin latitude
+ * @param {number} lon1 - Origin longitude
+ * @param {number} lat2 - Destination latitude
+ * @param {number} lon2 - Destination longitude
+ * @param {'driving'|'walking'|'cycling'} profile - Mapbox routing profile
+ * @returns {Promise<{ geometry: GeoJSON.LineString | null, distanceKm: number | null }>}
+ */
+export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driving') => {
+  // If Mapbox is not configured, gracefully fall back to Haversine distance.
+  if (!MAPBOX_TOKEN) {
+    const fallback = calculateDistance(lat1, lon1, lat2, lon2)
+    return { geometry: null, distanceKm: fallback }
+  }
+
+  // Basic validation
+  if (
+    lat1 == null ||
+    lon1 == null ||
+    lat2 == null ||
+    lon2 == null
+  ) {
+    return { geometry: null, distanceKm: null }
+  }
+
+  try {
+    const keyParts = [
+      'route',
+      profile,
+      lat1.toFixed(4),
+      lon1.toFixed(4),
+      lat2.toFixed(4),
+      lon2.toFixed(4)
+    ]
+    const cacheKey = keyParts.join('-')
+
+    // Try cache first to avoid repeated API calls
+    const cached = await getCached(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${lon1},${lat1};${lon2},${lat2}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      throw new Error(`Mapbox Directions error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const route = data.routes && data.routes[0]
+
+    if (!route) {
+      // No route found – still provide straight-line distance so UI can show something.
+      const fallback = calculateDistance(lat1, lon1, lat2, lon2)
+      return { geometry: null, distanceKm: fallback }
+    }
+
+    const result = {
+      geometry: route.geometry || null,
+      distanceKm: route.distance != null ? route.distance / 1000 : null
+    }
+
+    // Cache for several days – routes rarely change.
+    await setCached(cacheKey, result, 7 * 24 * 60 * 60 * 1000)
+
+    return result
+  } catch (error) {
+    console.error('Error fetching route directions from Mapbox:', error)
+    const fallback = calculateDistance(lat1, lon1, lat2, lon2)
+    return { geometry: null, distanceKm: fallback }
+  }
+}
+
+/**
  * Format distance for display
  * @param {number} distanceKm - Distance in kilometers
  * @returns {string} Formatted distance string
@@ -431,7 +536,12 @@ export const formatDistance = (distanceKm) => {
 }
 
 /**
- * Reverse geocode coordinates to get address/POI details
+ * Reverse geocode coordinates to get a **city / area level** label.
+ *
+ * For the multi‑city planner we don't want street names like "Via Roma 10",
+ * we want broader locations such as "Rome" or "Athens". This helper therefore
+ * prioritises Mapbox `place` / `locality` / `region` when choosing the name.
+ *
  * @param {number} lat - Latitude
  * @param {number} lon - Longitude
  * @returns {Promise<Object>} POI-like object or null
@@ -440,7 +550,8 @@ export const reverseGeocode = async (lat, lon) => {
   if (!MAPBOX_TOKEN) return null
 
   try {
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?types=poi,address,place&limit=1&access_token=${MAPBOX_TOKEN}`
+    // Ask Mapbox specifically for place-level results (city, town, locality, region, country)
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?types=place,locality,region,country&limit=1&access_token=${MAPBOX_TOKEN}`
     const response = await fetch(url)
 
     if (!response.ok) {
@@ -448,21 +559,54 @@ export const reverseGeocode = async (lat, lon) => {
     }
 
     const data = await response.json()
-    if (data.features && data.features.length > 0) {
-      const feature = data.features[0]
-      // Mapbox feature to simplified POI format
-      return {
-        id: `pinned-${Date.now()}`,
-        poiId: `mapbox-${feature.id}`,
-        name: feature.text || feature.place_name?.split(',')[0] || 'Unknown Location',
-        address: feature.place_name,
-        latitude: lat,
-        longitude: lon,
-        category: 'attraction', // Default category for dropped pins
-        source: 'pinned'
-      }
+    const feature = data.features && data.features[0]
+    if (!feature) return null
+
+    const context = feature.context || []
+
+    // Prefer city / town / locality level first
+    const placeContext =
+      context.find(c => typeof c.id === 'string' && c.id.startsWith('place.')) ||
+      context.find(c => typeof c.id === 'string' && c.id.startsWith('locality.')) ||
+      null
+
+    // Then region (state / prefecture)
+    const regionContext =
+      context.find(c => typeof c.id === 'string' && c.id.startsWith('region.')) || null
+
+    // Country entry
+    const countryContext =
+      context.find(c => typeof c.id === 'string' && c.id.startsWith('country.')) || null
+
+    const cityName =
+      placeContext?.text ||
+      feature.text || // Fallback to feature text if needed
+      feature.place_name?.split(',')[0] ||
+      'Unknown Location'
+
+    // Build a clean, high-level address like "Rome, Italy"
+    const addressParts = []
+    if (placeContext?.text) addressParts.push(placeContext.text)
+    else if (feature.text) addressParts.push(feature.text)
+    if (regionContext?.text && regionContext.text !== placeContext?.text) {
+      addressParts.push(regionContext.text)
     }
-    return null
+    if (countryContext?.text) addressParts.push(countryContext.text)
+
+    const address =
+      addressParts.length > 0 ? addressParts.join(', ') : feature.place_name || cityName
+
+    return {
+      id: `pinned-${Date.now()}`,
+      poiId: `mapbox-${feature.id}`,
+      name: cityName,
+      address,
+      latitude: lat,
+      longitude: lon,
+      category: 'attraction', // Default category for dropped pins
+      source: 'pinned',
+      countryName: countryContext?.text || null
+    }
   } catch (error) {
     console.error('Error reverse geocoding:', error)
     return null
@@ -786,6 +930,7 @@ export default {
   reverseGeocode,
   getCountryFromPlaceName,
   getDirectionsUrl,
+  getPlaceDetailsUrl,
   calculateDistance,
   formatDistance,
   fetchStays,

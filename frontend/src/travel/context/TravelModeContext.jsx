@@ -39,6 +39,7 @@ export const TravelModeProvider = ({ children }) => {
     return localStorage.getItem('discoveryMode') === 'true'
   })
   const [selectedPOI, setSelectedPOI] = useState(null)
+  const [activeTripCities, setActiveTripCities] = useState([])
   const [mapViewState, setMapViewState] = useState(null)
 
   // Scroll positions preservation for Discovery Mode
@@ -120,6 +121,31 @@ export const TravelModeProvider = ({ children }) => {
       setTripsLoading(false)
     }
   }, [])
+
+  /**
+   * Load cities for the current active trip (for multi-city visualization)
+   * Keeps a lightweight list of stops available to any consumer (e.g. Discovery map, micrography).
+   */
+  useEffect(() => {
+    const loadCitiesForActiveTrip = async () => {
+      if (!activeTrip?.id) {
+        setActiveTripCities([])
+        return
+      }
+
+      try {
+        // Lazy-load tripCityService to avoid circular deps at module top-level
+        const { tripCityService } = await import('../services/travelApi')
+        const cities = await tripCityService.getByTrip(activeTrip.id)
+        setActiveTripCities(Array.isArray(cities) ? cities : [])
+      } catch (error) {
+        console.error('Error loading cities for active trip:', error)
+        setActiveTripCities([])
+      }
+    }
+
+    loadCitiesForActiveTrip()
+  }, [activeTrip?.id])
 
   // Load active trip from API (online) or IndexedDB (offline) on mount
   useEffect(() => {
@@ -432,6 +458,7 @@ export const TravelModeProvider = ({ children }) => {
     clearSelectedPOI,
     mapViewState,
     updateMapViewState,
+    activeTripCities,
 
     // Online status
     isOnline,

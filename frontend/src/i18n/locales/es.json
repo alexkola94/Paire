@@ -300,6 +300,24 @@
     "errorDeletingAttachment": "Error al eliminar el adjunto"
   },
   "travel": {
+    "common": {
+      "enterTravelMode": "Modo Viaje",
+      "exitTravelMode": "Salir",
+      "noTrip": "No se Seleccionó Viaje",
+      "offline": "Sin conexión: los datos se sincronizarán cuando vuelvas a estar en línea",
+      "syncing": "Sincronizando...",
+      "syncComplete": "Sincronización completa",
+      "syncError": "Error al sincronizar",
+      "viewAll": "Ver todo",
+      "createTrip": "Crear Viaje",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "add": "Agregar",
+      "saving": "Guardando...",
+      "ascending": "Ascendente",
+      "descending": "Descendente",
+      "loadingTripView": "Cargando la vista de tu viaje..."
+    },
     "budget": {
       "title": "Presupuesto",
       "noTrip": "No se Seleccionó Viaje",
@@ -439,10 +457,33 @@
           "originPlaceholder": "ej., España",
           "destinationCountry": "País de destino",
           "destinationPlaceholder": "ej., Japón",
+          "destinationCountries": "Países de destino",
+          "addCountry": "Añadir país",
+          "addCountryPrompt": "Introduce el nombre del país:",
+          "multiCityHint": "Este es un viaje de múltiples ciudades. Añade o elimina países según sea necesario.",
           "providerLabel": "Enviar esta pregunta a",
           "providerHint": "Se abre en una nueva pestaña con la pregunta precompletada.",
           "promptPreview": "Vista previa de la pregunta que enviaremos",
           "askButton": "Abrir chat de IA con esta pregunta",
+          "originFallback": "mi país de origen",
+          "destinationFallback": "mi país de destino",
+          "prompt": {
+            "line1Basic": "Estoy planeando un viaje internacional desde {{origin}} hacia {{destination}}{{tripNameSentence}}.",
+            "line1WithRange": "Estoy planeando un viaje internacional desde {{origin}} hacia {{destination}} del {{startDate}} al {{endDate}}{{tripNameSentence}}.",
+            "line1WithStart": "Estoy planeando un viaje internacional desde {{origin}} hacia {{destination}} comenzando el {{startDate}}{{tripNameSentence}}.",
+            "line2": "Por favor, dime qué documentos de viaje, visas, requisitos de entrada y documentos de salud puedo necesitar.",
+            "line3": "Divide la respuesta en:",
+            "line4": "- Documentos esenciales requeridos para la entrada",
+            "line5": "- Documentos recomendados / agradables de tener",
+            "line6": "- Cualquier regla específica del país sobre visas, reglas de tránsito o reglas de validez del pasaporte que deba conocer.",
+            "line6MultiCountry": "- Cualquier regla específica del país sobre visas, reglas de tránsito, reglas de validez del pasaporte y requisitos de viaje transfronterizo que deba conocer para viajar entre estos países.",
+            "line7": "Responde en una lista de verificación concisa y amigable para el viajero.",
+            "tripNameSentence": " para un viaje llamado \"{{tripName}}\"",
+            "destinationsTwo": "{{country1}} y {{country2}}",
+            "destinationsMultiple": "{{countries}}, y {{lastCountry}}"
+          },
+          "promptCopied": "¡Prompt copiado al portapapeles! Péguelo en el chat de IA.",
+          "copyFailed": "No se pudo copiar al portapapeles. Por favor, copie el prompt manualmente desde la vista previa anterior.",
           "provider": {
             "travel-assistant": "Asistente de documentos de viaje",
             "chatgpt": "ChatGPT"
@@ -455,6 +496,7 @@
       "explore": "Explorar",
       "fromCenter": "desde el viaje",
       "getDirections": "Obtener Direcciones",
+       "seeDetails": "Ver detalles en Google Maps",
       "unpinFromTrip": "Marcado",
       "pinning": "Marcando...",
       "pinToTrip": "Mantener para Marcar",
@@ -504,6 +546,44 @@
         "active": "Activo",
         "completed": "Completado"
       }
+    },
+    "multiCity": {
+      "createTrip": "Crear Viaje Multi-Ciudad",
+      "editTrip": "Editar Viaje Multi-Ciudad",
+      "deleteTrip": "Eliminar Viaje",
+      "confirmDelete": "¿Eliminar este viaje y todas sus ciudades? Esta acción no se puede deshacer.",
+      "step1": {
+        "title": "Seleccionar Ciudades",
+        "description": "Haz clic en el mapa para agregar ciudades a tu viaje",
+        "tripName": "Nombre del Viaje (opcional)",
+        "namePlaceholder": "ej., Aventura Europea",
+        "selectedCities": "Ciudades Seleccionadas",
+        "calculatingRoutes": "Calculando mejores rutas...",
+        "totalDistance": "Distancia Total del Viaje"
+      },
+      "step2": {
+        "title": "Establecer Fechas",
+        "description": "Establece las fechas de llegada y salida para cada ciudad",
+        "arrival": "Llegada",
+        "departure": "Salida"
+      },
+      "errors": {
+        "minCities": "Por favor selecciona al menos 2 ciudades",
+        "cityDateRequired": "Por favor establece la fecha de llegada para {{city}}",
+        "dateOrder": "Las fechas de las ciudades deben estar en orden",
+        "deleteFailed": "Error al eliminar el viaje. Por favor intenta de nuevo."
+      },
+      "saveSuccess": {
+        "title": "¡Viaje Guardado Exitosamente!",
+        "message": "Tu viaje multi-ciudad ha sido guardado.",
+        "editMore": "Editar Más"
+      }
+    },
+    "micrography": {
+      "title": "Ruta del Viaje",
+      "expand": "Expandir mapa",
+      "expandedTitle": "Ruta del Viaje",
+      "more": "más"
     }
   }
 }

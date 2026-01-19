@@ -1,5 +1,9 @@
 /* ================================
    Explore Page - Premium Styling
+   Layout tuned for desktop so key modules
+   (weather + essentials) sit side‑by‑side
+   to reduce vertical scrolling while
+   remaining stacked on tablet/mobile.
    ================================ */
 
 .explore-page {
@@ -10,6 +14,8 @@
 }
 
 .explore-page.calm-explore {
+  /* Slightly wider canvas on larger screens so
+     hero weather + essentials can breathe */
   max-width: 600px;
   margin: 0 auto;
   width: 100%;
@@ -656,6 +662,44 @@
   .today-weather-main .today-icon {
     width: 64px;
     height: 64px;
+  }
+}
+
+/* =========================================
+   Desktop Layout – spread modules horizontally
+   ========================================= */
+@media (min-width: 1024px) {
+  .explore-page.calm-explore {
+    /* Wider layout on desktop to use full viewport */
+    max-width: 1120px;
+    padding-inline: 1.5rem;
+  }
+
+  .explore-page {
+    /* Switch from vertical stack to grid for desktop,
+       so we use horizontal space and avoid deep scrolling */
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "weather essentials"
+      "poi poi";
+    column-gap: 1.75rem;
+    row-gap: 1.75rem;
+  }
+
+  .explore-section.weather-section {
+    grid-area: weather;
+    height: 100%;
+  }
+
+  .explore-section.essentials-section {
+    grid-area: essentials;
+    height: 100%;
+  }
+
+  .explore-section.poi-section {
+    grid-area: poi;
   }
 }
 

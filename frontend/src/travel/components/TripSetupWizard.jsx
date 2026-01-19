@@ -5,7 +5,6 @@ import { useModalRegistration } from '../../context/ModalContext'
 import {
   FiX,
   FiMapPin,
-  FiCalendar,
   FiDollarSign,
   FiCheck,
   FiChevronRight,
@@ -17,6 +16,7 @@ import { tripService, geocodingService } from '../services/travelApi'
 import { budgetService, savingsGoalService } from '../../services/api'
 import { createTrip } from '../services/travelDb'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
+import DatePicker from './DatePicker'
 import '../styles/TripSetupWizard.css'
 
 // Geocoding service using backend proxy to avoid CORS issues
@@ -347,29 +347,23 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
 
             <div className="dates-row">
               <div className="form-group">
-                <label>{t('travel.trip.startDate', 'Departure')}</label>
-                <div className="date-input">
-                  <FiCalendar />
-                  <input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => handleChange('startDate', e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
+                <DatePicker
+                  label={t('travel.trip.startDate', 'Departure')}
+                  value={formData.startDate}
+                  onChange={(value) => handleChange('startDate', value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  placeholder={t('travel.setup.step2.selectDeparture', 'Select departure date')}
+                />
               </div>
 
               <div className="form-group">
-                <label>{t('travel.trip.endDate', 'Return')}</label>
-                <div className="date-input">
-                  <FiCalendar />
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleChange('endDate', e.target.value)}
-                    min={formData.startDate || new Date().toISOString().split('T')[0]}
-                  />
-                </div>
+                <DatePicker
+                  label={t('travel.trip.endDate', 'Return')}
+                  value={formData.endDate}
+                  onChange={(value) => handleChange('endDate', value)}
+                  min={formData.startDate || new Date().toISOString().split('T')[0]}
+                  placeholder={t('travel.setup.step2.selectReturn', 'Select return date')}
+                />
               </div>
             </div>
 

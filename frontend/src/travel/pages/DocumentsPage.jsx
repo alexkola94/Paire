@@ -21,9 +21,12 @@ import {
   FiMessageCircle,
   FiLoader
 } from 'react-icons/fi'
-import { documentService, uploadTravelFile } from '../services/travelApi'
+import { documentService, uploadTravelFile, tripCityService } from '../services/travelApi'
 import { getCountryFromPlaceName } from '../services/discoveryService'
+import { getAdvisories } from '../services/travelAdvisoryService'
+import TravelAdvisoryCard from '../components/TravelAdvisoryCard'
 import { DOCUMENT_TYPES } from '../utils/travelConstants'
+import DatePicker from '../components/DatePicker'
 import '../styles/Documents.css'
 
 // Document type icons mapping
@@ -75,10 +78,12 @@ const AI_PROVIDERS = [
 /**
  * Build a clear travel documents prompt for AI.
  * Keeps logic pure & easily testable.
+ * Supports both single and multi-country destinations.
  */
 const buildTravelDocsPrompt = ({
   originCountry,
   destinationCountry,
+  destinationCountries, // Array of countries for multi-city trips
   tripName,
   startDate,
   endDate,
@@ -88,9 +93,42 @@ const buildTravelDocsPrompt = ({
   const origin =
     originCountry?.trim() ||
     t('travel.documents.aiHelper.originFallback', 'my home country')
-  const destination =
-    destinationCountry?.trim() ||
-    t('travel.documents.aiHelper.destinationFallback', 'my destination country')
+  
+  // Determine destination text - use multiple countries if provided, otherwise single
+  let destination = ''
+  const isMultiCountry = Array.isArray(destinationCountries) && destinationCountries.length > 0
+  
+  if (isMultiCountry) {
+    // Filter out empty/null countries and get unique values
+    const uniqueCountries = [...new Set(destinationCountries.filter(c => c?.trim()))]
+    if (uniqueCountries.length > 0) {
+      if (uniqueCountries.length === 1) {
+        destination = uniqueCountries[0]
+      } else if (uniqueCountries.length === 2) {
+        destination = t('travel.documents.aiHelper.prompt.destinationsTwo', {
+          country1: uniqueCountries[0],
+          country2: uniqueCountries[1],
+          defaultValue: `${uniqueCountries[0]} and ${uniqueCountries[1]}`
+        })
+      } else {
+        // For 3+ countries, list them with proper formatting
+        const lastCountry = uniqueCountries[uniqueCountries.length - 1]
+        const otherCountries = uniqueCountries.slice(0, -1).join(', ')
+        destination = t('travel.documents.aiHelper.prompt.destinationsMultiple', {
+          countries: otherCountries,
+          lastCountry,
+          defaultValue: `${otherCountries}, and ${lastCountry}`
+        })
+      }
+    } else {
+      // Fallback if all countries are empty
+      destination = destinationCountry?.trim() ||
+        t('travel.documents.aiHelper.destinationFallback', 'my destination country')
+    }
+  } else {
+    destination = destinationCountry?.trim() ||
+      t('travel.documents.aiHelper.destinationFallback', 'my destination country')
+  }
 
   const hasStart = !!startDate
   const hasEnd = !!endDate
@@ -152,10 +190,18 @@ const buildTravelDocsPrompt = ({
     'travel.documents.aiHelper.prompt.line5',
     '- Recommended / nice-to-have documents'
   )
-  const line6 = t(
-    'travel.documents.aiHelper.prompt.line6',
-    '- Any country-specific visa rules, transit rules, or passport validity rules I should know.'
-  )
+  
+  // For multi-country trips, add a note about transit requirements
+  const line6 = isMultiCountry && destinationCountries.length > 1
+    ? t(
+        'travel.documents.aiHelper.prompt.line6MultiCountry',
+        '- Any country-specific visa rules, transit rules, passport validity rules, and cross-border travel requirements I should know for traveling between these countries.'
+      )
+    : t(
+        'travel.documents.aiHelper.prompt.line6',
+        '- Any country-specific visa rules, transit rules, or passport validity rules I should know.'
+      )
+  
   const line7 = t(
     'travel.documents.aiHelper.prompt.line7',
     'Answer in a concise, traveler-friendly checklist.'
@@ -224,11 +270,109 @@ const DocumentsPage = ({ trip }) => {
     return destinationText
   }, [trip?.destination])
 
-  // Resolved destination country – starts from inferredDestinationCountry and,
-  // when possible, is upgraded to a true country name via Mapbox geocoding.
+  // Resolved destination country/countries – handles both single and multi-city trips
   const [resolvedDestinationCountry, setResolvedDestinationCountry] = useState(inferredDestinationCountry)
+  const [resolvedDestinationCountries, setResolvedDestinationCountries] = useState([])
+  const [isMultiCityTrip, setIsMultiCityTrip] = useState(false)
+  const [advisories, setAdvisories] = useState([])
 
+  // Check if trip is multi-city and fetch cities
   useEffect(() => {
+    const checkMultiCity = async () => {
+      if (!trip?.id) {
+        setIsMultiCityTrip(false)
+        setResolvedDestinationCountries([])
+        return
+      }
+
+      try {
+        // Check trip type first
+        const isMultiCity = trip.tripType === 'multi-city'
+        
+        if (isMultiCity) {
+          // Fetch cities for multi-city trips
+          const cities = await tripCityService.getByTrip(trip.id)
+          if (cities && cities.length > 1) {
+            setIsMultiCityTrip(true)
+            
+            // Extract countries from cities and resolve them
+            const countryPromises = cities
+              .filter(city => city.country || city.name)
+              .map(async (city) => {
+                // If city already has a country, use it
+                if (city.country?.trim()) {
+                  return city.country.trim()
+                }
+                
+                // Otherwise, try to resolve from city name
+                try {
+                  const result = await getCountryFromPlaceName(city.name)
+                  if (result?.countryName) {
+                    // Prefer localized country name
+                    let localizedName = result.countryName
+                    if (result.countryCode && typeof Intl !== 'undefined' && Intl.DisplayNames) {
+                      try {
+                        const displayNames = new Intl.DisplayNames([i18n.language], { type: 'region' })
+                        localizedName = displayNames.of(result.countryCode) || localizedName
+                      } catch {
+                        // Fallback to the name provided by Mapbox
+                      }
+                    }
+                    return localizedName
+                  }
+                } catch (error) {
+                  console.error(`Could not resolve country for city ${city.name}:`, error)
+                }
+                return null
+              })
+            
+            const resolvedCountries = (await Promise.all(countryPromises))
+              .filter(c => c) // Remove nulls
+              .filter((c, index, arr) => arr.indexOf(c) === index) // Get unique countries
+            
+            setResolvedDestinationCountries(resolvedCountries)
+
+            // Load advisories for the resolved destination countries.
+            if (resolvedCountries.length > 0) {
+              try {
+                const advisoryResults = await getAdvisories(resolvedCountries)
+                setAdvisories(advisoryResults || [])
+              } catch (advisoryError) {
+                console.error('Error loading advisories for multi-city destinations:', advisoryError)
+                setAdvisories([])
+              }
+            } else {
+              setAdvisories([])
+            }
+            
+            // For backward compatibility, set the first country as single destination
+            if (resolvedCountries.length > 0) {
+              setResolvedDestinationCountry(resolvedCountries[0])
+            }
+          } else {
+            setIsMultiCityTrip(false)
+            setResolvedDestinationCountries([])
+          }
+        } else {
+          setIsMultiCityTrip(false)
+          setResolvedDestinationCountries([])
+          setAdvisories([])
+        }
+      } catch (error) {
+        console.error('Error checking multi-city trip:', error)
+        setIsMultiCityTrip(false)
+        setResolvedDestinationCountries([])
+        setAdvisories([])
+      }
+    }
+
+    checkMultiCity()
+  }, [trip?.id, trip?.tripType, i18n.language])
+
+  // Resolve single destination country for non-multi-city trips
+  useEffect(() => {
+    if (isMultiCityTrip) return // Skip for multi-city trips
+    
     let cancelled = false
 
     // Always reset to the synchronous inference first for snappy UI.
@@ -252,6 +396,15 @@ const DocumentsPage = ({ trip }) => {
           }
 
           setResolvedDestinationCountry(localizedName)
+
+          // Also refresh advisories for single-destination trips.
+          try {
+            const advisoryResults = await getAdvisories([localizedName])
+            setAdvisories(advisoryResults || [])
+          } catch (advisoryError) {
+            console.error('Error loading advisory for destination country:', advisoryError)
+            setAdvisories([])
+          }
         }
       } catch (error) {
         console.error('Could not resolve destination country from trip destination:', error)
@@ -263,7 +416,7 @@ const DocumentsPage = ({ trip }) => {
     return () => {
       cancelled = true
     }
-  }, [trip?.destination, inferredDestinationCountry, i18n.language])
+  }, [trip?.destination, inferredDestinationCountry, i18n.language, isMultiCityTrip])
 
   // Group documents by type
   const groupedDocuments = documents.reduce((acc, doc) => {
@@ -375,8 +528,28 @@ const DocumentsPage = ({ trip }) => {
     )
   }
 
+  // Lazy-load the documents view while records are being fetched
+  if (trip && loading) {
+    return (
+      <div className="travel-page-loading">
+        <div className="travel-glass-card travel-page-loading-card">
+          <FiLoader size={22} className="travel-spinner travel-page-loading-icon" />
+          <p className="travel-page-loading-text">
+            {t('travel.common.loadingTripView', 'Loading your trip view...')}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="documents-page">
+      {/* Compact travel advisory context above documents */}
+      {advisories && advisories.length > 0 && (
+        <div className="documents-advisory-strip">
+          <TravelAdvisoryCard advisory={advisories[0]} compact />
+        </div>
+      )}
       {/* Header */}
       <div className="documents-header">
         <div className="header-info">
@@ -509,6 +682,8 @@ const DocumentsPage = ({ trip }) => {
           <TravelDocsAiDialog
             trip={trip}
             inferredDestination={resolvedDestinationCountry}
+            inferredDestinations={isMultiCityTrip ? resolvedDestinationCountries : []}
+            isMultiCity={isMultiCityTrip}
             providers={AI_PROVIDERS}
             onClose={() => setShowAiHelper(false)}
           />
@@ -767,11 +942,11 @@ const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
             </div>
 
             <div className="form-group">
-              <label>{t('travel.documents.expiryDate', 'Expiry Date')}</label>
-              <input
-                type="date"
+              <DatePicker
+                label={t('travel.documents.expiryDate', 'Expiry Date')}
                 value={formData.expiryDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, expiryDate: e.target.value }))}
+                onChange={(value) => setFormData(prev => ({ ...prev, expiryDate: value }))}
+                placeholder={t('travel.documents.selectExpiryDate', 'Select expiry date')}
               />
             </div>
           </div>
@@ -857,11 +1032,11 @@ const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
 /**
  * TravelDocsAiDialog
  * Lightweight helper dialog that:
- * - Shows origin & destination countries
+ * - Shows origin & destination countries (supports multiple for multi-city trips)
  * - Lets the user pick which AI to use
  * - Builds a clear prompt and redirects to the selected AI chat page
  */
-const TravelDocsAiDialog = ({ trip, inferredDestination, providers, onClose }) => {
+const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, isMultiCity, providers, onClose }) => {
   const { t } = useTranslation()
 
   // Register modal to hide bottom navigation for mobile
@@ -898,7 +1073,13 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, providers, onClose }) =
   // Origin country – best effort auto-fill from current locale, still editable by the user.
   // This can later be wired to a real profile/location service.
   const [originCountry, setOriginCountry] = useState('')
-  const [destinationCountry, setDestinationCountry] = useState(inferredDestination || '')
+  
+  // For multi-city trips, use the array of countries; otherwise use single destination
+  const [destinationCountries, setDestinationCountries] = useState(
+    isMultiCity && inferredDestinations?.length > 0 
+      ? inferredDestinations 
+      : inferredDestination ? [inferredDestination] : []
+  )
   const [selectedProviderId, setSelectedProviderId] = useState(
     providers?.[0]?.id || ''
   )
@@ -921,7 +1102,8 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, providers, onClose }) =
   useEffect(() => {
     const autoPrompt = buildTravelDocsPrompt({
       originCountry,
-      destinationCountry,
+      destinationCountry: destinationCountries.length > 0 ? destinationCountries[0] : '',
+      destinationCountries: isMultiCity ? destinationCountries : undefined,
       tripName: trip?.name,
       startDate: trip?.startDate,
       endDate: trip?.endDate,
@@ -932,7 +1114,7 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, providers, onClose }) =
     if (!hasEditedPromptRef.current) {
       setPromptText(autoPrompt)
     }
-  }, [originCountry, destinationCountry, trip?.name, trip?.startDate, trip?.endDate, t])
+  }, [originCountry, destinationCountries, isMultiCity, trip?.name, trip?.startDate, trip?.endDate, t])
 
   const handlePromptChange = (event) => {
     if (!hasEditedPromptRef.current) {
@@ -951,7 +1133,8 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, providers, onClose }) =
       (promptText && promptText.trim()) ||
       buildTravelDocsPrompt({
         originCountry,
-        destinationCountry,
+        destinationCountry: destinationCountries.length > 0 ? destinationCountries[0] : '',
+        destinationCountries: isMultiCity ? destinationCountries : undefined,
         tripName: trip?.name,
         startDate: trip?.startDate,
         endDate: trip?.endDate,
@@ -994,7 +1177,10 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, providers, onClose }) =
   }
 
   const isConfirmDisabled =
-    !selectedProviderId || !destinationCountry.trim() || !originCountry.trim()
+    !selectedProviderId || 
+    !originCountry.trim() || 
+    destinationCountries.length === 0 || 
+    (!isMultiCity && !destinationCountries[0]?.trim())
 
   return (
     <motion.div
@@ -1056,24 +1242,72 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, providers, onClose }) =
               />
             </div>
 
-            {/* Destination country – prefilled from trip destination and editable just in case */}
-            <div className="form-group">
-              <label>
-                {t(
-                  'travel.documents.aiHelper.destinationCountry',
-                  'Destination country'
-                )}
-              </label>
-              <input
-                type="text"
-                value={destinationCountry}
-                onChange={(e) => setDestinationCountry(e.target.value)}
-                placeholder={t(
-                  'travel.documents.aiHelper.destinationPlaceholder',
-                  'e.g., Japan'
-                )}
-              />
-            </div>
+            {/* Destination countries – supports both single and multi-city trips */}
+            {isMultiCity && destinationCountries.length > 0 ? (
+              <div className="form-group">
+                <label>
+                  {t(
+                    'travel.documents.aiHelper.destinationCountries',
+                    'Destination countries'
+                  )}
+                </label>
+                <div className="destination-countries-list">
+                  {destinationCountries.map((country, index) => (
+                    <div key={index} className="destination-country-chip">
+                      <span>{country}</span>
+                      <button
+                        type="button"
+                        className="remove-country-btn"
+                        onClick={() => {
+                          const newCountries = destinationCountries.filter((_, i) => i !== index)
+                          setDestinationCountries(newCountries)
+                        }}
+                        aria-label={t('common.remove', 'Remove')}
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="add-country-btn"
+                    onClick={() => {
+                      const newCountry = prompt(t('travel.documents.aiHelper.addCountryPrompt', 'Enter country name:'))
+                      if (newCountry?.trim()) {
+                        setDestinationCountries([...destinationCountries, newCountry.trim()])
+                      }
+                    }}
+                  >
+                    <FiPlus size={14} />
+                    <span>{t('travel.documents.aiHelper.addCountry', 'Add country')}</span>
+                  </button>
+                </div>
+                <p className="form-hint">
+                  {t(
+                    'travel.documents.aiHelper.multiCityHint',
+                    'This is a multi-city trip. Add or remove countries as needed.'
+                  )}
+                </p>
+              </div>
+            ) : (
+              <div className="form-group">
+                <label>
+                  {t(
+                    'travel.documents.aiHelper.destinationCountry',
+                    'Destination country'
+                  )}
+                </label>
+                <input
+                  type="text"
+                  value={destinationCountries[0] || ''}
+                  onChange={(e) => setDestinationCountries([e.target.value])}
+                  placeholder={t(
+                    'travel.documents.aiHelper.destinationPlaceholder',
+                    'e.g., Japan'
+                  )}
+                />
+              </div>
+            )}
           </div>
 
           {/* AI provider selection – dropdown keeps the most popular provider first */}

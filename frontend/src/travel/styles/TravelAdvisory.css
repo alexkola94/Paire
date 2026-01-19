@@ -1,0 +1,197 @@
+.travel-advisory-card {
+  /* Paire glassmorphism base */
+  background: radial-gradient(circle at top left, rgba(139, 92, 246, 0.08), rgba(15, 7, 26, 0.9));
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 18px 45px rgba(15, 7, 26, 0.55),
+    0 0 0 1px rgba(139, 92, 246, 0.18);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: #f9fafb;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background 0.3s ease-in-out;
+}
+
+.travel-advisory-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 22px 55px rgba(15, 7, 26, 0.75),
+    0 0 0 1px rgba(139, 92, 246, 0.28);
+}
+
+.travel-advisory-card-compact {
+  padding: 0.75rem 1rem;
+}
+
+.travel-advisory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.travel-advisory-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.travel-advisory-icon {
+  padding: 0.35rem;
+  border-radius: 999px;
+  background: rgba(15, 7, 26, 0.85);
+}
+
+.travel-advisory-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.travel-advisory-country {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.travel-advisory-level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: rgba(15, 7, 26, 0.8);
+  backdrop-filter: blur(16px);
+}
+
+.travel-advisory-score-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.travel-advisory-score-label {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.travel-advisory-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at top left, rgba(139, 92, 246, 0.35), rgba(15, 7, 26, 0.95));
+}
+
+.travel-advisory-score-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.travel-advisory-score-max {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.travel-advisory-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.travel-advisory-message {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: rgba(249, 250, 251, 0.9);
+}
+
+.travel-advisory-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: rgba(209, 213, 219, 0.9);
+}
+
+.travel-advisory-updated::before {
+  content: '•';
+  margin-right: 0.4rem;
+  opacity: 0.6;
+}
+
+.travel-advisory-sources::before {
+  content: '•';
+  margin-right: 0.4rem;
+  opacity: 0.6;
+}
+
+/* Badge (inline) */
+.travel-advisory-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  background: rgba(15, 7, 26, 0.85);
+  color: #f9fafb;
+  transition: background 0.3s ease-in-out, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.travel-advisory-badge-icon {
+  flex-shrink: 0;
+}
+
+.travel-advisory-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 7, 26, 0.6);
+}
+
+.travel-advisory-badge-text {
+  white-space: nowrap;
+}
+
+/* Level colors */
+.advisory-level-low {
+  color: #10b981;
+}
+
+.advisory-level-medium {
+  color: #f59e0b;
+}
+
+.advisory-level-high {
+  color: #f97316;
+}
+
+.advisory-level-critical {
+  color: #ef4444;
+}
+
+.advisory-level-unknown {
+  color: #9ca3af;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .travel-advisory-card {
+    padding: 0.9rem 1rem;
+  }
+
+  .travel-advisory-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .travel-advisory-score-wrapper {
+    align-items: flex-start;
+  }
+}
+

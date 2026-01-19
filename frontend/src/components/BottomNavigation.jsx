@@ -42,7 +42,9 @@ const BottomNavigation = () => {
     }, [])
 
     return (
-        <nav className={`bottom-nav ${hasOpenModals ? 'hidden' : ''}`}>
+        <nav
+            className={`bottom-nav ${hasOpenModals ? 'hidden' : ''}`}
+        >
             <div className="bottom-nav-container">
                 <NavLink to="/dashboard" className="nav-item">
                     <div className="icon-container">

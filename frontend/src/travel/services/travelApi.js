@@ -7,7 +7,8 @@ import db, {
   createItineraryEvent,
   createPackingItem,
   createDocument,
-  createTravelExpense
+  createTravelExpense,
+  createTripCity
 } from './travelDb'
 
 /**
@@ -343,9 +344,30 @@ export const tripService = {
 
   /**
    * Update an existing trip
+   * Handles both API and IndexedDB-only trips
    */
   async update(id, updates) {
     const updatedData = { ...updates, updatedAt: new Date().toISOString() }
+    
+    // Check if trip exists in IndexedDB
+    const localTrip = await db.trips.get(id)
+    
+    // If trip only exists locally (not synced), just update IndexedDB
+    if (localTrip && !localTrip._synced) {
+      await db.trips.update(id, { ...updatedData, _synced: false })
+      // Update sync queue if there's a pending create operation
+      const pendingCreate = await db.syncQueue
+        .where('entityType').equals('trips')
+        .filter(item => item.operation === 'create' && (item.data?.id === id || item.data?.localId === id))
+        .first()
+      if (pendingCreate) {
+        // Update the queued create operation with new data
+        await db.syncQueue.update(pendingCreate.id, {
+          data: { ...pendingCreate.data, ...updatedData }
+        })
+      }
+      return await db.trips.get(id)
+    }
 
     try {
       const updated = await apiRequest(`/api/travel/trips/${id}`, {
@@ -356,10 +378,22 @@ export const tripService = {
       return updated
     } catch (error) {
       if (error instanceof OfflineError || error.isOffline) {
+        // Offline: update IndexedDB and queue for sync
         await db.trips.update(id, { ...updatedData, _synced: false })
         await addToSyncQueue('update', 'trips', { id, ...updatedData })
         const trip = await db.trips.get(id)
         return trip
+      } else if (error.message && error.message.includes('404')) {
+        // Trip doesn't exist on server but exists locally
+        // Update IndexedDB and mark as unsynced
+        await db.trips.update(id, { ...updatedData, _synced: false })
+        // Queue as create if it was never synced
+        if (localTrip && !localTrip._synced) {
+          await addToSyncQueue('create', 'trips', { ...localTrip, ...updatedData })
+        } else {
+          await addToSyncQueue('update', 'trips', { id, ...updatedData })
+        }
+        return await db.trips.get(id)
       }
       throw error
     }
@@ -367,22 +401,60 @@ export const tripService = {
 
   /**
    * Delete a trip
+   * Handles both API and IndexedDB-only trips
    */
   async delete(id) {
-    try {
-      await apiRequest(`/api/travel/trips/${id}`, { method: 'DELETE' })
+    // First, check if trip exists in IndexedDB
+    const localTrip = await db.trips.get(id)
+    
+    // Delete from IndexedDB and related data regardless of API status
+    // This ensures IndexedDB-only trips can be deleted
+    const deleteFromLocal = async () => {
       await db.trips.delete(id)
       // Also delete related data
       await db.itineraryEvents.where('tripId').equals(id).delete()
       await db.packingItems.where('tripId').equals(id).delete()
       await db.documents.where('tripId').equals(id).delete()
       await db.travelExpenses.where('tripId').equals(id).delete()
+      await db.tripCities.where('tripId').equals(id).delete()
+    }
+
+    // If trip only exists locally (not synced), just delete from IndexedDB
+    if (localTrip && !localTrip._synced) {
+      await deleteFromLocal()
+      // Remove from sync queue if it was queued for creation
+      await db.syncQueue.where('entityType').equals('trips')
+        .filter(item => item.data?.id === id || item.data?.localId === id)
+        .delete()
+      return
+    }
+
+    // Try to delete from API if online
+    try {
+      await apiRequest(`/api/travel/trips/${id}`, { method: 'DELETE' })
+      // Successfully deleted from API, now delete from IndexedDB
+      await deleteFromLocal()
     } catch (error) {
       if (error instanceof OfflineError || error.isOffline) {
-        await addToSyncQueue('delete', 'trips', { id })
-        await db.trips.delete(id)
+        // Offline: delete from IndexedDB and queue for sync
+        await deleteFromLocal()
+        // Only add to sync queue if trip was synced (exists on server)
+        if (localTrip?._synced) {
+          await addToSyncQueue('delete', 'trips', { id })
+        }
       } else {
-        throw error
+        // API error (e.g., 404 - trip doesn't exist on server)
+        // Still delete from IndexedDB if it exists locally
+        if (localTrip) {
+          await deleteFromLocal()
+          // If it was a 404, the trip only existed locally, so no need to queue
+          if (error.message && !error.message.includes('404')) {
+            throw error
+          }
+        } else {
+          // Trip doesn't exist in either place
+          throw error
+        }
       }
     }
   }
@@ -725,6 +797,187 @@ export const travelExpenseService = {
 }
 
 // ========================================
+// Trip City Service
+// ========================================
+
+export const tripCityService = {
+  /**
+   * Get all cities for a trip, ordered by sequence
+   */
+  async getByTrip(tripId) {
+    try {
+      const cities = await apiRequest(`/api/travel/trips/${tripId}/cities`)
+      // Map backend 'orderIndex' to frontend 'order'
+      const mappedCities = (cities || []).map(c => ({
+        ...c,
+        order: c.orderIndex || c.order || 0
+      }))
+      // Cache in IndexedDB - use bulkPut to handle existing records safely
+      if (Array.isArray(mappedCities)) {
+        await db.tripCities.where('tripId').equals(tripId).delete()
+        const citiesToStore = mappedCities.map(c => ({ ...c, _synced: true }))
+        // Use bulkPut instead of bulkAdd to handle cases where records might still exist
+        await db.tripCities.bulkPut(citiesToStore)
+      }
+      return mappedCities
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        // Return cached cities
+        const cached = await db.tripCities.where('tripId').equals(tripId).sortBy('order')
+        return cached.map(c => ({
+          ...c,
+          order: c.order || 0
+        }))
+      }
+      throw error
+    }
+  },
+
+  /**
+   * Create a new trip city
+   */
+  async create(tripId, cityData) {
+    const city = createTripCity({ ...cityData, tripId })
+    
+    // Map frontend 'order' to backend 'orderIndex'
+    const apiCity = {
+      ...city,
+      orderIndex: city.order,
+      order: undefined // Remove order, backend uses orderIndex
+    }
+    delete apiCity.order
+
+    try {
+      const created = await apiRequest(`/api/travel/trips/${tripId}/cities`, {
+        method: 'POST',
+        body: JSON.stringify(apiCity)
+      })
+      // Map backend 'orderIndex' back to frontend 'order'
+      const mappedCity = {
+        ...created,
+        order: created.orderIndex || created.order || 0
+      }
+      await db.tripCities.put({ ...mappedCity, _synced: true })
+      return mappedCity
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        const localId = await db.tripCities.add({ ...city, _synced: false })
+        await addToSyncQueue('create', 'tripCities', { ...city, localId, tripId })
+        return { ...city, id: localId }
+      }
+      throw error
+    }
+  },
+
+  /**
+   * Update an existing trip city
+   */
+  async update(cityId, cityData) {
+    const updatedData = { ...cityData, updatedAt: new Date().toISOString() }
+
+    // Look up local city to get tripId for the correct API route
+    const localCity = await db.tripCities.get(cityId)
+    const tripId = updatedData.tripId || localCity?.tripId
+
+    // Map frontend 'order' to backend 'orderIndex'
+    const apiData = {
+      ...updatedData,
+      orderIndex: updatedData.order,
+      order: undefined
+    }
+    delete apiData.order
+
+    try {
+      const url = tripId
+        ? `/api/travel/trips/${tripId}/cities/${cityId}`
+        : `/api/travel/trips/cities/${cityId}`
+
+      const updated = await apiRequest(url, {
+        method: 'PUT',
+        body: JSON.stringify(apiData)
+      })
+      // Map backend response back to frontend format
+      const mappedCity = {
+        ...updated,
+        order: updated.orderIndex || updated.order || 0
+      }
+      await db.tripCities.update(cityId, { ...mappedCity, _synced: true })
+      return mappedCity
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        // Offline: update locally and queue for sync
+        await db.tripCities.update(cityId, { ...updatedData, _synced: false })
+        const city = await db.tripCities.get(cityId)
+        await addToSyncQueue('update', 'tripCities', { id: cityId, ...updatedData, tripId: city?.tripId })
+        return await db.tripCities.get(cityId)
+      } else if (String(error.message || '').includes('404')) {
+        // City missing on server: keep local data and mark as unsynced
+        await db.tripCities.update(cityId, { ...updatedData, _synced: false })
+        return await db.tripCities.get(cityId)
+      }
+      throw error
+    }
+  },
+
+  /**
+   * Delete a trip city
+   */
+  async delete(cityId) {
+    // Look up local city to determine its tripId for the correct API route
+    const city = await db.tripCities.get(cityId)
+    const tripId = city?.tripId
+
+    try {
+      if (tripId) {
+        await apiRequest(`/api/travel/trips/${tripId}/cities/${cityId}`, { method: 'DELETE' })
+      } else {
+        // Fallback to legacy route if tripId is missing
+        await apiRequest(`/api/travel/trips/cities/${cityId}`, { method: 'DELETE' })
+      }
+      await db.tripCities.delete(cityId)
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        await addToSyncQueue('delete', 'tripCities', { id: cityId, tripId })
+        await db.tripCities.delete(cityId)
+      } else if (String(error.message || '').includes('404')) {
+        // If server says it's gone, remove it locally and continue
+        await db.tripCities.delete(cityId)
+      } else {
+        throw error
+      }
+    }
+  },
+
+  /**
+   * Reorder cities for a trip
+   * @param {string|number} tripId - Trip ID
+   * @param {Array<string|number>} cityIds - Array of city IDs in new order
+   */
+  async reorder(tripId, cityIds) {
+    try {
+      await apiRequest(`/api/travel/trips/${tripId}/cities/reorder`, {
+        method: 'POST',
+        body: JSON.stringify(cityIds)
+      })
+      // Update local order
+      for (let i = 0; i < cityIds.length; i++) {
+        await db.tripCities.update(cityIds[i], { order: i, _synced: true })
+      }
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        // Update local order
+        for (let i = 0; i < cityIds.length; i++) {
+          await db.tripCities.update(cityIds[i], { order: i, _synced: false })
+        }
+        await addToSyncQueue('update', 'tripCities', { tripId, reorder: cityIds })
+      } else {
+        throw error
+      }
+    }
+  }
+}
+
+// ========================================
 // Geocoding Service
 // ========================================
 
@@ -757,6 +1010,7 @@ export default {
   packingService,
   documentService,
   travelExpenseService,
+  tripCityService,
   geocodingService,
   processSyncQueue
 }

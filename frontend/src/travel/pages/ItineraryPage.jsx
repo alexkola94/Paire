@@ -22,6 +22,8 @@ import {
 import { RiFlightTakeoffLine, RiPlaneLine } from 'react-icons/ri'
 import { itineraryService, uploadTravelFile } from '../services/travelApi'
 import { ITINERARY_TYPES } from '../utils/travelConstants'
+import { getPinnedPOISummary } from '../services/travelDb'
+import DatePicker from '../components/DatePicker'
 import '../styles/Itinerary.css'
 import FlightStatus from '../components/FlightStatus'
 
@@ -191,6 +193,20 @@ const ItineraryPage = ({ trip }) => {
         <FiCalendar size={48} />
         <h3>{t('travel.itinerary.noTrip', 'No Trip Selected')}</h3>
         <p>{t('travel.itinerary.createTripFirst', 'Create a trip to start planning your itinerary')}</p>
+      </div>
+    )
+  }
+
+  // Lazy-load the itinerary view while events are being fetched
+  if (trip && loading) {
+    return (
+      <div className="travel-page-loading">
+        <div className="travel-glass-card travel-page-loading-card">
+          <FiLoader size={22} className="travel-spinner travel-page-loading-icon" />
+          <p className="travel-page-loading-text">
+            {t('travel.common.loadingTripView', 'Loading your trip view...')}
+          </p>
+        </div>
       </div>
     )
   }
@@ -442,8 +458,28 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
     attachmentSize: event?.attachmentSize || null
   })
   const [saving, setSaving] = useState(false)
+  const [savedPlaces, setSavedPlaces] = useState([])
+  const [loadingSavedPlaces, setLoadingSavedPlaces] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+
+  // Load saved places (pinned POIs from Discovery) for this trip
+  useEffect(() => {
+    const loadSavedPlaces = async () => {
+      if (!trip?.id) return
+      setLoadingSavedPlaces(true)
+      try {
+        const places = await getPinnedPOISummary(trip.id)
+        setSavedPlaces(places)
+      } catch (error) {
+        console.error('Error loading saved places for itinerary form:', error)
+      } finally {
+        setLoadingSavedPlaces(false)
+      }
+    }
+
+    loadSavedPlaces()
+  }, [trip?.id])
 
   const handleAttachmentChange = async (e) => {
     const file = e.target.files?.[0]
@@ -479,6 +515,21 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
       setUploading(false)
       e.target.value = ''
     }
+  }
+
+  // When user selects a saved place, gently fill in location/name/coords
+  const handleSelectSavedPlace = (poiId) => {
+    if (!poiId) return
+    const selected = savedPlaces.find(p => String(p.id) === String(poiId))
+    if (!selected) return
+
+    setFormData(prev => ({
+      ...prev,
+      name: prev.name || selected.name,
+      location: selected.address || selected.name,
+      latitude: selected.latitude ?? prev.latitude,
+      longitude: selected.longitude ?? prev.longitude
+    }))
   }
 
   const handleRemoveAttachment = () => {
@@ -591,13 +642,13 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
           {/* Date and Time */}
           <div className="form-row">
             <div className="form-group">
-              <label>{t('travel.itinerary.date', 'Date')}</label>
-              <input
-                type="date"
+              <DatePicker
+                label={t('travel.itinerary.date', 'Date')}
                 value={formData.date}
-                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                onChange={(value) => setFormData(prev => ({ ...prev, date: value }))}
                 min={trip.startDate}
                 max={trip.endDate}
+                placeholder={t('travel.itinerary.selectDate', 'Select date')}
               />
             </div>
             <div className="form-group">
@@ -613,6 +664,30 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
           {/* Location */}
           <div className="form-group">
             <label>{t('travel.itinerary.location', 'Location')}</label>
+            {savedPlaces.length > 0 && (
+              <div className="saved-places-selector">
+                <label className="saved-places-label">
+                  {t('travel.itinerary.savedPlaces', 'Saved places from Discovery')}
+                </label>
+                <select
+                  className="saved-places-select"
+                  onChange={(e) => handleSelectSavedPlace(e.target.value)}
+                  defaultValue=""
+                  disabled={loadingSavedPlaces}
+                >
+                  <option value="">
+                    {loadingSavedPlaces
+                      ? t('common.loading', 'Loading...')
+                      : t('travel.itinerary.chooseSavedPlace', 'Choose a saved place')}
+                  </option>
+                  {savedPlaces.map((place) => (
+                    <option key={place.id} value={place.id}>
+                      {place.name}{place.address ? ` – ${place.address}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <input
               type="text"
               value={formData.location}

@@ -154,7 +154,8 @@
 }
 
 .destination-search input {
-  padding-left: 44px;
+  /* Extra left padding so text never overlaps the leading icon */
+  padding-left: 52px;
 }
 
 .destination-search .searching {
@@ -228,17 +229,8 @@
   position: relative;
 }
 
-.date-input svg {
-  position: absolute;
-  left: var(--spacing-md);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  pointer-events: none;
-}
-
 .date-input input {
-  padding-left: 44px;
+  width: 100%;
 }
 
 .trip-duration {

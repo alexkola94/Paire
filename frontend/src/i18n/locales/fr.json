@@ -300,6 +300,24 @@
     "errorDeletingAttachment": "Échec de la suppression de la pièce jointe"
   },
   "travel": {
+    "common": {
+      "enterTravelMode": "Mode Voyage",
+      "exitTravelMode": "Quitter",
+      "noTrip": "Aucun Voyage Sélectionné",
+      "offline": "Hors ligne – les données seront synchronisées lorsque vous serez en ligne",
+      "syncing": "Synchronisation...",
+      "syncComplete": "Synchronisation terminée",
+      "syncError": "Échec de la synchronisation",
+      "viewAll": "Voir tout",
+      "createTrip": "Créer un Voyage",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "add": "Ajouter",
+      "saving": "Enregistrement...",
+      "ascending": "Croissant",
+      "descending": "Décroissant",
+      "loadingTripView": "Chargement de la vue de votre voyage..."
+    },
     "budget": {
       "title": "Budget",
       "noTrip": "Aucun Voyage Sélectionné",
@@ -435,14 +453,37 @@
           "title": "Demander à l’IA quels documents sont nécessaires",
           "subtitle": "Nous composerons une question claire pour l’IA choisie en fonction de votre trajet.",
           "askAiCta": "Demander à l’IA : documents requis",
-          "originCountry": "Pays d’origine",
+          "originCountry": "Pays d'origine",
           "originPlaceholder": "ex., France",
           "destinationCountry": "Pays de destination",
           "destinationPlaceholder": "ex., Japon",
+          "destinationCountries": "Pays de destination",
+          "addCountry": "Ajouter un pays",
+          "addCountryPrompt": "Entrez le nom du pays :",
+          "multiCityHint": "Il s'agit d'un voyage multi-villes. Ajoutez ou supprimez des pays selon vos besoins.",
           "providerLabel": "Envoyer cette question à",
           "providerHint": "S’ouvre dans un nouvel onglet avec la question préremplie.",
           "promptPreview": "Aperçu de la question que nous enverrons",
           "askButton": "Ouvrir le chat IA avec cette question",
+          "originFallback": "mon pays d'origine",
+          "destinationFallback": "mon pays de destination",
+          "prompt": {
+            "line1Basic": "Je prévois un voyage international de {{origin}} vers {{destination}}{{tripNameSentence}}.",
+            "line1WithRange": "Je prévois un voyage international de {{origin}} vers {{destination}} du {{startDate}} au {{endDate}}{{tripNameSentence}}.",
+            "line1WithStart": "Je prévois un voyage international de {{origin}} vers {{destination}} à partir du {{startDate}}{{tripNameSentence}}.",
+            "line2": "Veuillez me dire quels documents de voyage, visas, exigences d'entrée et documents de santé je pourrais avoir besoin.",
+            "line3": "Divisez la réponse en :",
+            "line4": "- Documents essentiels requis pour l'entrée",
+            "line5": "- Documents recommandés / agréables à avoir",
+            "line6": "- Toute règle spécifique au pays concernant les visas, les règles de transit ou les règles de validité du passeport que je devrais connaître.",
+            "line6MultiCountry": "- Toute règle spécifique au pays concernant les visas, les règles de transit, les règles de validité du passeport et les exigences de voyage transfrontalier que je devrais connaître pour voyager entre ces pays.",
+            "line7": "Répondez dans une liste de contrôle concise et conviviale pour les voyageurs.",
+            "tripNameSentence": " pour un voyage appelé \"{{tripName}}\"",
+            "destinationsTwo": "{{country1}} et {{country2}}",
+            "destinationsMultiple": "{{countries}}, et {{lastCountry}}"
+          },
+          "promptCopied": "Prompt copié dans le presse-papiers ! Collez-le dans le chat IA.",
+          "copyFailed": "Impossible de copier dans le presse-papiers. Veuillez copier le prompt manuellement depuis l'aperçu ci-dessus.",
           "provider": {
             "travel-assistant": "Assistant documents de voyage",
             "chatgpt": "ChatGPT"
@@ -455,6 +496,7 @@
       "explore": "Explorer",
       "fromCenter": "du voyage",
       "getDirections": "Obtenir l'Itinéraire",
+      "seeDetails": "Voir les détails sur Google Maps",
       "unpinFromTrip": "Épinglé",
       "pinning": "Épinglage...",
       "pinToTrip": "Maintenir pour Épingler",
@@ -504,6 +546,44 @@
         "active": "Actif",
         "completed": "Terminé"
       }
+    },
+    "multiCity": {
+      "createTrip": "Créer un Voyage Multi-Villes",
+      "editTrip": "Modifier le Voyage Multi-Villes",
+      "deleteTrip": "Supprimer le Voyage",
+      "confirmDelete": "Supprimer ce voyage et toutes ses villes ? Cette action ne peut pas être annulée.",
+      "step1": {
+        "title": "Sélectionner les Villes",
+        "description": "Cliquez sur la carte pour ajouter des villes à votre voyage",
+        "tripName": "Nom du Voyage (optionnel)",
+        "namePlaceholder": "ex., Aventure Européenne",
+        "selectedCities": "Villes Sélectionnées",
+        "calculatingRoutes": "Calcul des meilleurs itinéraires...",
+        "totalDistance": "Distance Totale du Voyage"
+      },
+      "step2": {
+        "title": "Définir les Dates",
+        "description": "Définissez les dates d'arrivée et de départ pour chaque ville",
+        "arrival": "Arrivée",
+        "departure": "Départ"
+      },
+      "errors": {
+        "minCities": "Veuillez sélectionner au moins 2 villes",
+        "cityDateRequired": "Veuillez définir la date d'arrivée pour {{city}}",
+        "dateOrder": "Les dates des villes doivent être dans l'ordre",
+        "deleteFailed": "Échec de la suppression du voyage. Veuillez réessayer."
+      },
+      "saveSuccess": {
+        "title": "Voyage Enregistré avec Succès !",
+        "message": "Votre voyage multi-villes a été enregistré.",
+        "editMore": "Modifier Plus"
+      }
+    },
+    "micrography": {
+      "title": "Itinéraire du Voyage",
+      "expand": "Agrandir la carte",
+      "expandedTitle": "Itinéraire du Voyage",
+      "more": "plus"
     }
   }
 }

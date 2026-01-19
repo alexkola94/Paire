@@ -19,7 +19,7 @@ import {
 } from 'react-icons/fi'
 import { FaBus } from 'react-icons/fa'
 import { DISCOVERY_POI_CATEGORIES } from '../../utils/travelConstants'
-import { getDirectionsUrl, formatDistance } from '../../services/discoveryService'
+import { getDirectionsUrl, getPlaceDetailsUrl, formatDistance } from '../../services/discoveryService'
 import '../../styles/POISheet.css'
 
 // Icon mapping for categories
@@ -62,6 +62,17 @@ const POISheet = memo(({
     const url = getDirectionsUrl(poi, tripLocation)
     window.open(url, '_blank', 'noopener,noreferrer')
   }, [poi, tripLocation])
+
+  /**
+   * Handle "See details" button click
+   * Opens Google Maps place details in a new tab
+   */
+  const handleSeeDetails = useCallback(() => {
+    if (!poi) return
+
+    const url = getPlaceDetailsUrl(poi)
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }, [poi])
 
   /**
    * Handle pin button with long press
@@ -234,6 +245,14 @@ const POISheet = memo(({
                 >
                   <FiNavigation size={18} />
                   <span>{t('travel.discovery.getDirections', 'Get Directions')}</span>
+                </button>
+
+                <button
+                  className="poi-action-btn secondary"
+                  onClick={handleSeeDetails}
+                >
+                  <FiExternalLink size={18} />
+                  <span>{t('travel.discovery.seeDetails', 'See details in Google Maps')}</span>
                 </button>
 
                 <button

@@ -10,6 +10,8 @@
   background: var(--bg-primary);
   padding-top: 60px;
   /* Account for fixed header */
+  touch-action: pan-x pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
 }
 
 .discovery-map-container .mapboxgl-map {
@@ -276,5 +278,98 @@
   .discovery-toggle,
   .discovery-control-btn {
     transition: none;
+  }
+}
+
+/* =========================================
+   Multi-City Trip City Markers (Discovery)
+   ========================================= */
+
+.discovery-city-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 7, 26, 0.85);
+  box-shadow: 0 10px 30px rgba(15, 7, 26, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  backdrop-filter: blur(14px);
+  transform: translateY(-6px);
+}
+
+.discovery-city-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #F9FAFB;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.discovery-city-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.discovery-city-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #E5E7EB;
+  white-space: nowrap;
+}
+
+.discovery-city-country {
+  font-size: 0.7rem;
+  color: rgba(229, 231, 235, 0.7);
+  white-space: nowrap;
+}
+
+/* Home marker (user's current location - starting point) */
+.discovery-home-marker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.discovery-home-marker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+}
+
+@media (max-width: 640px) {
+  .discovery-city-marker {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .discovery-city-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+
+  .discovery-city-name {
+    font-size: 0.7rem;
+  }
+
+  .discovery-city-country {
+    font-size: 0.65rem;
   }
 }

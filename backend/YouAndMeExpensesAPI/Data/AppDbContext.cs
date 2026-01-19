@@ -44,6 +44,7 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<PackingItem> PackingItems { get; set; }
         public DbSet<TravelDocument> TravelDocuments { get; set; }
         public DbSet<TravelExpense> TravelExpenses { get; set; }
+        public DbSet<TripCity> TripCities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -639,6 +640,7 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.Budget).HasColumnName("budget").HasColumnType("decimal(18,2)");
                 entity.Property(e => e.BudgetCurrency).HasColumnName("budget_currency").HasMaxLength(10).HasDefaultValue("EUR");
                 entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(50).HasDefaultValue("planning");
+                entity.Property(e => e.TripType).HasColumnName("trip_type").HasMaxLength(50).HasDefaultValue("single");
                 entity.Property(e => e.CoverImage).HasColumnName("cover_image");
                 entity.Property(e => e.Notes).HasColumnName("notes");
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -647,6 +649,34 @@ namespace YouAndMeExpensesAPI.Data
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.StartDate);
+            });
+
+            // ============================================
+            // TRIP CITIES TABLE
+            // ============================================
+            modelBuilder.Entity<TripCity>(entity =>
+            {
+                entity.ToTable("trip_cities");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TripId).HasColumnName("trip_id").IsRequired();
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255);
+                entity.Property(e => e.Country).HasColumnName("country").HasMaxLength(100);
+                entity.Property(e => e.Latitude).HasColumnName("latitude");
+                entity.Property(e => e.Longitude).HasColumnName("longitude");
+                entity.Property(e => e.OrderIndex).HasColumnName("order_index");
+                entity.Property(e => e.StartDate).HasColumnName("start_date");
+                entity.Property(e => e.EndDate).HasColumnName("end_date");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TripId);
+                entity.HasIndex(e => new { e.TripId, e.OrderIndex });
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany(t => t.Cities)
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // ============================================

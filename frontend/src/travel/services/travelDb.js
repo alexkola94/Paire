@@ -53,6 +53,22 @@ db.version(2).stores({
   pinnedPOIs: '++id, tripId, poiId, category, [tripId+category], createdAt'
 })
 
+// Version 3 - Add tripCities table for multi-city trips
+db.version(3).stores({
+  trips: '++id, userId, status, startDate, endDate, destination, createdAt, _synced',
+  itineraryEvents: '++id, tripId, type, date, startTime, [tripId+date], _synced',
+  packingItems: '++id, tripId, category, name, isChecked, [tripId+category], _synced',
+  documents: '++id, tripId, type, name, expiryDate, [tripId+type], _synced',
+  travelExpenses: '++id, tripId, category, amount, currency, date, [tripId+category], [tripId+date], _synced',
+  apiCache: '++id, key, data, timestamp, ttl',
+  syncQueue: '++id, action, table, timestamp, status',
+  pinnedPOIs: '++id, tripId, poiId, category, [tripId+category], createdAt',
+
+  // Trip cities for multi-city trips
+  // Indexes: id (auto), tripId, order (for sorting cities in sequence), [tripId+order] for efficient queries
+  tripCities: '++id, tripId, order, [tripId+order], _synced'
+})
+
 /**
  * Trip model factory
  * @param {Object} data - Trip data
@@ -70,6 +86,7 @@ export const createTrip = (data = {}) => ({
   budget: data.budget || 0,
   budgetCurrency: data.budgetCurrency || 'EUR',
   status: data.status || 'planning', // 'planning' | 'active' | 'completed'
+  tripType: data.tripType || 'single', // 'single' | 'multi-city'
   coverImage: data.coverImage || null,
   notes: data.notes || '',
   createdAt: data.createdAt || new Date().toISOString(),
@@ -293,6 +310,29 @@ export const getPinnedPOIs = async (tripId) => {
 }
 
 /**
+ * Convenience helper: get pinned POIs mapped into a lightweight
+ * structure suitable for feeding UI pickers (e.g. itinerary event forms).
+ * This keeps UI code simple and avoids leaking Dexie models.
+ *
+ * @param {number|string} tripId - Trip ID
+ * @returns {Promise<Array<{ id: number, name: string, address: string, latitude: number|null, longitude: number|null }>>}
+ */
+export const getPinnedPOISummary = async (tripId) => {
+  const pinned = await getPinnedPOIs(tripId)
+
+  // Map to a minimal, serializable model for selects/autocomplete
+  return pinned.map(poi => ({
+    id: poi.id,
+    poiId: poi.poiId,
+    name: poi.name || poi.address || 'Pinned place',
+    address: poi.address || '',
+    latitude: poi.latitude ?? null,
+    longitude: poi.longitude ?? null,
+    category: poi.category || 'other'
+  }))
+}
+
+/**
  * Add a pinned POI
  * @param {Object} poi - POI data
  * @returns {Promise<number>} New POI ID
@@ -337,6 +377,40 @@ export const isPOIPinned = async (tripId, poiId) => {
     // Fallback if compound index doesn't work
     const pois = await db.pinnedPOIs.where('tripId').equals(tripId).toArray()
     return pois.some(p => p.poiId === poiId)
+  }
+}
+
+/**
+ * Trip city model factory
+ * @param {Object} data - Trip city data
+ * @returns {Object} Trip city object with defaults
+ */
+export const createTripCity = (data = {}) => ({
+  tripId: data.tripId,
+  name: data.name || '',
+  country: data.country || '',
+  latitude: data.latitude || null,
+  longitude: data.longitude || null,
+  order: data.order || 0, // Order in the trip sequence
+  startDate: data.startDate || null, // Arrival date in this city
+  endDate: data.endDate || null, // Departure date from this city
+  createdAt: data.createdAt || new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+})
+
+/**
+ * Get all cities for a trip, ordered by sequence
+ * @param {number|string} tripId - Trip ID
+ * @returns {Promise<Array>} Array of trip cities
+ */
+export const getTripCities = async (tripId) => {
+  try {
+    return await db.tripCities
+      .where('tripId').equals(tripId)
+      .sortBy('order')
+  } catch (error) {
+    console.error('Error getting trip cities:', error)
+    return []
   }
 }
 

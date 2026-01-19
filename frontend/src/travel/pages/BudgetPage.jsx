@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi'
 import { travelExpenseService } from '../services/travelApi'
 import { BUDGET_CATEGORIES } from '../utils/travelConstants'
+import DatePicker from '../components/DatePicker'
 import '../styles/Budget.css'
 
 // Category icons mapping
@@ -148,6 +149,20 @@ const BudgetPage = ({ trip }) => {
         <FiDollarSign size={48} />
         <h3>{t('travel.budget.noTrip', 'No Trip Selected')}</h3>
         <p>{t('travel.budget.createTripFirst', 'Create a trip to start tracking expenses')}</p>
+      </div>
+    )
+  }
+
+  // Lazy-load the budget view while expenses are being fetched
+  if (trip && loading) {
+    return (
+      <div className="travel-page-loading">
+        <div className="travel-glass-card travel-page-loading-card">
+          <FiLoader size={22} className="travel-spinner travel-page-loading-icon" />
+          <p className="travel-page-loading-text">
+            {t('travel.common.loadingTripView', 'Loading your trip view...')}
+          </p>
+        </div>
       </div>
     )
   }
@@ -430,11 +445,11 @@ const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
           </div>
 
           <div className="form-group">
-            <label>{t('travel.budget.date', 'Date')}</label>
-            <input
-              type="date"
+            <DatePicker
+              label={t('travel.budget.date', 'Date')}
               value={formData.date}
-              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+              onChange={(value) => setFormData(prev => ({ ...prev, date: value }))}
+              placeholder={t('travel.budget.selectDate', 'Select date')}
             />
           </div>
 

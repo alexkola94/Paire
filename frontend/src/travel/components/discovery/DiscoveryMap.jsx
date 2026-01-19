@@ -1,5 +1,6 @@
-import { memo, useCallback, useRef, useEffect } from 'react'
+import { memo, useCallback, useRef, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { FiHome } from 'react-icons/fi'
 import { useTravelMode } from '../../context/TravelModeContext'
 import POIMarker from './POIMarker'
 import { MAP_STYLES, DISCOVERY_MAP_CONFIG } from '../../utils/travelConstants'
@@ -25,24 +26,96 @@ const DiscoveryMap = memo(({
   showTripMarker = true,
   mapStyle = 'detailed'
 }) => {
-  const { activeTrip, mapViewState, updateMapViewState } = useTravelMode()
+  const { activeTrip, activeTripCities, mapViewState, updateMapViewState } = useTravelMode()
   const mapRef = useRef(null)
   const longPressTimer = useRef(null)
   const isLongPress = useRef(false)
   const touchStartTime = useRef(0)
+  const [homeLocation, setHomeLocation] = useState(null)
 
-  // Initialize view state from trip location if not set
+  // Get user's current location (Home) on mount
   useEffect(() => {
-    if (!mapViewState && activeTrip?.latitude && activeTrip?.longitude) {
+    if (!('geolocation' in navigator)) return
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setHomeLocation({ latitude, longitude })
+      },
+      (error) => {
+        // Fail silently – home location is optional
+        console.warn('Geolocation unavailable for DiscoveryMap:', error)
+      }
+    )
+  }, [])
+
+  // Initialize view state:
+  // - For multi-city trips, center between all cities (and trip center and home) with an appropriate zoom
+  // - Otherwise, fall back to single trip center
+  useEffect(() => {
+    if (mapViewState) return
+
+    const citiesWithCoords = (activeTripCities || []).filter(
+      c => c.latitude != null && c.longitude != null
+    )
+
+    // Helper to update viewState in one place
+    const setView = (latitude, longitude, zoom) => {
       updateMapViewState({
-        latitude: activeTrip.latitude,
-        longitude: activeTrip.longitude,
-        zoom: DISCOVERY_MAP_CONFIG.defaultZoom,
+        latitude,
+        longitude,
+        zoom,
         pitch: 0,
         bearing: 0
       })
     }
-  }, [activeTrip, mapViewState, updateMapViewState])
+
+    // Multi-city: fit around all cities + home location
+    if (
+      activeTrip?.tripType === 'multi-city' &&
+      citiesWithCoords.length > 0
+    ) {
+      const lats = citiesWithCoords.map(c => c.latitude)
+      const lngs = citiesWithCoords.map(c => c.longitude)
+
+      // Include home location if available
+      if (homeLocation) {
+        lats.push(homeLocation.latitude)
+        lngs.push(homeLocation.longitude)
+      }
+
+      // Optionally include trip center if available
+      if (activeTrip.latitude && activeTrip.longitude) {
+        lats.push(activeTrip.latitude)
+        lngs.push(activeTrip.longitude)
+      }
+
+      const minLat = Math.min(...lats)
+      const maxLat = Math.max(...lats)
+      const minLng = Math.min(...lngs)
+      const maxLng = Math.max(...lngs)
+
+      const centerLat = (minLat + maxLat) / 2
+      const centerLng = (minLng + maxLng) / 2
+
+      // Rough distance-based zoom heuristic
+      const maxDelta = Math.max(maxLat - minLat, maxLng - minLng)
+      let zoom = 6
+      if (maxDelta < 0.5) zoom = 11
+      else if (maxDelta < 1.5) zoom = 9
+      else if (maxDelta < 4) zoom = 7
+      else if (maxDelta < 10) zoom = 5
+      else zoom = 3.5
+
+      setView(centerLat, centerLng, zoom)
+      return
+    }
+
+    // Default: center on single trip location
+    if (activeTrip?.latitude && activeTrip?.longitude) {
+      setView(activeTrip.latitude, activeTrip.longitude, DISCOVERY_MAP_CONFIG.defaultZoom)
+    }
+  }, [activeTrip, activeTripCities, homeLocation, mapViewState, updateMapViewState])
 
   /**
    * Handle map move/zoom events
@@ -218,6 +291,13 @@ const DiscoveryMap = memo(({
         maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}
         attributionControl={false}
         reuseMaps
+        scrollWheelZoom={true}
+        dragPan={true}
+        dragRotate={true}
+        doubleClickZoom={true}
+        touchZoom={true}
+        touchRotate={true}
+        keyboard={true}
       >
         {/* Navigation controls (zoom buttons) - hidden, we use custom */}
 
@@ -228,6 +308,19 @@ const DiscoveryMap = memo(({
           showAccuracyCircle={false}
           style={{ display: 'none' }} // Hidden, controlled by DiscoveryControls
         />
+
+        {/* Home marker (user's current location) - starting point */}
+        {homeLocation && (
+          <Marker
+            latitude={homeLocation.latitude}
+            longitude={homeLocation.longitude}
+            anchor="center"
+          >
+            <div className="discovery-home-marker">
+              <FiHome size={18} />
+            </div>
+          </Marker>
+        )}
 
         {/* Trip center marker */}
         {showTripMarker && activeTrip?.latitude && activeTrip?.longitude && (
@@ -242,6 +335,30 @@ const DiscoveryMap = memo(({
             </div>
           </Marker>
         )}
+
+        {/* Multi-city trip city markers (highlight route stops) */}
+        {activeTrip?.tripType === 'multi-city' &&
+          (activeTripCities || [])
+            .filter(c => c.latitude != null && c.longitude != null)
+            .sort((a, b) => (a.orderIndex ?? a.order ?? 0) - (b.orderIndex ?? b.order ?? 0))
+            .map((city, index) => (
+              <Marker
+                key={city.id || `city-${index}`}
+                latitude={city.latitude}
+                longitude={city.longitude}
+                anchor="center"
+              >
+                <div className="discovery-city-marker">
+                  <div className="discovery-city-badge">{index + 1}</div>
+                  <div className="discovery-city-label">
+                    <span className="discovery-city-name">{city.name}</span>
+                    {city.country && (
+                      <span className="discovery-city-country">{city.country}</span>
+                    )}
+                  </div>
+                </div>
+              </Marker>
+            ))}
 
         {/* POI markers */}
         {pois.map((poi, index) => (

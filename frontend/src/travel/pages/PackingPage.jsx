@@ -218,6 +218,20 @@ const PackingPage = ({ trip }) => {
     )
   }
 
+  // Lazy-load the packing view while items are being fetched
+  if (trip && loading) {
+    return (
+      <div className="travel-page-loading">
+        <div className="travel-glass-card travel-page-loading-card">
+          <FiLoader size={22} className="travel-spinner travel-page-loading-icon" />
+          <p className="travel-page-loading-text">
+            {t('travel.common.loadingTripView', 'Loading your trip view...')}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="packing-page">
       {/* Progress Header */}

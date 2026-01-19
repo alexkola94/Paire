@@ -52,6 +52,14 @@ namespace YouAndMeExpensesAPI.Models
         [MaxLength(50)]
         public string Status { get; set; } = "planning"; // planning, active, completed
 
+        /// <summary>
+        /// Trip type: single destination or multi-city.
+        /// Defaults to \"single\" for backward compatibility.
+        /// </summary>
+        [Column("trip_type")]
+        [MaxLength(50)]
+        public string TripType { get; set; } = "single"; // single, multi-city
+
         [Column("cover_image")]
         public string? CoverImage { get; set; }
 
@@ -69,6 +77,64 @@ namespace YouAndMeExpensesAPI.Models
         public virtual ICollection<PackingItem> PackingItems { get; set; } = new List<PackingItem>();
         public virtual ICollection<TravelDocument> Documents { get; set; } = new List<TravelDocument>();
         public virtual ICollection<TravelExpense> Expenses { get; set; } = new List<TravelExpense>();
+
+        /// <summary>
+        /// Ordered list of cities for multi-city trips.
+        /// For single-destination trips this can be empty or contain a single city.
+        /// </summary>
+        public virtual ICollection<TripCity> Cities { get; set; } = new List<TripCity>();
+    }
+
+    /// <summary>
+    /// City stop within a trip for multi-city planning.
+    /// Keeps routing and date ranges per city lightweight.
+    /// </summary>
+    [Table("trip_cities")]
+    public class TripCity
+    {
+        [Key]
+        [Column("id")]
+        public Guid Id { get; set; }
+
+        [Column("trip_id")]
+        public Guid TripId { get; set; }
+
+        [Column("name")]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [Column("country")]
+        [MaxLength(100)]
+        public string? Country { get; set; }
+
+        [Column("latitude")]
+        public double? Latitude { get; set; }
+
+        [Column("longitude")]
+        public double? Longitude { get; set; }
+
+        /// <summary>
+        /// Order of the city within the trip route (0-based).
+        /// Stored as \"order_index\" to avoid SQL reserved word collisions.
+        /// </summary>
+        [Column("order_index")]
+        public int OrderIndex { get; set; }
+
+        [Column("start_date")]
+        public DateTime? StartDate { get; set; }
+
+        [Column("end_date")]
+        public DateTime? EndDate { get; set; }
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; }
+
+        // Navigation
+        [ForeignKey("TripId")]
+        public virtual Trip? Trip { get; set; }
     }
 
     /// <summary>

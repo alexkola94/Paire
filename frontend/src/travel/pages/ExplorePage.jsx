@@ -15,7 +15,8 @@ import {
   FiHeart,
   FiDollarSign,
   FiExternalLink,
-  FiSearch
+  FiSearch,
+  FiLoader
 } from 'react-icons/fi'
 import { WEATHER_CODES, POI_CATEGORIES } from '../utils/travelConstants'
 import { getDestinationInfo } from '../utils/travelData'
@@ -195,6 +196,21 @@ const ExplorePage = ({ trip }) => {
         <h3>{t('travel.explore.noLocation', 'Location Not Set')}</h3>
         <p>{t('travel.explore.setLocation', 'Set your destination to see weather and places')}</p>
       </motion.div>
+    )
+  }
+
+  // Lazy-load the explore view until the first weather payload arrives,
+  // so the hero card doesn't pop in half-baked after a trip switch.
+  if (trip && loadingWeather && !weather && !weatherError) {
+    return (
+      <div className="travel-page-loading">
+        <div className="travel-glass-card travel-page-loading-card">
+          <FiLoader size={22} className="travel-spinner travel-page-loading-icon" />
+          <p className="travel-page-loading-text">
+            {t('travel.common.loadingTripView', 'Loading your trip view...')}
+          </p>
+        </div>
+      </div>
     )
   }
 
