@@ -16,6 +16,37 @@
   /* Prevent page-level scrollbar */
 }
 
+/* Travel date inputs – inherit global styling but ensure icons respond to travel theme */
+.travel-layout input[type="date"] {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  padding: 0.5rem 0.75rem;
+  accent-color: var(--primary);
+}
+
+.travel-layout input[type="date"]::-webkit-calendar-picker-indicator {
+  color: var(--primary);
+  opacity: 0.9;
+}
+
+.travel-layout input[type="date"]:hover::-webkit-calendar-picker-indicator,
+.travel-layout input[type="date"]:focus::-webkit-calendar-picker-indicator {
+  color: var(--text-primary);
+}
+
+/* Dark-theme fix: force the native icon to appear light instead of black */
+[data-theme='dark'] .travel-layout input[type="date"] {
+  background-color: var(--bg-tertiary, #111827);
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+
+[data-theme='dark'] .travel-layout input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.3);
+  opacity: 0.9;
+}
+
 .travel-layout[data-offline="true"] {
   padding-top: 40px;
 }
@@ -254,11 +285,27 @@
   border-bottom: var(--glass-border);
   padding: var(--spacing-sm) var(--spacing-md);
   min-height: 60px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Discovery Mode: Header collapses and slides up partially */
+.travel-header.discovery-collapsed {
+  transform: translateY(-70%);
+  opacity: 0.6;
+}
+
+/* Expand header on hover in discovery mode */
+.travel-header.discovery-collapsed.hovered,
+.travel-header.discovery-collapsed:focus-within {
+  transform: translateY(0);
+  opacity: 1;
 }
 
 [data-theme='dark'] .travel-header {
   background: rgba(15, 7, 26, 0.8);
 }
+
 
 .travel-header-content {
   display: flex;
@@ -486,8 +533,8 @@
   /* Smooth slide animation */
   transform: translateY(0);
   opacity: 1;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme='dark'] .travel-nav {

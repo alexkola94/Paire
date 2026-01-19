@@ -17,8 +17,11 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
  */
 const DiscoveryMap = memo(({
   pois = [],
+  stays = [],
   onPOIClick,
+  onStayClick,
   selectedPOIId,
+  selectedStayId,
   showTripMarker = true,
   mapStyle = 'detailed'
 }) => {
@@ -71,6 +74,15 @@ const DiscoveryMap = memo(({
       onPOIClick(poi)
     }
   }, [onPOIClick])
+
+  /**
+   * Handle Stay/Accommodation marker click
+   */
+  const handleStayClick = useCallback((stay) => {
+    if (onStayClick) {
+      onStayClick(stay)
+    }
+  }, [onStayClick])
 
   /**
    * Handle Map Click (Tap)
@@ -248,6 +260,59 @@ const DiscoveryMap = memo(({
               isSelected={selectedPOIId === poi.id || selectedPOIId === poi.poiId}
               index={index}
             />
+          </Marker>
+        ))}
+
+        {/* Accommodation/Stay markers */}
+        {stays.map((stay, index) => (
+          <Marker
+            key={stay.id || `stay-${index}`}
+            latitude={stay.latitude}
+            longitude={stay.longitude}
+            anchor="bottom"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation()
+              handleStayClick(stay)
+            }}
+          >
+            <div
+              className={`stay-marker ${selectedStayId === stay.id ? 'selected' : ''}`}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: selectedStayId === stay.id
+                  ? 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)'
+                  : 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+                border: selectedStayId === stay.id
+                  ? '3px solid white'
+                  : '2px solid rgba(255, 255, 255, 0.8)',
+                boxShadow: selectedStayId === stay.id
+                  ? '0 4px 16px rgba(155, 89, 182, 0.5)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                transform: selectedStayId === stay.id ? 'scale(1.15)' : 'scale(1)'
+              }}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 7v11a2 2 0 002 2h14a2 2 0 002-2V7" />
+                <path d="M21 7H3a2 2 0 01-2-2V4a2 2 0 012-2h18a2 2 0 012 2v1a2 2 0 01-2 2z" />
+                <path d="M3 11h18" />
+              </svg>
+            </div>
           </Marker>
         ))}
       </Map>

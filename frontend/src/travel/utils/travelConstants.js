@@ -335,6 +335,15 @@ export const DISCOVERY_POI_CATEGORIES = [
     color: '#e91e63',
     gradient: 'linear-gradient(135deg, #e91e63 0%, #c2185b 100%)',
     osmTags: ['pharmacy', 'hospital', 'clinic']
+  },
+  {
+    id: 'accommodation',
+    icon: 'FiBed',
+    label: 'discovery.categories.accommodation',
+    fallbackLabel: 'Stays',
+    color: '#9b59b6',
+    gradient: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+    osmTags: ['hotel', 'hostel', 'motel', 'guest_house', 'apartment']
   }
 ]
 

@@ -9,6 +9,47 @@
   flex-direction: column;
 }
 
+/* Native date inputs – theme‑aware calendar icon & accent
+   Keeps the browser's built‑in picker but tints it using our theme colors. */
+.layout input[type="date"] {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border, #e0e0e0);
+  padding: 0.5rem 0.75rem;
+  accent-color: var(--primary);
+}
+
+.layout input[type="date"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+/* WebKit/Blink calendar icon */
+.layout input[type="date"]::-webkit-calendar-picker-indicator {
+  color: var(--primary);
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+.layout input[type="date"]:hover::-webkit-calendar-picker-indicator,
+.layout input[type="date"]:focus::-webkit-calendar-picker-indicator {
+  color: var(--text-primary);
+}
+
+/* Dark theme refinement – ensure icon stays visible on dark backgrounds */
+[data-theme='dark'] .layout input[type="date"] {
+  background-color: var(--bg-tertiary, #111827);
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+
+[data-theme='dark'] .layout input[type="date"]::-webkit-calendar-picker-indicator {
+  /* Invert + brighten so the default black icon becomes light on dark backgrounds */
+  filter: invert(1) brightness(1.3);
+  opacity: 0.9;
+}
+
 /* Ensure SVG icons render properly everywhere */
 .layout svg {
   display: inline-block !important;

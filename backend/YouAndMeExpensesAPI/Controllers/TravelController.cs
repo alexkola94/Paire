@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -18,11 +20,16 @@ namespace YouAndMeExpensesAPI.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ILogger<TravelController> _logger;
+        private readonly IStorageService _storageService;
 
-        public TravelController(AppDbContext context, ILogger<TravelController> logger)
+        public TravelController(
+            AppDbContext context,
+            ILogger<TravelController> logger,
+            IStorageService storageService)
         {
             _context = context;
             _logger = logger;
+            _storageService = storageService;
         }
 
         private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
@@ -114,6 +121,68 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 _logger.LogError(ex, "Error geocoding location: {Query}", q);
                 return StatusCode(500, new { message = "Error geocoding location" });
+            }
+        }
+
+        // ========================================
+        // FILE UPLOADS (TRAVEL ATTACHMENTS)
+        // ========================================
+
+        /// <summary>
+        /// Upload a file attachment for the current trip.
+        /// The returned metadata can be attached to itinerary events or travel documents.
+        /// </summary>
+        [HttpPost("trips/{tripId}/upload")]
+        public async Task<IActionResult> UploadTravelAttachment(Guid tripId, IFormFile file)
+        {
+            var userId = GetUserId();
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file uploaded" });
+            }
+
+            // Basic server-side guardrails – frontend also validates
+            const long maxBytes = 5 * 1024 * 1024; // 5MB
+            if (file.Length > maxBytes)
+            {
+                return BadRequest(new { message = "File too large. Max size is 5MB." });
+            }
+
+            try
+            {
+                var tripExists = await _context.Trips
+                    .AnyAsync(t => t.Id == tripId && t.UserId == userId);
+
+                if (!tripExists)
+                {
+                    return NotFound(new { message = "Trip not found" });
+                }
+
+                var extension = Path.GetExtension(file.FileName);
+                var storageFileName = $"travel/{userId}/{tripId}/{Guid.NewGuid()}{extension}";
+
+                // Reuse the existing Supabase/S3 bucket used for receipts to avoid extra config
+                var url = await _storageService.UploadFileAsync(file, storageFileName, "receipts");
+
+                return Ok(new
+                {
+                    url,
+                    name = file.FileName,
+                    type = file.ContentType,
+                    size = file.Length,
+                    path = storageFileName
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading travel attachment for trip {TripId}", tripId);
+                return StatusCode(500, new { message = "Error uploading attachment", error = ex.Message });
             }
         }
 

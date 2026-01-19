@@ -94,6 +94,12 @@ export const createItineraryEvent = (data = {}) => ({
   longitude: data.longitude || null,
   confirmationNumber: data.confirmationNumber || '',
   notes: data.notes || '',
+  // Optional attachment metadata for supporting event documents (e.g. tickets, PDFs)
+  // These are kept generic so the backend can evolve without breaking offline data.
+  attachmentUrl: data.attachmentUrl || null,
+  attachmentName: data.attachmentName || '',
+  attachmentType: data.attachmentType || '',
+  attachmentSize: data.attachmentSize || null,
   // Flight-specific
   flightNumber: data.flightNumber || '',
   airline: data.airline || '',

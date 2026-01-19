@@ -10,7 +10,8 @@ import {
   FiX,
   FiZap,
   FiChevronDown,
-  FiChevronUp
+  FiChevronUp,
+  FiLoader
 } from 'react-icons/fi'
 import { packingService } from '../services/travelApi'
 import { PACKING_CATEGORIES } from '../utils/travelConstants'
@@ -25,6 +26,7 @@ const PackingPage = ({ trip }) => {
   const { t } = useTranslation()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [activeCategory, setActiveCategory] = useState(null)
@@ -117,6 +119,9 @@ const PackingPage = ({ trip }) => {
     try {
       const updated = await packingService.toggleChecked(trip.id, item.id, !item.isChecked)
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, isChecked: !i.isChecked } : i))
+      
+      // Dispatch event to invalidate cache in TravelHome (packing progress changes)
+      window.dispatchEvent(new CustomEvent('travel:item-updated', { detail: { type: 'packing', tripId: trip.id } }))
     } catch (error) {
       console.error('Error toggling item:', error)
     }
@@ -127,19 +132,52 @@ const PackingPage = ({ trip }) => {
     try {
       await packingService.delete(trip.id, itemId)
       setItems(prev => prev.filter(i => i.id !== itemId))
+      
+      // Dispatch event to invalidate cache in TravelHome
+      window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'packing', tripId: trip.id } }))
     } catch (error) {
       console.error('Error deleting item:', error)
     }
   }
 
-  // Add item
+  // Add item with optimistic updates
   const handleAddItem = async (itemData) => {
+    // Close modal immediately for optimistic UX
+    setShowAddModal(false)
+
+    // Create optimistic item with temporary ID
+    const tempId = `temp-${Date.now()}`
+    const optimisticItem = {
+      id: tempId,
+      tripId: trip.id,
+      ...itemData,
+      isChecked: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      _optimistic: true
+    }
+
+    // Add optimistic item to list immediately
+    setItems(prev => [...prev, optimisticItem])
+    setSaving(true)
+
     try {
-      const newItem = await packingService.create(trip.id, itemData)
-      setItems(prev => [...prev, newItem])
-      setShowAddModal(false)
+      // Call API in background
+      await packingService.create(trip.id, itemData)
+      
+      // Refresh items list to get real item from server
+      const refreshedItems = await packingService.getByTrip(trip.id)
+      setItems(refreshedItems || [])
+      
+      // Dispatch event to invalidate cache in TravelHome
+      window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'packing', tripId: trip.id } }))
     } catch (error) {
       console.error('Error adding item:', error)
+      // Remove optimistic item on error
+      setItems(prev => prev.filter(i => i.id !== tempId))
+      // TODO: Show error message to user (toast or inline)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -236,16 +274,26 @@ const PackingPage = ({ trip }) => {
 
       {/* Quick Actions */}
       <div className="packing-actions">
-        <button className="action-btn primary" onClick={() => setShowAddModal(true)}>
-          <FiPlus size={18} />
-          {t('travel.packing.addItem', 'Add Item')}
-        </button>
-        {items.length === 0 && (
-          <button className="action-btn secondary" onClick={() => handleAddSuggestions()}>
-            <FiZap size={18} />
-            {t('travel.packing.addSuggestions', 'Smart Suggestions')}
+        <div className="actions-left">
+          {saving && (
+            <span className="saving-indicator">
+              <FiLoader size={14} className="spinning" />
+              {t('travel.packing.adding', 'Adding item...')}
+            </span>
+          )}
+        </div>
+        <div className="actions-right">
+          <button className="action-btn primary" onClick={() => setShowAddModal(true)}>
+            <FiPlus size={18} />
+            {t('travel.packing.addItem', 'Add Item')}
           </button>
-        )}
+          {items.length === 0 && (
+            <button className="action-btn secondary" onClick={() => handleAddSuggestions()}>
+              <FiZap size={18} />
+              {t('travel.packing.addSuggestions', 'Smart Suggestions')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Category Lists */}
@@ -378,6 +426,9 @@ const AddItemModal = ({ onClose, onSave }) => {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!formData.name.trim()) return
+    // Close modal immediately for optimistic UX
+    onClose()
+    // Call onSave which will handle optimistic update
     onSave(formData)
   }
 

@@ -160,6 +160,22 @@ namespace YouAndMeExpensesAPI.Models
         [Column("reminder_minutes")]
         public int? ReminderMinutes { get; set; }
 
+        // Optional attachment metadata for storing related documents (tickets, PDFs, etc.)
+        // Kept generic and lightweight to work well with mobile and offline flows.
+        [Column("attachment_url")]
+        public string? AttachmentUrl { get; set; }
+
+        [Column("attachment_name")]
+        [MaxLength(255)]
+        public string? AttachmentName { get; set; }
+
+        [Column("attachment_type")]
+        [MaxLength(100)]
+        public string? AttachmentType { get; set; }
+
+        [Column("attachment_size")]
+        public long? AttachmentSize { get; set; }
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 

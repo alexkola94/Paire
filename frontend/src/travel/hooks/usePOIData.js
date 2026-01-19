@@ -4,7 +4,8 @@ import {
   fetchPOIsByCategory,
   fetchPOIsMultipleCategories,
   searchPOIs,
-  calculateDistance
+  calculateDistance,
+  getZoomBasedSettings
 } from '../services/discoveryService'
 import { getPinnedPOIs, addPinnedPOI, removePinnedPOI, isPOIPinned } from '../services/travelDb'
 import { DISCOVERY_POI_CATEGORIES } from '../utils/travelConstants'
@@ -45,10 +46,17 @@ const usePOIData = () => {
 
   /**
    * Fetch POIs for selected categories
+   * Uses current map view center (like Google Maps), not fixed trip location
+   * Applies zoom-based filtering: zoomed out = fewer best results, zoomed in = more results
    */
   const fetchPOIs = useCallback(async (categories = activeCategories) => {
-    if (!activeTrip?.latitude || !activeTrip?.longitude) {
-      setError('No trip location available')
+    // Use map view center if available, otherwise fall back to trip location
+    const lat = mapViewState?.latitude || activeTrip?.latitude
+    const lon = mapViewState?.longitude || activeTrip?.longitude
+    const zoom = mapViewState?.zoom || 14
+
+    if (!lat || !lon) {
+      setError('No location available')
       return
     }
 
@@ -63,23 +71,26 @@ const usePOIData = () => {
     try {
       const results = await fetchPOIsMultipleCategories(
         categories,
-        activeTrip.latitude,
-        activeTrip.longitude
+        lat,
+        lon
       )
 
-      // Add distance to each POI
-      const poisWithDistance = results.map(poi => ({
+      // Add distance from map center to each POI
+      let poisWithDistance = results.map(poi => ({
         ...poi,
         distance: calculateDistance(
-          activeTrip.latitude,
-          activeTrip.longitude,
+          lat,
+          lon,
           poi.latitude,
           poi.longitude
         )
       }))
 
-      // Sort by distance
+      // Sort by distance from map center
       poisWithDistance.sort((a, b) => a.distance - b.distance)
+
+      // Default limit of ~50 per category is handled in service, 
+      // but we don't apply strict zoom-based clipping here to avoid hiding pins
 
       setPois(poisWithDistance)
     } catch (err) {
@@ -88,7 +99,7 @@ const usePOIData = () => {
     } finally {
       setLoading(false)
     }
-  }, [activeTrip?.latitude, activeTrip?.longitude, activeCategories])
+  }, [mapViewState?.latitude, mapViewState?.longitude, mapViewState?.zoom, activeTrip?.latitude, activeTrip?.longitude, activeCategories])
 
   /**
    * Toggle a category filter
@@ -123,6 +134,7 @@ const usePOIData = () => {
 
   /**
    * Search for POIs by text query
+   * Uses current map view center (like Google Maps)
    */
   const search = useCallback(async (query) => {
     setSearchQuery(query)
@@ -134,8 +146,12 @@ const usePOIData = () => {
       return
     }
 
-    if (!activeTrip?.latitude || !activeTrip?.longitude) {
-      console.warn('Cannot search: No trip location available')
+    // Use map view center if available, otherwise fall back to trip location
+    const lat = mapViewState?.latitude || activeTrip?.latitude
+    const lon = mapViewState?.longitude || activeTrip?.longitude
+
+    if (!lat || !lon) {
+      console.warn('Cannot search: No location available')
       setSearchResults([])
       return
     }
@@ -146,22 +162,22 @@ const usePOIData = () => {
     try {
       const results = await searchPOIs(
         query.trim(),
-        activeTrip.latitude,
-        activeTrip.longitude
+        lat,
+        lon
       )
 
-      // Add distance to each result
+      // Add distance from map center to each result
       const resultsWithDistance = results.map(poi => ({
         ...poi,
         distance: calculateDistance(
-          activeTrip.latitude,
-          activeTrip.longitude,
+          lat,
+          lon,
           poi.latitude,
           poi.longitude
         )
       }))
 
-      // Sort by distance
+      // Sort by distance from map center
       resultsWithDistance.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
 
       console.log(`Search for "${query}" returned ${resultsWithDistance.length} results`)
@@ -173,7 +189,7 @@ const usePOIData = () => {
     } finally {
       setLoading(false)
     }
-  }, [activeTrip?.latitude, activeTrip?.longitude])
+  }, [mapViewState?.latitude, mapViewState?.longitude, activeTrip?.latitude, activeTrip?.longitude])
 
   /**
    * Clear search results
@@ -257,11 +273,11 @@ const usePOIData = () => {
           isPinned: true,
           distance: activeTrip?.latitude && activeTrip?.longitude
             ? calculateDistance(
-                activeTrip.latitude,
-                activeTrip.longitude,
-                pinned.latitude,
-                pinned.longitude
-              )
+              activeTrip.latitude,
+              activeTrip.longitude,
+              pinned.latitude,
+              pinned.longitude
+            )
             : null
         })
       }

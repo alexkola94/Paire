@@ -354,6 +354,9 @@
       "arrival": "Hacia",
       "checkIn": "Check-in",
       "checkOut": "Check-out",
+      "attachment": "Adjunto",
+      "viewAttachment": "Ver adjunto",
+      "removeAttachment": "Eliminar",
       "types": {
         "flight": "Vuelo",
         "hotel": "Hotel",
@@ -417,14 +420,34 @@
       "expiringDays": "Vence en {{days}}d",
       "expiresIn": "{{days}}d restantes",
       "valid": "Válido",
-      "types": {
+      "attachment": "Adjunto",
+      "viewAttachment": "Ver adjunto",
+      "removeAttachment": "Eliminar",
+        "types": {
         "passport": "Pasaporte",
         "visa": "Visa",
         "booking": "Reserva",
         "insurance": "Seguro",
         "ticket": "Boleto",
         "other": "Otro"
-      }
+        },
+        "aiHelper": {
+          "title": "Pregunta a la IA qué documentos necesitas",
+          "subtitle": "Crearemos una pregunta clara para la IA elegida basándonos en tu ruta.",
+          "askAiCta": "Preguntar a IA: documentos necesarios",
+          "originCountry": "País de origen",
+          "originPlaceholder": "ej., España",
+          "destinationCountry": "País de destino",
+          "destinationPlaceholder": "ej., Japón",
+          "providerLabel": "Enviar esta pregunta a",
+          "providerHint": "Se abre en una nueva pestaña con la pregunta precompletada.",
+          "promptPreview": "Vista previa de la pregunta que enviaremos",
+          "askButton": "Abrir chat de IA con esta pregunta",
+          "provider": {
+            "travel-assistant": "Asistente de documentos de viaje",
+            "chatgpt": "ChatGPT"
+          }
+        }
     },
     "discovery": {
       "enter": "Entrar en Modo Descubrimiento",

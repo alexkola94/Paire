@@ -12,6 +12,8 @@ import {
 } from 'react-icons/fi'
 import { useTravelMode } from '../context/TravelModeContext'
 import { travelExpenseService, packingService, itineraryService } from '../services/travelApi'
+import { getCached, setCached } from '../services/travelDb'
+import db from '../services/travelDb'
 import TripSetupWizard from '../components/TripSetupWizard'
 import ConfirmationModal from '../../components/ConfirmationModal'
 import '../styles/TravelHome.css'
@@ -79,6 +81,7 @@ const TravelHome = ({ trip, onNavigate }) => {
   }, [t])
 
   // Load minimal trip data - only what's needed for summary
+  // Uses caching to avoid API calls on every mount
   useEffect(() => {
     const loadTripData = async () => {
       if (!trip?.id) {
@@ -86,8 +89,22 @@ const TravelHome = ({ trip, onNavigate }) => {
         return
       }
 
+      const cacheKey = `trip-summary-${trip.id}`
+      
       try {
-        // Load data in parallel
+        // Try to get cached data first
+        const cachedData = await getCached(cacheKey)
+        
+        if (cachedData) {
+          // Use cached data
+          setBudgetSummary(cachedData.budgetSummary)
+          setPackingProgress(cachedData.packingProgress)
+          setUpcomingCount(cachedData.upcomingCount)
+          setLoading(false)
+          return
+        }
+
+        // No cache, fetch from API
         const [expenses, packingItems, events] = await Promise.all([
           travelExpenseService.getSummary(trip.id).catch(() => null),
           packingService.getByTrip(trip.id).catch(() => []),
@@ -97,19 +114,29 @@ const TravelHome = ({ trip, onNavigate }) => {
         setBudgetSummary(expenses)
 
         // Calculate packing progress
+        let packingProgressData = null
         if (packingItems.length > 0) {
           const checked = packingItems.filter(item => item.isChecked).length
-          setPackingProgress({
+          packingProgressData = {
             total: packingItems.length,
             checked,
             percentage: Math.round((checked / packingItems.length) * 100)
-          })
+          }
+          setPackingProgress(packingProgressData)
         }
 
         // Just count upcoming events, don't show details
         const today = new Date().toISOString().split('T')[0]
         const upcoming = events.filter(e => e.date >= today)
-        setUpcomingCount(upcoming.length)
+        const upcomingCountValue = upcoming.length
+        setUpcomingCount(upcomingCountValue)
+
+        // Cache the computed summary data (cache for 5 minutes)
+        await setCached(cacheKey, {
+          budgetSummary: expenses,
+          packingProgress: packingProgressData,
+          upcomingCount: upcomingCountValue
+        }, 5 * 60 * 1000) // 5 minutes TTL
       } catch (error) {
         console.error('Error loading trip data:', error)
       } finally {
@@ -118,6 +145,76 @@ const TravelHome = ({ trip, onNavigate }) => {
     }
 
     loadTripData()
+  }, [trip?.id])
+
+  // Listen for events when items are added to invalidate cache
+  useEffect(() => {
+    if (!trip?.id) return
+
+    const handleItemAdded = async () => {
+      // Invalidate cache when items are added
+      const cacheKey = `trip-summary-${trip.id}`
+      try {
+        await db.apiCache.where('key').equals(cacheKey).delete()
+      } catch (error) {
+        console.error('Error invalidating cache:', error)
+      }
+      
+      // Reload trip data
+      const loadTripData = async () => {
+        try {
+          const [expenses, packingItems, events] = await Promise.all([
+            travelExpenseService.getSummary(trip.id).catch(() => null),
+            packingService.getByTrip(trip.id).catch(() => []),
+            itineraryService.getByTrip(trip.id).catch(() => [])
+          ])
+
+          setBudgetSummary(expenses)
+
+          if (packingItems.length > 0) {
+            const checked = packingItems.filter(item => item.isChecked).length
+            setPackingProgress({
+              total: packingItems.length,
+              checked,
+              percentage: Math.round((checked / packingItems.length) * 100)
+            })
+          } else {
+            setPackingProgress(null)
+          }
+
+          const today = new Date().toISOString().split('T')[0]
+          const upcoming = events.filter(e => e.date >= today)
+          setUpcomingCount(upcoming.length)
+
+          // Update cache
+          const cacheKey = `trip-summary-${trip.id}`
+          await setCached(cacheKey, {
+            budgetSummary: expenses,
+            packingProgress: packingItems.length > 0 ? {
+              total: packingItems.length,
+              checked: packingItems.filter(item => item.isChecked).length,
+              percentage: Math.round((packingItems.filter(item => item.isChecked).length / packingItems.length) * 100)
+            } : null,
+            upcomingCount: upcoming.length
+          }, 5 * 60 * 1000)
+        } catch (error) {
+          console.error('Error reloading trip data:', error)
+        }
+      }
+      
+      loadTripData()
+    }
+
+    // Listen for item added events from other pages
+    window.addEventListener('travel:item-added', handleItemAdded)
+    window.addEventListener('travel:item-updated', handleItemAdded)
+    window.addEventListener('travel:item-deleted', handleItemAdded)
+
+    return () => {
+      window.removeEventListener('travel:item-added', handleItemAdded)
+      window.removeEventListener('travel:item-updated', handleItemAdded)
+      window.removeEventListener('travel:item-deleted', handleItemAdded)
+    }
   }, [trip?.id])
 
   // Calculate days countdown

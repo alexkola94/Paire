@@ -15,10 +15,12 @@ import {
   FiHome,
   FiStar,
   FiCoffee,
-  FiTruck
+  FiTruck,
+  FiPaperclip,
+  FiLoader
 } from 'react-icons/fi'
 import { RiFlightTakeoffLine, RiPlaneLine } from 'react-icons/ri'
-import { itineraryService } from '../services/travelApi'
+import { itineraryService, uploadTravelFile } from '../services/travelApi'
 import { ITINERARY_TYPES } from '../utils/travelConstants'
 import '../styles/Itinerary.css'
 import FlightStatus from '../components/FlightStatus'
@@ -40,6 +42,7 @@ const ItineraryPage = ({ trip }) => {
   const { t } = useTranslation()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
@@ -100,15 +103,44 @@ const ItineraryPage = ({ trip }) => {
     return acc
   }, {})
 
-  // Add event
+  // Add event with optimistic updates
   const handleAddEvent = async (eventData) => {
+    // Close modal immediately for optimistic UX
+    setShowAddModal(false)
+    setEditingEvent(null)
+
+    // Create optimistic event with temporary ID
+    const tempId = `temp-${Date.now()}`
+    const optimisticEvent = {
+      id: tempId,
+      tripId: trip.id,
+      ...eventData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      _optimistic: true
+    }
+
+    // Add optimistic event to list immediately
+    setEvents(prev => [...prev, optimisticEvent])
+    setSaving(true)
+
     try {
-      const newEvent = await itineraryService.create(trip.id, eventData)
-      setEvents(prev => [...prev, newEvent])
-      setShowAddModal(false)
-      setEditingEvent(null)
+      // Call API in background
+      await itineraryService.create(trip.id, eventData)
+      
+      // Refresh events list to get real event from server
+      const refreshedEvents = await itineraryService.getByTrip(trip.id)
+      setEvents(refreshedEvents || [])
+      
+      // Dispatch event to invalidate cache in TravelHome
+      window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
       console.error('Error adding event:', error)
+      // Remove optimistic event on error
+      setEvents(prev => prev.filter(e => e.id !== tempId))
+      // TODO: Show error message to user (toast or inline)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -119,6 +151,9 @@ const ItineraryPage = ({ trip }) => {
       setEvents(prev => prev.map(e => e.id === editingEvent.id ? { ...e, ...eventData } : e))
       setShowAddModal(false)
       setEditingEvent(null)
+      
+      // Dispatch event to invalidate cache in TravelHome
+      window.dispatchEvent(new CustomEvent('travel:item-updated', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
       console.error('Error updating event:', error)
     }
@@ -129,6 +164,9 @@ const ItineraryPage = ({ trip }) => {
     try {
       await itineraryService.delete(trip.id, eventId)
       setEvents(prev => prev.filter(e => e.id !== eventId))
+      
+      // Dispatch event to invalidate cache in TravelHome
+      window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
       console.error('Error deleting event:', error)
     }
@@ -161,7 +199,15 @@ const ItineraryPage = ({ trip }) => {
     <div className="itinerary-page">
       {/* Header */}
       <div className="itinerary-header">
-        <h2 className="section-title">{t('travel.itinerary.title', 'Itinerary')}</h2>
+        <div className="header-info">
+          <h2 className="section-title">{t('travel.itinerary.title', 'Itinerary')}</h2>
+          {saving && (
+            <span className="saving-indicator">
+              <FiLoader size={14} className="spinning" />
+              {t('travel.itinerary.adding', 'Adding event...')}
+            </span>
+          )}
+        </div>
         <button className="add-btn" onClick={() => setShowAddModal(true)}>
           <FiPlus size={20} />
         </button>
@@ -336,6 +382,22 @@ const EventCard = ({ event, onEdit, onDelete }) => {
           </div>
         )}
 
+        {event.attachmentUrl && (
+          <div className="event-attachment">
+            <button
+              type="button"
+              className="event-attachment-btn"
+              onClick={() => window.open(event.attachmentUrl, '_blank')}
+            >
+              <FiPaperclip size={12} />
+              <span>
+                {event.attachmentName ||
+                  t('fileUpload.attachedFile', 'Attached file')}
+              </span>
+            </button>
+          </div>
+        )}
+
         <div className="event-actions">
           <button className="event-action-btn" onClick={onEdit}>
             <FiEdit2 size={14} />
@@ -372,16 +434,99 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
     // Hotel-specific
     checkInTime: event?.checkInTime || '',
     checkOutTime: event?.checkOutTime || '',
-    notes: event?.notes || ''
+    notes: event?.notes || '',
+    // Attachment metadata – maps to backend itinerary event attachment fields
+    attachmentUrl: event?.attachmentUrl || null,
+    attachmentName: event?.attachmentName || '',
+    attachmentType: event?.attachmentType || '',
+    attachmentSize: event?.attachmentSize || null
   })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+
+  const handleAttachmentChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !trip?.id) return
+
+    setUploadError('')
+
+    const maxSizeBytes = 5 * 1024 * 1024
+    if (file.size > maxSizeBytes) {
+      setUploadError(t('fileUpload.sizeError', { max: 5 }))
+      return
+    }
+
+    setUploading(true)
+    try {
+      const result = await uploadTravelFile(trip.id, file)
+
+      if (result?.url) {
+        setFormData(prev => ({
+          ...prev,
+          attachmentUrl: result.url,
+          attachmentName: result.name || file.name,
+          attachmentType: result.type || file.type,
+          attachmentSize: result.size ?? file.size
+        }))
+      }
+    } catch (error) {
+      console.error('Error uploading itinerary attachment:', error)
+      setUploadError(
+        t('fileUpload.uploadError', { error: error.message || 'Error' })
+      )
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleRemoveAttachment = () => {
+    setFormData(prev => ({
+      ...prev,
+      attachmentUrl: null,
+      attachmentName: '',
+      attachmentType: '',
+      attachmentSize: null
+    }))
+    setUploadError('')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.name.trim()) return
 
     setSaving(true)
-    await onSave(formData)
+    // Only send fields the backend understands; attachment metadata is kept minimal.
+    const payload = {
+      type: formData.type,
+      name: formData.name,
+      date: formData.date,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
+      location: formData.location,
+      confirmationNumber: formData.confirmationNumber,
+      // Flight
+      flightNumber: formData.flightNumber,
+      airline: formData.airline,
+      departureAirport: formData.departureAirport,
+      arrivalAirport: formData.arrivalAirport,
+      // Hotel
+      checkInTime: formData.checkInTime,
+      checkOutTime: formData.checkOutTime,
+      // Notes
+      notes: formData.notes,
+      // Attachment
+      attachmentUrl: formData.attachmentUrl,
+      attachmentName: formData.attachmentName,
+      attachmentType: formData.attachmentType,
+      attachmentSize: formData.attachmentSize
+    }
+
+    // Close modal immediately for optimistic UX
+    onClose()
+    // Call onSave which will handle optimistic update
+    await onSave(payload)
     setSaving(false)
   }
 
@@ -553,6 +698,62 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
               onChange={(e) => setFormData(prev => ({ ...prev, confirmationNumber: e.target.value }))}
               placeholder={t('travel.itinerary.confirmationPlaceholder', 'Optional booking reference')}
             />
+          </div>
+
+          {/* Attachment */}
+          <div className="form-group">
+            <label>{t('travel.itinerary.attachment', 'Attachment')}</label>
+            <div className="attachment-upload">
+              <label className="attachment-upload-btn">
+                <FiPaperclip size={16} />
+                <span>
+                  {uploading
+                    ? t('common.uploading', 'Uploading...')
+                    : t(
+                        'fileUpload.selectFile',
+                        'Select file'
+                      )}
+                </span>
+                <input
+                  type="file"
+                  onChange={handleAttachmentChange}
+                  disabled={uploading}
+                  accept=".pdf,image/*"
+                />
+              </label>
+
+              {formData.attachmentUrl && (
+                <div className="attachment-chip">
+                  <button
+                    type="button"
+                    className="attachment-view"
+                    onClick={() => window.open(formData.attachmentUrl, '_blank')}
+                  >
+                    <FiPaperclip size={14} />
+                    <span>
+                      {formData.attachmentName ||
+                        t(
+                          'travel.itinerary.viewAttachment',
+                          'View attachment'
+                        )}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="attachment-remove"
+                    onClick={handleRemoveAttachment}
+                  >
+                    {t('travel.itinerary.removeAttachment', 'Remove')}
+                  </button>
+                </div>
+              )}
+
+              {uploadError && (
+                <p className="attachment-error">
+                  {uploadError}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="modal-footer">

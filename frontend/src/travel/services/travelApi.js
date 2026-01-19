@@ -241,6 +241,23 @@ export const processSyncQueue = async () => {
   }
 }
 
+/**
+ * Upload a travel-related file attachment for a given trip.
+ * Used by itinerary events and travel documents to attach PDFs, images, etc.
+ */
+export const uploadTravelFile = async (tripId, file) => {
+  if (!tripId || !file) return null
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  // This will throw on error; callers should handle and show friendly UI.
+  return apiRequest(`/api/travel/trips/${tripId}/upload`, {
+    method: 'POST',
+    body: formData
+  })
+}
+
 // ========================================
 // Trip Service
 // ========================================

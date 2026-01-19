@@ -4,7 +4,7 @@
 
 .discovery-search {
   position: fixed;
-  top: 90px;
+  top: 110px;
   /* More spacing below fixed header */
   left: 16px;
   right: 16px;
@@ -43,18 +43,13 @@
 /* Category Chips */
 .discovery-category-chips {
   display: flex;
-  flex-wrap: nowrap;
-  /* Prevent wrapping on mobile */
-  overflow-x: auto;
-  /* Enable horizontal scroll */
+  flex-wrap: wrap;
+  /* Allow wrapping to show all categories */
   padding: 4px;
   /* Space for shadow */
   gap: 8px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
   pointer-events: auto;
   /* Re-enable clicks */
-  -webkit-overflow-scrolling: touch;
   margin-left: -4px;
   /* Offset padding */
   width: calc(100% + 8px);

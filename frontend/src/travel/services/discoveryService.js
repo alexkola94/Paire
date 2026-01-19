@@ -3,11 +3,41 @@ import { DISCOVERY_POI_CATEGORIES, CACHE_TTL, DISCOVERY_MAP_CONFIG } from '../ut
 
 const OVERPASS_API = 'https://overpass-api.de/api/interpreter'
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
+const SERPAPI_KEY = import.meta.env.VITE_SERPAPI_API_KEY || ''
 
 /**
  * Discovery Service
- * Handles POI fetching from Overpass API (OpenStreetMap) and Mapbox Search
+ * Handles POI fetching from Overpass API (OpenStreetMap), Mapbox Search, and SerpApi (Google Hotels)
  */
+
+/**
+ * Calculate zoom-based result settings
+ * - Zoomed OUT (low zoom): fewer results, only best reviews
+ * - Zoomed IN (high zoom): more results, include average reviews
+ * 
+ * @param {number} zoom - Current map zoom level (0-22)
+ * @returns {{ limit: number, minRating: number }} Settings based on zoom
+ */
+export const getZoomBasedSettings = (zoom = 14) => {
+  // Zoom thresholds
+  // <= 10: Very zoomed out (city/region view)
+  // 11-13: Medium zoom (neighborhood view)
+  // >= 14: Zoomed in (street/block view)
+
+  if (zoom <= 10) {
+    // Very zoomed out: show only top 20 best-rated results
+    return { limit: 20, minRating: 4.0 }
+  } else if (zoom <= 12) {
+    // Medium-low zoom: show top 40 with good ratings
+    return { limit: 40, minRating: 3.5 }
+  } else if (zoom <= 14) {
+    // Medium zoom: show top 60 with average+ ratings
+    return { limit: 60, minRating: 3.0 }
+  } else {
+    // Zoomed in: show all nearby (up to 100), include average ratings
+    return { limit: 100, minRating: 2.5 }
+  }
+}
 
 /**
  * Build Overpass query for a specific category
@@ -96,17 +126,19 @@ const formatAddress = (tags) => {
 /**
  * Fetch POIs from Overpass API for a specific category
  * @param {string} categoryId - Category ID
- * @param {number} lat - Latitude
- * @param {number} lon - Longitude
+ * @param {number} lat - Latitude (map center, not user location)
+ * @param {number} lon - Longitude (map center, not user location)
  * @param {number} radius - Search radius in meters
- * @returns {Promise<Array>} Array of POIs
+ * @param {number} limit - Maximum number of results (default 100)
+ * @returns {Promise<Array>} Array of POIs sorted by distance from map center
  */
-export const fetchPOIsByCategory = async (categoryId, lat, lon, radius = DISCOVERY_MAP_CONFIG.poiRadius) => {
+export const fetchPOIsByCategory = async (categoryId, lat, lon, radius = DISCOVERY_MAP_CONFIG.poiRadius, limit = 100) => {
   // Check cache first
   const cacheKey = `discovery-poi-${categoryId}-${lat.toFixed(3)}-${lon.toFixed(3)}`
   const cached = await getCached(cacheKey)
   if (cached) {
-    return cached
+    // Apply limit to cached results too
+    return cached.slice(0, limit)
   }
 
   const query = buildOverpassQuery(categoryId, lat, lon, radius)
@@ -129,32 +161,54 @@ export const fetchPOIsByCategory = async (categoryId, lat, lon, radius = DISCOVE
     }
 
     const data = await response.json()
-    const pois = parseOverpassResults(data.elements || [], categoryId)
+    let pois = parseOverpassResults(data.elements || [], categoryId)
 
-    // Cache results
+    // Calculate distance and sort by nearest first (best results)
+    pois = pois.map(poi => ({
+      ...poi,
+      distance: calculateDistance(lat, lon, poi.latitude, poi.longitude)
+    }))
+      .sort((a, b) => (a.distance || 0) - (b.distance || 0))
+
+    // Cache all results (before limiting)
     await setCached(cacheKey, pois, CACHE_TTL.poi)
 
-    return pois
+    // Return limited results
+    return pois.slice(0, limit)
   } catch (error) {
     console.error('Error fetching POIs from Overpass:', error)
     // Try to return cached data even if expired
     const expiredCache = await getCached(cacheKey)
-    if (expiredCache) return expiredCache
+    if (expiredCache) return expiredCache.slice(0, limit)
     return []
   }
 }
 
 /**
- * Fetch POIs for multiple categories
+ * Fetch POIs for multiple categories sequentially to avoid Overpass 429/504 errors
  * @param {Array<string>} categoryIds - Array of category IDs
  * @param {number} lat - Latitude
  * @param {number} lon - Longitude
  * @returns {Promise<Array>} Combined array of POIs
  */
 export const fetchPOIsMultipleCategories = async (categoryIds, lat, lon) => {
-  const promises = categoryIds.map(id => fetchPOIsByCategory(id, lat, lon))
-  const results = await Promise.all(promises)
-  return results.flat()
+  const results = []
+
+  // Execute sequentially to be gentle on the API
+  for (const id of categoryIds) {
+    try {
+      const categoryPOIs = await fetchPOIsByCategory(id, lat, lon)
+      results.push(...categoryPOIs)
+
+      // Small delay between requests
+      await new Promise(resolve => setTimeout(resolve, 300))
+    } catch (error) {
+      console.warn(`Failed to fetch category ${id}:`, error)
+      // Continue with other categories even if one fails
+    }
+  }
+
+  return results
 }
 
 /**
@@ -189,7 +243,7 @@ export const searchPOIs = async (query, lat, lon) => {
 
     const data = await response.json()
     const results = parseMapboxResults(data.features || [])
-    
+
     // If we got results, return them
     if (results.length > 0) {
       return results
@@ -318,7 +372,7 @@ const searchPOIsOverpass = async (query, lat, lon) => {
       }
       return element
     })
-    
+
     return parseOverpassResults(elements, 'attraction')
   } catch (error) {
     console.error('Error searching Overpass:', error)
@@ -415,12 +469,328 @@ export const reverseGeocode = async (lat, lon) => {
   }
 }
 
+/**
+ * Resolve a free‑text place name (e.g. city) to its country using Mapbox Geocoding.
+ * Keeps the response very small and only returns basic country info.
+ * @param {string} placeName - City or place name, e.g. "Milan" or "Milan, Lombardy"
+ * @returns {Promise<{ countryName: string, countryCode?: string } | null>}
+ */
+export const getCountryFromPlaceName = async (placeName) => {
+  if (!MAPBOX_TOKEN || !placeName || !placeName.trim()) {
+    return null
+  }
+
+  try {
+    const query = encodeURIComponent(placeName.trim())
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?types=place,region,country&limit=1&access_token=${MAPBOX_TOKEN}`
+
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`Mapbox place->country error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const feature = data.features?.[0]
+    if (!feature) return null
+
+    // Mapbox usually adds the country as a context entry (e.g. "country.1234").
+    const context = feature.context || []
+    const countryContext = context.find(c => typeof c.id === 'string' && c.id.startsWith('country.'))
+
+    const countryName = countryContext?.text || feature.place_name?.split(',').pop()?.trim()
+    if (!countryName) return null
+
+    const code = countryContext?.short_code
+      ? String(countryContext.short_code).toUpperCase()
+      : undefined
+
+    return {
+      countryName,
+      countryCode: code
+    }
+  } catch (error) {
+    console.error('Error resolving country from place name:', error)
+    return null
+  }
+}
+
+/**
+ * Get city name from coordinates for broad caching
+ * Requests only 'place' and 'locality' types from Mapbox to ensure we get general area 
+ * instead of specific street addresses
+ */
+export const getCityName = async (lat, lon) => {
+  if (!MAPBOX_TOKEN) return null
+
+  try {
+    // Only ask for place (city) and locality
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?types=place,locality&limit=1&access_token=${MAPBOX_TOKEN}`
+    const response = await fetch(url)
+
+    if (!response.ok) return null
+
+    const data = await response.json()
+    if (data.features && data.features.length > 0) {
+      // Return just the text name (e.g., "Milan", "New York")
+      return data.features[0].text
+    }
+    return null
+  } catch (error) {
+    console.error('Error getting city name:', error)
+    return null
+  }
+}
+
+/**
+ * Fetch hotels from SerpApi (Google Hotels)
+ * Uses reverse geocoding to get city name, then queries Google Hotels
+ * @param {number} lat - Latitude
+ * @param {number} lon - Longitude
+ * @param {number} limit - Maximum results
+ * @returns {Promise<Array>} Array of hotel objects
+ */
+const fetchHotelsFromSerpApi = async (lat, lon, limit = 20) => {
+  if (!SERPAPI_KEY) {
+    console.warn('SerpApi key not configured')
+    return null
+  }
+
+  try {
+    // Get broader city location to improve cache hits and reduce API calls
+    const cityName = await getCityName(lat, lon)
+
+    if (!cityName) {
+      console.warn('Could not determine city name for hotel search')
+      return null
+    }
+
+    // Cache key based on city name - extremely effective for "hotels in Milan" queries
+    const cacheKey = `serpapi-hotels-${cityName.toLowerCase().replace(/\s+/g, '-')}`
+    const cached = await getCached(cacheKey)
+    if (cached) {
+      console.log(`Using cached hotels for ${cityName}`)
+      return cached.slice(0, limit)
+    }
+
+    // Calculate dates for valid hotel search (tomorrow check-in, +1 day check-out)
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const checkIn = tomorrow.toISOString().split('T')[0]
+
+    const dayAfter = new Date(tomorrow)
+    dayAfter.setDate(dayAfter.getDate() + 1)
+    const checkOut = dayAfter.toISOString().split('T')[0]
+
+    // Call backend proxy to bypass CORS AND send dates
+    const params = new URLSearchParams({
+      q: `hotels in ${cityName}`,
+      gl: 'us',
+      hl: 'en',
+      check_in_date: checkIn,
+      check_out_date: checkOut
+    })
+
+    // Use local backend proxy
+    const response = await fetch(`http://localhost:5038/api/SerpApi/hotels?${params}`)
+
+    if (!response.ok) {
+      throw new Error(`SerpApi error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    // Map SerpApi response to our stay format
+    const hotels = (data.properties || []).map((hotel, index) => ({
+      id: `serpapi-${hotel.name?.replace(/\s+/g, '-').toLowerCase() || index}`,
+      name: hotel.name || 'Unknown Hotel',
+      latitude: hotel.gps_coordinates?.latitude || lat + (Math.random() * 0.01 - 0.005),
+      longitude: hotel.gps_coordinates?.longitude || lon + (Math.random() * 0.01 - 0.005),
+      price: hotel.rate_per_night?.lowest
+        ? { amount: parseFloat(hotel.rate_per_night.lowest.replace(/[^0-9.]/g, '')), currency: 'USD' }
+        : null,
+      rating: hotel.overall_rating || hotel.reviews_rating || 0,
+      reviewCount: hotel.reviews || 0,
+      image: hotel.images?.[0]?.thumbnail || hotel.thumbnail || null,
+      amenities: hotel.amenities || [],
+      address: hotel.address || cityName,
+      provider: 'google',
+      booking_url: hotel.link || `https://www.google.com/travel/hotels?q=${encodeURIComponent(hotel.name + ' ' + cityName)}`,
+      category: 'accommodation',
+      source: 'serpapi'
+    }))
+
+    // Cache for 1 hour
+    await setCached(cacheKey, hotels, 3600000)
+
+    return hotels.slice(0, limit)
+  } catch (error) {
+    console.error('Error fetching hotels from SerpApi:', error)
+    return null
+  }
+}
+
+/**
+ * Placeholder stays data for fallback when API is unavailable
+ * Replace with actual API integration (Booking.com, Airbnb, etc.)
+ */
+const PLACEHOLDER_STAYS = [
+  {
+    id: 'stay-1',
+    name: 'Grand Hotel Palace',
+    latitude: 0, // Will be set relative to search location
+    longitude: 0,
+    price: { amount: 150, currency: 'EUR' },
+    rating: 4.5,
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
+    amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Parking'],
+    address: 'Main Street 123',
+    provider: 'booking' // 'booking' or 'airbnb'
+  },
+  {
+    id: 'stay-2',
+    name: 'Cozy Downtown Apartment',
+    latitude: 0,
+    longitude: 0,
+    price: { amount: 85, currency: 'EUR' },
+    rating: 4.8,
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400',
+    amenities: ['WiFi', 'Kitchen', 'Washer', 'Air Conditioning'],
+    address: 'Central Avenue 45',
+    provider: 'airbnb'
+  },
+  {
+    id: 'stay-3',
+    name: 'Seaside Resort & Spa',
+    latitude: 0,
+    longitude: 0,
+    price: { amount: 220, currency: 'EUR' },
+    rating: 4.7,
+    image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400',
+    amenities: ['WiFi', 'Pool', 'Beach Access', 'Spa', 'Gym', 'Restaurant'],
+    address: 'Beach Road 78',
+    provider: 'booking'
+  },
+  {
+    id: 'stay-4',
+    name: 'Budget Hostel Central',
+    latitude: 0,
+    longitude: 0,
+    price: { amount: 35, currency: 'EUR' },
+    rating: 4.2,
+    image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400',
+    amenities: ['WiFi', 'Shared Kitchen', 'Locker'],
+    address: 'Backpacker Lane 12',
+    provider: 'booking'
+  },
+  {
+    id: 'stay-5',
+    name: 'Luxury Penthouse Suite',
+    latitude: 0,
+    longitude: 0,
+    price: { amount: 350, currency: 'EUR' },
+    rating: 4.9,
+    image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400',
+    amenities: ['WiFi', 'Rooftop Terrace', 'City View', 'Kitchen', 'Concierge'],
+    address: 'Skyline Tower 500',
+    provider: 'airbnb'
+  }
+]
+
+/**
+ * Fetch accommodation/stays near a location
+ * Uses SerpApi (Google Hotels) when available, falls back to placeholder data
+ * @param {number} lat - Latitude (map center, not user location)
+ * @param {number} lon - Longitude (map center, not user location)
+ * @param {number} radius - Search radius in meters (default 2000m)
+ * @param {number} limit - Maximum number of results (default 100)
+ * @returns {Promise<Array>} Array of stay objects sorted by rating (best first)
+ */
+export const fetchStays = async (lat, lon, radius = DISCOVERY_MAP_CONFIG.poiRadius, limit = 100) => {
+  // Try SerpApi first for real hotel data
+  const serpApiResults = await fetchHotelsFromSerpApi(lat, lon, limit)
+
+  if (serpApiResults && serpApiResults.length > 0) {
+    // Calculate distance and sort by rating
+    const staysWithDistance = serpApiResults.map(stay => ({
+      ...stay,
+      distance: calculateDistance(lat, lon, stay.latitude, stay.longitude)
+    }))
+
+    return staysWithDistance
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, limit)
+  }
+
+  // Fallback to placeholder data if API unavailable
+  console.log('Using placeholder stays data (SerpApi unavailable or no results)')
+
+  // Scatter placeholder stays around the search location
+  const stays = PLACEHOLDER_STAYS.map((stay, index) => {
+    // Create positions in a circle around the center
+    const angle = (index / PLACEHOLDER_STAYS.length) * 2 * Math.PI
+    const offsetLat = (Math.random() * 0.008 + 0.002) * Math.cos(angle)
+    const offsetLon = (Math.random() * 0.008 + 0.002) * Math.sin(angle)
+
+    return {
+      ...stay,
+      latitude: lat + offsetLat,
+      longitude: lon + offsetLon,
+      category: 'accommodation',
+      source: 'placeholder',
+      distance: calculateDistance(lat, lon, lat + offsetLat, lon + offsetLon)
+    }
+  })
+
+  // Sort by rating (best first) and limit results
+  return stays
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .slice(0, limit)
+}
+
+/**
+ * Open Airbnb search for a specific property/location
+ * @param {string} propertyName - Property name
+ * @param {string} city - City name for the search
+ */
+export const goToAirbnbBooking = (propertyName, city = '') => {
+  const query = encodeURIComponent(`${propertyName} ${city}`.trim())
+  window.open(`https://www.airbnb.com/s/${query}/homes`, '_blank')
+}
+
+/**
+ * Open Booking.com search for a specific property
+ * @param {string} propertyName - Property name
+ */
+export const goToBookingDotCom = (propertyName) => {
+  const query = encodeURIComponent(propertyName)
+  window.open(`https://www.booking.com/searchresults.html?ss=${query}`, '_blank')
+}
+
+/**
+ * Open appropriate booking site based on provider
+ * @param {Object} stay - Stay object with name and provider
+ * @param {string} city - City name for Airbnb searches
+ */
+export const openBookingUrl = (stay, city = '') => {
+  if (stay.provider === 'airbnb') {
+    goToAirbnbBooking(stay.name, city)
+  } else {
+    goToBookingDotCom(stay.name)
+  }
+}
+
 export default {
   fetchPOIsByCategory,
   fetchPOIsMultipleCategories,
   searchPOIs,
   reverseGeocode,
+  getCountryFromPlaceName,
   getDirectionsUrl,
   calculateDistance,
-  formatDistance
+  formatDistance,
+  fetchStays,
+  goToAirbnbBooking,
+  goToBookingDotCom,
+  openBookingUrl
 }
+

@@ -1234,6 +1234,9 @@
       "arrival": "Προς",
       "checkIn": "Check-in",
       "checkOut": "Check-out",
+      "attachment": "Συνημμένο",
+      "viewAttachment": "Προβολή συνημμένου",
+      "removeAttachment": "Αφαίρεση",
       "types": {
         "flight": "Πτήση",
         "hotel": "Ξενοδοχείο",
@@ -1297,14 +1300,52 @@
       "expiringDays": "Λήγει σε {{days}} ημέρες",
       "expiresIn": "{{days}} ημέρες υπόλοιπο",
       "valid": "Έγκυρο",
-      "types": {
+      "attachment": "Συνημμένο",
+      "viewAttachment": "Προβολή συνημμένου",
+      "removeAttachment": "Αφαίρεση",
+        "types": {
         "passport": "Διαβατήριο",
         "visa": "Βίζα",
         "booking": "Κράτηση",
         "insurance": "Ασφάλεια",
         "ticket": "Εισιτήριο",
         "other": "Άλλο"
-      }
+        },
+        "aiHelper": {
+          "title": "Ρώτα την ΙΑ ποια έγγραφα χρειάζεσαι",
+          "subtitle": "Θα συνθέσουμε μια καθαρή ερώτηση για την επιλεγμένη ΙΑ με βάση τη διαδρομή σου.",
+          "askAiCta": "Ρώτα ΙΑ: απαραίτητα έγγραφα",
+          "originCountry": "Χώρα αναχώρησης",
+          "originPlaceholder": "π.χ. Ελλάδα",
+          "destinationCountry": "Χώρα προορισμού",
+          "destinationPlaceholder": "π.χ. Ιαπωνία",
+          "providerLabel": "Στείλε αυτή την ερώτηση σε",
+          "providerHint": "Ανοίγει σε νέα καρτέλα με την ερώτηση προσυμπληρωμένη.",
+          "promptPreview": "Προεπισκόπηση της ερώτησης που θα στείλουμε",
+          "askButton": "Άνοιγμα συνομιλίας ΙΑ με αυτή την ερώτηση",
+          "originFallback": "τη χώρα αναχώρησής μου",
+          "destinationFallback": "τη χώρα προορισμού μου",
+          "prompt": {
+            "line1Basic": "Σχεδιάζω ένα διεθνές ταξίδι από {{origin}} προς {{destination}}{{tripNameSentence}}.",
+            "line1WithRange": "Σχεδιάζω ένα διεθνές ταξίδι από {{origin}} προς {{destination}} από {{startDate}} μέχρι {{endDate}}{{tripNameSentence}}.",
+            "line1WithStart": "Σχεδιάζω ένα διεθνές ταξίδι από {{origin}} προς {{destination}} με αναχώρηση στις {{startDate}}{{tripNameSentence}}.",
+            "line2": "Παρακαλώ πες μου ποια ταξιδιωτικά έγγραφα, βίζες, απαιτήσεις εισόδου και έγγραφα υγείας μπορεί να χρειαστώ.",
+            "line3": "Χώρισε την απάντηση σε:",
+            "line4": "- Απαραίτητα έγγραφα για την είσοδο στη χώρα",
+            "line5": "- Προτεινόμενα / καλό είναι να έχω έγγραφα",
+            "line6": "- Τυχόν ειδικούς κανόνες για βίζα, transit ή ισχύ διαβατηρίου που πρέπει να γνωρίζω.",
+            "line7": "Απάντησε με μια σύντομη, φιλική προς τον ταξιδιώτη λίστα ελέγχου."
+          },
+          "provider": {
+            "chatgpt": "ChatGPT",
+            "claude": "Claude",
+            "gemini": "Gemini",
+            "perplexity": "Perplexity",
+            "copilot": "Copilot"
+          },
+          "promptCopied": "Η ερώτηση αντιγράφηκε στο πρόχειρο! Επικολλήστε την στη συνομιλία της ΙΑ.",
+          "copyFailed": "Δεν ήταν δυνατή η αντιγραφή στο πρόχειρο. Παρακαλώ αντιγράψτε την ερώτηση χειροκίνητα από την προεπισκόπηση παραπάνω."
+        }
     },
     "explore": {
       "title": "Εξερεύνηση",

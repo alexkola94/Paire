@@ -1259,6 +1259,9 @@
       "arrival": "To",
       "checkIn": "Check-in",
       "checkOut": "Check-out",
+      "attachment": "Attachment",
+      "viewAttachment": "View attachment",
+      "removeAttachment": "Remove",
       "types": {
         "flight": "Flight",
         "hotel": "Hotel",
@@ -1298,7 +1301,7 @@
         "other": "Other"
       }
     },
-    "documents": {
+      "documents": {
       "title": "Documents",
       "noTrip": "No Trip Selected",
       "createTripFirst": "Create a trip to store your documents",
@@ -1322,14 +1325,52 @@
       "expiringDays": "Expires in {{days}}d",
       "expiresIn": "{{days}}d remaining",
       "valid": "Valid",
-      "types": {
+      "attachment": "Attachment",
+      "viewAttachment": "View attachment",
+      "removeAttachment": "Remove",
+        "types": {
         "passport": "Passport",
         "visa": "Visa",
         "booking": "Booking",
         "insurance": "Insurance",
         "ticket": "Ticket",
         "other": "Other"
-      }
+        },
+        "aiHelper": {
+          "title": "Ask AI which documents you need",
+          "subtitle": "We will compose a clear question for your chosen AI based on your route.",
+          "askAiCta": "Ask AI: required documents",
+          "originCountry": "Origin country",
+          "originPlaceholder": "e.g., Greece",
+          "destinationCountry": "Destination country",
+          "destinationPlaceholder": "e.g., Japan",
+          "providerLabel": "Send this question to",
+          "providerHint": "Opens in a new tab with your question prefilled.",
+          "promptPreview": "Preview of the question we will send",
+          "askButton": "Open AI chat with this question",
+          "originFallback": "my home country",
+          "destinationFallback": "my destination country",
+          "prompt": {
+            "line1Basic": "I am planning international travel from {{origin}} to {{destination}}{{tripNameSentence}}.",
+            "line1WithRange": "I am planning international travel from {{origin}} to {{destination}} from {{startDate}} to {{endDate}}{{tripNameSentence}}.",
+            "line1WithStart": "I am planning international travel from {{origin}} to {{destination}} starting on {{startDate}}{{tripNameSentence}}.",
+            "line2": "Please tell me which travel documents, visas, entry requirements, and health documents I may need.",
+            "line3": "Split the answer into:",
+            "line4": "- Essential documents required for entry",
+            "line5": "- Recommended / nice-to-have documents",
+            "line6": "- Any country-specific visa rules, transit rules, or passport validity rules I should know.",
+            "line7": "Answer in a concise, traveler-friendly checklist."
+          },
+          "provider": {
+            "chatgpt": "ChatGPT",
+            "claude": "Claude",
+            "gemini": "Gemini",
+            "perplexity": "Perplexity",
+            "copilot": "Copilot"
+          },
+          "promptCopied": "Prompt copied to clipboard! Paste it into the AI chat.",
+          "copyFailed": "Could not copy to clipboard. Please copy the prompt manually from the preview above."
+        }
     },
     "explore": {
       "title": "Explore",

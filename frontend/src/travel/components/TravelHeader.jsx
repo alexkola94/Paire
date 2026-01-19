@@ -4,16 +4,23 @@ import { motion } from 'framer-motion'
 import { FiRefreshCw, FiMapPin, FiCalendar } from 'react-icons/fi'
 import { RiPlaneLine } from 'react-icons/ri'
 import { useTravelMode } from '../context/TravelModeContext'
+import { useModal } from '../../context/ModalContext'
 import TripSelector from './TripSelector'
 import '../styles/TravelLayout.css'
 
 /**
  * Travel Header Component
  * Shows trip info, sync status, and exit button
+ * Partially hides in Discovery Mode, expands on hover
  */
-const TravelHeader = memo(({ trip, syncStatus }) => {
+const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false }) => {
   const { t } = useTranslation()
   const { exitTravelMode } = useTravelMode()
+  // When any modal is open (e.g. "Ask AI" or "Add Document"),
+  // hide the travel header so it doesn't visually cut into the dialog.
+  // This mirrors the behavior used for the bottom navigation.
+  const { hasOpenModals } = useModal()
+  const [isHovered, setIsHovered] = useState(false)
 
   // Format date range for display
   const formatDateRange = () => {
@@ -65,8 +72,18 @@ const TravelHeader = memo(({ trip, syncStatus }) => {
   const tripStatus = getTripStatus()
   const dateRange = formatDateRange()
 
+  // Do not render header while a modal is open.
+  // Keeps overlays clean on mobile/tablet and prevents clipping.
+  if (hasOpenModals) {
+    return null
+  }
+
   return (
-    <header className="travel-header">
+    <header
+      className={`travel-header ${isDiscoveryMode ? 'discovery-collapsed' : ''} ${isHovered ? 'hovered' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="travel-header-content">
         {/* Exit button */}
         <motion.button

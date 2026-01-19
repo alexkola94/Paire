@@ -8,6 +8,8 @@ import TravelHeader from './TravelHeader'
 import TravelNavigation from './TravelNavigation'
 import OfflineIndicator from './common/OfflineIndicator'
 import usePOIData from '../hooks/usePOIData'
+import useDebounce from '../hooks/useDebounce'
+import { fetchStays, getZoomBasedSettings } from '../services/discoveryService'
 import { FiEye, FiMap, FiX } from 'react-icons/fi'
 import '../styles/TravelLayout.css'
 import '../styles/TravelLightTheme.css'
@@ -17,6 +19,7 @@ const DiscoveryMap = lazy(() => import('./discovery/DiscoveryMap'))
 const DiscoverySearch = lazy(() => import('./discovery/DiscoverySearch'))
 const DiscoveryControls = lazy(() => import('./discovery/DiscoveryControls'))
 const POISheet = lazy(() => import('./discovery/POISheet'))
+const StayDetailsSheet = lazy(() => import('./discovery/StayDetailsSheet'))
 const DistanceOverlay = lazy(() => import('./discovery/DistanceOverlay'))
 
 // Mapbox configuration for static map fallback
@@ -124,6 +127,9 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
   } = usePOIData()
 
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [stays, setStays] = useState([])
+  const [selectedStay, setSelectedStay] = useState(null)
+  const [staysLoading, setStaysLoading] = useState(false)
 
   // Static map URL for non-discovery mode
   const staticMapUrl = activeTrip?.latitude && activeTrip?.longitude
@@ -134,6 +140,63 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
   useEffect(() => {
     setMapLoaded(false)
   }, [activeTrip?.id])
+
+  // Debounce map view state to prevent excessive API calls (700ms delay)
+  // This protects the SerpApi limit (250 req/month) while dragging/zooming
+  const debouncedMapViewState = useDebounce(mapViewState, 700)
+
+  // Fetch stays only when accommodation category is selected
+  // Uses debounced map center to save API calls
+  // Applies zoom-based filtering: zoomed out = fewer best results, zoomed in = more results
+  useEffect(() => {
+    const isAccommodationActive = activeCategories.includes('accommodation')
+
+    if (!isAccommodationActive) {
+      // Clear stays when accommodation is not selected
+      setStays([])
+      return
+    }
+
+    // Use debounced map view center if available, otherwise fall back to trip location
+    const lat = debouncedMapViewState?.latitude || activeTrip?.latitude
+    const lon = debouncedMapViewState?.longitude || activeTrip?.longitude
+    const zoom = debouncedMapViewState?.zoom || 14
+
+    // Get zoom-based settings for limit and min rating
+    const { limit, minRating } = getZoomBasedSettings(zoom)
+
+    const loadStays = async () => {
+      if (isDiscoveryMode && lat && lon && isAccommodationActive) {
+        setStaysLoading(true)
+        try {
+          // Pass zoom-based limit to API to minimize data transfer (though SerpApi paging handles it)
+          const staysData = await fetchStays(lat, lon, undefined, limit)
+          // Filter by minimum rating based on zoom level
+          const filteredStays = staysData.filter(stay => (stay.rating || 0) >= minRating)
+          setStays(filteredStays)
+        } catch (error) {
+          console.error('Error fetching stays:', error)
+        } finally {
+          setStaysLoading(false)
+        }
+      }
+    }
+    loadStays()
+  }, [isDiscoveryMode, debouncedMapViewState, activeTrip?.latitude, activeTrip?.longitude, activeCategories])
+
+  /**
+   * Handle stay marker click
+   */
+  const handleStayClick = useCallback((stay) => {
+    setSelectedStay(stay)
+  }, [])
+
+  /**
+   * Handle stay sheet close
+   */
+  const handleStaySheetClose = useCallback(() => {
+    setSelectedStay(null)
+  }, [])
 
   /**
    * Handle toggle button click
@@ -200,8 +263,11 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
         <Suspense fallback={<StaticMapFallback trip={activeTrip} showOverlay={false} />}>
           <DiscoveryMap
             pois={allPOIs}
+            stays={stays}
             onPOIClick={handlePOIClick}
+            onStayClick={handleStayClick}
             selectedPOIId={selectedPOI?.id || selectedPOI?.poiId}
+            selectedStayId={selectedStay?.id}
             showTripMarker
             mapStyle="detailed"
           />
@@ -220,8 +286,8 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
         )
       )}
 
-      {/* Header - Always visible */}
-      <TravelHeader trip={activeTrip} syncStatus={syncStatus} />
+      {/* Header - Always visible, collapses in Discovery Mode */}
+      <TravelHeader trip={activeTrip} syncStatus={syncStatus} isDiscoveryMode={isDiscoveryMode} />
 
       {/* Discovery Mode UI Layer */}
       <AnimatePresence mode="wait">
@@ -248,6 +314,12 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
                 onPin={handlePinPOI}
                 isPinned={selectedPOI ? checkIsPinned(selectedPOI.poiId || selectedPOI.id) : false}
                 tripLocation={activeTrip ? { lat: activeTrip.latitude, lon: activeTrip.longitude } : null}
+              />
+              <StayDetailsSheet
+                stay={selectedStay}
+                onClose={handleStaySheetClose}
+                tripLocation={activeTrip ? { lat: activeTrip.latitude, lon: activeTrip.longitude } : null}
+                cityName={activeTrip?.destination || ''}
               />
             </Suspense>
           </motion.div>

@@ -428,6 +428,9 @@ builder.Services.AddHttpClient<ICurrencyService, CurrencyService>(client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
+// Explicitly register generic HttpClient for proxies
+builder.Services.AddHttpClient();
+
 // =====================================================
 // Configure Background Services (Optional - Uncomment to enable)
 // =====================================================

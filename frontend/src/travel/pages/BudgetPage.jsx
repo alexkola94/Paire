@@ -12,7 +12,8 @@ import {
   FiShoppingBag,
   FiMoreHorizontal,
   FiTrash2,
-  FiX
+  FiX,
+  FiLoader
 } from 'react-icons/fi'
 import { travelExpenseService } from '../services/travelApi'
 import { BUDGET_CATEGORIES } from '../utils/travelConstants'
@@ -36,6 +37,7 @@ const BudgetPage = ({ trip }) => {
   const { t } = useTranslation()
   const [expenses, setExpenses] = useState([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
 
@@ -79,14 +81,43 @@ const BudgetPage = ({ trip }) => {
   const remaining = budget - total
   const percentUsed = budget > 0 ? Math.min(100, (total / budget) * 100) : 0
 
-  // Handle add expense
+  // Handle add expense with optimistic updates
   const handleAddExpense = async (expenseData) => {
+    // Close modal immediately for optimistic UX
+    setShowAddModal(false)
+
+    // Create optimistic expense with temporary ID
+    const tempId = `temp-${Date.now()}`
+    const optimisticExpense = {
+      id: tempId,
+      tripId: trip.id,
+      ...expenseData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      _optimistic: true
+    }
+
+    // Add optimistic expense to list immediately
+    setExpenses(prev => [...prev, optimisticExpense])
+    setSaving(true)
+
     try {
-      const newExpense = await travelExpenseService.create(trip.id, expenseData)
-      setExpenses(prev => [...prev, newExpense])
-      setShowAddModal(false)
+      // Call API in background
+      await travelExpenseService.create(trip.id, expenseData)
+      
+      // Refresh expenses list to get real expense from server
+      const refreshedExpenses = await travelExpenseService.getByTrip(trip.id)
+      setExpenses(refreshedExpenses || [])
+      
+      // Dispatch event to invalidate cache in TravelHome
+      window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'expense', tripId: trip.id } }))
     } catch (error) {
       console.error('Error adding expense:', error)
+      // Remove optimistic expense on error
+      setExpenses(prev => prev.filter(e => e.id !== tempId))
+      // TODO: Show error message to user (toast or inline)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -95,6 +126,9 @@ const BudgetPage = ({ trip }) => {
     try {
       await travelExpenseService.delete(trip.id, expenseId)
       setExpenses(prev => prev.filter(e => e.id !== expenseId))
+      
+      // Dispatch event to invalidate cache in TravelHome
+      window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'expense', tripId: trip.id } }))
     } catch (error) {
       console.error('Error deleting expense:', error)
     }
@@ -202,7 +236,15 @@ const BudgetPage = ({ trip }) => {
       {/* Recent Expenses */}
       <div className="recent-expenses">
         <div className="section-header">
-          <h3 className="section-title">{t('travel.budget.recentExpenses', 'Recent Expenses')}</h3>
+          <div className="header-info">
+            <h3 className="section-title">{t('travel.budget.recentExpenses', 'Recent Expenses')}</h3>
+            {saving && (
+              <span className="saving-indicator">
+                <FiLoader size={14} className="spinning" />
+                {t('travel.budget.adding', 'Adding expense...')}
+              </span>
+            )}
+          </div>
           <button className="add-btn" onClick={() => setShowAddModal(true)}>
             <FiPlus size={20} />
           </button>
@@ -295,6 +337,9 @@ const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
     if (!formData.amount || !formData.description) return
 
     setSaving(true)
+    // Close modal immediately for optimistic UX
+    onClose()
+    // Call onSave which will handle optimistic update
     await onSave({
       ...formData,
       amount: parseFloat(formData.amount),

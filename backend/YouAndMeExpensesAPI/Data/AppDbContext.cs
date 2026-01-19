@@ -678,6 +678,10 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.RoomType).HasColumnName("room_type").HasMaxLength(100);
                 entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(50).HasDefaultValue("confirmed");
                 entity.Property(e => e.ReminderMinutes).HasColumnName("reminder_minutes");
+                entity.Property(e => e.AttachmentUrl).HasColumnName("attachment_url");
+                entity.Property(e => e.AttachmentName).HasColumnName("attachment_name").HasMaxLength(255);
+                entity.Property(e => e.AttachmentType).HasColumnName("attachment_type").HasMaxLength(100);
+                entity.Property(e => e.AttachmentSize).HasColumnName("attachment_size");
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
 

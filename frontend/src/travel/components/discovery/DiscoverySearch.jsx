@@ -10,7 +10,7 @@ import {
   FiDollarSign,
   FiHeart
 } from 'react-icons/fi'
-import { FaBus } from 'react-icons/fa'
+import { FaBus, FaBed } from 'react-icons/fa'
 import { DISCOVERY_POI_CATEGORIES } from '../../utils/travelConstants'
 import '../../styles/DiscoverySearch.css'
 
@@ -21,7 +21,8 @@ const categoryIcons = {
   shopping: FiShoppingBag,
   transit: FaBus,
   atm: FiDollarSign,
-  pharmacy: FiHeart
+  pharmacy: FiHeart,
+  accommodation: FaBed
 }
 
 /**
