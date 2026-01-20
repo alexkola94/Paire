@@ -9,6 +9,75 @@
   max-height: 95vh;
 }
 
+/* Light theme: soften global wizard shell (overlay, header, footer) so it feels
+   like a glass card floating over the travel layout rather than a dark modal. */
+.travel-layout:not([data-theme='dark']) .wizard-overlay {
+  background: rgba(15, 7, 26, 0.25);
+  backdrop-filter: blur(18px);
+}
+
+/* Light theme container – clean glass card surface using global tokens */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard {
+  background: var(--glass-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--glass-border);
+  padding: var(--spacing-xl);
+  transition: var(--transition);
+}
+
+/* Light theme: header + footer sit on subtle off‑white rails rather than
+   inheriting darker defaults from the generic wizard styles. */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-header,
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-footer {
+  background: rgba(249, 250, 251, 0.95);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+/* Tighten title tracking to align with Paire typography guidelines. */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-header h2 {
+  letter-spacing: -0.03em;
+}
+
+/* Close button in light theme: soft hover halo instead of harsh contrast. */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-close {
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-close:hover {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-primary);
+}
+
+/* Light theme: make wizard content breathe a bit more on large layouts */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-content {
+  padding: var(--spacing-xl);
+}
+
+/* Light theme: progress strip sits on a soft pill background */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-progress {
+  background: rgba(248, 250, 252, 0.9);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Light theme: keep progress steps soft but readable */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step.active {
+  background: var(--primary-gradient);
+  color: #ffffff;
+}
+
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step.completed {
+  background: var(--success);
+  color: #ffffff;
+}
+
 /* Split layout for step 1: details left, map right */
 .wizard-step-split {
   display: grid;
@@ -21,6 +90,19 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  /* Allow the left column to scroll independently from the map on large
+     screens so long multi‑city routes don't push the map out of view. */
+  max-height: calc(90vh - 160px);
+  overflow-y: auto;
+  padding-right: var(--spacing-md);
+}
+
+/* Light theme: gently separate the left column from the shell */
+.travel-layout:not([data-theme='dark']) .wizard-step-details {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .wizard-step-map {
@@ -45,6 +127,17 @@
   position: relative;
 }
 
+/* Light theme: map wrapper framed as a bright glass card */
+.travel-layout:not([data-theme='dark']) .city-selection-map-wrapper {
+  border-radius: var(--radius-lg);
+  border: var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  transition: var(--transition);
+}
+
 /* Home marker (current location) - icon only */
 .home-marker {
   position: relative;
@@ -54,13 +147,19 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  /* Match Paire primary (Royal Amethyst) glassy style */
-  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  /* Default (dark theme) marker gradient */
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   border: 2px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.55);
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+/* Light theme: use app primary for home marker */
+.travel-layout:not([data-theme='dark']) .home-marker {
+  background: var(--primary-gradient);
+  box-shadow: 0 4px 14px rgba(142, 68, 173, 0.4);
 }
 
 .home-marker:hover {
@@ -91,9 +190,9 @@
   top: var(--spacing-md);
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 1rem;
   padding: var(--spacing-md);
   display: flex;
@@ -105,8 +204,15 @@
   pointer-events: none;
 }
 
+/* Light theme: keep instructions bar airy over the map */
+.travel-layout:not([data-theme='dark']) .city-selection-instructions {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: var(--shadow-sm);
+}
+
 .city-selection-instructions svg {
-  color: #8B5CF6;
+  color: #6366f1;
 }
 
 /* City Markers - Simple dots on map */
@@ -123,9 +229,15 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #8B5CF6;
+  background: #6366f1;
   border: 2px solid white;
   box-shadow: 0 2px 6px rgba(139, 92, 246, 0.5);
+}
+
+/* Light theme: align map dots to primary accent */
+.travel-layout:not([data-theme='dark']) .city-marker-dot {
+  background: var(--primary);
+  box-shadow: 0 2px 6px rgba(142, 68, 173, 0.5);
 }
 
 @keyframes pulse {
@@ -179,6 +291,18 @@
   transform: translateY(-1px);
 }
 
+/* Light theme: city tags become soft chips on off-white */
+.travel-layout:not([data-theme='dark']) .city-tag {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .city-tag:hover {
+  background: #eef2ff;
+  border-color: rgba(129, 140, 248, 0.8);
+}
+
 .city-tag-number {
   width: 22px;
   height: 22px;
@@ -191,6 +315,11 @@
   font-size: 0.7rem;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+/* Light theme: city index badge uses global primary gradient */
+.travel-layout:not([data-theme='dark']) .city-tag-number {
+  background: var(--primary-gradient);
 }
 
 .city-tag-info {
@@ -251,8 +380,8 @@
 
 .city-distance-item {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
+  flex-direction: column;
+  gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
@@ -264,6 +393,30 @@
 .city-distance-item:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(139, 92, 246, 0.2);
+}
+
+.distance-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+/* Light theme: distance rows as subtle list cards */
+.travel-layout:not([data-theme='dark']) .cities-distance-summary {
+  border-top-color: rgba(148, 163, 184, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .city-distance-item {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .city-distance-item:hover {
+  background: #eef2ff;
+  border-color: rgba(129, 140, 248, 0.85);
 }
 
 .distance-route {
@@ -284,6 +437,11 @@
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 600;
+}
+
+/* Light theme: distance badges tied to primary gradient */
+.travel-layout:not([data-theme='dark']) .distance-step {
+  background: var(--primary-gradient);
 }
 
 .distance-arrow {
@@ -321,10 +479,111 @@
   text-align: right;
 }
 
+/* Light theme: distance text uses primary color */
+.travel-layout:not([data-theme='dark']) .distance-value {
+  color: var(--primary);
+}
+
+/* Transport selection row under each distance item */
+.transport-leg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding-top: 0.25rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+.transport-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.14), rgba(124, 58, 237, 0.04));
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  box-shadow: 0 4px 14px rgba(15, 7, 26, 0.35);
+  transition: var(--transition);
+}
+
+.transport-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.transport-current-mode {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8B5CF6;
+}
+
+.transport-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.transport-mode-select {
+  min-width: 150px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: 0.35rem 0.75rem;
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+.transport-mode-select:focus {
+  border-color: rgba(139, 92, 246, 0.8);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.6);
+}
+
+.transport-mode-select:hover {
+  border-color: rgba(139, 92, 246, 0.7);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.transport-suggestion-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.travel-layout:not([data-theme='dark']) .transport-leg-row {
+  border-top-color: rgba(148, 163, 184, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-mode-pill {
+  /* In light theme, transport pill becomes a neutral chip with subtle border –
+     keeping purple only in text/icons to respect the light palette. */
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.6);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-mode-select {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.7);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-mode-select:hover {
+  background: #eef2ff;
+  border-color: rgba(129, 140, 248, 0.9);
+}
+
 /* Total Trip Distance */
 .trip-total-distance {
   margin-top: var(--spacing-md);
   padding: var(--spacing-md) var(--spacing-lg);
+  /* Default (dark theme) version keeps a subtle purple tint for readability;
+     light mode is neutralised below. */
   background: rgba(139, 92, 246, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(139, 92, 246, 0.3);
@@ -333,6 +592,14 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-md);
+}
+
+/* Light theme: total distance highlight uses primary tokens */
+.travel-layout:not([data-theme='dark']) .trip-total-distance {
+  /* Large surface uses neutral off‑white; primary stays in text only. */
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: var(--shadow-sm);
 }
 
 .total-distance-label {
@@ -348,6 +615,59 @@
   font-weight: 700;
   color: #8B5CF6;
   letter-spacing: 0.02em;
+}
+
+/* Optional legs between Home and the route endpoints, shown as a compact
+   summary strip above the detailed city-to-city legs. Mirrors the calm
+   home-leg styling used on TravelHome. */
+.home-legs-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: var(--spacing-sm);
+  padding: 0.5rem var(--spacing-md);
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.home-leg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.home-leg-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.home-leg-distance {
+  font-weight: 600;
+  color: #8B5CF6;
+}
+
+.travel-layout:not([data-theme='dark']) .home-legs-summary {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .home-leg-distance {
+  color: var(--primary);
+}
+
+/* Light theme: total distance uses primary token */
+.travel-layout:not([data-theme='dark']) .total-distance-value {
+  color: var(--primary);
 }
 
 /* Header Delete Button */
@@ -455,6 +775,14 @@
     grid-template-columns: 1fr;
   }
 
+  /* On tablet/mobile we fall back to a shared scroll to avoid nested
+     scrolling behaviours. */
+  .wizard-step-details {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
   .wizard-step-map {
     margin-top: var(--spacing-lg);
   }
@@ -484,6 +812,18 @@
 .city-date-card:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Light theme: date cards as bright glass surfaces */
+.travel-layout:not([data-theme='dark']) .city-date-card {
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.travel-layout:not([data-theme='dark']) .city-date-card:hover {
+  background: #f9fafb;
+  border-color: rgba(139, 92, 246, 0.4);
 }
 
 .city-date-header {
@@ -581,6 +921,18 @@
   transition: all 0.3s ease-in-out;
 }
 
+/* Light theme: route overview panel integrates with light shell */
+.travel-layout:not([data-theme='dark']) .route-overview-card {
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.travel-layout:not([data-theme='dark']) .endpoint-chip {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.14) 0%, rgba(124, 58, 237, 0.06) 100%);
+  box-shadow: var(--shadow-md);
+}
+
 .endpoint-number {
   width: 22px;
   height: 22px;
@@ -593,6 +945,11 @@
   font-size: 0.75rem;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+/* Light theme: route badges reuse global primary gradient */
+.travel-layout:not([data-theme='dark']) .endpoint-number {
+  background: var(--primary-gradient);
 }
 
 .endpoint-text {

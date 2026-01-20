@@ -114,6 +114,15 @@ namespace YouAndMeExpensesAPI.Models
         public double? Longitude { get; set; }
 
         /// <summary>
+        /// Preferred transport mode used to travel into this city from the previous one.
+        /// Examples: car, train, flight, bus, ferry, walking.
+        /// Optional for backward compatibility.
+        /// </summary>
+        [Column("transport_mode")]
+        [MaxLength(50)]
+        public string? TransportMode { get; set; }
+
+        /// <summary>
         /// Order of the city within the trip route (0-based).
         /// Stored as \"order_index\" to avoid SQL reserved word collisions.
         /// </summary>

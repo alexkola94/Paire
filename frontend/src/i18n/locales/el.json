@@ -1179,7 +1179,25 @@
       "planActivities": "Σχεδιάστε τις δραστηριότητές σας",
       "encourageCountdown": "Πάρτε τον χρόνο σας για την προετοιμασία. Το έχετε!",
       "encourageActive": "Απολαύστε κάθε στιγμή του ταξιδιού σας.",
-      "encourageCompleted": "Ελπίζουμε να είχατε ένα υπέροχο ταξίδι!"
+      "encourageCompleted": "Ελπίζουμε να είχατε ένα υπέροχο ταξίδι!",
+      "createTripTypeTitle": "Τι είδους ταξίδι;",
+      "createTripTypeDescription": "Επιλέξτε ανάμεσα σε έναν απλό προορισμό ή μια διαδρομή πολλαπλών πόλεων.",
+      "singleTripLabel": "Ταξίδι με έναν προορισμό",
+      "singleTripSubtitle": "Ένας βασικός προορισμός με απλές ημερομηνίες.",
+      "multiCityTripLabel": "Ταξίδι πολλαπλών πόλεων",
+      "multiCityTripSubtitle": "Πολλές πόλεις σε μία χαρτογραφημένη διαδρομή.",
+      "destinationSnapshotTitle": "Ο προορισμός σας",
+      "destinationSnapshotBase": "Ένα ήρεμο σημείο βάσης για να οργανώσετε αυτό το ταξίδι.",
+      "destinationFallback": "Προορισμός ταξιδιού",
+      "tripDuration": "{{days}} ημέρες συνολικά",
+      "tripStatusLabel": "Κατάσταση ταξιδιού",
+      "tripStatusPreparing": "Προετοιμασία",
+      "tripStatusActive": "Στο ταξίδι",
+      "tripStatusCompleted": "Επιστροφή στο σπίτι",
+      "quickActionsTitle": "Γρήγορες ενέργειες",
+      "quickActionsPacking": "Λίστα αποσκευών",
+      "quickActionsBudget": "Προϋπολογισμός ταξιδιού",
+      "quickActionsItinerary": "Πρόγραμμα"
     },
     "budget": {
       "title": "Προϋπολογισμός",
@@ -1487,6 +1505,7 @@
       "police": "Αστυνομία",
       "ambulance": "Ασθενοφόρο",
       "fire": "Πυροσβεστική",
+      "general": "Γενικός Αριθμός Έκτακτης Ανάγκης",
       "note": "Πατήστε τους αριθμούς για άμεση κλήση"
     },
     "phrasebook": {
@@ -1496,7 +1515,12 @@
       "thank_you": "Ευχαριστώ",
       "yes": "Ναι",
       "no": "Όχι",
+      "please": "Παρακαλώ",
+      "sorry": "Συγγνώμη",
       "help": "Βοήθεια",
+      "where_is": "Πού είναι...;",
+      "do_you_speak_english": "Μιλάτε Αγγλικά;",
+      "i_dont_understand": "Δεν καταλαβαίνω",
       "bathroom": "Τουαλέτα",
       "water": "Νερό",
       "how_much": "Πόσο κοστίζει;",
@@ -1533,7 +1557,10 @@
         "namePlaceholder": "π.χ., Ευρωπαϊκή Περιπέτεια",
         "selectedCities": "Επιλεγμένες Πόλεις",
         "calculatingRoutes": "Υπολογισμός καλύτερων διαδρομών...",
-        "totalDistance": "Συνολική Απόσταση Ταξιδιού"
+        "totalDistance": "Συνολική Απόσταση Ταξιδιού",
+        "transportLabel": "Μέσο μετακίνησης",
+        "transportSuggested": "Πρόταση: {{mode}}",
+        "transportSeaHint": "Αυτή η διαδρομή φαίνεται να περνάει από θάλασσα, οπότε διαθέσιμες είναι μόνο πτήση ή πλοίο."
       },
       "step2": {
         "title": "Ορισμός Ημερομηνιών",
@@ -1558,6 +1585,16 @@
       "expand": "Επέκταση χάρτη",
       "expandedTitle": "Διαδρομή Ταξιδιού",
       "more": "περισσότερες"
+    }
+  },
+  "transport": {
+    "mode": {
+      "car": "Αυτοκίνητο",
+      "train": "Τρένο",
+      "flight": "Πτήση",
+      "bus": "Λεωφορείο",
+      "ferry": "Πλοίο",
+      "walking": "Περπάτημα"
     }
   }
 }

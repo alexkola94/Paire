@@ -2079,6 +2079,11 @@ namespace YouAndMeExpensesAPI.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("longitude");
 
+                    b.Property<string>("TransportMode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("transport_mode");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)

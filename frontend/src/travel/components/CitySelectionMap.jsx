@@ -59,17 +59,57 @@ const CitySelectionMap = memo(({
   // Ordered cities for consistent numbering and routing
   const orderedCities = [...cities].sort((a, b) => (a.order || 0) - (b.order || 0))
 
+  /**
+   * Helper: build the list of route coordinates based on the selected transport mode
+   * for each leg. We keep a single polyline but simplify legs that are not
+   * travelled by car/train/bus (e.g. flights / ferries) into straight segments.
+   * Includes: Home → first city, all city-to-city legs, and last city → Home.
+   */
+  const buildRouteCoordinates = () => {
+    const coords = []
+
+    if (orderedCities.length === 0) {
+      return coords
+    }
+
+    const first = orderedCities[0]
+    const last = orderedCities[orderedCities.length - 1]
+
+    // Home → first city leg
+    if (homeLocation && first.latitude && first.longitude) {
+      coords.push([homeLocation.longitude, homeLocation.latitude])
+      coords.push([first.longitude, first.latitude])
+    } else if (first.latitude && first.longitude) {
+      coords.push([first.longitude, first.latitude])
+    }
+
+    // City-to-city legs (append in order)
+    for (let i = 0; i < orderedCities.length - 1; i++) {
+      const from = orderedCities[i]
+      const to = orderedCities[i + 1]
+      if (!from.latitude || !from.longitude || !to.latitude || !to.longitude) continue
+
+      coords.push([from.longitude, from.latitude])
+      coords.push([to.longitude, to.latitude])
+    }
+
+    // Last city → Home leg
+    if (homeLocation && last.latitude && last.longitude) {
+      coords.push([last.longitude, last.latitude])
+      coords.push([homeLocation.longitude, homeLocation.latitude])
+    }
+
+    return coords
+  }
+
   // Calculate route line coordinates from Home (if available) through all cities
-  const routeCoordinates = [
-    ...(homeLocation ? [[homeLocation.longitude, homeLocation.latitude]] : []),
-    ...orderedCities
-      .filter(city => city.latitude && city.longitude)
-      .map(city => [city.longitude, city.latitude])
-  ]
+  const routeCoordinates = buildRouteCoordinates()
 
   /**
    * Fetch realistic route geometry from Mapbox Directions API.
    * We build one continuous LineString going from Home → City 1 → City 2 → ...
+   * For legs where the incoming transport mode is "flight", we intentionally keep
+   * the geometry clean and straight instead of following roads.
    * Falls back to simple straight-line coordinates when Directions are not available.
    */
   useEffect(() => {
@@ -85,33 +125,79 @@ const CitySelectionMap = memo(({
       try {
         setRoutesLoading(true)
 
-        // Build list of segment pairs (origin/destination)
+        // Build list of segment pairs (origin/destination) with optional transport mode
         const segments = []
-        for (let i = 0; i < routeCoordinates.length - 1; i++) {
-          const [lon1, lat1] = routeCoordinates[i]
-          const [lon2, lat2] = routeCoordinates[i + 1]
-          segments.push({ lat1, lon1, lat2, lon2 })
+
+        if (orderedCities.length > 0) {
+          const first = orderedCities[0]
+          const last = orderedCities[orderedCities.length - 1]
+
+          // Home → first city leg. We align the visual routing mode with the
+          // incoming transport mode of the first city so that choosing
+          // "flight" or "ferry" turns this segment into a clean straight line
+          // instead of a road-following path.
+          if (homeLocation && first.latitude && first.longitude) {
+            const firstMode = first.transportMode || 'driving'
+            segments.push({
+              lat1: homeLocation.latitude,
+              lon1: homeLocation.longitude,
+              lat2: first.latitude,
+              lon2: first.longitude,
+              mode: firstMode
+            })
+          }
+
+          // City-to-city legs; transportMode is stored on the incoming city
+          for (let i = 0; i < orderedCities.length - 1; i++) {
+            const from = orderedCities[i]
+            const to = orderedCities[i + 1]
+            if (!from.latitude || !from.longitude || !to.latitude || !to.longitude) continue
+
+            segments.push({
+              lat1: from.latitude,
+              lon1: from.longitude,
+              lat2: to.latitude,
+              lon2: to.longitude,
+              mode: to.transportMode || 'driving'
+            })
+          }
+
+          // Last city → Home leg
+          if (homeLocation && last.latitude && last.longitude) {
+            segments.push({
+              lat1: last.latitude,
+              lon1: last.longitude,
+              lat2: homeLocation.latitude,
+              lon2: homeLocation.longitude,
+              mode: 'driving'
+            })
+          }
         }
 
         const results = await Promise.all(
-          segments.map(seg =>
-            getRouteDirections(seg.lat1, seg.lon1, seg.lat2, seg.lon2, 'driving')
-          )
+          segments.map(seg => {
+            // For flights or ferries we skip road routing and keep a clean straight segment.
+            if (seg.mode === 'flight' || seg.mode === 'ferry') {
+              return Promise.resolve(null)
+            }
+            return getRouteDirections(seg.lat1, seg.lon1, seg.lat2, seg.lon2, 'driving')
+          })
         )
 
         // Concatenate all segment geometries into a single LineString
         const allCoords = []
         segments.forEach((seg, index) => {
           const result = results[index]
-          if (result?.geometry?.coordinates?.length > 1) {
-            // Append route geometry coordinates
-            allCoords.push(...result.geometry.coordinates)
-          } else {
-            // Fallback: straight line for this segment
+
+          // For flight legs or missing geometry, fall back to a simple straight line
+          if (seg.mode === 'flight' || !(result?.geometry?.coordinates?.length > 1)) {
             allCoords.push(
               [seg.lon1, seg.lat1],
               [seg.lon2, seg.lat2]
             )
+          } else {
+            // Append route geometry coordinates
+            allCoords.push(...result.geometry.coordinates)
           }
         })
 
@@ -141,8 +227,10 @@ const CitySelectionMap = memo(({
     return () => {
       cancelled = true
     }
+    // We intentionally depend on the full cities array so that changing transportMode
+    // for a leg recomputes the rendered route.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeLocation, orderedCities.length])
+  }, [homeLocation, cities])
 
   /**
    * Handle map click to add city
@@ -234,13 +322,14 @@ const CitySelectionMap = memo(({
         attributionControl={false}
         reuseMaps
         cursor={isAdding ? 'wait' : 'crosshair'}
-        scrollWheelZoom={true}
+        // Limit scroll-wheel zoom so normal page scrolling doesn't break the map.
+        // Users can still zoom with Ctrl+scroll, pinch, double‑click, or UI controls.
+        scrollZoom={{ around: 'center', ctrlKeyOnly: true }}
         dragPan={true}
         dragRotate={true}
         doubleClickZoom={true}
         touchZoom={true}
         touchRotate={true}
-        keyboard={true}
       >
         {/* Home marker (user's current location) */}
         {homeLocation && (

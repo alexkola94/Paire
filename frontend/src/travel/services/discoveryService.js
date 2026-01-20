@@ -454,13 +454,13 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
  * @param {number} lat2 - Destination latitude
  * @param {number} lon2 - Destination longitude
  * @param {'driving'|'walking'|'cycling'} profile - Mapbox routing profile
- * @returns {Promise<{ geometry: GeoJSON.LineString | null, distanceKm: number | null }>}
+ * @returns {Promise<{ geometry: GeoJSON.LineString | null, distanceKm: number | null, usedFallback: boolean }>}
  */
 export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driving') => {
   // If Mapbox is not configured, gracefully fall back to Haversine distance.
   if (!MAPBOX_TOKEN) {
     const fallback = calculateDistance(lat1, lon1, lat2, lon2)
-    return { geometry: null, distanceKm: fallback }
+    return { geometry: null, distanceKm: fallback, usedFallback: true }
   }
 
   // Basic validation
@@ -470,7 +470,7 @@ export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driv
     lat2 == null ||
     lon2 == null
   ) {
-    return { geometry: null, distanceKm: null }
+    return { geometry: null, distanceKm: null, usedFallback: true }
   }
 
   try {
@@ -503,12 +503,14 @@ export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driv
     if (!route) {
       // No route found – still provide straight-line distance so UI can show something.
       const fallback = calculateDistance(lat1, lon1, lat2, lon2)
-      return { geometry: null, distanceKm: fallback }
+      const result = { geometry: null, distanceKm: fallback, usedFallback: true }
+      return result
     }
 
     const result = {
       geometry: route.geometry || null,
-      distanceKm: route.distance != null ? route.distance / 1000 : null
+      distanceKm: route.distance != null ? route.distance / 1000 : null,
+      usedFallback: false
     }
 
     // Cache for several days – routes rarely change.
@@ -518,7 +520,7 @@ export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driv
   } catch (error) {
     console.error('Error fetching route directions from Mapbox:', error)
     const fallback = calculateDistance(lat1, lon1, lat2, lon2)
-    return { geometry: null, distanceKm: fallback }
+    return { geometry: null, distanceKm: fallback, usedFallback: true }
   }
 }
 

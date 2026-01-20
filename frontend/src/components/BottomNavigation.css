@@ -43,10 +43,7 @@
     margin: 0 auto;
     position: relative;
     padding: 0 12px;
-    /* Smooth expansion when hovering the nav */
-    transition: all 0.3s ease-in-out;
 }
-
 
 .nav-item {
     display: flex;
@@ -62,8 +59,6 @@
     border: none;
     cursor: pointer;
     position: relative;
-    min-width: 0;
-    /* Ensure items can shrink when labels are hidden */
 }
 
 .nav-item.active {
@@ -76,30 +71,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0;
-    /* Default: slightly smaller icons for compact state */
-    transform: scale(0.9);
-    transition: transform 0.3s ease-in-out, margin-bottom 0.3s ease-in-out;
+    margin-bottom: 4px;
+    transition: transform 0.2s ease;
+}
+
+.nav-item.active .icon-container {
+    transform: translateY(-2px);
 }
 
 .nav-label {
     font-size: 0.7rem;
     font-weight: 500;
     white-space: nowrap;
-    /* Default: hide labels, no extra height */
-    opacity: 0;
-    max-width: 0;
-    overflow: hidden;
-    margin: 0;
-    padding: 0;
-    line-height: 1.2;
-    height: 0;
-    transform: translateY(4px);
-    transition:
-        opacity 0.3s ease-in-out,
-        max-width 0.3s ease-in-out,
-        height 0.3s ease-in-out,
-        transform 0.3s ease-in-out;
 }
 
 /* Bottom Nav Avatar */
@@ -110,55 +93,10 @@
     object-fit: cover;
     border: 1.5px solid currentColor;
     /* Use current text color for border */
-    transition: transform 0.3s ease-in-out;
-    /* Default: match compact icon size */
-    transform: scale(0.9);
 }
 
 .nav-item.active .bottom-nav-avatar {
     border-color: var(--primary, #6c5ce7);
-}
-
-/* Hover state: expand nav back to full look and reveal labels */
-/* Triggered when user hovers anywhere on the bottom nav */
-/* CSS hover (for devices with hover support) */
-.bottom-nav:hover .bottom-nav-container,
-.bottom-nav.hover-active .bottom-nav-container {
-    max-width: 700px;
-    padding: 0 16px;
-}
-
-.bottom-nav:hover .icon-container,
-.bottom-nav.hover-active .icon-container,
-.bottom-nav:hover .bottom-nav-avatar,
-.bottom-nav.hover-active .bottom-nav-avatar {
-    transform: scale(1);
-    margin-bottom: 4px;
-}
-
-.bottom-nav:hover .nav-label,
-.bottom-nav.hover-active .nav-label {
-    opacity: 1;
-    max-width: 120px;
-    height: auto;
-    transform: translateY(0);
-}
-
-/* Also support container hover for debugging */
-.bottom-nav-container:hover .icon-container,
-.bottom-nav-container.hover-active .icon-container,
-.bottom-nav-container:hover .bottom-nav-avatar,
-.bottom-nav-container.hover-active .bottom-nav-avatar {
-    transform: scale(1);
-    margin-bottom: 4px;
-}
-
-.bottom-nav-container:hover .nav-label,
-.bottom-nav-container.hover-active .nav-label {
-    opacity: 1;
-    max-width: 120px;
-    height: auto;
-    transform: translateY(0);
 }
 
 

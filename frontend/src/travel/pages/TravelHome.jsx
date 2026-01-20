@@ -13,7 +13,8 @@ import {
   FiNavigation,
   FiCalendar,
   FiHome,
-  FiLoader
+  FiLoader,
+  FiExternalLink
 } from 'react-icons/fi'
 import { useTravelMode } from '../context/TravelModeContext'
 import { travelExpenseService, packingService, itineraryService, tripCityService, tripService } from '../services/travelApi'
@@ -62,6 +63,9 @@ const TravelHome = ({ trip, onNavigate }) => {
   const { selectTrip, loadTrips } = useTravelMode()
   const [showSetup, setShowSetup] = useState(false)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
+  // Simple chooser so user can pick between single-destination and multi‑city
+  // before we open any heavy wizard UI.
+  const [showCreateTypePicker, setShowCreateTypePicker] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [budgetSummary, setBudgetSummary] = useState(null)
   const [packingProgress, setPackingProgress] = useState(null)
@@ -74,6 +78,9 @@ const TravelHome = ({ trip, onNavigate }) => {
   const [tripCities, setTripCities] = useState([])
   const [routeDistances, setRouteDistances] = useState({})
   const [totalDistance, setTotalDistance] = useState(0)
+  const [homeLocation, setHomeLocation] = useState(null)
+  const [homeToFirstDistance, setHomeToFirstDistance] = useState(0)
+  const [lastToHomeDistance, setLastToHomeDistance] = useState(0)
   const [currentCityIndex, setCurrentCityIndex] = useState(-1)
   const [nextCityIndex, setNextCityIndex] = useState(-1)
   const [advisory, setAdvisory] = useState(null)
@@ -82,13 +89,44 @@ const TravelHome = ({ trip, onNavigate }) => {
   useEffect(() => {
     const handleCreateTrip = () => {
       setIsCreatingNew(true)
-      setShowSetup(true)
+      // For any global "create trip" action (e.g. from TripSelector),
+      // always start with the lightweight type picker so the user can
+      // choose between a single‑destination or multi‑city flow.
+      setShowCreateTypePicker(true)
+      setShowSetup(false)
+      setShowMultiCityWizard(false)
     }
 
     window.addEventListener('travel:create-trip', handleCreateTrip)
     return () => {
       window.removeEventListener('travel:create-trip', handleCreateTrip)
     }
+  }, [])
+
+  // Central handler for the main "create trip" button.
+  // We first show a lightweight picker so the user can decide
+  // between a simple trip and a multi‑city route.
+  const handleOpenCreateTrip = useCallback(() => {
+    setIsCreatingNew(true)
+    setShowCreateTypePicker(true)
+  }, [])
+
+  // Get user's current location (Home) once – this is optional but lets us
+  // include the legs from home → first city and last city → home in the
+  // overall distance summary.
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setHomeLocation({ latitude, longitude })
+      },
+      (error) => {
+        // Fail silently – if location is blocked, we simply don't add home legs.
+        console.warn('Geolocation unavailable for TravelHome distance summary:', error)
+      }
+    )
   }, [])
 
   // Get time-based greeting
@@ -137,11 +175,19 @@ const TravelHome = ({ trip, onNavigate }) => {
     checkMultiCity()
   }, [trip?.id, trip?.tripType])
 
-  // Calculate route distances for multi-city trips
+  // Calculate route distances for multi-city trips.
+  // NOTE:
+  // - `routeDistances` keeps only city-to-city legs (used for future UI),
+  // - `totalDistance` includes:
+  //     home → first city (if homeLocation known)
+  //     + all city-to-city legs
+  //     + last city → home (if homeLocation known)
   useEffect(() => {
     if (!isMultiCity || tripCities.length < 2) {
       setRouteDistances({})
       setTotalDistance(0)
+      setHomeToFirstDistance(0)
+      setLastToHomeDistance(0)
       return
     }
 
@@ -152,8 +198,12 @@ const TravelHome = ({ trip, onNavigate }) => {
         const ordered = [...tripCities].sort((a, b) => (a.order || a.orderIndex || 0) - (b.order || b.orderIndex || 0))
         const distances = {}
         let total = 0
+        let homeToFirst = 0
+        let lastToHome = 0
 
         const tasks = []
+
+        // 1) City-to-city legs
         for (let i = 0; i < ordered.length - 1; i++) {
           const from = ordered[i]
           const to = ordered[i + 1]
@@ -182,11 +232,78 @@ const TravelHome = ({ trip, onNavigate }) => {
           )
         }
 
+        // 2) Optional home legs: home → first city and last city → home
+        if (
+          homeLocation &&
+          homeLocation.latitude != null &&
+          homeLocation.longitude != null &&
+          ordered.length > 0
+        ) {
+          const firstCity = ordered[0]
+          const lastCity = ordered[ordered.length - 1]
+
+          const hasFirstCoords =
+            firstCity?.latitude != null &&
+            firstCity?.longitude != null
+          const hasLastCoords =
+            lastCity?.latitude != null &&
+            lastCity?.longitude != null
+
+          const addLegTask = (fromLat, fromLng, toLat, toLng) =>
+            getRouteDirections(fromLat, fromLng, toLat, toLng, 'driving')
+              .then(result => {
+                if (!cancelled && result?.distanceKm != null) {
+                  // These home legs are only reflected in the total distance.
+                  total += result.distanceKm
+                  return result.distanceKm
+                }
+                return 0
+              })
+              .catch(err => {
+                console.error('Error computing home leg distance:', err)
+                return 0
+              })
+
+          // Home → first city
+          if (hasFirstCoords) {
+            tasks.push(
+              addLegTask(
+                homeLocation.latitude,
+                homeLocation.longitude,
+                firstCity.latitude,
+                firstCity.longitude
+              ).then(km => {
+                if (!cancelled && km > 0) {
+                  homeToFirst = km
+                }
+              })
+            )
+          }
+
+          // Last city → home
+          if (hasLastCoords) {
+            tasks.push(
+              addLegTask(
+                lastCity.latitude,
+                lastCity.longitude,
+                homeLocation.latitude,
+                homeLocation.longitude
+              ).then(km => {
+                if (!cancelled && km > 0) {
+                  lastToHome = km
+                }
+              })
+            )
+          }
+        }
+
         await Promise.all(tasks)
 
         if (!cancelled) {
           setRouteDistances(distances)
           setTotalDistance(total)
+          setHomeToFirstDistance(homeToFirst)
+          setLastToHomeDistance(lastToHome)
         }
       } catch (error) {
         console.error('Error calculating route distances:', error)
@@ -198,7 +315,7 @@ const TravelHome = ({ trip, onNavigate }) => {
     return () => {
       cancelled = true
     }
-  }, [isMultiCity, tripCities])
+  }, [isMultiCity, tripCities, homeLocation])
 
   // Determine current and next city based on dates
   useEffect(() => {
@@ -490,6 +607,97 @@ const TravelHome = ({ trip, onNavigate }) => {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  // Open Google Maps directions with full trip route:
+  // Home (if known) → all cities in order → Home (loop).
+  const handleOpenGoogleDirections = useCallback(() => {
+    if (!homeLocation || !tripCities || tripCities.length === 0) return
+
+    const ordered = getOrderedCities().filter(
+      c => c.latitude != null && c.longitude != null
+    )
+    if (ordered.length === 0) return
+
+    const origin = `${homeLocation.latitude},${homeLocation.longitude}`
+    const destination = `${homeLocation.latitude},${homeLocation.longitude}`
+    const waypoints = ordered
+      .map(city => `${city.latitude},${city.longitude}`)
+      .join('|')
+
+    const baseUrl = 'https://www.google.com/maps/dir/?api=1'
+    const params = [
+      `origin=${encodeURIComponent(origin)}`,
+      `destination=${encodeURIComponent(destination)}`,
+      waypoints ? `waypoints=${encodeURIComponent(waypoints)}` : '',
+      'travelmode=driving'
+    ]
+      .filter(Boolean)
+      .join('&')
+
+    const url = `${baseUrl}&${params}`
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }, [homeLocation, tripCities, getOrderedCities])
+
+  // Open Google Maps directions for an individual leg related to a city card.
+  // Simple rule:
+  // - First city: Home → First city (if home is known)
+  // - Other cities: Previous city → This city
+  const handleOpenLegDirections = useCallback(
+    (cityIndex) => {
+      if (!tripCities || tripCities.length === 0) return
+
+      const ordered = getOrderedCities().filter(
+        c => c.latitude != null && c.longitude != null
+      )
+      if (ordered.length === 0 || !ordered[cityIndex]) return
+
+      let originLat = null
+      let originLng = null
+      let destLat = null
+      let destLng = null
+
+      if (cityIndex === 0) {
+        // Home → First city (only if home location is available)
+        if (!homeLocation || homeLocation.latitude == null || homeLocation.longitude == null) {
+          return
+        }
+        originLat = homeLocation.latitude
+        originLng = homeLocation.longitude
+        destLat = ordered[0].latitude
+        destLng = ordered[0].longitude
+      } else {
+        const prev = ordered[cityIndex - 1]
+        const current = ordered[cityIndex]
+        if (
+          !prev ||
+          prev.latitude == null ||
+          prev.longitude == null ||
+          current.latitude == null ||
+          current.longitude == null
+        ) {
+          return
+        }
+        originLat = prev.latitude
+        originLng = prev.longitude
+        destLat = current.latitude
+        destLng = current.longitude
+      }
+
+      const origin = `${originLat},${originLng}`
+      const destination = `${destLat},${destLng}`
+
+      const baseUrl = 'https://www.google.com/maps/dir/?api=1'
+      const params = [
+        `origin=${encodeURIComponent(origin)}`,
+        `destination=${encodeURIComponent(destination)}`,
+        'travelmode=driving'
+      ].join('&')
+
+      const url = `${baseUrl}&${params}`
+      window.open(url, '_blank', 'noopener,noreferrer')
+    },
+    [tripCities, homeLocation, getOrderedCities]
+  )
+
   const handleDeleteCurrentTrip = useCallback(async () => {
     if (!trip?.id) return
 
@@ -516,8 +724,18 @@ const TravelHome = ({ trip, onNavigate }) => {
         const nextTrip = sorted[0]
         selectTrip(nextTrip)
       } else {
-        // No trips left
+        // No trips left – reset view back to calm \"no trip\" state.
         selectTrip(null)
+        setIsMultiCity(false)
+        setTripCities([])
+        setRouteDistances({})
+        setTotalDistance(0)
+        setHomeToFirstDistance(0)
+        setLastToHomeDistance(0)
+        setCurrentCityIndex(-1)
+        setNextCityIndex(-1)
+        setAdvisory(null)
+        setLoading(false)
       }
 
       setShowDeleteConfirm(false)
@@ -546,7 +764,19 @@ const TravelHome = ({ trip, onNavigate }) => {
             })
             selectTrip(sorted[0])
           } else {
+            // No trips left – hard reset local state so UI falls back to
+            // the empty \"Where to next?\" home prompt.
             selectTrip(null)
+            setIsMultiCity(false)
+            setTripCities([])
+            setRouteDistances({})
+            setTotalDistance(0)
+            setHomeToFirstDistance(0)
+            setLastToHomeDistance(0)
+            setCurrentCityIndex(-1)
+            setNextCityIndex(-1)
+            setAdvisory(null)
+            setLoading(false)
           }
         }
       } catch (cleanupError) {
@@ -630,10 +860,7 @@ const TravelHome = ({ trip, onNavigate }) => {
           <p>{t('travel.home.noTripDescription', 'Start planning your journey')}</p>
           <motion.button
             className="travel-btn calm-btn"
-            onClick={() => {
-              setIsCreatingNew(true)
-              setShowSetup(true)
-            }}
+            onClick={handleOpenCreateTrip}
             whileTap={{ scale: 0.98 }}
           >
             <FiPlus size={18} />
@@ -641,9 +868,133 @@ const TravelHome = ({ trip, onNavigate }) => {
           </motion.button>
         </motion.div>
 
+        {/* When the user is in the calm empty state we still want to ask
+            whether they prefer a single‑destination or multi‑city trip
+            before showing any heavy wizard UI. */}
+        <AnimatePresence>
+          {showCreateTypePicker && (
+            <motion.div
+              className="create-trip-type-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+              onClick={() => setShowCreateTypePicker(false)}
+              aria-modal="true"
+              role="dialog"
+            >
+              <motion.div
+                className="create-trip-type-card travel-glass-card"
+                initial={{ scale: 0.9, opacity: 0, y: 12 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 12 }}
+                transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="create-trip-type-header">
+                  <span className="create-trip-type-icon">
+                    <FiPlus size={18} />
+                  </span>
+                  <div className="create-trip-type-text">
+                    <h3>
+                      {t('travel.home.createTripTypeTitle', 'What kind of trip?')}
+                    </h3>
+                    <p>
+                      {t(
+                        'travel.home.createTripTypeDescription',
+                        'Choose between a simple destination or a multi-city route.'
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <div className="create-trip-type-actions">
+                  <button
+                    type="button"
+                    className="create-trip-type-option single"
+                    onClick={() => {
+                      // Single‑destination flow: open classic TripSetupWizard.
+                      setShowCreateTypePicker(false)
+                      setShowMultiCityWizard(false)
+                      setShowSetup(true)
+                    }}
+                  >
+                    <div className="option-main">
+                      <span className="option-icon">
+                        <FiHome size={16} />
+                      </span>
+                      <div className="option-text">
+                        <span className="option-title">
+                          {t(
+                            'travel.home.singleTripLabel',
+                            'Single destination'
+                          )}
+                        </span>
+                        <span className="option-subtitle">
+                          {t(
+                            'travel.home.singleTripSubtitle',
+                            'One main place with simple dates.'
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="create-trip-type-option multi"
+                    onClick={() => {
+                      // Multi‑city flow: open the dedicated multi‑city wizard.
+                      setShowCreateTypePicker(false)
+                      setShowSetup(false)
+                      setShowMultiCityWizard(true)
+                    }}
+                  >
+                    <div className="option-main">
+                      <span className="option-icon">
+                        <FiMapPin size={16} />
+                      </span>
+                      <div className="option-text">
+                        <span className="option-title">
+                          {t(
+                            'travel.home.multiCityTripLabel',
+                            'Multi-city route'
+                          )}
+                        </span>
+                        <span className="option-subtitle">
+                          {t(
+                            'travel.home.multiCityTripSubtitle',
+                            'Several cities with a mapped route.'
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {showSetup && (
           <TripSetupWizard
-            onClose={() => setShowSetup(false)}
+            trip={null}
+            onClose={() => {
+              setShowSetup(false)
+              setIsCreatingNew(false)
+            }}
+            onSave={handleTripCreated}
+          />
+        )}
+
+        {/* Multi‑city wizard also needs to work from the calm empty state.
+            When the user picks "Multi‑city route" we create a fresh trip
+            via the dedicated multi‑city flow. */}
+        {showMultiCityWizard && (
+          <MultiCityTripWizard
+            trip={null}
+            onClose={() => {
+              setShowMultiCityWizard(false)
+              setIsCreatingNew(false)
+            }}
             onSave={handleTripCreated}
           />
         )}
@@ -664,26 +1015,11 @@ const TravelHome = ({ trip, onNavigate }) => {
         <div className="greeting-actions">
           <button
             className="create-trip-btn"
-            onClick={() => {
-              setIsCreatingNew(true)
-              setShowSetup(true)
-            }}
+            onClick={handleOpenCreateTrip}
             aria-label={t('travel.trips.selector.createNew', 'Create New Trip')}
             title={t('travel.trips.selector.createNew', 'Create New Trip')}
           >
             <FiPlus size={16} />
-          </button>
-          <button
-            className="create-trip-btn"
-            onClick={() => {
-              setIsCreatingNew(true)
-              setShowMultiCityWizard(true)
-            }}
-            aria-label={t('travel.multiCity.createTrip', 'Create Multi-City Trip')}
-            title={t('travel.multiCity.createTrip', 'Create Multi-City Trip')}
-            style={{ marginLeft: '4px' }}
-          >
-            <FiMapPin size={16} />
           </button>
           <button
             className="edit-trip-btn"
@@ -791,6 +1127,138 @@ const TravelHome = ({ trip, onNavigate }) => {
             </motion.div>
           )}
 
+          {/* Single-city destination snapshot + gentle status and quick actions */}
+          {!isMultiCity && trip && (
+            <>
+              {/* Destination snapshot card */}
+              <motion.div
+                className="travel-glass-card single-destination-card"
+                variants={cardVariants}
+              >
+                <div className="single-destination-header">
+                  <div className="single-destination-icon">
+                    <FiMapPin size={18} />
+                  </div>
+                  <div className="single-destination-heading">
+                    <span className="single-destination-title">
+                      {t('travel.home.destinationSnapshotTitle', 'Your destination')}
+                    </span>
+                    <span className="single-destination-name">
+                      {trip.destination || t('travel.home.destinationFallback', 'Trip destination')}
+                    </span>
+                    {trip.country && (
+                      <span className="single-destination-country">{trip.country}</span>
+                    )}
+                  </div>
+                </div>
+
+                {(trip.startDate || trip.endDate) && (
+                  <div className="single-destination-meta">
+                    {trip.startDate && trip.endDate && (
+                      <span className="single-destination-dates">
+                        <FiCalendar size={14} />
+                        <span>
+                          {formatDateRange(trip.startDate, trip.endDate)}
+                        </span>
+                      </span>
+                    )}
+                    {trip.startDate && trip.endDate && (
+                      <span className="single-destination-duration">
+                        {(() => {
+                          const start = new Date(trip.startDate)
+                          const end = new Date(trip.endDate)
+                          start.setHours(0, 0, 0, 0)
+                          end.setHours(0, 0, 0, 0)
+                          const days = Math.max(
+                            1,
+                            Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
+                          )
+                          return t(
+                            'travel.home.tripDuration',
+                            '{{days}} days in total',
+                            { days }
+                          )
+                        })()}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <p className="single-destination-base">
+                  {t(
+                    'travel.home.destinationSnapshotBase',
+                    'A calm base to organise this trip.'
+                  )}
+                </p>
+              </motion.div>
+
+              {/* Today / trip status strip */}
+              {countdown && (
+                <div className="single-trip-status-strip">
+                  <span className="single-trip-status-label">
+                    {t('travel.home.tripStatusLabel', 'Trip status')}
+                  </span>
+                  <span className={`single-trip-status-pill ${countdown.type}`}>
+                    {countdown.type === 'active' &&
+                      t('travel.home.tripStatusActive', 'On the trip')}
+                    {countdown.type === 'countdown' &&
+                      t('travel.home.tripStatusPreparing', 'Preparing')}
+                    {countdown.type === 'completed' &&
+                      t('travel.home.tripStatusCompleted', 'Back home')}
+                  </span>
+                  <span className="single-trip-status-detail">
+                    {countdown.label}
+                  </span>
+                </div>
+              )}
+
+              {/* Quick actions cluster */}
+              <div className="single-trip-quick-actions">
+                <span className="quick-actions-label">
+                  {t('travel.home.quickActionsTitle', 'Quick actions')}
+                </span>
+                <div className="quick-actions-buttons">
+                  <button
+                    type="button"
+                    className="quick-action-pill"
+                    onClick={() => onNavigate('packing')}
+                  >
+                    <span className="quick-action-icon">
+                      <FiCheckSquare size={14} />
+                    </span>
+                    <span className="quick-action-text">
+                      {t('travel.home.quickActionsPacking', 'Packing list')}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-action-pill"
+                    onClick={() => onNavigate('budget')}
+                  >
+                    <span className="quick-action-icon">
+                      <FiDollarSign size={14} />
+                    </span>
+                    <span className="quick-action-text">
+                      {t('travel.home.quickActionsBudget', 'Trip budget')}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-action-pill"
+                    onClick={() => onNavigate('itinerary')}
+                  >
+                    <span className="quick-action-icon">
+                      <FiMapPin size={14} />
+                    </span>
+                    <span className="quick-action-text">
+                      {t('travel.home.quickActionsItinerary', 'Itinerary')}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Multi-City Trip Micrography - Below countdown on left */}
           {isMultiCity && trip && (
             <motion.div variants={cardVariants}>
@@ -883,12 +1351,51 @@ const TravelHome = ({ trip, onNavigate }) => {
             >
               <div className="city-timeline-header">
                 <h3 className="timeline-title">{t('travel.home.tripRoute', 'Trip Route')}</h3>
+                {homeLocation && homeLocation.latitude != null && homeLocation.longitude != null && (
+                  <button
+                    type="button"
+                    className="trip-route-directions-btn"
+                    onClick={handleOpenGoogleDirections}
+                    title={t('travel.home.openDirections', 'Open route in Google Maps')}
+                    aria-label={t('travel.home.openDirections', 'Open route in Google Maps')}
+                  >
+                    <FiExternalLink size={14} />
+                  </button>
+                )}
               </div>
+              {/* Optional legs from home to first city and last city back home */}
+              {(homeToFirstDistance > 0 || lastToHomeDistance > 0) && (
+                <div className="home-legs-summary">
+                  {homeToFirstDistance > 0 && (
+                    <div className="home-leg-row">
+                      <span className="home-leg-label">
+                        {t('travel.home.homeToFirst', 'Home → First city')}
+                      </span>
+                      <span className="home-leg-distance">
+                        {Math.round(homeToFirstDistance).toLocaleString()} km
+                      </span>
+                    </div>
+                  )}
+                  {lastToHomeDistance > 0 && (
+                    <div className="home-leg-row">
+                      <span className="home-leg-label">
+                        {t('travel.home.lastToHome', 'Last city → Home')}
+                      </span>
+                      <span className="home-leg-distance">
+                        {Math.round(lastToHomeDistance).toLocaleString()} km
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="city-timeline-scroll">
                 {getOrderedCities().map((city, index) => {
                   const isCurrent = index === currentCityIndex
                   const isNext = index === nextCityIndex
                   const isPast = currentCityIndex >= 0 && index < currentCityIndex
+                  const canOpenLeg =
+                    (index === 0 && homeLocation && homeLocation.latitude != null && homeLocation.longitude != null) ||
+                    (index > 0)
                   
                   return (
                     <div
@@ -897,15 +1404,30 @@ const TravelHome = ({ trip, onNavigate }) => {
                     >
                       <div className="city-timeline-number">{index + 1}</div>
                       <div className="city-timeline-content">
-                        <div className="city-timeline-name">{city.name}</div>
-                        {city.country && (
-                          <div className="city-timeline-country">{city.country}</div>
-                        )}
-                        {city.startDate && (
-                          <div className="city-timeline-dates">
-                            {formatDateRange(city.startDate, city.endDate)}
+                        <div className="city-timeline-main">
+                          <div className="city-timeline-text">
+                            <div className="city-timeline-name">{city.name}</div>
+                            {city.country && (
+                              <div className="city-timeline-country">{city.country}</div>
+                            )}
+                            {city.startDate && (
+                              <div className="city-timeline-dates">
+                                {formatDateRange(city.startDate, city.endDate)}
+                              </div>
+                            )}
                           </div>
-                        )}
+                          {canOpenLeg && (
+                            <button
+                              type="button"
+                              className="city-timeline-leg-btn"
+                              onClick={() => handleOpenLegDirections(index)}
+                              title={t('travel.home.openLegDirections', 'Open directions for this segment')}
+                              aria-label={t('travel.home.openLegDirections', 'Open directions for this segment')}
+                            >
+                              <FiNavigation size={12} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {isCurrent && (
                         <div className="city-timeline-badge current-badge">
@@ -1065,6 +1587,110 @@ const TravelHome = ({ trip, onNavigate }) => {
           onSave={handleTripCreated}
         />
       )}
+
+      {/* Create Trip Type Picker - lets user choose between single and multi‑city */}
+      <AnimatePresence>
+        {showCreateTypePicker && (
+          <motion.div
+            className="create-trip-type-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+            onClick={() => setShowCreateTypePicker(false)}
+            aria-modal="true"
+            role="dialog"
+          >
+            <motion.div
+              className="create-trip-type-card travel-glass-card"
+              initial={{ scale: 0.9, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 12 }}
+              transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="create-trip-type-header">
+                <span className="create-trip-type-icon">
+                  <FiPlus size={18} />
+                </span>
+                <div className="create-trip-type-text">
+                  <h3>
+                    {t('travel.home.createTripTypeTitle', 'What kind of trip?')}
+                  </h3>
+                  <p>
+                    {t(
+                      'travel.home.createTripTypeDescription',
+                      'Choose between a simple destination or a multi-city route.'
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="create-trip-type-actions">
+                <button
+                  type="button"
+                  className="create-trip-type-option single"
+                  onClick={() => {
+                    // Single‑destination flow: open classic TripSetupWizard.
+                    setShowCreateTypePicker(false)
+                    setShowMultiCityWizard(false)
+                    setShowSetup(true)
+                  }}
+                >
+                  <div className="option-main">
+                    <span className="option-icon">
+                      <FiHome size={16} />
+                    </span>
+                    <div className="option-text">
+                      <span className="option-title">
+                        {t(
+                          'travel.home.singleTripLabel',
+                          'Single destination'
+                        )}
+                      </span>
+                      <span className="option-subtitle">
+                        {t(
+                          'travel.home.singleTripSubtitle',
+                          'One main place with simple dates.'
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="create-trip-type-option multi"
+                  onClick={() => {
+                    // Multi‑city flow: open the dedicated multi‑city wizard.
+                    setShowCreateTypePicker(false)
+                    setShowSetup(false)
+                    setShowMultiCityWizard(true)
+                  }}
+                >
+                  <div className="option-main">
+                    <span className="option-icon">
+                      <FiMapPin size={16} />
+                    </span>
+                    <div className="option-text">
+                      <span className="option-title">
+                        {t(
+                          'travel.home.multiCityTripLabel',
+                          'Multi-city route'
+                        )}
+                      </span>
+                      <span className="option-subtitle">
+                        {t(
+                          'travel.home.multiCityTripSubtitle',
+                          'Several cities with a mapped route.'
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Switch Trip Confirmation Modal */}
       <ConfirmationModal

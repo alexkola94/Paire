@@ -374,3 +374,81 @@
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* ================================
+   Light Theme - Warm Sand + Orange
+   ================================ */
+
+.travel-layout:not([data-theme='dark']) .trip-selector-button {
+  background: rgba(255, 252, 247, 0.95);
+  border: 1px solid rgba(232, 145, 58, 0.2);
+  box-shadow: 0 2px 12px rgba(180, 120, 60, 0.08);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-button:hover {
+  background: rgba(255, 252, 247, 0.98);
+  border-color: rgba(232, 145, 58, 0.35);
+  box-shadow: 0 4px 16px rgba(180, 120, 60, 0.12);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-dropdown {
+  background: rgba(255, 252, 247, 0.98);
+  border: 1px solid rgba(232, 145, 58, 0.2);
+  box-shadow: 0 8px 32px rgba(180, 120, 60, 0.15);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-spinner {
+  border-color: rgba(232, 145, 58, 0.2);
+  border-top-color: #e8913a;
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-item:hover {
+  background: rgba(232, 145, 58, 0.08);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-item.active {
+  background: rgba(232, 145, 58, 0.12);
+  border: 1px solid rgba(232, 145, 58, 0.25);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-item.active:hover {
+  background: rgba(232, 145, 58, 0.18);
+  border-color: rgba(232, 145, 58, 0.35);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-item-check {
+  color: #e8913a;
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-item-status.upcoming {
+  background: rgba(232, 145, 58, 0.12);
+  color: #d07a28;
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-footer {
+  border-top-color: rgba(232, 145, 58, 0.15);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-create-btn {
+  background: rgba(232, 145, 58, 0.1);
+  border: 1px solid rgba(232, 145, 58, 0.25);
+  color: #d07a28;
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-create-btn:hover {
+  background: rgba(232, 145, 58, 0.15);
+  border-color: rgba(232, 145, 58, 0.35);
+  box-shadow: 0 2px 8px rgba(232, 145, 58, 0.2);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(232, 145, 58, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 145, 58, 0.5);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-selector-button:hover .trip-selector-chevron {
+  color: #e8913a;
+}

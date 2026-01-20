@@ -1,6 +1,7 @@
 import { useState, Suspense, lazy } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTravelMode } from './context/TravelModeContext'
+import { useTheme } from '../context/ThemeContext'
 import TravelLayout from './components/TravelLayout'
 import LogoLoader from '../components/LogoLoader'
 
@@ -40,6 +41,12 @@ const pageVariants = {
 const TravelApp = () => {
   const [activePage, setActivePage] = useState('home')
   const { activeTrip, tripLoading } = useTravelMode()
+  const { theme } = useTheme()
+
+  // Dynamic loader accent class based on current theme
+  // Keeps logic simple and lets CSS handle the actual color tokens.
+  const loaderAccentClass =
+    theme === 'dark' ? 'logo-loader-accent--dark' : 'logo-loader-accent--light'
 
   // Map page IDs to components
   const pageComponents = {
@@ -56,8 +63,12 @@ const TravelApp = () => {
   // Show loading while checking for active trip
   if (tripLoading) {
     return (
-      <div className="travel-loading">
-        <LogoLoader size="large" fullScreen />
+      <div className="travel-loading-light">
+        <LogoLoader
+          size="large"
+          fullScreen
+          className={loaderAccentClass}
+        />
       </div>
     )
   }
@@ -66,8 +77,11 @@ const TravelApp = () => {
     <TravelLayout activePage={activePage} onNavigate={setActivePage}>
       <Suspense
         fallback={
-          <div className="travel-page-loading">
-            <LogoLoader size="medium" />
+          <div className="travel-page-loading travel-loading-light">
+            <LogoLoader
+              size="medium"
+              className={loaderAccentClass}
+            />
           </div>
         }
       >

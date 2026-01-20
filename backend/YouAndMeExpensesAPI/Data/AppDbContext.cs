@@ -664,6 +664,7 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.Country).HasColumnName("country").HasMaxLength(100);
                 entity.Property(e => e.Latitude).HasColumnName("latitude");
                 entity.Property(e => e.Longitude).HasColumnName("longitude");
+                entity.Property(e => e.TransportMode).HasColumnName("transport_mode").HasMaxLength(50);
                 entity.Property(e => e.OrderIndex).HasColumnName("order_index");
                 entity.Property(e => e.StartDate).HasColumnName("start_date");
                 entity.Property(e => e.EndDate).HasColumnName("end_date");

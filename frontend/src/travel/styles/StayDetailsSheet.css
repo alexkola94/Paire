@@ -374,26 +374,26 @@
     background: linear-gradient(180deg,
             rgba(255, 253, 250, 0.98) 0%,
             rgba(255, 250, 245, 0.99) 100%);
-    border-color: rgba(199, 149, 109, 0.2);
-    box-shadow: 0 -8px 40px rgba(139, 108, 74, 0.15);
+    border-color: rgba(232, 145, 58, 0.2);
+    box-shadow: 0 -8px 40px rgba(180, 120, 60, 0.15);
 }
 
 .travel-layout:not([data-theme='dark']) .stay-sheet .handle-bar {
-    background: rgba(199, 149, 109, 0.4);
+    background: rgba(232, 145, 58, 0.4);
 }
 
 .travel-layout:not([data-theme='dark']) .stay-sheet-close {
     background: rgba(255, 255, 255, 0.8);
-    color: #5c534a;
+    color: #6b6058;
 }
 
 .travel-layout:not([data-theme='dark']) .stay-sheet-close:hover {
     background: white;
-    color: #2d2926;
+    color: #3d3530;
 }
 
 .travel-layout:not([data-theme='dark']) .stay-sheet-name {
-    color: #2d2926;
+    color: #3d3530;
 }
 
 .travel-layout:not([data-theme='dark']) .stay-sheet-distance {
@@ -409,30 +409,30 @@
 }
 
 .travel-layout:not([data-theme='dark']) .stay-address {
-    background: rgba(199, 149, 109, 0.1);
-    color: #5c534a;
+    background: rgba(232, 145, 58, 0.1);
+    color: #6b6058;
 }
 
 .travel-layout:not([data-theme='dark']) .stay-address svg {
-    color: #8a8279;
+    color: #9a9088;
 }
 
 .travel-layout:not([data-theme='dark']) .amenity-chip {
     background: rgba(155, 89, 182, 0.1);
     border-color: rgba(155, 89, 182, 0.25);
-    color: #5c534a;
+    color: #6b6058;
 }
 
 .travel-layout:not([data-theme='dark']) .stay-action-btn.secondary {
-    background: rgba(199, 149, 109, 0.1);
-    border-color: rgba(199, 149, 109, 0.25);
-    color: #5c534a;
+    background: rgba(232, 145, 58, 0.1);
+    border-color: rgba(232, 145, 58, 0.25);
+    color: #6b6058;
 }
 
 .travel-layout:not([data-theme='dark']) .stay-action-btn.secondary:hover {
-    background: rgba(199, 149, 109, 0.15);
-    border-color: rgba(199, 149, 109, 0.35);
-    color: #2d2926;
+    background: rgba(232, 145, 58, 0.15);
+    border-color: rgba(232, 145, 58, 0.35);
+    color: #3d3530;
 }
 
 /* ================================

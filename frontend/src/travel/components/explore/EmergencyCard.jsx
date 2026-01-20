@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next'
 
 /**
  * Emergency Info Card
- * Shows local emergency numbers
+ * Shows local emergency numbers in a simple, tappable list.
+ * If a country exposes a universal/general emergency number (e.g. 112),
+ * we surface it first so travellers always see the most reliable option.
  */
 const EmergencyCard = memo(({ data }) => {
     const { t } = useTranslation()
@@ -13,6 +15,26 @@ const EmergencyCard = memo(({ data }) => {
     if (!data) return null
 
     const { countryName, emergency } = data
+
+    // Build a small, explicit list so the layout stays predictable
+    const emergencyItems = [
+        emergency?.general && {
+            key: 'general',
+            number: emergency.general
+        },
+        emergency?.police && {
+            key: 'police',
+            number: emergency.police
+        },
+        emergency?.ambulance && {
+            key: 'ambulance',
+            number: emergency.ambulance
+        },
+        emergency?.fire && {
+            key: 'fire',
+            number: emergency.fire
+        }
+    ].filter(Boolean)
 
     return (
         <motion.div
@@ -33,18 +55,18 @@ const EmergencyCard = memo(({ data }) => {
             </div>
 
             <div className="emergency-numbers">
-                <a href={`tel:${emergency.police}`} className="emergency-item">
-                    <span className="label">{t('travel.emergency.police', 'Police')}</span>
-                    <span className="number">{emergency.police}</span>
-                </a>
-                <a href={`tel:${emergency.ambulance}`} className="emergency-item">
-                    <span className="label">{t('travel.emergency.ambulance', 'Ambulance')}</span>
-                    <span className="number">{emergency.ambulance}</span>
-                </a>
-                <a href={`tel:${emergency.fire}`} className="emergency-item">
-                    <span className="label">{t('travel.emergency.fire', 'Fire')}</span>
-                    <span className="number">{emergency.fire}</span>
-                </a>
+                {emergencyItems.map((item) => (
+                    <a
+                        key={item.key}
+                        href={`tel:${item.number}`}
+                        className={`emergency-item${item.key === 'general' ? ' emergency-item-primary' : ''}`}
+                    >
+                        <span className="label">
+                            {t(`travel.emergency.${item.key}`, item.key)}
+                        </span>
+                        <span className="number">{item.number}</span>
+                    </a>
+                ))}
             </div>
 
             <div className="emergency-note">

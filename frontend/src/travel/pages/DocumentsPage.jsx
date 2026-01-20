@@ -222,6 +222,10 @@ const DocumentsPage = ({ trip }) => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingDocument, setEditingDocument] = useState(null)
   const [showAiHelper, setShowAiHelper] = useState(false)
+  // Inline notes form state (light-theme helper, local only)
+  const [notesTitle, setNotesTitle] = useState('')
+  const [notesBody, setNotesBody] = useState('')
+  const [savedNotes, setSavedNotes] = useState([])
 
   // Load documents
   useEffect(() => {
@@ -588,6 +592,71 @@ const DocumentsPage = ({ trip }) => {
             <FiPlus size={20} />
           </button>
         </div>
+      </div>
+
+      {/* Inline helper notes form (local only) */}
+      <div className="documents-notes-card">
+        <h3 className="documents-notes-title">
+          {t('travel.documents.notesHelper.title', 'Travel notes for your documents')}
+        </h3>
+        <p className="documents-notes-subtitle">
+          {t(
+            'travel.documents.notesHelper.subtitle',
+            'Use this space to jot down questions for embassies, airlines, or your future self.'
+          )}
+        </p>
+        <form
+          className="documents-notes-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!notesTitle.trim() && !notesBody.trim()) return
+            const entry = {
+              id: Date.now(),
+              title: notesTitle.trim() || t('travel.documents.notesHelper.untitled', 'Untitled note'),
+              body: notesBody.trim()
+            }
+            setSavedNotes(prev => [entry, ...prev].slice(0, 5))
+            setNotesTitle('')
+            setNotesBody('')
+          }}
+        >
+          <div className="documents-notes-row">
+            <input
+              type="text"
+              className="documents-notes-input"
+              value={notesTitle}
+              onChange={(e) => setNotesTitle(e.target.value)}
+              placeholder={t('travel.documents.notesHelper.titlePlaceholder', 'e.g., Visa questions for Japan')}
+            />
+          </div>
+          <div className="documents-notes-row">
+            <textarea
+              className="documents-notes-textarea"
+              rows={3}
+              value={notesBody}
+              onChange={(e) => setNotesBody(e.target.value)}
+              placeholder={t(
+                'travel.documents.notesHelper.bodyPlaceholder',
+                'Add any reminders or talking points you want to keep next to your documents.'
+              )}
+            />
+          </div>
+          <div className="documents-notes-footer">
+            <button type="submit" className="travel-btn">
+              {t('travel.documents.notesHelper.save', 'Save note')}
+            </button>
+          </div>
+        </form>
+        {savedNotes.length > 0 && (
+          <div className="documents-notes-list">
+            {savedNotes.map(note => (
+              <div key={note.id} className="documents-note-chip">
+                <h4>{note.title}</h4>
+                {note.body && <p>{note.body}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Document sections by type */}

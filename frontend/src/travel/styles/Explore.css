@@ -767,8 +767,8 @@
 }
 
 .card-icon.primary-bg {
-  background: rgba(168, 85, 247, 0.15);
-  color: #a855f7;
+  background: rgba(232, 145, 58, 0.12);
+  color: #e8913a;
 }
 
 .card-title {
@@ -824,6 +824,13 @@
   font-weight: 700;
   color: #ef4444;
   letter-spacing: 0.5px;
+}
+
+/* Highlight a universal / primary emergency number (e.g. 112) */
+.emergency-item-primary {
+  background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.06));
+  border-color: rgba(239, 68, 68, 0.25);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.25);
 }
 
 .emergency-note {

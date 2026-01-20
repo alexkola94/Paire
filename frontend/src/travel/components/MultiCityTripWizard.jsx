@@ -19,6 +19,7 @@ import TravelAdvisoryBadge from './TravelAdvisoryBadge'
 import { budgetService, savingsGoalService } from '../../services/api'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import CitySelectionMap from './CitySelectionMap'
+import MultiCityDistanceSummary from './MultiCityDistanceSummary'
 import { getRouteDirections } from '../services/discoveryService'
 import DatePicker from './DatePicker'
 import '../styles/TripSetupWizard.css'
@@ -47,8 +48,16 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   // Cities state
   const [cities, setCities] = useState([])
   const [routeDistances, setRouteDistances] = useState({})
+  // Store per-leg metadata so we can adapt UI based on routing availability (e.g. sea legs)
+  const [routeLegMeta, setRouteLegMeta] = useState({})
   const [routesLoading, setRoutesLoading] = useState(false)
   const [cityAdvisories, setCityAdvisories] = useState({})
+  // Home location + optional distances from home → first city and last city → home.
+  // This mirrors the behaviour in TravelHome and TripMicrography so users see
+  // a consistent \"door-to-door\" distance picture.
+  const [homeLocation, setHomeLocation] = useState(null)
+  const [homeToFirstDistance, setHomeToFirstDistance] = useState(0)
+  const [lastToHomeDistance, setLastToHomeDistance] = useState(0)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -57,6 +66,24 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     budgetCategory: trip?.name || '',
     budgetCurrency: trip?.budgetCurrency || 'EUR'
   })
+
+  // Try to detect the user's home location once, using the browser's geolocation.
+  // If permission is denied or unavailable we simply omit the home legs from
+  // the distance summary – the rest of the wizard continues to work normally.
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setHomeLocation({ latitude, longitude })
+      },
+      (error) => {
+        // Keep logic simple and fail silently to avoid blocking the flow.
+        console.warn('Geolocation unavailable for MultiCityTripWizard:', error)
+      }
+    )
+  }, [])
 
   // Load existing budgets and saving goals on mount
   useEffect(() => {
@@ -116,14 +143,23 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     const newCity = {
       ...city,
       id: `temp-${Date.now()}`,
-      order: cities.length
+      order: cities.length,
+      // Keep transport explicit on the incoming leg for this city.
+      transportMode: city.transportMode || null
     }
     setCities([...cities, newCity])
   }
 
   // Handle city removal
   const handleCityRemove = (cityId) => {
-    setCities(cities.filter(c => c.id !== cityId).map((c, idx) => ({ ...c, order: idx })))
+    setCities(
+      cities
+        .filter(c => c.id !== cityId)
+        .map((c, idx) => ({
+          ...c,
+          order: idx
+        }))
+    )
   }
 
   // Handle city reorder (drag and drop would go here, simplified for now)
@@ -460,8 +496,11 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   // using Mapbox Directions. Results are stored by city-pair key for quick lookup.
   useEffect(() => {
     const ordered = getOrderedCities()
-    if (ordered.length < 2) {
+    if (ordered.length === 0) {
       setRouteDistances({})
+      setRouteLegMeta({})
+      setHomeToFirstDistance(0)
+      setLastToHomeDistance(0)
       return
     }
 
@@ -471,6 +510,9 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
       try {
         setRoutesLoading(true)
         const distances = {}
+        const meta = {}
+        let homeToFirst = 0
+        let lastToHome = 0
 
         const tasks = []
         for (let i = 0; i < ordered.length - 1; i++) {
@@ -490,8 +532,16 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           tasks.push(
             getRouteDirections(from.latitude, from.longitude, to.latitude, to.longitude, 'driving')
               .then(result => {
-                if (!cancelled && result?.distanceKm != null) {
-                  distances[key] = result.distanceKm
+                if (!cancelled && result) {
+                  const distanceKm =
+                    result.distanceKm != null ? result.distanceKm : getDistanceKm(from, to)
+                  if (distanceKm != null) {
+                    distances[key] = distanceKm
+                    meta[key] = {
+                      distanceKm,
+                      usedFallback: !!result.usedFallback
+                    }
+                  }
                 }
               })
               .catch(err => {
@@ -500,10 +550,66 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           )
         }
 
+        // Optional home legs: from Home → first city and last city → Home.
+        // These are only used for the summary numbers (not for per-leg rows),
+        // and they follow the same driving-profile routing used elsewhere.
+        if (
+          homeLocation &&
+          homeLocation.latitude != null &&
+          homeLocation.longitude != null &&
+          ordered.length > 0
+        ) {
+          const firstCity = ordered[0]
+          const lastCity = ordered[ordered.length - 1]
+
+          const hasFirstCoords =
+            firstCity?.latitude != null && firstCity?.longitude != null
+          const hasLastCoords =
+            lastCity?.latitude != null && lastCity?.longitude != null
+
+          const addHomeLegTask = (fromLat, fromLng, toLat, toLng, assign) =>
+            getRouteDirections(fromLat, fromLng, toLat, toLng, 'driving')
+              .then(result => {
+                if (!cancelled && result?.distanceKm != null) {
+                  assign(result.distanceKm)
+                }
+              })
+              .catch(err => {
+                console.error('Error computing home leg distance in wizard:', err)
+              })
+
+          if (hasFirstCoords) {
+            tasks.push(
+              addHomeLegTask(
+                homeLocation.latitude,
+                homeLocation.longitude,
+                firstCity.latitude,
+                firstCity.longitude,
+                (km) => { homeToFirst = km }
+              )
+            )
+          }
+
+          if (hasLastCoords) {
+            tasks.push(
+              addHomeLegTask(
+                lastCity.latitude,
+                lastCity.longitude,
+                homeLocation.latitude,
+                homeLocation.longitude,
+                (km) => { lastToHome = km }
+              )
+            )
+          }
+        }
+
         await Promise.all(tasks)
 
         if (!cancelled) {
           setRouteDistances(distances)
+          setRouteLegMeta(meta)
+          setHomeToFirstDistance(homeToFirst)
+          setLastToHomeDistance(lastToHome)
         }
       } finally {
         if (!cancelled) {
@@ -517,7 +623,21 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     return () => {
       cancelled = true
     }
-  }, [cities])
+  }, [cities, homeLocation])
+
+  // Centralised handler so distance summary stays dumb and reusable.
+  const handleCityTransportChange = (cityId, mode) => {
+    setCities(prevCities => {
+      const next = [...prevCities]
+      const idx = next.findIndex(c => c.id === cityId)
+      if (idx === -1) return prevCities
+      next[idx] = {
+        ...next[idx],
+        transportMode: mode
+      }
+      return next
+    })
+  }
 
   // Step content
   const renderStep = () => {
@@ -609,61 +729,18 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                   </div>
 
                   {/* Distance summary - clean route visualization */}
-                  {orderedCities.length > 1 && (
-                    <div className="cities-distance-summary">
-                      {routesLoading && (
-                        <div className="route-loading-hint">
-                          {t('travel.multiCity.step1.calculatingRoutes', 'Calculating best routes...')}
-                        </div>
-                      )}
-                      {orderedCities.map((city, index) => {
-                        if (index === 0) return null
-                        const prev = orderedCities[index - 1]
-                        const key = `${prev.id}-${city.id}`
-                        const km = routeDistances[key] ?? getDistanceKm(prev, city)
-                        if (!km) return null
-                        const rounded = Math.round(km)
-                        return (
-                          <div key={`${prev.id}-${city.id}`} className="city-distance-item">
-                            <div className="distance-route">
-                              <span className="distance-step">{index}</span>
-                              <span className="distance-arrow">→</span>
-                              <span className="distance-step">{index + 1}</span>
-                            </div>
-                            <div className="distance-cities">
-                              <span className="distance-city-from">{prev.name}</span>
-                              <span className="distance-arrow-small">→</span>
-                              <span className="distance-city-to">{city.name}</span>
-                            </div>
-                            <div className="distance-value">{rounded} km</div>
-                          </div>
-                        )
-                      })}
-                      
-                      {/* Total trip distance */}
-                      {(() => {
-                        const totalKm = orderedCities.reduce((total, city, index) => {
-                          if (index === 0) return total
-                          const prev = orderedCities[index - 1]
-                          const key = `${prev.id}-${city.id}`
-                          const km = routeDistances[key] ?? getDistanceKm(prev, city)
-                          return total + (km || 0)
-                        }, 0)
-                        const roundedTotal = Math.round(totalKm)
-                        if (roundedTotal > 0) {
-                          return (
-                            <div className="trip-total-distance">
-                              <div className="total-distance-label">
-                                {t('travel.multiCity.step1.totalDistance', 'Total Trip Distance')}
-                              </div>
-                              <div className="total-distance-value">{roundedTotal.toLocaleString()} km</div>
-                            </div>
-                          )
-                        }
-                        return null
-                      })()}
-                    </div>
-                  )}
+                  <MultiCityDistanceSummary
+                    cities={cities}
+                    orderedCities={orderedCities}
+                    routeDistances={routeDistances}
+                    routeLegMeta={routeLegMeta}
+                    homeLocation={homeLocation}
+                    homeToFirstDistance={homeToFirstDistance}
+                    lastToHomeDistance={lastToHomeDistance}
+                    getDistanceKm={getDistanceKm}
+                    onCityTransportChange={handleCityTransportChange}
+                    routesLoading={routesLoading}
+                  />
                 </div>
               )}
 

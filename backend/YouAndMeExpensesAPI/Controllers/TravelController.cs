@@ -6,6 +6,7 @@ using YouAndMeExpensesAPI.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using YouAndMeExpensesAPI.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -21,15 +22,18 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly AppDbContext _context;
         private readonly ILogger<TravelController> _logger;
         private readonly IStorageService _storageService;
+        private readonly IConfiguration _configuration;
 
         public TravelController(
             AppDbContext context,
             ILogger<TravelController> logger,
-            IStorageService storageService)
+            IStorageService storageService,
+            IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
             _storageService = storageService;
+            _configuration = configuration;
         }
 
         private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
@@ -168,7 +172,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
         /// <summary>
         /// Get travel advisory / risk score for a given country.
-        /// Proxies the Travel-Advisory.info API to avoid CORS issues and to keep
+        /// Proxies the TuGo TravelSafe API to avoid CORS issues and to keep
         /// external API details away from the frontend.
         /// </summary>
         /// <param name="countryCode">
@@ -184,22 +188,21 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Normalise to upper-case, Travel-Advisory supports 2 or 3 letter codes.
+                // Normalise to upper-case, TuGo expects ISO codes.
                 var normalizedCode = countryCode.Trim().ToUpperInvariant();
 
-                // In some development environments (corporate VPNs, SSL interception, etc.)
-                // the external Travel-Advisory certificate chain may fail validation with a
-                // RemoteCertificateNameMismatch error. To keep the feature working locally
-                // without weakening production security, we relax certificate validation
-                // ONLY when running in Development.
-                //
-                // IMPORTANT: Production continues to use the default, fully validated handler.
+                // Read TuGo API key from configuration (appsettings / env).
+                // Configure it under: "TuGo": { "ApiKey": "YOUR_KEY_HERE" }
+                var apiKey = _configuration["TuGo:ApiKey"];
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    _logger.LogWarning("TuGo API key is not configured. Unable to fetch travel advisory for {CountryCode}", normalizedCode);
+                    return Ok(new { countryCode = normalizedCode, hasData = false, message = "Advisory service unavailable" });
+                }
+
                 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
                 var handler = new HttpClientHandler();
-                
-                // Follow redirects (301, 302, etc.) automatically
-                handler.AllowAutoRedirect = true;
 
                 if (string.Equals(environment, "Development", StringComparison.OrdinalIgnoreCase))
                 {
@@ -211,34 +214,46 @@ namespace YouAndMeExpensesAPI.Controllers
                 httpClient.DefaultRequestHeaders.Add("User-Agent", "YouMeExpenses-TravelAdvisory/1.0");
                 httpClient.Timeout = TimeSpan.FromSeconds(10); // 10 second timeout
 
-                // Travel-Advisory.info pattern: https://www.travel-advisory.info/api?countrycode=US
-                var url = $"https://www.travel-advisory.info/api?countrycode={Uri.EscapeDataString(normalizedCode)}";
-                
-                _logger.LogInformation("Fetching travel advisory from {Url} for country {CountryCode}", url, normalizedCode);
-                
+                // TuGo TravelSafe endpoint pattern:
+                // https://api.tugo.com/v1/travelsafe/countries/{countryCode}?lang=en
+                var url = $"https://api.tugo.com/v1/travelsafe/countries/{Uri.EscapeDataString(normalizedCode)}?lang=en";
+
+                // According to TuGo docs the API key must be sent in the Auth-Key header.
+                // If your portal shows a different header name, update this to match.
+                httpClient.DefaultRequestHeaders.Add("Auth-Key", apiKey);
+
+                _logger.LogInformation("Fetching TuGo travel advisory from {Url} for country {CountryCode}", url, normalizedCode);
+
                 var response = await httpClient.GetAsync(url);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("Travel-Advisory API returned {StatusCode} {StatusText} for country {CountryCode}. Response URL: {ResponseUrl}",
+                    _logger.LogWarning("TuGo API returned {StatusCode} {StatusText} for country {CountryCode}. Response URL: {ResponseUrl}",
                         response.StatusCode, response.ReasonPhrase, normalizedCode, response.RequestMessage?.RequestUri);
-                    return StatusCode((int)response.StatusCode, new { message = "Advisory service unavailable" });
+
+                    // Treat all non-success as "no data" for a soft failure.
+                    return Ok(new
+                    {
+                        countryCode = normalizedCode,
+                        hasData = false,
+                        message = "Advisory service unavailable"
+                    });
                 }
 
                 var content = await response.Content.ReadAsStringAsync();
 
-                // Check if response is actually JSON (might be HTML if redirected incorrectly)
+                // Check if response is actually JSON
                 var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
-                if (!contentType.Contains("json", StringComparison.OrdinalIgnoreCase) && 
-                    !content.TrimStart().StartsWith("{") && 
+                if (!contentType.Contains("json", StringComparison.OrdinalIgnoreCase) &&
+                    !content.TrimStart().StartsWith("{") &&
                     !content.TrimStart().StartsWith("["))
                 {
-                    _logger.LogWarning("Travel-Advisory API returned non-JSON content (Content-Type: {ContentType}) for country {CountryCode}. Content preview: {Preview}",
+                    _logger.LogWarning("TuGo API returned non-JSON content (Content-Type: {ContentType}) for country {CountryCode}. Content preview: {Preview}",
                         contentType, normalizedCode, content.Length > 200 ? content.Substring(0, 200) : content);
                     return Ok(new { countryCode = normalizedCode, hasData = false, message = "Invalid response format from advisory service" });
                 }
 
-                // Parse JSON in a very defensive way to avoid tight coupling to external schema.
+                // Parse JSON defensively – TuGo schema may evolve, so keep coupling light.
                 System.Text.Json.JsonDocument doc;
                 try
                 {
@@ -246,7 +261,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
                 catch (System.Text.Json.JsonException ex)
                 {
-                    _logger.LogError(ex, "Failed to parse Travel-Advisory API JSON response for country {CountryCode}. Content: {Content}",
+                    _logger.LogError(ex, "Failed to parse TuGo API JSON response for country {CountryCode}. Content: {Content}",
                         normalizedCode, content.Length > 500 ? content.Substring(0, 500) : content);
                     return Ok(new { countryCode = normalizedCode, hasData = false, message = "Failed to parse advisory response" });
                 }
@@ -255,121 +270,138 @@ namespace YouAndMeExpensesAPI.Controllers
                 {
                     var root = doc.RootElement;
 
-                // Default structure according to Travel-Advisory.info docs:
-                // {
-                //   "data": {
-                //     "US": {
-                //       "iso_alpha2": "US",
-                //       "name": "United States",
-                //       "advisory": {
-                //         "score": 2.5,
-                //         "sources_active": 7,
-                //         "message": "...",
-                //         "updated": "2024-01-01 00:00:00+00:00"
-                //       }
-                //     }
-                //   },
-                //   "status": { ... }
-                // }
-
-                if (!root.TryGetProperty("data", out var dataElement) || dataElement.ValueKind != System.Text.Json.JsonValueKind.Object)
-                {
-                    _logger.LogWarning("Travel-Advisory API response missing 'data' for country {CountryCode}", normalizedCode);
-                    return Ok(new { countryCode = normalizedCode, hasData = false });
-                }
-
-                System.Text.Json.JsonElement countryElement = default;
-                bool foundCountry = false;
-
-                // Try direct lookup by code first, then fall back to first element.
-                if (dataElement.TryGetProperty(normalizedCode, out var directCountry))
-                {
-                    countryElement = directCountry;
-                    foundCountry = true;
-                }
-                else
-                {
-                    foreach (var property in dataElement.EnumerateObject())
+                    // Best-effort extraction based on TuGo docs:
+                    // - Destination / country name
+                    // - Advisories collection with description/level/updated
+                    string countryName = normalizedCode;
+                    if (root.TryGetProperty("destinationName", out var destNameElement) && destNameElement.ValueKind == System.Text.Json.JsonValueKind.String)
                     {
-                        countryElement = property.Value;
-                        foundCountry = true;
-                        break;
+                        countryName = destNameElement.GetString() ?? normalizedCode;
                     }
-                }
-
-                if (!foundCountry)
-                {
-                    return Ok(new { countryCode = normalizedCode, hasData = false });
-                }
-
-                string name = countryElement.TryGetProperty("name", out var nameElement)
-                    ? nameElement.GetString() ?? normalizedCode
-                    : normalizedCode;
-
-                string iso2 = countryElement.TryGetProperty("iso_alpha2", out var iso2Element)
-                    ? iso2Element.GetString() ?? normalizedCode
-                    : normalizedCode;
-
-                double score = 0;
-                string message = string.Empty;
-                string updated = string.Empty;
-                int sourcesActive = 0;
-
-                if (countryElement.TryGetProperty("advisory", out var advisoryElement) &&
-                    advisoryElement.ValueKind == System.Text.Json.JsonValueKind.Object)
-                {
-                    if (advisoryElement.TryGetProperty("score", out var scoreElement) &&
-                        scoreElement.TryGetDouble(out var s))
+                    else if (root.TryGetProperty("countryName", out var countryNameElement) && countryNameElement.ValueKind == System.Text.Json.JsonValueKind.String)
                     {
-                        score = s;
+                        countryName = countryNameElement.GetString() ?? normalizedCode;
                     }
 
-                    if (advisoryElement.TryGetProperty("message", out var messageElement))
+                    double score = 0;
+                    string level = "unknown";
+                    string message = string.Empty;
+                    string updated = string.Empty;
+                    int sourcesActive = 0;
+                    bool hasData = false;
+
+                    if (root.TryGetProperty("advisories", out var advisoriesElement) &&
+                        advisoriesElement.ValueKind == System.Text.Json.JsonValueKind.Array)
                     {
-                        message = messageElement.GetString() ?? string.Empty;
+                        foreach (var adv in advisoriesElement.EnumerateArray())
+                        {
+                            hasData = true;
+
+                            // Message / description (try multiple common field names)
+                            if (string.IsNullOrEmpty(message))
+                            {
+                                if (adv.TryGetProperty("description", out var descEl) && descEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                {
+                                    message = descEl.GetString() ?? string.Empty;
+                                }
+                                else if (adv.TryGetProperty("text", out var textEl) && textEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                {
+                                    message = textEl.GetString() ?? string.Empty;
+                                }
+                                else if (adv.TryGetProperty("message", out var msgEl) && msgEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                {
+                                    message = msgEl.GetString() ?? string.Empty;
+                                }
+                            }
+
+                            // Updated / lastUpdated
+                            if (string.IsNullOrEmpty(updated))
+                            {
+                                if (adv.TryGetProperty("updatedDate", out var updEl) && updEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                {
+                                    updated = updEl.GetString() ?? string.Empty;
+                                }
+                                else if (adv.TryGetProperty("lastUpdated", out var lastUpdEl) && lastUpdEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                {
+                                    updated = lastUpdEl.GetString() ?? string.Empty;
+                                }
+                            }
+
+                            // Severity / level (numeric or string)
+                            if (adv.TryGetProperty("severity", out var severityEl))
+                            {
+                                if (severityEl.ValueKind == System.Text.Json.JsonValueKind.Number &&
+                                    severityEl.TryGetDouble(out var sev))
+                                {
+                                    score = sev;
+                                }
+                                else if (severityEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                {
+                                    var sevStr = severityEl.GetString();
+                                    if (!string.IsNullOrWhiteSpace(sevStr))
+                                    {
+                                        level = sevStr.ToLowerInvariant();
+                                    }
+                                }
+                            }
+                            else if (adv.TryGetProperty("level", out var levelEl))
+                            {
+                                if (levelEl.ValueKind == System.Text.Json.JsonValueKind.Number &&
+                                    levelEl.TryGetDouble(out var lvlNum))
+                                {
+                                    score = lvlNum;
+                                }
+                                else if (levelEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                                {
+                                    var lvlStr = levelEl.GetString();
+                                    if (!string.IsNullOrWhiteSpace(lvlStr))
+                                    {
+                                        level = lvlStr.ToLowerInvariant();
+                                    }
+                                }
+                            }
+
+                            // We only need the first advisory for now – it's enough context for the UI.
+                            break;
+                        }
                     }
 
-                    if (advisoryElement.TryGetProperty("updated", out var updatedElement))
+                    if (!hasData)
                     {
-                        updated = updatedElement.GetString() ?? string.Empty;
+                        return Ok(new { countryCode = normalizedCode, hasData = false });
                     }
 
-                    if (advisoryElement.TryGetProperty("sources_active", out var sourcesElement) &&
-                        sourcesElement.TryGetInt32(out var src))
+                    // If we only have a numeric score, map it to qualitative levels.
+                    if (level == "unknown" && score > 0)
                     {
-                        sourcesActive = src;
+                        level = score switch
+                        {
+                            >= 4.0 => "critical",
+                            >= 3.0 => "high",
+                            >= 2.0 => "medium",
+                            > 0.0 => "low",
+                            _ => "unknown"
+                        };
                     }
+
+                    var result = new
+                    {
+                        countryCode = normalizedCode,
+                        countryName,
+                        score,
+                        level,
+                        message,
+                        updated,
+                        sourcesActive,
+                        hasData = true
+                    };
+
+                    return Ok(result);
                 }
-
-                // Map numeric score to a simple qualitative level for the frontend.
-                // These thresholds can be adjusted later without breaking API shape.
-                string level = score switch
-                {
-                    >= 4.0 => "critical",
-                    >= 3.0 => "high",
-                    >= 2.0 => "medium",
-                    > 0.0 => "low",
-                    _ => "unknown"
-                };
-
-                var result = new
-                {
-                    countryCode = iso2,
-                    countryName = name,
-                    score,
-                    level,
-                    message,
-                    updated,
-                    sourcesActive,
-                    hasData = true
-                };
-
-                return Ok(result);
-                } // End using (doc) block
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching travel advisory for country {CountryCode}", countryCode);
+                _logger.LogError(ex, "Error fetching TuGo travel advisory for country {CountryCode}", countryCode);
                 return StatusCode(500, new { message = "Error fetching travel advisory" });
             }
         }

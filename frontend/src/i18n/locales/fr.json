@@ -559,7 +559,10 @@
         "namePlaceholder": "ex., Aventure Européenne",
         "selectedCities": "Villes Sélectionnées",
         "calculatingRoutes": "Calcul des meilleurs itinéraires...",
-        "totalDistance": "Distance Totale du Voyage"
+        "totalDistance": "Distance Totale du Voyage",
+        "transportLabel": "Transport",
+        "transportSuggested": "Suggestion : {{mode}}",
+        "transportSeaHint": "Ce trajet semble traverser la mer, seuls l’avion ou le ferry sont proposés."
       },
       "step2": {
         "title": "Définir les Dates",
@@ -584,6 +587,16 @@
       "expand": "Agrandir la carte",
       "expandedTitle": "Itinéraire du Voyage",
       "more": "plus"
+    }
+  },
+  "transport": {
+    "mode": {
+      "car": "Voiture",
+      "train": "Train",
+      "flight": "Vol",
+      "bus": "Bus",
+      "ferry": "Ferry",
+      "walking": "À pied"
     }
   }
 }

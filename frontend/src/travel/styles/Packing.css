@@ -28,6 +28,14 @@
   padding: var(--spacing-lg);
 }
 
+/* Light theme surface for progress card */
+.travel-layout:not([data-theme='dark']) .packing-progress {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
 .progress-header {
   display: flex;
   justify-content: space-between;
@@ -55,7 +63,7 @@
 .progress-percentage {
   font-size: 2rem;
   font-weight: 700;
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -63,14 +71,14 @@
 
 .packing-progress .progress-bar {
   height: 8px;
-  background: var(--bg-tertiary);
+  background: #e5e7eb;
   border-radius: 4px;
   overflow: hidden;
 }
 
 .packing-progress .progress-fill {
   height: 100%;
-  background: var(--primary-gradient);
+  background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
   border-radius: 4px;
 }
 
@@ -134,23 +142,23 @@
 }
 
 .action-btn.primary {
-  background: var(--primary);
+  background: #6366f1;
   color: white;
   border: none;
 }
 
 .action-btn.primary:hover {
-  background: var(--primary-dark);
+  background: #4f46e5;
 }
 
 .action-btn.secondary {
   background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
+  color: #6366f1;
+  border: 1px solid #6366f1;
 }
 
 .action-btn.secondary:hover {
-  background: rgba(142, 68, 173, 0.1);
+  background: rgba(99, 102, 241, 0.08);
 }
 
 /* Category Sections */
@@ -163,8 +171,15 @@
 .category-section {
   background: var(--bg-secondary);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
+}
+
+/* Light theme category containers */
+.travel-layout:not([data-theme='dark']) .category-section {
+  background: rgba(255, 252, 247, 0.98);
+  border-color: rgba(232, 145, 58, 0.22);
+  box-shadow: 0 14px 34px rgba(180, 120, 60, 0.12);
 }
 
 .category-header {
@@ -180,6 +195,10 @@
 
 .category-header:active {
   background: var(--bg-tertiary);
+}
+
+.travel-layout:not([data-theme='dark']) .category-header:hover {
+  background: rgba(232, 145, 58, 0.06);
 }
 
 .category-info {
@@ -214,6 +233,10 @@
   overflow: hidden;
 }
 
+.travel-layout:not([data-theme='dark']) .category-progress {
+  background: rgba(232, 145, 58, 0.15);
+}
+
 @media (max-width: 480px) {
   .category-header {
     padding: var(--spacing-md);
@@ -244,6 +267,10 @@
   transition: width 0.3s ease;
 }
 
+.travel-layout:not([data-theme='dark']) .category-progress-fill {
+  background: linear-gradient(90deg, #e8913a 0%, #f0a85c 100%);
+}
+
 /* Items */
 .category-items {
   padding: 0 var(--spacing-md) var(--spacing-md);
@@ -257,8 +284,8 @@
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm);
-  background: var(--bg-primary);
-  border-radius: var(--radius-sm);
+  background: rgba(255, 252, 247, 0.96);
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
   min-height: 48px; /* Touch-friendly */
 }
@@ -271,7 +298,8 @@
 }
 
 .packing-item.checked {
-  opacity: 0.6;
+  opacity: 0.75;
+  background: rgba(232, 145, 58, 0.06);
 }
 
 .packing-item.checked .item-name {
@@ -281,9 +309,9 @@
 .check-btn {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
-  border: 2px solid var(--text-secondary);
-  background: transparent;
+  border-radius: 999px;
+  border: 2px solid rgba(148, 163, 184, 0.8);
+  background: rgba(255, 252, 247, 0.9);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -294,6 +322,25 @@
   min-width: 44px; /* Touch-friendly area */
   min-height: 44px;
   padding: 8px;
+}
+
+/* Light theme – soften checkbox ring to match sand palette */
+.travel-layout:not([data-theme='dark']) .check-btn {
+  border-color: rgba(148, 163, 184, 0.7);
+  background: rgba(255, 252, 247, 0.98);
+  color: #6b6058;
+}
+
+.travel-layout:not([data-theme='dark']) .check-btn:hover {
+  border-color: rgba(232, 145, 58, 0.85);
+  box-shadow: 0 4px 10px rgba(180, 120, 60, 0.25);
+}
+
+/* Light mode: when item is checked, use brand orange circle regardless of category */
+.travel-layout:not([data-theme='dark']) .packing-item.checked .check-btn {
+  background: #e8913a !important;
+  border-color: #e8913a !important;
+  color: #ffffff;
 }
 
 @media (max-width: 480px) {
@@ -444,6 +491,35 @@
 .add-suggestion-btn:hover {
   background: var(--primary-dark);
   transform: scale(1.05);
+}
+
+/* Light theme refinement – warm travel accent for smart suggestions */
+.travel-layout:not([data-theme='dark']) .weather-suggestion-card {
+  background: rgba(255, 252, 247, 0.98);
+  border-color: rgba(232, 145, 58, 0.26);
+  box-shadow: 0 8px 24px rgba(180, 120, 60, 0.14);
+}
+
+.travel-layout:not([data-theme='dark']) .suggestion-icon {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  box-shadow: 0 6px 18px rgba(180, 120, 60, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .suggestion-content h4 {
+  color: #3d3530;
+}
+
+.travel-layout:not([data-theme='dark']) .suggestion-content p {
+  color: #6b6058;
+}
+
+.travel-layout:not([data-theme='dark']) .add-suggestion-btn {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  box-shadow: 0 4px 14px rgba(180, 120, 60, 0.35);
+}
+
+.travel-layout:not([data-theme='dark']) .add-suggestion-btn:hover {
+  background: linear-gradient(135deg, #f0a85c 0%, #fbbf77 100%);
 }
 
 /* Add Item Modal */

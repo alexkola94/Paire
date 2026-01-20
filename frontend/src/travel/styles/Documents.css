@@ -94,11 +94,13 @@
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
 }
 
 .documents-header .add-btn:hover {
   transform: scale(1.1);
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.25);
 }
 
 /* AI Helper trigger */
@@ -107,7 +109,8 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border-radius: var(--radius-lg);
+  /* Pill-shaped chip for Paire soft-tech style */
+  border-radius: 999px;
   border: 1px solid var(--glass-border);
   background: rgba(15, 7, 26, 0.6);
   color: var(--text-secondary);
@@ -134,11 +137,181 @@
   white-space: nowrap;
 }
 
+/* --------------------------------
+   Light theme refinement
+   Soft glass chips on bright canvas
+   -------------------------------- */
+
+[data-theme='light'] .ai-helper-btn {
+  /* Light theme: white pill with warm orange accent */
+  background: #ffffff;
+  color: #111827;
+  border-color: rgba(232, 145, 58, 0.6);
+  box-shadow: 0 12px 32px rgba(180, 120, 60, 0.16);
+}
+
+[data-theme='light'] .ai-helper-btn svg {
+  color: #e8913a;
+}
+
+[data-theme='light'] .ai-helper-btn:hover {
+  background: rgba(232, 145, 58, 0.06);
+  color: #111827;
+  border-color: #e8913a;
+  box-shadow: 0 18px 45px rgba(180, 120, 60, 0.22);
+  transform: translateY(-2px);
+}
+
+[data-theme='light'] .documents-header .add-btn {
+  /* Soft gradient floating action for light mode */
+  background: linear-gradient(140deg, #fbbf77, #f59e0b);
+  box-shadow:
+    0 14px 38px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+}
+
+[data-theme='light'] .documents-header .add-btn:hover {
+  background: linear-gradient(140deg, #fdba74, #f97316);
+}
+
 /* Document Sections */
 .documents-sections {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+}
+
+/* Helper notes card (light theme friendly) */
+.documents-notes-card {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.documents-notes-title {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.documents-notes-subtitle {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.documents-notes-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.documents-notes-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.documents-notes-input,
+.documents-notes-textarea {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.9375rem;
+  background: #f9fafb;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  resize: vertical;
+}
+
+.documents-notes-input:focus,
+.documents-notes-textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: #ffffff;
+}
+
+.documents-notes-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing-xs);
+}
+
+.documents-notes-list {
+  margin-top: var(--spacing-md);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.documents-note-chip {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.documents-note-chip h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.documents-note-chip p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Dark mode overrides for notes helper */
+.travel-layout[data-theme='dark'] .documents-notes-card {
+  background: rgba(15, 7, 26, 0.82);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+.travel-layout[data-theme='dark'] .documents-notes-title {
+  color: var(--text-primary);
+}
+
+.travel-layout[data-theme='dark'] .documents-notes-subtitle {
+  color: var(--text-secondary);
+}
+
+.travel-layout[data-theme='dark'] .documents-notes-input,
+.travel-layout[data-theme='dark'] .documents-notes-textarea {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  color: #e5e7eb;
+}
+
+.travel-layout[data-theme='dark'] .documents-notes-input:focus,
+.travel-layout[data-theme='dark'] .documents-notes-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+}
+
+.travel-layout[data-theme='dark'] .documents-note-chip {
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid rgba(75, 85, 99, 0.7);
+}
+
+.travel-layout[data-theme='dark'] .documents-note-chip h4 {
+  color: #e5e7eb;
+}
+
+.travel-layout[data-theme='dark'] .documents-note-chip p {
+  color: #9ca3af;
 }
 
 .document-section {
@@ -529,6 +702,11 @@
   color: #8b5cf6;
 }
 
+/* Light mode: use warm travel accent for the title icon */
+[data-theme='light'] .ai-helper-title svg {
+  color: #e8913a;
+}
+
 .ai-helper-heading h3 {
   margin: 0 0 4px 0;
 }
@@ -604,6 +782,26 @@
   border-color: rgba(139, 92, 246, 1);
   background: radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.55), rgba(15, 7, 26, 0.9));
   color: #f9fafb;
+}
+
+/* Light mode – provider pills on bright canvas */
+[data-theme='light'] .ai-provider-card {
+  background: #ffffff;
+  border-color: rgba(232, 145, 58, 0.28);
+  color: #111827;
+  box-shadow: 0 10px 26px rgba(180, 120, 60, 0.14);
+}
+
+[data-theme='light'] .ai-provider-card:hover {
+  border-color: rgba(232, 145, 58, 0.6);
+  box-shadow: 0 14px 34px rgba(180, 120, 60, 0.2);
+  transform: translateY(-1px);
+}
+
+[data-theme='light'] .ai-provider-card.selected {
+  border-color: #e8913a;
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  color: #ffffff;
 }
 
 .ai-provider-logo {

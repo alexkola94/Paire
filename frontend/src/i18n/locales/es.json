@@ -559,7 +559,10 @@
         "namePlaceholder": "ej., Aventura Europea",
         "selectedCities": "Ciudades Seleccionadas",
         "calculatingRoutes": "Calculando mejores rutas...",
-        "totalDistance": "Distancia Total del Viaje"
+        "totalDistance": "Distancia Total del Viaje",
+        "transportLabel": "Transporte",
+        "transportSuggested": "Sugerido: {{mode}}",
+        "transportSeaHint": "Este tramo parece cruzar mar, así que solo vuelo o ferry están disponibles."
       },
       "step2": {
         "title": "Establecer Fechas",
@@ -584,6 +587,16 @@
       "expand": "Expandir mapa",
       "expandedTitle": "Ruta del Viaje",
       "more": "más"
+    }
+  },
+  "transport": {
+    "mode": {
+      "car": "Coche",
+      "train": "Tren",
+      "flight": "Vuelo",
+      "bus": "Autobús",
+      "ferry": "Ferry",
+      "walking": "A pie"
     }
   }
 }
