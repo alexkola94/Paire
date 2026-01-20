@@ -8,6 +8,7 @@ using System.Text;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
+using YouAndMeExpensesAPI.Repositories;
 using YouAndMeExpensesAPI.Hubs;
 using System;
 using System.IO;
@@ -408,6 +409,26 @@ builder.Services.AddScoped<IBankTransactionImportService, BankTransactionImportS
 
 // Register Storage Service (Supabase)
 builder.Services.AddScoped<IStorageService, SupabaseStorageService>();
+
+// =====================================================
+// Register Travel Services & Repository
+// =====================================================
+
+builder.Services.AddScoped<ITravelRepository, TravelRepository>();
+builder.Services.AddScoped<ITravelService, TravelService>();
+builder.Services.AddScoped<ITravelAttachmentService, TravelAttachmentService>();
+
+builder.Services.AddHttpClient<ITravelGeocodingService, TravelGeocodingService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+builder.Services.AddHttpClient<ITravelAdvisoryService, TravelAdvisoryService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 
 // =====================================================

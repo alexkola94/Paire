@@ -170,6 +170,9 @@ export const processSyncQueue = async () => {
           case 'travelExpenses':
             endpoint = `/api/travel/trips/${tripId}/expenses`
             break
+          case 'tripCities':
+            endpoint = `/api/travel/trips/${tripId}/cities`
+            break
           default:
             continue
         }

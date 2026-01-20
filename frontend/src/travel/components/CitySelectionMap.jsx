@@ -162,14 +162,17 @@ const CitySelectionMap = memo(({
             })
           }
 
-          // Last city → Home leg
+          // Last city → Home leg.
+          // Mirror the outgoing transport mode from the last city so that
+          // setting it to "flight" or "ferry" also turns this return leg into
+          // a simple straight segment instead of a road-following route.
           if (homeLocation && last.latitude && last.longitude) {
             segments.push({
               lat1: last.latitude,
               lon1: last.longitude,
               lat2: homeLocation.latitude,
               lon2: homeLocation.longitude,
-              mode: 'driving'
+              mode: last.transportMode || 'driving'
             })
           }
         }
@@ -339,7 +342,8 @@ const CitySelectionMap = memo(({
             anchor="center"
           >
             <div className="home-marker">
-              <FiHome size={18} />
+              {/* Home indicator stays a compact house icon */}
+              <FiHome size={16} />
             </div>
           </Marker>
         )}
@@ -363,24 +367,27 @@ const CitySelectionMap = memo(({
               id="route-line"
               type="line"
               paint={{
-                'line-color': '#8B5CF6',
-                'line-width': 3,
-                'line-opacity': 0.7
+                // Neutral but standout cyan for the route so it remains visible
+                // on top of satellite/terrain in both themes
+                'line-color': '#0ea5e9',
+                'line-width': 3.5,
+                'line-opacity': 0.8
               }}
             />
             <Layer
               id="route-line-outline"
               type="line"
               paint={{
-                'line-color': '#ffffff',
-                'line-width': 5,
-                'line-opacity': 0.3
+                // Soft light outline to improve contrast without feeling heavy
+                'line-color': '#e0f2fe',
+                'line-width': 5.5,
+                'line-opacity': 0.65
               }}
             />
           </Source>
         )}
 
-        {/* City markers - simple dots only */}
+        {/* City markers – neutral pins so they are clearly distinct from Home */}
         {orderedCities.map((city, index) => {
           if (!city.latitude || !city.longitude) return null
 
@@ -389,10 +396,10 @@ const CitySelectionMap = memo(({
               key={city.id || `city-${index}`}
               latitude={city.latitude}
               longitude={city.longitude}
-              anchor="center"
+              anchor="bottom"
             >
-              <div className="city-marker-simple">
-                <div className="city-marker-dot" />
+              <div className="city-marker-pin">
+                <FiMapPin size={16} />
               </div>
             </Marker>
           )

@@ -16,8 +16,17 @@
   backdrop-filter: blur(18px);
 }
 
-/* Light theme container – clean glass card surface using global tokens */
+/* Light theme container – clean glass card surface using global tokens.
+   We also mirror the TravelHome warm accent palette here so the wizard
+   visually belongs to the same experience (soft sand + orange). */
 .travel-layout:not([data-theme='dark']) .multi-city-wizard {
+  /* Travel light-theme accent palette – warm sand + soft orange */
+  --travel-accent: #e8913a;
+  --travel-accent-strong: #d07a28;
+  --travel-accent-soft: #fbe6d2;
+  --travel-accent-chip: #fef4e7;
+  --travel-accent-border: rgba(232, 145, 58, 0.4);
+
   background: var(--glass-bg);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
@@ -69,7 +78,8 @@
 }
 
 .travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step.active {
-  background: var(--primary-gradient);
+  /* Use warm travel accent instead of global violet in light mode */
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
   color: #ffffff;
 }
 
@@ -138,33 +148,49 @@
   transition: var(--transition);
 }
 
-/* Home marker (current location) - icon only */
+/* Home marker (current location) – compact house chip that stands out on the map
+   using a bright but still theme-neutral cyan/blue. */
 .home-marker {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  /* Default (dark theme) marker gradient */
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  /* Bright cyan gradient so Home is clearly distinguished from other markers */
+  background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 45%, #0369a1 100%);
   border: 2px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.55);
+  box-shadow:
+    0 0 0 2px rgba(15, 23, 42, 0.15),
+    0 10px 18px rgba(15, 23, 42, 0.35);
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-/* Light theme: use app primary for home marker */
-.travel-layout:not([data-theme='dark']) .home-marker {
-  background: var(--primary-gradient);
-  box-shadow: 0 4px 14px rgba(142, 68, 173, 0.4);
+  transform-origin: center;
 }
 
 .home-marker:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.75);
+  box-shadow:
+    0 0 0 2px rgba(15, 23, 42, 0.2),
+    0 14px 24px rgba(15, 23, 42, 0.5);
+}
+
+/* City pins – neutral but still visible, using a slate gradient so they don't
+   compete with the cyan Home chip. */
+.city-marker-pin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #111827 0%, #4b5563 50%, #9ca3af 100%);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 14px rgba(15, 23, 42, 0.45);
+  color: #f9fafb;
 }
 
 .city-selection-map-container {
@@ -215,6 +241,11 @@
   color: #6366f1;
 }
 
+/* Light theme: map hint icon uses warm travel accent */
+.travel-layout:not([data-theme='dark']) .city-selection-instructions svg {
+  color: var(--travel-accent);
+}
+
 /* City Markers - Simple dots on map */
 .city-marker-simple {
   position: relative;
@@ -229,15 +260,10 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #6366f1;
+  /* Neutral marker colour shared by both themes */
+  background: #64748b;
   border: 2px solid white;
-  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.5);
-}
-
-/* Light theme: align map dots to primary accent */
-.travel-layout:not([data-theme='dark']) .city-marker-dot {
-  background: var(--primary);
-  box-shadow: 0 2px 6px rgba(142, 68, 173, 0.5);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.5);
 }
 
 @keyframes pulse {
@@ -317,9 +343,9 @@
   flex-shrink: 0;
 }
 
-/* Light theme: city index badge uses global primary gradient */
+/* Light theme: city index badge uses travel accent gradient */
 .travel-layout:not([data-theme='dark']) .city-tag-number {
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
 }
 
 .city-tag-info {
@@ -439,9 +465,9 @@
   font-weight: 600;
 }
 
-/* Light theme: distance badges tied to primary gradient */
+/* Light theme: distance badges tied to travel accent gradient */
 .travel-layout:not([data-theme='dark']) .distance-step {
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
 }
 
 .distance-arrow {
@@ -479,9 +505,9 @@
   text-align: right;
 }
 
-/* Light theme: distance text uses primary color */
+/* Light theme: distance text uses warm travel accent */
 .travel-layout:not([data-theme='dark']) .distance-value {
-  color: var(--primary);
+  color: var(--travel-accent-strong);
 }
 
 /* Transport selection row under each distance item */
@@ -540,12 +566,14 @@
   transition: var(--transition);
 }
 
-.transport-mode-select:focus {
+/* Dark theme focus/hover keep the violet accent; light theme overrides are
+   defined further below so we avoid double-colored outlines. */
+[data-theme='dark'] .transport-mode-select:focus {
   border-color: rgba(139, 92, 246, 0.8);
   box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.6);
 }
 
-.transport-mode-select:hover {
+[data-theme='dark'] .transport-mode-select:hover {
   border-color: rgba(139, 92, 246, 0.7);
   background: rgba(15, 23, 42, 0.85);
 }
@@ -573,9 +601,19 @@
   border-color: rgba(148, 163, 184, 0.7);
 }
 
+/* Light theme: transport mode text + focus ring use travel accent */
+.travel-layout:not([data-theme='dark']) .transport-current-mode {
+  color: var(--travel-accent-strong);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-mode-select:focus {
+  border-color: var(--travel-accent-strong);
+  box-shadow: 0 0 0 1px rgba(232, 145, 58, 0.7);
+}
+
 .travel-layout:not([data-theme='dark']) .transport-mode-select:hover {
-  background: #eef2ff;
-  border-color: rgba(129, 140, 248, 0.9);
+  background: var(--travel-accent-chip);
+  border-color: var(--travel-accent-strong);
 }
 
 /* Total Trip Distance */
@@ -826,6 +864,12 @@
   border-color: rgba(139, 92, 246, 0.4);
 }
 
+/* Light theme: use travel accent for the city index badge in step 2 so it
+   matches the rest of the multi‑city light palette. */
+.travel-layout:not([data-theme='dark']) .city-date-number {
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
+}
+
 .city-date-header {
   display: flex;
   align-items: center;
@@ -915,6 +959,7 @@
   gap: var(--spacing-sm);
   padding: 6px 10px;
   border-radius: 999px;
+  /* Default (dark theme) retains a subtle violet tint for contrast */
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(124, 58, 237, 0.08) 100%);
   border: 1px solid rgba(139, 92, 246, 0.35);
   box-shadow: 0 4px 14px rgba(15, 7, 26, 0.35);
@@ -929,7 +974,9 @@
 }
 
 .travel-layout:not([data-theme='dark']) .endpoint-chip {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.14) 0%, rgba(124, 58, 237, 0.06) 100%);
+  /* Light theme: endpoint chips use the warm travel accent palette */
+  background: linear-gradient(135deg, var(--travel-accent-soft), rgba(255, 255, 255, 0.96));
+  border-color: var(--travel-accent-border);
   box-shadow: var(--shadow-md);
 }
 
@@ -949,7 +996,7 @@
 
 /* Light theme: route badges reuse global primary gradient */
 .travel-layout:not([data-theme='dark']) .endpoint-number {
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
 }
 
 .endpoint-text {
@@ -1048,4 +1095,42 @@
     max-height: 100vh;
     border-radius: 0;
   }
+}
+
+/* Override any previous light-theme distance colors with travel accent so
+   home legs and summary km values never fall back to the violet palette. */
+.travel-layout:not([data-theme='dark']) .home-leg-distance {
+  color: var(--travel-accent-strong);
+}
+
+.travel-layout:not([data-theme='dark']) .total-distance-value {
+  color: var(--travel-accent-strong);
+}
+
+/* ================================
+   Travel light-theme button + budget accents
+   ================================ */
+
+/* Primary wizard actions inside the multi‑city flow use the warm travel
+   accent in light mode so they match the TravelHome CTA buttons. */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-btn.primary {
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
+  box-shadow: 0 6px 18px rgba(232, 145, 58, 0.35);
+}
+
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-btn.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(232, 145, 58, 0.45);
+}
+
+/* Budget mode toggle uses travel accent chip styling when active. */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .budget-mode-toggle {
+  background: var(--travel-accent-chip);
+  border-color: var(--travel-accent-border);
+}
+
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .mode-btn.active {
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(232, 145, 58, 0.4);
 }

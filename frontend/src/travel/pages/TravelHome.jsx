@@ -84,6 +84,13 @@ const TravelHome = ({ trip, onNavigate }) => {
   const [currentCityIndex, setCurrentCityIndex] = useState(-1)
   const [nextCityIndex, setNextCityIndex] = useState(-1)
   const [advisory, setAdvisory] = useState(null)
+  const [isTripDeleted, setIsTripDeleted] = useState(false)
+
+  // Effective trip used by this page.
+  // When the last trip is deleted we locally treat it as null so the UI
+  // can immediately fall back to the calm empty state, even if parent
+  // props/context update slightly later.
+  const activeTrip = isTripDeleted ? null : trip
 
   // Listen for create trip event from TripSelector
   useEffect(() => {
@@ -140,7 +147,7 @@ const TravelHome = ({ trip, onNavigate }) => {
   // Check if trip is multi-city and load cities
   useEffect(() => {
     const checkMultiCity = async () => {
-      if (!trip?.id) {
+      if (!activeTrip?.id) {
         setIsMultiCity(false)
         setTripCities([])
         return
@@ -148,10 +155,10 @@ const TravelHome = ({ trip, onNavigate }) => {
 
       // Check tripType or cities count
       let cities = []
-      if (trip.tripType === 'multi-city') {
+      if (activeTrip.tripType === 'multi-city') {
         setIsMultiCity(true)
         try {
-          cities = await tripCityService.getByTrip(trip.id)
+          cities = await tripCityService.getByTrip(activeTrip.id)
           setTripCities(cities || [])
         } catch (error) {
           console.error('Error loading cities:', error)
@@ -160,7 +167,7 @@ const TravelHome = ({ trip, onNavigate }) => {
       } else {
         // Fallback: check if trip has multiple cities
         try {
-          cities = await tripCityService.getByTrip(trip.id)
+          cities = await tripCityService.getByTrip(activeTrip.id)
           const isMulti = cities && cities.length > 1
           setIsMultiCity(isMulti)
           setTripCities(isMulti ? (cities || []) : [])
@@ -173,7 +180,7 @@ const TravelHome = ({ trip, onNavigate }) => {
     }
 
     checkMultiCity()
-  }, [trip?.id, trip?.tripType])
+  }, [activeTrip?.id, activeTrip?.tripType])
 
   // Calculate route distances for multi-city trips.
   // NOTE:
@@ -362,13 +369,18 @@ const TravelHome = ({ trip, onNavigate }) => {
   // Uses caching to avoid API calls on every mount
   useEffect(() => {
     const loadTripData = async () => {
-      if (!trip?.id) {
+      // If there is no active trip (e.g. after deleting the last one),
+      // clear summary state and fall back to the calm empty view.
+      if (!activeTrip?.id || isTripDeleted) {
         setLoading(false)
         setAdvisory(null)
+        setBudgetSummary(null)
+        setPackingProgress(null)
+        setUpcomingCount(0)
         return
       }
 
-      const cacheKey = `trip-summary-${trip.id}`
+      const cacheKey = `trip-summary-${activeTrip.id}`
       
       try {
         // Try to get cached data first
@@ -386,11 +398,11 @@ const TravelHome = ({ trip, onNavigate }) => {
 
         // No cache, fetch from API
         const [expenses, packingItems, events, tripAdvisory] = await Promise.all([
-          travelExpenseService.getSummary(trip.id).catch(() => null),
-          packingService.getByTrip(trip.id).catch(() => []),
-          itineraryService.getByTrip(trip.id).catch(() => []),
+          travelExpenseService.getSummary(activeTrip.id).catch(() => null),
+          packingService.getByTrip(activeTrip.id).catch(() => []),
+          itineraryService.getByTrip(activeTrip.id).catch(() => []),
           // Advisory is optional, so handle errors silently.
-          getAdvisoryForTrip(trip).catch(() => null)
+          getAdvisoryForTrip(activeTrip).catch(() => null)
         ])
 
         setBudgetSummary(expenses)
@@ -429,15 +441,15 @@ const TravelHome = ({ trip, onNavigate }) => {
     }
 
     loadTripData()
-  }, [trip?.id])
+  }, [activeTrip?.id, isTripDeleted])
 
   // Listen for events when items are added to invalidate cache
   useEffect(() => {
-    if (!trip?.id) return
+    if (!activeTrip?.id || isTripDeleted) return
 
     const handleItemAdded = async () => {
       // Invalidate cache when items are added
-      const cacheKey = `trip-summary-${trip.id}`
+      const cacheKey = `trip-summary-${activeTrip.id}`
       try {
         await db.apiCache.where('key').equals(cacheKey).delete()
       } catch (error) {
@@ -448,9 +460,9 @@ const TravelHome = ({ trip, onNavigate }) => {
       const loadTripData = async () => {
         try {
           const [expenses, packingItems, events] = await Promise.all([
-            travelExpenseService.getSummary(trip.id).catch(() => null),
-            packingService.getByTrip(trip.id).catch(() => []),
-            itineraryService.getByTrip(trip.id).catch(() => [])
+            travelExpenseService.getSummary(activeTrip.id).catch(() => null),
+            packingService.getByTrip(activeTrip.id).catch(() => []),
+            itineraryService.getByTrip(activeTrip.id).catch(() => [])
           ])
 
           setBudgetSummary(expenses)
@@ -471,7 +483,7 @@ const TravelHome = ({ trip, onNavigate }) => {
           setUpcomingCount(upcoming.length)
 
           // Update cache
-          const cacheKey = `trip-summary-${trip.id}`
+          const cacheKey = `trip-summary-${activeTrip.id}`
           await setCached(cacheKey, {
             budgetSummary: expenses,
             packingProgress: packingItems.length > 0 ? {
@@ -499,7 +511,7 @@ const TravelHome = ({ trip, onNavigate }) => {
       window.removeEventListener('travel:item-updated', handleItemAdded)
       window.removeEventListener('travel:item-deleted', handleItemAdded)
     }
-  }, [trip?.id])
+  }, [activeTrip?.id, isTripDeleted])
 
   // Helper: Get ordered cities
   const getOrderedCities = useCallback(() => {
@@ -525,7 +537,7 @@ const TravelHome = ({ trip, onNavigate }) => {
 
   // Calculate days countdown
   const getDaysCountdown = useCallback(() => {
-    if (!trip?.startDate) return null
+    if (!activeTrip?.startDate) return null
 
     // For multi-city trips, use current/next city dates
     if (isMultiCity && tripCities.length > 0) {
@@ -570,9 +582,9 @@ const TravelHome = ({ trip, onNavigate }) => {
       }
 
       // Fallback to trip dates
-      const start = new Date(trip.startDate)
+      const start = new Date(activeTrip.startDate)
       start.setHours(0, 0, 0, 0)
-      const end = new Date(trip.endDate)
+      const end = new Date(activeTrip.endDate)
       end.setHours(0, 0, 0, 0)
 
       if (now < start) {
@@ -588,9 +600,9 @@ const TravelHome = ({ trip, onNavigate }) => {
     // Single city trip
     const now = new Date()
     now.setHours(0, 0, 0, 0)
-    const start = new Date(trip.startDate)
+    const start = new Date(activeTrip.startDate)
     start.setHours(0, 0, 0, 0)
-    const end = new Date(trip.endDate)
+    const end = new Date(activeTrip.endDate)
     end.setHours(0, 0, 0, 0)
 
     if (now < start) {
@@ -601,7 +613,7 @@ const TravelHome = ({ trip, onNavigate }) => {
       return { type: 'active', days, label: t('travel.home.daysRemaining', '{{days}} days remaining', { days }) }
     }
     return { type: 'completed', days: 0, label: t('travel.home.tripCompleted', 'Trip completed') }
-  }, [trip, isMultiCity, tripCities, getCityInfo, t])
+  }, [activeTrip, isMultiCity, tripCities, getCityInfo, t])
 
   const countdown = getDaysCountdown()
 
@@ -699,14 +711,14 @@ const TravelHome = ({ trip, onNavigate }) => {
   )
 
   const handleDeleteCurrentTrip = useCallback(async () => {
-    if (!trip?.id) return
+    if (!activeTrip?.id) return
 
     try {
       // Check if trip exists in IndexedDB (might be IndexedDB-only)
-      const localTrip = await db.trips.get(trip.id)
+      const localTrip = await db.trips.get(activeTrip.id)
       
       // Delete current trip (handles both API and IndexedDB)
-      await tripService.delete(trip.id)
+      await tripService.delete(activeTrip.id)
 
       // Reload trips list to refresh state
       await loadTrips()
@@ -724,7 +736,7 @@ const TravelHome = ({ trip, onNavigate }) => {
         const nextTrip = sorted[0]
         selectTrip(nextTrip)
       } else {
-        // No trips left – reset view back to calm \"no trip\" state.
+        // No trips left – reset view back to calm "no trip" state.
         selectTrip(null)
         setIsMultiCity(false)
         setTripCities([])
@@ -736,6 +748,9 @@ const TravelHome = ({ trip, onNavigate }) => {
         setNextCityIndex(-1)
         setAdvisory(null)
         setLoading(false)
+        // Mark that the last trip is gone so this page falls back to the
+        // "Where to next?" empty state straight away.
+        setIsTripDeleted(true)
       }
 
       setShowDeleteConfirm(false)
@@ -765,7 +780,7 @@ const TravelHome = ({ trip, onNavigate }) => {
             selectTrip(sorted[0])
           } else {
             // No trips left – hard reset local state so UI falls back to
-            // the empty \"Where to next?\" home prompt.
+            // the empty "Where to next?" home prompt.
             selectTrip(null)
             setIsMultiCity(false)
             setTripCities([])
@@ -777,6 +792,7 @@ const TravelHome = ({ trip, onNavigate }) => {
             setNextCityIndex(-1)
             setAdvisory(null)
             setLoading(false)
+            setIsTripDeleted(true)
           }
         }
       } catch (cleanupError) {
@@ -784,24 +800,26 @@ const TravelHome = ({ trip, onNavigate }) => {
       }
       setShowDeleteConfirm(false)
     }
-  }, [trip?.id, loadTrips, selectTrip])
+  }, [activeTrip?.id, loadTrips, selectTrip])
 
   // Handle trip creation or update
   const handleTripCreated = async (createdTrip) => {
     setShowSetup(false)
     setIsCreatingNew(false)
+    // A new or updated trip means we are no longer in the "deleted" state.
+    setIsTripDeleted(false)
     
     // Refresh trips list to include the new or updated trip
     await loadTrips()
 
     // If this is an update of the currently active trip, refresh state immediately
-    if (trip?.id && createdTrip?.id === trip.id) {
+    if (activeTrip?.id && createdTrip?.id === activeTrip.id) {
       selectTrip(createdTrip)
       return
     }
     
     // If there's already a different active trip, ask user if they want to switch
-    if (trip?.id) {
+    if (activeTrip?.id) {
       setNewTrip(createdTrip)
       setShowSwitchConfirm(true)
     } else {
@@ -830,7 +848,7 @@ const TravelHome = ({ trip, onNavigate }) => {
 
   // When a trip is selected and summary data is still loading,
   // show a calm loading card instead of partially rendered content.
-  if (trip && loading) {
+  if (activeTrip && loading) {
     return (
       <div className="travel-page-loading">
         <div className="travel-glass-card travel-page-loading-card">
@@ -844,7 +862,7 @@ const TravelHome = ({ trip, onNavigate }) => {
   }
 
   // If no trip, show a calming create trip prompt
-  if (!trip && !loading) {
+  if (!activeTrip && !loading) {
     return (
       <div className="travel-home no-trip">
         <motion.div
@@ -1041,7 +1059,7 @@ const TravelHome = ({ trip, onNavigate }) => {
           >
             <FiEdit3 size={16} />
           </button>
-          {trip?.id && (
+          {activeTrip?.id && (
             <button
               className="edit-trip-btn delete-trip-btn"
               onClick={() => setShowDeleteConfirm(true)}
@@ -1128,7 +1146,7 @@ const TravelHome = ({ trip, onNavigate }) => {
           )}
 
           {/* Single-city destination snapshot + gentle status and quick actions */}
-          {!isMultiCity && trip && (
+          {!isMultiCity && activeTrip && (
             <>
               {/* Destination snapshot card */}
               <motion.div
@@ -1144,29 +1162,29 @@ const TravelHome = ({ trip, onNavigate }) => {
                       {t('travel.home.destinationSnapshotTitle', 'Your destination')}
                     </span>
                     <span className="single-destination-name">
-                      {trip.destination || t('travel.home.destinationFallback', 'Trip destination')}
+                      {activeTrip.destination || t('travel.home.destinationFallback', 'Trip destination')}
                     </span>
-                    {trip.country && (
-                      <span className="single-destination-country">{trip.country}</span>
+                    {activeTrip.country && (
+                      <span className="single-destination-country">{activeTrip.country}</span>
                     )}
                   </div>
                 </div>
 
-                {(trip.startDate || trip.endDate) && (
+                {(activeTrip.startDate || activeTrip.endDate) && (
                   <div className="single-destination-meta">
-                    {trip.startDate && trip.endDate && (
+                    {activeTrip.startDate && activeTrip.endDate && (
                       <span className="single-destination-dates">
                         <FiCalendar size={14} />
                         <span>
-                          {formatDateRange(trip.startDate, trip.endDate)}
+                          {formatDateRange(activeTrip.startDate, activeTrip.endDate)}
                         </span>
                       </span>
                     )}
-                    {trip.startDate && trip.endDate && (
+                    {activeTrip.startDate && activeTrip.endDate && (
                       <span className="single-destination-duration">
                         {(() => {
-                          const start = new Date(trip.startDate)
-                          const end = new Date(trip.endDate)
+                          const start = new Date(activeTrip.startDate)
+                          const end = new Date(activeTrip.endDate)
                           start.setHours(0, 0, 0, 0)
                           end.setHours(0, 0, 0, 0)
                           const days = Math.max(
@@ -1260,9 +1278,9 @@ const TravelHome = ({ trip, onNavigate }) => {
           )}
 
           {/* Multi-City Trip Micrography - Below countdown on left */}
-          {isMultiCity && trip && (
+          {isMultiCity && activeTrip && (
             <motion.div variants={cardVariants}>
-              <TripMicrography trip={trip} onNavigate={onNavigate} />
+              <TripMicrography trip={activeTrip} onNavigate={onNavigate} />
             </motion.div>
           )}
 
@@ -1302,11 +1320,11 @@ const TravelHome = ({ trip, onNavigate }) => {
                     <span className="stat-label">km</span>
                   </div>
                 )}
-                {trip?.startDate && trip?.endDate && (
+                {activeTrip?.startDate && activeTrip?.endDate && (
                   <div className="route-stat">
                     <FiCalendar size={16} />
                     <span className="stat-value">
-                      {Math.ceil((new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24)) + 1}
+                      {Math.ceil((new Date(activeTrip.endDate) - new Date(activeTrip.startDate)) / (1000 * 60 * 60 * 24)) + 1}
                     </span>
                     <span className="stat-label">{t('travel.home.days', 'days')}</span>
                   </div>
@@ -1465,10 +1483,10 @@ const TravelHome = ({ trip, onNavigate }) => {
                     {upcomingCount} {t('travel.home.eventsPlanned', 'events')}
                   </span>
                 )}
-                {budgetSummary && trip?.budget && (
+                {budgetSummary && activeTrip?.budget && (
                   <span className="mini-stat">
                     <FiDollarSign size={14} />
-                    {Math.round((budgetSummary.total / trip.budget) * 100)}%
+                    {Math.round((budgetSummary.total / activeTrip.budget) * 100)}%
                   </span>
                 )}
               </span>
@@ -1523,13 +1541,13 @@ const TravelHome = ({ trip, onNavigate }) => {
                     </div>
                     <div className="detail-content">
                       <span className="detail-label">{t('travel.home.budget', 'Budget')}</span>
-                      {budgetSummary && trip?.budget ? (
+                      {budgetSummary && activeTrip?.budget ? (
                         <span className="detail-value">
                           {new Intl.NumberFormat(undefined, {
                             style: 'currency',
-                            currency: trip?.budgetCurrency || 'EUR',
+                            currency: activeTrip?.budgetCurrency || 'EUR',
                             maximumFractionDigits: 0
-                          }).format(trip.budget - budgetSummary.total)} {t('travel.home.remaining', 'remaining')}
+                          }).format(activeTrip.budget - budgetSummary.total)} {t('travel.home.remaining', 'remaining')}
                         </span>
                       ) : (
                         <span className="detail-value">{t('travel.home.setBudget', 'Set your budget')}</span>
@@ -1566,7 +1584,7 @@ const TravelHome = ({ trip, onNavigate }) => {
       {/* Trip Setup Wizard Modal */}
       {showSetup && !showMultiCityWizard && (
         <TripSetupWizard
-          trip={isCreatingNew ? null : trip}
+          trip={isCreatingNew ? null : activeTrip}
           onClose={() => {
             setShowSetup(false)
             setIsCreatingNew(false)
@@ -1578,7 +1596,7 @@ const TravelHome = ({ trip, onNavigate }) => {
       {/* Multi-City Trip Wizard Modal */}
       {showMultiCityWizard && (
         <MultiCityTripWizard
-          trip={isCreatingNew ? null : trip}
+          trip={isCreatingNew ? null : activeTrip}
           onClose={() => {
             setShowMultiCityWizard(false)
             setShowSetup(false)
