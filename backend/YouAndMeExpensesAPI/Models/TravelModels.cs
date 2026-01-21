@@ -418,4 +418,112 @@ namespace YouAndMeExpensesAPI.Models
         [ForeignKey("TripId")]
         public virtual Trip? Trip { get; set; }
     }
+
+    /// <summary>
+    /// Layout preferences for customizing the TravelHome page per trip.
+    /// Stores section order and visibility settings as JSON.
+    /// </summary>
+    [Table("trip_layout_preferences")]
+    public class TripLayoutPreferences
+    {
+        [Key]
+        [Column("id")]
+        public Guid Id { get; set; }
+
+        [Column("trip_id")]
+        public Guid TripId { get; set; }
+
+        /// <summary>
+        /// JSON string containing section order and visibility settings.
+        /// Structure: { mainColumn: [{key, visible}], sidebarColumn: [{key, visible}] }
+        /// </summary>
+        [Column("layout_config")]
+        public string LayoutConfig { get; set; } = "{}";
+
+        /// <summary>
+        /// Current preset name. Null or "custom" if user has customized layout.
+        /// Valid values: planning, active, minimal, custom
+        /// </summary>
+        [Column("preset")]
+        [MaxLength(50)]
+        public string? Preset { get; set; }
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; }
+
+        // Navigation
+        [ForeignKey("TripId")]
+        public virtual Trip? Trip { get; set; }
+    }
+    /// <summary>
+    /// Saved place / pinned POI from Discovery Mode.
+    /// Scoped to a trip and user.
+    /// </summary>
+    [Table("saved_places")]
+    public class SavedPlace
+    {
+        [Key]
+        [Column("id")]
+        public Guid Id { get; set; }
+
+        [Column("trip_id")]
+        public Guid TripId { get; set; }
+
+        [Column("user_id")]
+        public string? UserId { get; set; }
+
+        [Column("poi_id")]
+        [MaxLength(255)]
+        public string? PoiId { get; set; }
+
+        [Column("name")]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [Column("category")]
+        [MaxLength(50)]
+        public string Category { get; set; } = "other";
+
+        [Column("latitude")]
+        public double? Latitude { get; set; }
+
+        [Column("longitude")]
+        public double? Longitude { get; set; }
+
+        [Column("address")]
+        public string? Address { get; set; }
+
+        [Column("phone")]
+        [MaxLength(50)]
+        public string? Phone { get; set; }
+
+        [Column("website")]
+        public string? Website { get; set; }
+
+        [Column("opening_hours")]
+        public string? OpeningHours { get; set; }
+
+        [Column("rating")]
+        public double? Rating { get; set; }
+
+        [Column("notes")]
+        public string? Notes { get; set; }
+
+        [Column("source")]
+        [MaxLength(50)]
+        public string Source { get; set; } = "overpass";
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; }
+
+        // Navigation
+        [ForeignKey("TripId")]
+        public virtual Trip? Trip { get; set; }
+    }
 }

@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using YouAndMeExpensesAPI.DTOs;
@@ -546,6 +547,94 @@ namespace YouAndMeExpensesAPI.Services
             await _repository.SaveChangesAsync();
             return true;
         }
+
+        // Layout preferences
+
+        public async Task<TripLayoutPreferences?> GetLayoutPreferencesAsync(string userId, Guid tripId)
+        {
+            var exists = await _repository.TripExistsForUserAsync(tripId, userId);
+            if (!exists)
+            {
+                return null;
+            }
+
+            return await _repository.GetLayoutPreferencesAsync(tripId);
+        }
+
+        public async Task<TripLayoutPreferences> SaveLayoutPreferencesAsync(string userId, Guid tripId, string layoutConfig, string? preset)
+        {
+            var exists = await _repository.TripExistsForUserAsync(tripId, userId);
+            if (!exists)
+            {
+                throw new InvalidOperationException("Trip not found");
+            }
+
+            var existing = await _repository.GetLayoutPreferencesAsync(tripId);
+
+            if (existing != null)
+            {
+                existing.LayoutConfig = layoutConfig;
+                existing.Preset = preset;
+                existing.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                existing = new TripLayoutPreferences
+                {
+                    Id = Guid.NewGuid(),
+                    TripId = tripId,
+                    LayoutConfig = layoutConfig,
+                    Preset = preset,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _repository.AddLayoutPreferencesAsync(existing);
+            }
+
+            await _repository.SaveChangesAsync();
+            return existing;
+        }
+
+        // Saved Places
+
+        public async Task<IReadOnlyList<SavedPlace>?> GetSavedPlacesAsync(string userId, Guid tripId)
+        {
+            var trip = await _repository.GetTripAsync(userId, tripId);
+            if (trip == null) return null;
+
+            return await _repository.GetSavedPlacesAsync(tripId);
+        }
+
+        public async Task<SavedPlace?> CreateSavedPlaceAsync(string userId, Guid tripId, SavedPlace place)
+        {
+            var trip = await _repository.GetTripAsync(userId, tripId);
+            if (trip == null) return null;
+
+            place.TripId = tripId;
+            place.UserId = userId;
+            place.Id = Guid.NewGuid(); // Ensure ID is generated
+            place.CreatedAt = DateTime.UtcNow;
+            place.UpdatedAt = DateTime.UtcNow;
+
+            await _repository.AddSavedPlaceAsync(place);
+            await _repository.SaveChangesAsync();
+
+            return place;
+        }
+
+        public async Task<bool> DeleteSavedPlaceAsync(string userId, Guid tripId, Guid placeId)
+        {
+            var trip = await _repository.GetTripAsync(userId, tripId);
+            if (trip == null) return false;
+
+            var existing = await _repository.GetSavedPlaceAsync(tripId, placeId);
+            if (existing == null) return false;
+
+            await _repository.RemoveSavedPlaceAsync(existing);
+            await _repository.SaveChangesAsync();
+
+            return true;
+        }
     }
 
     /// <summary>
@@ -671,6 +760,155 @@ namespace YouAndMeExpensesAPI.Services
         private readonly ILogger<TravelAdvisoryService> _logger;
         private readonly HttpClient _httpClient;
 
+        // Global in-memory maps built from Data/CountryCodes.json on first use.
+        private static readonly Dictionary<string, string> CountryNameToIso2 =
+            new(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> KnownIsoCodes =
+            new(StringComparer.OrdinalIgnoreCase);
+        private static bool _countryMapInitialised;
+        private static readonly object CountryMapLock = new();
+
+        private static void EnsureCountryMapInitialised()
+        {
+            if (_countryMapInitialised)
+            {
+                return;
+            }
+
+            lock (CountryMapLock)
+            {
+                if (_countryMapInitialised)
+                {
+                    return;
+                }
+
+                try
+                {
+                    // CountryCodes.json is copied to the application base directory
+                    // via the project file configuration.
+                    var basePath = AppContext.BaseDirectory;
+                    var filePath = Path.Combine(basePath, "Data", "CountryCodes.json");
+                    if (!File.Exists(filePath))
+                    {
+                        return;
+                    }
+
+                    var json = File.ReadAllText(filePath);
+                    var entries = JsonSerializer.Deserialize<List<CountryCodeEntry>>(json);
+                    if (entries == null)
+                    {
+                        return;
+                    }
+
+                    foreach (var entry in entries)
+                    {
+                        if (string.IsNullOrWhiteSpace(entry.Iso2))
+                        {
+                            continue;
+                        }
+
+                        KnownIsoCodes.Add(entry.Iso2);
+
+                        if (!string.IsNullOrWhiteSpace(entry.Name))
+                        {
+                            // Normalise keys to upper-case so lookups using ToUpperInvariant succeed.
+                            CountryNameToIso2[entry.Name.ToUpperInvariant()] = entry.Iso2;
+                        }
+
+                        if (entry.Aliases != null)
+                        {
+                            foreach (var alias in entry.Aliases)
+                            {
+                                if (!string.IsNullOrWhiteSpace(alias))
+                                {
+                                    CountryNameToIso2[alias.ToUpperInvariant()] = entry.Iso2;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // If anything goes wrong, we simply fall back to basic behaviour.
+                }
+                finally
+                {
+                    _countryMapInitialised = true;
+                }
+            }
+        }
+
+        private sealed class CountryCodeEntry
+        {
+            [JsonPropertyName("name")]
+            public string Name { get; set; } = string.Empty;
+
+            [JsonPropertyName("iso2")]
+            public string Iso2 { get; set; } = string.Empty;
+
+            [JsonPropertyName("iso3")]
+            public string? Iso3 { get; set; }
+
+            [JsonPropertyName("aliases")]
+            public List<string>? Aliases { get; set; }
+        }
+
+        /// <summary>
+        /// Normalise input country values to an ISO-style code TuGo expects.
+        /// - If already a 2/3 letter code, return upper-cased.
+        /// - If it's a full name like "GREECE", map via CountryNameToIso2 when possible.
+        /// </summary>
+        private static string NormalizeToIsoCode(string raw)
+        {
+            EnsureCountryMapInitialised();
+
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return string.Empty;
+            }
+
+            var trimmed = raw.Trim();
+
+            // If this already looks like a code (2–3 letters, no spaces) and we know it,
+            // just upper-case it.
+            if (trimmed.Length is 2 or 3 &&
+                trimmed.All(char.IsLetter) &&
+                (KnownIsoCodes.Count == 0 || KnownIsoCodes.Contains(trimmed)))
+            {
+                return trimmed.ToUpperInvariant();
+            }
+
+            // Otherwise treat it as a name and attempt lookup.
+            if (CountryNameToIso2.TryGetValue(trimmed, out var iso))
+            {
+                return iso;
+            }
+
+            // Hardening: handle a few very common full names explicitly even if
+            // the JSON map failed to load for some reason.
+            var upper = trimmed.ToUpperInvariant();
+            switch (upper)
+            {
+                case "UNITED KINGDOM":
+                case "UNITED KINGDOM OF GREAT BRITAIN AND NORTHERN IRELAND":
+                case "GREAT BRITAIN":
+                    return "GB";
+                case "GREECE":
+                case "HELLENIC REPUBLIC":
+                    return "GR";
+                case "UNITED STATES":
+                case "UNITED STATES OF AMERICA":
+                case "USA":
+                    return "US";
+                case "NORTH MACEDONIA":
+                case "REPUBLIC OF NORTH MACEDONIA":
+                    return "MK";
+            }
+
+            // Fallback: upper-case the original; TuGo may still recognise some names.
+            return upper;
+        }
+
         public TravelAdvisoryService(IConfiguration configuration, ILogger<TravelAdvisoryService> logger, HttpClient httpClient)
         {
             _configuration = configuration;
@@ -680,9 +918,11 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<TravelAdvisoryResult> GetAdvisoryAsync(string countryCode, CancellationToken cancellationToken = default)
         {
+            var normalizedCode = NormalizeToIsoCode(countryCode);
+
             var result = new TravelAdvisoryResult
             {
-                CountryCode = countryCode.Trim().ToUpperInvariant()
+                CountryCode = normalizedCode
             };
 
             try
@@ -705,16 +945,39 @@ namespace YouAndMeExpensesAPI.Services
 
                 _httpClient.DefaultRequestHeaders.UserAgent.Clear();
                 _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("YouMeExpenses-TravelAdvisory", "1.0"));
-                _httpClient.Timeout = TimeSpan.FromSeconds(10);
+                _httpClient.Timeout = TimeSpan.FromSeconds(60);
 
-                var url = $"https://api.tugo.com/v1/travelsafe/countries/{Uri.EscapeDataString(result.CountryCode)}?lang=en";
+                var url = $"https://api.tugo.com/v1/travelsafe/countries/{Uri.EscapeDataString(result.CountryCode)}";
 
+                // TuGo API samples use the X-Auth-API-Key header for authentication.
+                // We normalise the header each call to avoid duplicates.
                 _httpClient.DefaultRequestHeaders.Remove("Auth-Key");
-                _httpClient.DefaultRequestHeaders.Add("Auth-Key", apiKey);
+                _httpClient.DefaultRequestHeaders.Remove("X-Auth-API-Key");
+                _httpClient.DefaultRequestHeaders.Add("X-Auth-API-Key", apiKey);
 
                 _logger.LogInformation("Fetching TuGo travel advisory from {Url} for country {CountryCode}", url, result.CountryCode);
 
-                var response = await _httpClient.GetAsync(url, cancellationToken);
+                HttpResponseMessage response;
+                try
+                {
+                    // Wrap the outbound call so timeouts are handled gracefully and
+                    // do not bubble up as noisy errors for the rest of the pipeline.
+                    response = await _httpClient.GetAsync(url, cancellationToken);
+                }
+                catch (TaskCanceledException tex) when (!cancellationToken.IsCancellationRequested)
+                {
+                    // This usually means HttpClient.Timeout was reached.
+                    _logger.LogWarning(
+                        tex,
+                        "TuGo travel advisory request timed out for country {CountryCode} after {TimeoutSeconds} seconds",
+                        result.CountryCode,
+                        _httpClient.Timeout.TotalSeconds);
+
+                    result.HasData = false;
+                    result.ErrorMessage = "Advisory service timeout";
+                    result.StatusCode = 504; // Gateway Timeout semantics for external API
+                    return result;
+                }
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -773,6 +1036,9 @@ namespace YouAndMeExpensesAPI.Services
                 {
                     var root = doc.RootElement;
 
+                    // -------------------------------
+                    // Country name normalisation
+                    // -------------------------------
                     string countryName = result.CountryCode;
                     if (root.TryGetProperty("destinationName", out var destNameElement) &&
                         destNameElement.ValueKind == JsonValueKind.String)
@@ -784,8 +1050,28 @@ namespace YouAndMeExpensesAPI.Services
                     {
                         countryName = countryNameElement.GetString() ?? result.CountryCode;
                     }
+                    else if (root.TryGetProperty("name", out var nameElement) &&
+                             nameElement.ValueKind == JsonValueKind.String)
+                    {
+                        countryName = nameElement.GetString() ?? result.CountryCode;
+                    }
 
                     result.CountryName = countryName;
+
+                    // -------------------------------
+                    // Core advisory mapping
+                    // TuGo sample shape (per user):
+                    // {
+                    //   "advisories": { "description": "...", "regionalAdvisories": [] },
+                    //   "advisoryState": 0,
+                    //   "advisoryText": "Exercise normal security precautions",
+                    //   "dateCreated": "...",
+                    //   "publishedDate": "...",
+                    //   "hasAdvisoryWarning": false,
+                    //   "hasRegionalAdvisory": false,
+                    //   ...
+                    // }
+                    // -------------------------------
 
                     double score = 0;
                     string level = "unknown";
@@ -794,81 +1080,252 @@ namespace YouAndMeExpensesAPI.Services
                     int sourcesActive = 0;
                     bool hasData = false;
 
-                    if (root.TryGetProperty("advisories", out var advisoriesElement) &&
-                        advisoriesElement.ValueKind == JsonValueKind.Array)
+                    // advisoryText is a concise, user‑friendly summary
+                    if (root.TryGetProperty("advisoryText", out var advisoryTextEl) &&
+                        advisoryTextEl.ValueKind == JsonValueKind.String)
                     {
-                        foreach (var adv in advisoriesElement.EnumerateArray())
+                        message = advisoryTextEl.GetString() ?? string.Empty;
+                        result.AdvisoryText = message;
+                        if (!string.IsNullOrWhiteSpace(message))
                         {
                             hasData = true;
-
-                            if (string.IsNullOrEmpty(message))
-                            {
-                                if (adv.TryGetProperty("description", out var descEl) &&
-                                    descEl.ValueKind == JsonValueKind.String)
-                                {
-                                    message = descEl.GetString() ?? string.Empty;
-                                }
-                                else if (adv.TryGetProperty("text", out var textEl) &&
-                                         textEl.ValueKind == JsonValueKind.String)
-                                {
-                                    message = textEl.GetString() ?? string.Empty;
-                                }
-                                else if (adv.TryGetProperty("message", out var msgEl) &&
-                                         msgEl.ValueKind == JsonValueKind.String)
-                                {
-                                    message = msgEl.GetString() ?? string.Empty;
-                                }
-                            }
-
-                            if (string.IsNullOrEmpty(updated))
-                            {
-                                if (adv.TryGetProperty("updatedDate", out var updEl) &&
-                                    updEl.ValueKind == JsonValueKind.String)
-                                {
-                                    updated = updEl.GetString() ?? string.Empty;
-                                }
-                                else if (adv.TryGetProperty("lastUpdated", out var lastUpdEl) &&
-                                         lastUpdEl.ValueKind == JsonValueKind.String)
-                                {
-                                    updated = lastUpdEl.GetString() ?? string.Empty;
-                                }
-                            }
-
-                            if (adv.TryGetProperty("severity", out var severityEl))
-                            {
-                                if (severityEl.ValueKind == JsonValueKind.Number &&
-                                    severityEl.TryGetDouble(out var sev))
-                                {
-                                    score = sev;
-                                }
-                                else if (severityEl.ValueKind == JsonValueKind.String)
-                                {
-                                    var sevStr = severityEl.GetString();
-                                    if (!string.IsNullOrWhiteSpace(sevStr))
-                                    {
-                                        level = sevStr.ToLowerInvariant();
-                                    }
-                                }
-                            }
-                            else if (adv.TryGetProperty("level", out var levelEl))
-                            {
-                                if (levelEl.ValueKind == JsonValueKind.Number &&
-                                    levelEl.TryGetDouble(out var lvlNum))
-                                {
-                                    score = lvlNum;
-                                }
-                                else if (levelEl.ValueKind == JsonValueKind.String)
-                                {
-                                    var lvlStr = levelEl.GetString();
-                                    if (!string.IsNullOrWhiteSpace(lvlStr))
-                                    {
-                                        level = lvlStr.ToLowerInvariant();
-                                    }
-                                }
-                            }
-
-                            break;
                         }
+                    }
+
+                    // Fallback / additional detail from advisories.description
+                    if (root.TryGetProperty("advisories", out var advisoriesElement) &&
+                        advisoriesElement.ValueKind == JsonValueKind.Object)
+                    {
+                        if (advisoriesElement.TryGetProperty("description", out var descEl) &&
+                            descEl.ValueKind == JsonValueKind.String)
+                        {
+                            var longDescription = descEl.GetString() ?? string.Empty;
+                            if (!string.IsNullOrWhiteSpace(longDescription))
+                            {
+                                // Expose full text for richer UIs while still keeping a short message.
+                                result.AdvisoryLongDescription = longDescription;
+                                // If we don't have a short message yet, use this.
+                                if (string.IsNullOrWhiteSpace(message))
+                                {
+                                    message = longDescription;
+                                }
+
+                                hasData = true;
+                            }
+                        }
+
+                        // Regional advisories presence can be treated as an additional "source".
+                        if (advisoriesElement.TryGetProperty("regionalAdvisories", out var regionalEl) &&
+                            (regionalEl.ValueKind == JsonValueKind.Array && regionalEl.GetArrayLength() > 0))
+                        {
+                            sourcesActive++;
+                        }
+                    }
+
+                    // advisoryState is a numeric risk indicator; we treat it as the score.
+                    if (root.TryGetProperty("advisoryState", out var advisoryStateEl) &&
+                        advisoryStateEl.ValueKind == JsonValueKind.Number &&
+                        advisoryStateEl.TryGetDouble(out var stateScore))
+                    {
+                        score = stateScore;
+                        hasData = hasData || stateScore >= 0;
+                    }
+
+                    // Map advisoryState to a friendly severity level when possible.
+                    // 0 = normal, 1 = caution, 2 = avoid non-essential, 3 = avoid travel.
+                    if (level == "unknown")
+                    {
+                        level = score switch
+                        {
+                            <= 0 => "low",
+                            >= 3 => "critical",
+                            >= 2 => "high",
+                            >= 1 => "medium",
+                            _ => "low"
+                        };
+                    }
+
+                    // updated / published date
+                    if (root.TryGetProperty("publishedDate", out var publishedEl) &&
+                        publishedEl.ValueKind == JsonValueKind.String)
+                    {
+                        updated = publishedEl.GetString() ?? string.Empty;
+                    }
+                    else if (root.TryGetProperty("dateCreated", out var createdEl) &&
+                             createdEl.ValueKind == JsonValueKind.String)
+                    {
+                        updated = createdEl.GetString() ?? string.Empty;
+                    }
+
+                    // Additional signal: if TuGo flags any warnings, treat as active sources.
+                    if (root.TryGetProperty("hasAdvisoryWarning", out var hasWarningEl) &&
+                        hasWarningEl.ValueKind == JsonValueKind.True)
+                    {
+                        sourcesActive++;
+                        result.HasAdvisoryWarning = true;
+                    }
+
+                    if (root.TryGetProperty("hasRegionalAdvisory", out var hasRegionalEl) &&
+                        hasRegionalEl.ValueKind == JsonValueKind.True)
+                    {
+                        sourcesActive++;
+                        result.HasRegionalAdvisory = true;
+                    }
+
+                    // Recent updates from TuGo (plain text summary).
+                    if (root.TryGetProperty("recentUpdates", out var recentUpdatesEl) &&
+                        recentUpdatesEl.ValueKind == JsonValueKind.String)
+                    {
+                        var recent = recentUpdatesEl.GetString();
+                        if (!string.IsNullOrWhiteSpace(recent))
+                        {
+                            result.RecentUpdates = recent;
+                        }
+                    }
+
+                    // ----------------------------------------------------
+                    // Rich highlight extraction for frontend "More details"
+                    // ----------------------------------------------------
+                    try
+                    {
+                        // Climate highlights – take up to 2 climateInfo descriptions.
+                        if (root.TryGetProperty("climate", out var climateEl) &&
+                            climateEl.ValueKind == JsonValueKind.Object)
+                        {
+                            if (climateEl.TryGetProperty("description", out var climateDescEl) &&
+                                climateDescEl.ValueKind == JsonValueKind.String)
+                            {
+                                var text = climateDescEl.GetString();
+                                if (!string.IsNullOrWhiteSpace(text))
+                                {
+                                    result.ClimateSummary = text;
+                                }
+                            }
+
+                            if (climateEl.TryGetProperty("climateInfo", out var climateInfoEl) &&
+                                climateInfoEl.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var item in climateInfoEl.EnumerateArray())
+                                {
+                                    if (result.ClimateHighlights.Count >= 2) break;
+                                    if (item.TryGetProperty("description", out var desc) &&
+                                        desc.ValueKind == JsonValueKind.String)
+                                    {
+                                        var text = desc.GetString();
+                                        if (!string.IsNullOrWhiteSpace(text))
+                                        {
+                                            result.ClimateHighlights.Add(text);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Entry / exit highlights – top-level description + first 2 requirementInfo items.
+                        if (root.TryGetProperty("entryExitRequirement", out var entryExitEl) &&
+                            entryExitEl.ValueKind == JsonValueKind.Object)
+                        {
+                            if (entryExitEl.TryGetProperty("description", out var entryDesc) &&
+                                entryDesc.ValueKind == JsonValueKind.String)
+                            {
+                                var text = entryDesc.GetString();
+                                if (!string.IsNullOrWhiteSpace(text))
+                                {
+                                    result.EntryExitHighlights.Add(text);
+                                    result.EntryExitSummary = text;
+                                }
+                            }
+
+                            if (entryExitEl.TryGetProperty("requirementInfo", out var reqInfoEl) &&
+                                reqInfoEl.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var item in reqInfoEl.EnumerateArray())
+                                {
+                                    if (result.EntryExitHighlights.Count >= 3) break;
+
+                                    if (item.TryGetProperty("description", out var desc) &&
+                                        desc.ValueKind == JsonValueKind.String)
+                                    {
+                                        var text = desc.GetString();
+                                        if (!string.IsNullOrWhiteSpace(text))
+                                        {
+                                            result.EntryExitHighlights.Add(text);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Health highlights – global description + up to 2 healthInfo blocks.
+                        if (root.TryGetProperty("health", out var healthEl) &&
+                            healthEl.ValueKind == JsonValueKind.Object)
+                        {
+                            if (healthEl.TryGetProperty("description", out var healthDesc) &&
+                                healthDesc.ValueKind == JsonValueKind.String)
+                            {
+                                var text = healthDesc.GetString();
+                                if (!string.IsNullOrWhiteSpace(text))
+                                {
+                                    result.HealthHighlights.Add(text);
+                                    result.HealthSummary = text;
+                                }
+                            }
+
+                            if (healthEl.TryGetProperty("healthInfo", out var healthInfoEl) &&
+                                healthInfoEl.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var item in healthInfoEl.EnumerateArray())
+                                {
+                                    if (result.HealthHighlights.Count >= 3) break;
+
+                                    if (item.TryGetProperty("description", out var desc) &&
+                                        desc.ValueKind == JsonValueKind.String)
+                                    {
+                                        var text = desc.GetString();
+                                        if (!string.IsNullOrWhiteSpace(text))
+                                        {
+                                            result.HealthHighlights.Add(text);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Safety highlights – up to 3 key safetyInfo descriptions.
+                        if (root.TryGetProperty("safety", out var safetyEl) &&
+                            safetyEl.ValueKind == JsonValueKind.Object &&
+                            safetyEl.TryGetProperty("safetyInfo", out var safetyInfoEl) &&
+                            safetyInfoEl.ValueKind == JsonValueKind.Array)
+                        {
+                            if (safetyEl.TryGetProperty("description", out var safetyDescEl) &&
+                                safetyDescEl.ValueKind == JsonValueKind.String)
+                            {
+                                var text = safetyDescEl.GetString();
+                                if (!string.IsNullOrWhiteSpace(text))
+                                {
+                                    result.SafetySummary = text;
+                                }
+                            }
+
+                            foreach (var item in safetyInfoEl.EnumerateArray())
+                            {
+                                if (result.SafetyHighlights.Count >= 3) break;
+
+                                if (item.TryGetProperty("description", out var desc) &&
+                                    desc.ValueKind == JsonValueKind.String)
+                                {
+                                    var text = desc.GetString();
+                                    if (!string.IsNullOrWhiteSpace(text))
+                                    {
+                                        result.SafetyHighlights.Add(text);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(ex, "Failed to extract rich highlights from TuGo advisory payload for {CountryCode}", result.CountryCode);
                     }
 
                     result.HasData = hasData;
@@ -878,23 +1335,6 @@ namespace YouAndMeExpensesAPI.Services
                     result.Updated = updated;
                     result.SourcesActive = sourcesActive;
                     result.StatusCode = 200;
-
-                    if (!hasData)
-                    {
-                        return result;
-                    }
-
-                    if (level == "unknown" && score > 0)
-                    {
-                        result.Level = score switch
-                        {
-                            >= 4.0 => "critical",
-                            >= 3.0 => "high",
-                            >= 2.0 => "medium",
-                            > 0.0 => "low",
-                            _ => "unknown"
-                        };
-                    }
 
                     return result;
                 }

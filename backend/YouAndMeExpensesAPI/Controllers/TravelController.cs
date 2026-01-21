@@ -96,20 +96,16 @@ namespace YouAndMeExpensesAPI.Controllers
 
             if (!result.HasData)
             {
-                return Ok(new { countryCode = result.CountryCode, hasData = false });
+                // Return the full DTO so the frontend still receives error/status metadata.
+                return Ok(result);
             }
 
-            return Ok(new
-            {
-                countryCode = result.CountryCode,
-                countryName = result.CountryName,
-                score = result.Score,
-                level = result.Level,
-                message = result.Message,
-                updated = result.Updated,
-                sourcesActive = result.SourcesActive,
-                hasData = true
-            });
+            // When data is available, expose the entire normalised DTO. This includes:
+            // - Core risk fields (score, level, message, updated, sourcesActive)
+            // - HasAdvisoryWarning / HasRegionalAdvisory flags
+            // - AdvisoryText / AdvisoryLongDescription and section summaries
+            // - Highlight lists used by the "More details" modal
+            return Ok(result);
         }
 
         // ========================================
@@ -753,5 +749,139 @@ namespace YouAndMeExpensesAPI.Controllers
 
             return NoContent();
         }
+
+        // ========================================
+        // LAYOUT PREFERENCES
+        // ========================================
+
+        /// <summary>
+        /// Get layout preferences for a trip
+        /// </summary>
+        [HttpGet("trips/{tripId}/layout")]
+        public async Task<IActionResult> GetLayoutPreferences(Guid tripId)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var preferences = await _travelService.GetLayoutPreferencesAsync(userId, tripId);
+
+            // Return empty object if no preferences exist yet
+            if (preferences == null)
+            {
+                return Ok(new { tripId, layoutConfig = "{}", preset = (string?)null });
+            }
+
+            return Ok(new
+            {
+                id = preferences.Id,
+                tripId = preferences.TripId,
+                layoutConfig = preferences.LayoutConfig,
+                preset = preferences.Preset,
+                createdAt = preferences.CreatedAt,
+                updatedAt = preferences.UpdatedAt
+            });
+        }
+
+        /// <summary>
+        /// Update layout preferences for a trip
+        /// </summary>
+        [HttpPut("trips/{tripId}/layout")]
+        public async Task<IActionResult> UpdateLayoutPreferences(Guid tripId, [FromBody] LayoutPreferencesDto dto)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var preferences = await _travelService.SaveLayoutPreferencesAsync(
+                    userId,
+                    tripId,
+                    dto.LayoutConfig ?? "{}",
+                    dto.Preset);
+
+                return Ok(new
+                {
+                    id = preferences.Id,
+                    tripId = preferences.TripId,
+                    layoutConfig = preferences.LayoutConfig,
+                    preset = preferences.Preset,
+                    createdAt = preferences.CreatedAt,
+                    updatedAt = preferences.UpdatedAt
+                });
+            }
+            catch (InvalidOperationException)
+            {
+                return NotFound("Trip not found");
+            }
+        }
+
+        // ==========================================
+        // Saved Places (Pinned POIs)
+        // ==========================================
+
+        /// <summary>
+        /// Get all saved places for a trip
+        /// </summary>
+        [HttpGet("trips/{tripId}/saved-places")]
+        public async Task<ActionResult<IEnumerable<SavedPlace>>> GetSavedPlaces(Guid tripId)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var places = await _travelService.GetSavedPlacesAsync(userId, tripId);
+            if (places == null) return NotFound("Trip not found");
+
+            return Ok(places);
+        }
+
+        /// <summary>
+        /// Save a place (pin a POI)
+        /// </summary>
+        [HttpPost("trips/{tripId}/saved-places")]
+        public async Task<ActionResult<SavedPlace>> CreateSavedPlace(Guid tripId, [FromBody] SavedPlace place)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            if (tripId != place.TripId)
+            {
+                return BadRequest("Trip ID mismatch");
+            }
+
+            var created = await _travelService.CreateSavedPlaceAsync(userId, tripId, place);
+            if (created == null) return NotFound("Trip not found");
+
+            return CreatedAtAction(nameof(GetSavedPlaces), new { tripId = tripId }, created);
+        }
+
+        /// <summary>
+        /// Remove a saved place
+        /// </summary>
+        [HttpDelete("trips/{tripId}/saved-places/{placeId}")]
+        public async Task<ActionResult> DeleteSavedPlace(Guid tripId, Guid placeId)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _travelService.DeleteSavedPlaceAsync(userId, tripId, placeId);
+            if (!result) return NotFound("Trip or place not found");
+
+            return NoContent();
+        }
+    }
+
+    /// <summary>
+    /// DTO for layout preferences request
+    /// </summary>
+    public class LayoutPreferencesDto
+    {
+        public string? LayoutConfig { get; set; }
+        public string? Preset { get; set; }
     }
 }

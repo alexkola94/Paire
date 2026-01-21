@@ -38,6 +38,43 @@
   /* Re-enable clicks */
 }
 
+/* Compact advisory hint under the search bar – surfaces country-level smart data */
+.discovery-advisory-hint {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.45);
+}
+
+.discovery-advisory-country {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+
+.discovery-advisory-message {
+  opacity: 0.9;
+}
+
+.travel-layout:not([data-theme='dark']) .discovery-advisory-hint {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #0f172a;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+}
+
 /* Light theme: clean input pill over map */
 .travel-layout:not([data-theme='dark']) .discovery-search-input-wrapper {
   background: #ffffff;

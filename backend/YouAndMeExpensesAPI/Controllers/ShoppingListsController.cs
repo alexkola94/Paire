@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -13,12 +12,14 @@ namespace YouAndMeExpensesAPI.Controllers
     [Route("api/[controller]")]
     public class ShoppingListsController : BaseApiController
     {
-        private readonly AppDbContext _dbContext;
+        private readonly IShoppingListsService _shoppingListsService;
         private readonly ILogger<ShoppingListsController> _logger;
 
-        public ShoppingListsController(AppDbContext dbContext, ILogger<ShoppingListsController> logger)
+        public ShoppingListsController(
+            IShoppingListsService shoppingListsService,
+            ILogger<ShoppingListsController> logger)
         {
-            _dbContext = dbContext;
+            _shoppingListsService = shoppingListsService;
             _logger = logger;
         }
 
@@ -38,91 +39,13 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
-
-                // Get shopping lists from user and partner(s)
-                var lists = await _dbContext.ShoppingLists
-                    .Where(l => allUserIds.Contains(l.UserId))
-                    .OrderByDescending(l => l.CreatedAt)
-                    .ToListAsync();
-
-                // Get user profiles for all list creators
-                var userIds = lists.Select(l => l.UserId).Distinct().ToList();
-                var userProfiles = await _dbContext.UserProfiles
-                    .Where(up => userIds.Contains(up.Id.ToString()))
-                    .ToListAsync();
-
-                // Create a dictionary for quick lookup
-                var profileDict = userProfiles.ToDictionary(
-                    p => p.Id.ToString(),
-                    p => new
-                    {
-                        id = p.Id,
-                        email = p.Email,
-                        display_name = p.DisplayName,
-                        avatar_url = p.AvatarUrl
-                    }
-                );
-
-                // Enrich lists with user profile data
-                var enrichedLists = lists.Select(l => new
-                {
-                    id = l.Id,
-                    user_id = l.UserId,
-                    name = l.Name,
-                    category = l.Category,
-                    is_completed = l.IsCompleted,
-                    estimated_total = l.EstimatedTotal,
-                    actual_total = l.ActualTotal,
-                    notes = l.Notes,
-                    completed_date = l.CompletedDate,
-                    created_at = l.CreatedAt,
-                    updated_at = l.UpdatedAt,
-                    user_profiles = profileDict.ContainsKey(l.UserId) ? profileDict[l.UserId] : null
-                }).ToList();
-
-                return Ok(enrichedLists);
+                var lists = await _shoppingListsService.GetShoppingListsAsync(userId);
+                return Ok(lists);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting shopping lists for user {UserId}", userId);
                 return StatusCode(500, new { message = "Error retrieving shopping lists", error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Helper method to get partner user IDs for the current user
-        /// </summary>
-        /// <param name="userId">Current user ID</param>
-        /// <returns>List of partner user IDs as strings</returns>
-        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
-        {
-            try
-            {
-                var partnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p =>
-                        (p.User1Id == userId || p.User2Id == userId) &&
-                        p.Status == "active");
-
-                if (partnership == null)
-                {
-                    return new List<string>();
-                }
-
-                // Return the partner's ID
-                var partnerId = partnership.User1Id == userId
-                    ? partnership.User2Id
-                    : partnership.User1Id;
-
-                return new List<string> { partnerId.ToString() };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
-                return new List<string>();
             }
         }
 
@@ -137,33 +60,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var result = await _shoppingListsService.GetShoppingListAsync(userId, id);
 
-                var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
-
-                if (list == null)
+                if (result == null)
                 {
                     return NotFound(new { message = $"Shopping list {id} not found" });
                 }
-
-                // Get all items for this list
-                var items = await _dbContext.ShoppingListItems
-                    .Where(i => i.ShoppingListId == id)
-                    .OrderBy(i => i.IsChecked)
-                    .ThenBy(i => i.CreatedAt)
-                    .ToListAsync();
-
-                var result = new
-                {
-                    list = list,
-                    items = items,
-                    itemCount = items.Count,
-                    checkedCount = items.Count(i => i.IsChecked)
-                };
 
                 return Ok(result);
             }
@@ -190,19 +92,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                list.Id = Guid.NewGuid();
-                list.UserId = userId.ToString();
-                list.CreatedAt = DateTime.UtcNow;
-                list.UpdatedAt = DateTime.UtcNow;
-                list.IsCompleted = false;
-
-                _dbContext.ShoppingLists.Add(list);
-                await _dbContext.SaveChangesAsync();
+                var created = await _shoppingListsService.CreateShoppingListAsync(userId, list);
 
                 return CreatedAtAction(
                     nameof(GetShoppingList),
-                    new { id = list.Id },
-                    list);
+                    new { id = created.Id },
+                    created);
             }
             catch (Exception ex)
             {
@@ -229,40 +124,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var updated = await _shoppingListsService.UpdateShoppingListAsync(userId, id, list);
 
-                // Allow user or partner to update the shopping list
-                var existingList = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
-
-                if (existingList == null)
+                if (updated == null)
                 {
                     return NotFound(new { message = $"Shopping list {id} not found" });
                 }
 
-                existingList.Name = list.Name;
-                existingList.Category = list.Category;
-                existingList.IsCompleted = list.IsCompleted;
-                existingList.EstimatedTotal = list.EstimatedTotal;
-                existingList.ActualTotal = list.ActualTotal;
-                existingList.Notes = list.Notes;
-                existingList.UpdatedAt = DateTime.UtcNow;
-
-                if (list.IsCompleted && !existingList.CompletedDate.HasValue)
-                {
-                    existingList.CompletedDate = DateTime.UtcNow;
-                }
-                else if (!list.IsCompleted)
-                {
-                    existingList.CompletedDate = null;
-                }
-
-                await _dbContext.SaveChangesAsync();
-
-                return Ok(existingList);
+                return Ok(updated);
             }
             catch (Exception ex)
             {
@@ -282,28 +151,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var deleted = await _shoppingListsService.DeleteShoppingListAsync(userId, id);
 
-                // Allow user or partner to delete the shopping list
-                var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
-
-                if (list == null)
+                if (!deleted)
                 {
                     return NotFound(new { message = $"Shopping list {id} not found" });
                 }
-
-                // Delete all items in the list first
-                var items = await _dbContext.ShoppingListItems
-                    .Where(i => i.ShoppingListId == id)
-                    .ToListAsync();
-
-                _dbContext.ShoppingListItems.RemoveRange(items);
-                _dbContext.ShoppingLists.Remove(list);
-                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }
@@ -329,25 +182,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var items = await _shoppingListsService.GetShoppingListItemsAsync(userId, listId);
 
-                // Verify list belongs to user or partner
-                var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
-
-                if (list == null)
+                if (items.Count == 0)
                 {
                     return NotFound(new { message = $"Shopping list {listId} not found" });
                 }
-
-                var items = await _dbContext.ShoppingListItems
-                    .Where(i => i.ShoppingListId == listId)
-                    .OrderBy(i => i.IsChecked)
-                    .ThenBy(i => i.CreatedAt)
-                    .ToListAsync();
 
                 return Ok(items);
             }
@@ -376,45 +216,17 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var created = await _shoppingListsService.AddShoppingListItemAsync(userId, listId, item);
 
-                // Verify list belongs to user or partner
-                var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
-
-                if (list == null)
+                if (created == null)
                 {
                     return NotFound(new { message = $"Shopping list {listId} not found" });
                 }
 
-                item.Id = Guid.NewGuid();
-                item.ShoppingListId = listId;
-                item.CreatedAt = DateTime.UtcNow;
-                item.IsChecked = false;
-
-                if (item.Quantity <= 0)
-                {
-                    item.Quantity = 1;
-                }
-
-                _dbContext.ShoppingListItems.Add(item);
-
-                // Update list estimated total if item has estimated price
-                if (item.EstimatedPrice.HasValue && item.EstimatedPrice.Value > 0)
-                {
-                    list.EstimatedTotal = (list.EstimatedTotal ?? 0) + (item.EstimatedPrice.Value * item.Quantity);
-                }
-
-                list.UpdatedAt = DateTime.UtcNow;
-                await _dbContext.SaveChangesAsync();
-
                 return CreatedAtAction(
                     nameof(GetShoppingListItems),
-                    new { listId = listId },
-                    item);
+                    new { listId },
+                    created);
             }
             catch (Exception ex)
             {
@@ -442,54 +254,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var updated = await _shoppingListsService.UpdateShoppingListItemAsync(userId, listId, itemId, item);
 
-                // Verify list belongs to user or partner
-                var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
-
-                if (list == null)
+                if (updated == null)
                 {
-                    return NotFound(new { message = $"Shopping list {listId} not found" });
+                    return NotFound(new { message = $"Shopping list {listId} not found or item {itemId} not found" });
                 }
 
-                var existingItem = await _dbContext.ShoppingListItems
-                    .FirstOrDefaultAsync(i => i.Id == itemId && i.ShoppingListId == listId);
-
-                if (existingItem == null)
-                {
-                    return NotFound(new { message = $"Item {itemId} not found" });
-                }
-
-                // Calculate estimated total change
-                var oldEstimate = (existingItem.EstimatedPrice ?? 0) * existingItem.Quantity;
-                var newEstimate = (item.EstimatedPrice ?? 0) * item.Quantity;
-
-                existingItem.Name = item.Name;
-                existingItem.Quantity = item.Quantity;
-                existingItem.Unit = item.Unit;
-                existingItem.EstimatedPrice = item.EstimatedPrice;
-                existingItem.ActualPrice = item.ActualPrice;
-                existingItem.IsChecked = item.IsChecked;
-                existingItem.Category = item.Category;
-                existingItem.Notes = item.Notes;
-
-                // Update list totals
-                list.EstimatedTotal = (list.EstimatedTotal ?? 0) - oldEstimate + newEstimate;
-
-                if (item.ActualPrice.HasValue)
-                {
-                    var actualChange = (item.ActualPrice.Value * item.Quantity);
-                    list.ActualTotal = (list.ActualTotal ?? 0) + actualChange;
-                }
-
-                list.UpdatedAt = DateTime.UtcNow;
-                await _dbContext.SaveChangesAsync();
-
-                return Ok(existingItem);
+                return Ok(updated);
             }
             catch (Exception ex)
             {
@@ -511,32 +283,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
-
-                // Verify list belongs to user or partner
-                var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
-
-                if (list == null)
-                {
-                    return NotFound(new { message = $"Shopping list {listId} not found" });
-                }
-
-                var item = await _dbContext.ShoppingListItems
-                    .FirstOrDefaultAsync(i => i.Id == itemId && i.ShoppingListId == listId);
+                var item = await _shoppingListsService.ToggleShoppingListItemAsync(userId, listId, itemId);
 
                 if (item == null)
                 {
-                    return NotFound(new { message = $"Item {itemId} not found" });
+                    return NotFound(new { message = $"Shopping list {listId} not found or item {itemId} not found" });
                 }
-
-                item.IsChecked = !item.IsChecked;
-                list.UpdatedAt = DateTime.UtcNow;
-
-                await _dbContext.SaveChangesAsync();
 
                 return Ok(item);
             }
@@ -560,37 +312,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var deleted = await _shoppingListsService.DeleteShoppingListItemAsync(userId, listId, itemId);
 
-                // Verify list belongs to user or partner
-                var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
-
-                if (list == null)
+                if (!deleted)
                 {
-                    return NotFound(new { message = $"Shopping list {listId} not found" });
+                    return NotFound(new { message = $"Shopping list {listId} not found or item {itemId} not found" });
                 }
-
-                var item = await _dbContext.ShoppingListItems
-                    .FirstOrDefaultAsync(i => i.Id == itemId && i.ShoppingListId == listId);
-
-                if (item == null)
-                {
-                    return NotFound(new { message = $"Item {itemId} not found" });
-                }
-
-                // Update list estimated total
-                if (item.EstimatedPrice.HasValue)
-                {
-                    list.EstimatedTotal = (list.EstimatedTotal ?? 0) - (item.EstimatedPrice.Value * item.Quantity);
-                }
-
-                _dbContext.ShoppingListItems.Remove(item);
-                list.UpdatedAt = DateTime.UtcNow;
-                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }
@@ -612,26 +339,17 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var updated = await _shoppingListsService.UpdateShoppingListAsync(
+                    userId,
+                    id,
+                    new ShoppingList { Id = id, IsCompleted = true });
 
-                var list = await _dbContext.ShoppingLists
-                    .FirstOrDefaultAsync(l => l.Id == id && allUserIds.Contains(l.UserId));
-
-                if (list == null)
+                if (updated == null)
                 {
                     return NotFound(new { message = $"Shopping list {id} not found" });
                 }
 
-                list.IsCompleted = true;
-                list.CompletedDate = DateTime.UtcNow;
-                list.UpdatedAt = DateTime.UtcNow;
-
-                await _dbContext.SaveChangesAsync();
-
-                return Ok(list);
+                return Ok(updated);
             }
             catch (Exception ex)
             {
@@ -651,27 +369,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
-
-                var lists = await _dbContext.ShoppingLists
-                    .Where(l => allUserIds.Contains(l.UserId))
-                    .ToListAsync();
-
-                var activeLists = lists.Where(l => !l.IsCompleted).ToList();
-                var completedLists = lists.Where(l => l.IsCompleted).ToList();
-
-                var summary = new
-                {
-                    totalLists = lists.Count,
-                    activeLists = activeLists.Count,
-                    completedLists = completedLists.Count,
-                    totalEstimated = activeLists.Sum(l => l.EstimatedTotal ?? 0),
-                    totalSpent = completedLists.Sum(l => l.ActualTotal ?? 0)
-                };
-
+                var summary = await _shoppingListsService.GetSummaryAsync(userId);
                 return Ok(summary);
             }
             catch (Exception ex)

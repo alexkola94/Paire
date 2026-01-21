@@ -346,6 +346,9 @@ builder.Services.AddAuthorization();
 // Register Data Service (Entity Framework)
 // =====================================================
 
+// In-memory cache used by admin/maintenance features
+builder.Services.AddMemoryCache();
+
 builder.Services.AddScoped<ISupabaseService, EntityFrameworkDataService>();
 
 // =====================================================
@@ -410,6 +413,23 @@ builder.Services.AddScoped<IBankTransactionImportService, BankTransactionImportS
 // Register Storage Service (Supabase)
 builder.Services.AddScoped<IStorageService, SupabaseStorageService>();
 
+// Register Transactions Service
+builder.Services.AddScoped<ITransactionsService, TransactionsService>();
+
+// Register Loans Service
+builder.Services.AddScoped<ILoansService, LoansService>();
+builder.Services.AddScoped<ILoanPaymentsService, LoanPaymentsService>();
+builder.Services.AddScoped<IRecurringBillsService, RecurringBillsService>();
+builder.Services.AddScoped<ISavingsGoalsService, SavingsGoalsService>();
+builder.Services.AddScoped<IImportsService, ImportsService>();
+// Register Budgets application service
+builder.Services.AddScoped<IBudgetsAppService, BudgetsAppService>();
+builder.Services.AddScoped<IShoppingListsService, ShoppingListsService>();
+builder.Services.AddScoped<IDataClearingService, DataClearingService>();
+builder.Services.AddScoped<ISystemService, SystemService>();
+builder.Services.AddScoped<IPublicStatsService, PublicStatsService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+
 // =====================================================
 // Register Travel Services & Repository
 // =====================================================
@@ -448,6 +468,11 @@ builder.Services.AddHttpClient<ICurrencyService, CurrencyService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
+
+// Register Profile Service
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IUsersService, UsersService>();
+builder.Services.AddScoped<IPartnershipService, PartnershipService>();
 
 // Explicitly register generic HttpClient for proxies
 builder.Services.AddHttpClient();

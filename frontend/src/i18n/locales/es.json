@@ -318,6 +318,14 @@
       "descending": "Descendente",
       "loadingTripView": "Cargando la vista de tu viaje..."
     },
+    "home": {
+      "welcome": "Bienvenido al Modo Viaje",
+      "noTripTitle": "¿A dónde vamos?",
+      "noTripDescription": "Comienza a planear tu viaje",
+      "savedPlacesTitle": "Lugares guardados",
+      "savedPlacesCount": "{{count}} guardados",
+      "savedPlacesEmpty": "Marca tus sitios favoritos en el mapa para tenerlos siempre a mano."
+    },
     "budget": {
       "title": "Presupuesto",
       "noTrip": "No se Seleccionó Viaje",
@@ -486,9 +494,34 @@
           "copyFailed": "No se pudo copiar al portapapeles. Por favor, copie el prompt manualmente desde la vista previa anterior.",
           "provider": {
             "travel-assistant": "Asistente de documentos de viaje",
-            "chatgpt": "ChatGPT"
+        "chatgpt": "ChatGPT"
           }
         }
+    },
+    "explore": {
+      "title": "Explorar",
+      "essentials": "Esenciales de viaje",
+      "noTrip": "No se Seleccionó Viaje",
+      "createTripFirst": "Crea un viaje para explorar tu destino",
+      "noLocation": "Ubicación no establecida",
+      "setLocation": "Configura tu destino para ver el tiempo y los lugares cercanos",
+      "weatherTitle": "Tiempo",
+      "loadingWeather": "Cargando tiempo...",
+      "weatherError": "No se pudo cargar el tiempo",
+      "hideForecast": "Ocultar pronóstico",
+      "showForecast": "Ver pronóstico de 7 días",
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "nearby": "¿Qué estás buscando?",
+      "findPlaces": "Encontrar lugares cercanos",
+      "loadingPlaces": "Buscando lugares...",
+      "noPois": "No se encontraron lugares cercanos",
+      "tryAnother": "Prueba otra categoría",
+      "selectCategory": "Selecciona una categoría para explorar",
+      "unnamed": "Sin nombre",
+        "savedPlacesTitle": "Lugares guardados cerca",
+        "savedPlacesCount": "{{count}} marcados",
+        "placesForTripTitle": "Lugares para este viaje"
     },
     "discovery": {
       "enter": "Entrar en Modo Descubrimiento",

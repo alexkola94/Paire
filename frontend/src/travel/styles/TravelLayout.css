@@ -696,88 +696,68 @@
   transition: opacity 0.3s ease-in-out, max-width 0.3s ease-in-out, height 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
-/* DESKTOP HOVER BEHAVIOR (>= 1024px): almost hidden strip that expands on hover/focus */
+/* ================================
+   DESKTOP NAVIGATION - Minimal dock style
+   Clean, stable, no complex animations
+   ================================ */
 @media (min-width: 1024px) {
-  /* Compact strip by default */
+  /* Fixed dock at bottom - always visible */
   .travel-nav {
-    bottom: 4px;
-    height: 12px;
-    opacity: 0.35;
+    bottom: 0;
+    height: 56px;
+    opacity: 1;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: var(--glass-border);
+  }
+
+  [data-theme='dark'] .travel-nav {
+    background: rgba(15, 7, 26, 0.9);
   }
 
   .travel-nav-container {
-    max-width: 520px;
-    padding: 0 var(--spacing-xs);
-    transition: max-width 0.3s ease-in-out, padding 0.3s ease-in-out, min-height 0.3s ease-in-out;
-  }
-
-  .nav-icon-wrapper {
-    height: 0;
-    width: 0;
-    transform: scale(0.6);
-    overflow: hidden;
+    max-width: 500px;
+    padding: var(--spacing-xs) var(--spacing-md);
+    gap: var(--spacing-xs);
+    transition: none;
   }
 
   .travel-nav-item {
-    min-height: 12px;
-    transition: min-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
-    opacity: 0;
+    min-height: 48px;
+    padding: var(--spacing-xs);
+    transition: color 0.2s ease, transform 0.2s ease;
+    opacity: 1;
+  }
+
+  .travel-nav-item:hover {
+    transform: translateY(-2px);
+  }
+
+  .nav-icon-wrapper {
+    width: 24px;
+    height: 24px;
+    transform: scale(1);
+    overflow: visible;
+    opacity: 1;
+    transition: transform 0.2s ease;
+  }
+
+  .travel-nav-item:hover .nav-icon-wrapper {
+    transform: scale(1.1);
   }
 
   .travel-nav .nav-indicator {
-    opacity: 0;
-    transform: translateX(-50%) scale(0.4);
-    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
   }
 
+  /* Labels always visible on desktop */
   .travel-nav-item .nav-label {
-    opacity: 0;
-    max-width: 0;
-    height: 0;
-    overflow: hidden;
-    transform: translateY(4px);
-  }
-
-  /* Expand on hover or when any item has keyboard focus */
-  .travel-nav:hover,
-  .travel-nav:focus-within {
-    height: 70px;
-    bottom: 0;
-    opacity: 1;
-  }
-
-  .travel-nav:hover .travel-nav-container,
-  .travel-nav:focus-within .travel-nav-container {
-    max-width: 640px;
-    padding: var(--spacing-xs) var(--spacing-sm);
-  }
-
-  .travel-nav:hover .nav-icon-wrapper,
-  .travel-nav:focus-within .nav-icon-wrapper {
-    width: 32px;
-    height: 32px;
-    transform: scale(1);
-    overflow: visible;
-  }
-
-  .travel-nav:hover .travel-nav-item,
-  .travel-nav:focus-within .travel-nav-item {
-    min-height: 48px;
-    opacity: 1;
-  }
-
-  .travel-nav:hover .travel-nav-item .nav-label,
-  .travel-nav:focus-within .travel-nav-item .nav-label {
     opacity: 1;
     max-width: 100%;
     height: auto;
-    transform: translateY(0);
-  }
-
-  .travel-nav:hover .nav-indicator,
-  .travel-nav:focus-within .nav-indicator {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
+    font-size: 0.65rem;
   }
 }
 
@@ -1066,6 +1046,61 @@
   .travel-nav-item .nav-label {
     font-size: 0.55rem;
     line-height: 1;
+  }
+}
+
+/* ================================
+   iOS Safe Area & Bottom Spacing
+   Prevents accidental Siri/gesture triggers
+   ================================ */
+
+/* Mobile devices - extra bottom padding */
+@media (max-width: 768px) {
+  .travel-nav {
+    /* Increase safe area padding for iOS home indicator + extra buffer */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  }
+
+  .travel-nav-container {
+    /* Add top padding to push nav items higher */
+    padding-top: var(--spacing-xs);
+    padding-bottom: var(--spacing-xs);
+  }
+}
+
+/* iOS devices with home indicator - maximum safe spacing */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) {
+    .travel-nav {
+      /* Use max() to ensure at least 20px from physical bottom on notched iPhones */
+      padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+    }
+  }
+}
+
+/* Touch devices - ensure nav items are comfortably above gesture zone */
+@media (hover: none) and (pointer: coarse) {
+  .travel-nav {
+    /* Extra padding for touch devices to avoid gesture conflicts */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  }
+
+  .travel-nav-item {
+    /* Larger touch targets positioned higher */
+    min-height: 54px;
+    padding-top: var(--spacing-sm);
+  }
+
+  .nav-icon-wrapper {
+    /* Push icon slightly higher within the nav item */
+    margin-bottom: 2px;
+  }
+}
+
+/* Standalone PWA mode (installed to home screen) - even more space */
+@media (display-mode: standalone) {
+  .travel-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
   }
 }
 

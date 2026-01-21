@@ -1,3 +1,5 @@
+using YouAndMeExpensesAPI.Models;
+
 namespace YouAndMeExpensesAPI.Services
 {
     /// <summary>
@@ -32,6 +34,16 @@ namespace YouAndMeExpensesAPI.Services
         /// <param name="userId">User ID to check savings goals for</param>
         /// <returns>Number of notifications sent</returns>
         Task<int> SendSavingsGoalRemindersAsync(Guid userId);
+
+        /// <summary>
+        /// Get or initialize reminder settings for a user.
+        /// </summary>
+        Task<ReminderPreferences> GetReminderSettingsAsync(Guid userId);
+
+        /// <summary>
+        /// Update or create reminder settings for a user.
+        /// </summary>
+        Task<ReminderPreferences> UpdateReminderSettingsAsync(Guid userId, ReminderPreferences preferences);
 
         /// <summary>
         /// Checks and sends all reminders for a user

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 
@@ -48,6 +49,112 @@ namespace YouAndMeExpensesAPI.Services
                 frontendUrl = frontendUrl.Split(',')[0].Trim();
             }
             return frontendUrl;
+        }
+
+        /// <summary>
+        /// Get or initialize reminder settings for a user.
+        /// </summary>
+        public async Task<ReminderPreferences> GetReminderSettingsAsync(Guid userId)
+        {
+            try
+            {
+                var preferences = await _dbContext.ReminderPreferences
+                    .FirstOrDefaultAsync(p => p.UserId == userId);
+
+                if (preferences == null)
+                {
+                    preferences = new ReminderPreferences
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        EmailEnabled = true,
+                        BillRemindersEnabled = true,
+                        BillReminderDays = 3,
+                        LoanRemindersEnabled = true,
+                        LoanReminderDays = 7,
+                        BudgetAlertsEnabled = true,
+                        BudgetAlertThreshold = 90,
+                        SavingsMilestonesEnabled = true,
+                        PrivacyHideNumbers = false,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                }
+
+                return preferences;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting reminder settings for user {UserId}", userId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Update or create reminder settings for a user.
+        /// </summary>
+        public async Task<ReminderPreferences> UpdateReminderSettingsAsync(Guid userId, ReminderPreferences preferences)
+        {
+            try
+            {
+                var existing = await _dbContext.ReminderPreferences
+                    .FirstOrDefaultAsync(p => p.UserId == userId);
+
+                if (existing != null)
+                {
+                    existing.EmailEnabled = preferences.EmailEnabled;
+                    existing.BillRemindersEnabled = preferences.BillRemindersEnabled;
+                    existing.BillReminderDays = preferences.BillReminderDays;
+                    existing.LoanRemindersEnabled = preferences.LoanRemindersEnabled;
+                    existing.LoanReminderDays = preferences.LoanReminderDays;
+                    existing.BudgetAlertsEnabled = preferences.BudgetAlertsEnabled;
+                    existing.BudgetAlertThreshold = preferences.BudgetAlertThreshold;
+                    existing.SavingsMilestonesEnabled = preferences.SavingsMilestonesEnabled;
+                    existing.PrivacyHideNumbers = preferences.PrivacyHideNumbers;
+                    existing.UpdatedAt = DateTime.UtcNow;
+
+                    await _dbContext.SaveChangesAsync();
+
+                    _logger.LogInformation("Reminder settings updated for user {UserId}", userId);
+                    return existing;
+                }
+
+                try
+                {
+                    preferences.Id = Guid.NewGuid();
+                    preferences.UserId = userId;
+                    preferences.CreatedAt = DateTime.UtcNow;
+                    preferences.UpdatedAt = DateTime.UtcNow;
+
+                    _dbContext.ReminderPreferences.Add(preferences);
+                    await _dbContext.SaveChangesAsync();
+
+                    _logger.LogInformation("Reminder settings created for user {UserId}", userId);
+                    return preferences;
+                }
+                catch (DbUpdateException dbEx) when (dbEx.InnerException is PostgresException pgEx && pgEx.SqlState == "23503")
+                {
+                    try
+                    {
+                        var entry = _dbContext.Entry(preferences);
+                        if (entry != null && entry.State != EntityState.Detached)
+                        {
+                            entry.State = EntityState.Detached;
+                        }
+                    }
+                    catch
+                    {
+                    }
+
+                    _logger.LogError(dbEx, "Database constraint violation when saving reminder preferences for user {UserId}", userId);
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating reminder settings for user {UserId}", userId);
+                throw;
+            }
         }
 
         /// <summary>

@@ -318,6 +318,14 @@
       "descending": "Décroissant",
       "loadingTripView": "Chargement de la vue de votre voyage..."
     },
+    "home": {
+      "welcome": "Bienvenue en mode voyage",
+      "noTripTitle": "Où partons-nous ?",
+      "noTripDescription": "Commencez à planifier votre séjour",
+      "savedPlacesTitle": "Lieux enregistrés",
+      "savedPlacesCount": "{{count}} enregistrés",
+      "savedPlacesEmpty": "Épinglez vos endroits favoris sur la carte pour les garder à portée de main."
+    },
     "budget": {
       "title": "Budget",
       "noTrip": "Aucun Voyage Sélectionné",
@@ -486,9 +494,34 @@
           "copyFailed": "Impossible de copier dans le presse-papiers. Veuillez copier le prompt manuellement depuis l'aperçu ci-dessus.",
           "provider": {
             "travel-assistant": "Assistant documents de voyage",
-            "chatgpt": "ChatGPT"
+        "chatgpt": "ChatGPT"
           }
         }
+    },
+    "explore": {
+      "title": "Explorer",
+      "essentials": "Essentiels de voyage",
+      "noTrip": "Aucun Voyage Sélectionné",
+      "createTripFirst": "Créez un voyage pour explorer votre destination",
+      "noLocation": "Localisation non définie",
+      "setLocation": "Définissez votre destination pour voir la météo et les lieux à proximité",
+      "weatherTitle": "Météo",
+      "loadingWeather": "Chargement de la météo...",
+      "weatherError": "Impossible de charger la météo",
+      "hideForecast": "Masquer les prévisions",
+      "showForecast": "Voir les prévisions sur 7 jours",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "nearby": "Que cherchez-vous ?",
+      "findPlaces": "Trouver des lieux à proximité",
+      "loadingPlaces": "Recherche de lieux...",
+      "noPois": "Aucun lieu trouvé à proximité",
+      "tryAnother": "Essayez une autre catégorie",
+      "selectCategory": "Sélectionnez une catégorie à explorer",
+      "unnamed": "Sans nom",
+        "savedPlacesTitle": "Lieux enregistrés à proximité",
+        "savedPlacesCount": "{{count}} épinglés",
+        "placesForTripTitle": "Lieux pour ce voyage"
     },
     "discovery": {
       "enter": "Entrer en Mode Découverte",

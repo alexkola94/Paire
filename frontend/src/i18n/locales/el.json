@@ -1197,7 +1197,10 @@
       "quickActionsTitle": "Γρήγορες ενέργειες",
       "quickActionsPacking": "Λίστα αποσκευών",
       "quickActionsBudget": "Προϋπολογισμός ταξιδιού",
-      "quickActionsItinerary": "Πρόγραμμα"
+      "quickActionsItinerary": "Πρόγραμμα",
+      "savedPlacesTitle": "Αποθηκευμένα μέρη",
+      "savedPlacesCount": "{{count}} αποθηκευμένα",
+      "savedPlacesEmpty": "Καρφιτσώστε τα αγαπημένα σας σημεία στον χάρτη για να τα έχετε πάντα κοντά."
     },
     "budget": {
       "title": "Προϋπολογισμός",
@@ -1396,6 +1399,8 @@
       "tryAnother": "Δοκιμάστε άλλη κατηγορία",
       "selectCategory": "Επιλέξτε κατηγορία για εξερεύνηση",
       "unnamed": "Χωρίς Όνομα",
+      "savedPlacesTitle": "Αποθηκευμένα μέρη κοντά",
+      "savedPlacesCount": "{{count}} καρφιτσωμένα",
       "travelTips": "Συμβουλές Ταξιδιού",
       "poi": {
         "restaurant": "Εστιατόρια",
@@ -1433,7 +1438,8 @@
         "downloadMaps": "Κατεβάστε χάρτες offline για τον προορισμό σας",
         "localCurrency": "Εντοπίστε ΑΤΜ για τοπικό νόμισμα",
         "emergency": "Σημειώστε τα κοντινά νοσοκομεία για έκτακτες ανάγκες"
-      }
+      },
+      "placesForTripTitle": "Μέρη για αυτό το ταξίδι"
     },
     "discovery": {
       "enter": "Είσοδος στη Λειτουργία Εξερεύνησης",

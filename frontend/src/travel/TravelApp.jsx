@@ -40,6 +40,7 @@ const pageVariants = {
  */
 const TravelApp = () => {
   const [activePage, setActivePage] = useState('home')
+  const [isLayoutSettingsOpen, setIsLayoutSettingsOpen] = useState(false)
   const { activeTrip, tripLoading } = useTravelMode()
   const { theme } = useTheme()
 
@@ -74,7 +75,11 @@ const TravelApp = () => {
   }
 
   return (
-    <TravelLayout activePage={activePage} onNavigate={setActivePage}>
+    <TravelLayout
+      activePage={activePage}
+      onNavigate={setActivePage}
+      shouldHideNav={isLayoutSettingsOpen}
+    >
       <Suspense
         fallback={
           <div className="travel-page-loading travel-loading-light">
@@ -97,6 +102,8 @@ const TravelApp = () => {
             <ActiveComponent
               trip={activeTrip}
               onNavigate={setActivePage}
+              isLayoutSettingsOpen={isLayoutSettingsOpen}
+              setIsLayoutSettingsOpen={setIsLayoutSettingsOpen}
             />
           </motion.div>
         </AnimatePresence>

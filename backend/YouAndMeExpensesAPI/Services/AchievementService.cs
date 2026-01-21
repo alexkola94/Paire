@@ -859,6 +859,52 @@ namespace YouAndMeExpensesAPI.Services
 
             await _context.SaveChangesAsync();
         }
+
+        /// <summary>
+        /// Compute aggregate statistics for a user's achievements (unlocked counts, totals, breakdowns).
+        /// </summary>
+        public async Task<AchievementStatsDto> GetAchievementStatsAsync(string userId)
+        {
+            var progress = await GetUserAchievementProgressAsync(userId);
+
+            var unlocked = progress.Count(p => p.IsUnlocked);
+            var total = progress.Count;
+            var totalPoints = progress
+                .Where(p => p.IsUnlocked)
+                .Sum(p => p.Achievement.Points);
+
+            var byCategory = progress
+                .Where(p => p.IsUnlocked)
+                .GroupBy(p => p.Achievement.Category)
+                .Select(g => new AchievementCategoryCountDto
+                {
+                    Category = g.Key,
+                    Count = g.Count()
+                })
+                .ToList();
+
+            var byRarity = progress
+                .Where(p => p.IsUnlocked)
+                .GroupBy(p => p.Achievement.Rarity)
+                .Select(g => new AchievementRarityCountDto
+                {
+                    Rarity = g.Key,
+                    Count = g.Count()
+                })
+                .ToList();
+
+            var percentage = total > 0 ? (unlocked * 100.0 / total) : 0;
+
+            return new AchievementStatsDto
+            {
+                Unlocked = unlocked,
+                Total = total,
+                TotalPoints = totalPoints,
+                Percentage = percentage,
+                ByCategory = byCategory,
+                ByRarity = byRarity
+            };
+        }
     }
 }
 

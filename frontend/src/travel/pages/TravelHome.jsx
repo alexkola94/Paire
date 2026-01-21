@@ -14,20 +14,24 @@ import {
   FiCalendar,
   FiHome,
   FiLoader,
-  FiExternalLink
+  FiExternalLink,
+  FiSettings
 } from 'react-icons/fi'
 import { useTravelMode } from '../context/TravelModeContext'
-import { travelExpenseService, packingService, itineraryService, tripCityService, tripService } from '../services/travelApi'
+import useDiscoveryMode from '../hooks/useDiscoveryMode'
+import { travelExpenseService, packingService, itineraryService, tripCityService, tripService, savedPlaceService } from '../services/travelApi'
 import { getCached, setCached } from '../services/travelDb'
 import db from '../services/travelDb'
 import { getRouteDirections } from '../services/discoveryService'
-import { getAdvisoryForTrip } from '../services/travelAdvisoryService'
+import { getAdvisoryForTrip, getAdvisories } from '../services/travelAdvisoryService'
 import TravelAdvisoryCard from '../components/TravelAdvisoryCard'
 import { formatDate, formatDateRange as formatDateRangeUtil } from '../utils/dateFormatter'
 import TripSetupWizard from '../components/TripSetupWizard'
 import MultiCityTripWizard from '../components/MultiCityTripWizard'
 import TripMicrography from '../components/TripMicrography'
+import LayoutSettingsModal from '../components/LayoutSettingsModal'
 import ConfirmationModal from '../../components/ConfirmationModal'
+import { useTripLayout } from '../hooks/useTripLayout'
 import '../styles/TravelHome.css'
 
 // Gentle animation variants - slower, smoother for calm feeling
@@ -58,9 +62,10 @@ const cardVariants = {
  * Travel Home Page - Calm, minimal dashboard
  * Shows just what travelers need: countdown, simple status, and easy navigation
  */
-const TravelHome = ({ trip, onNavigate }) => {
+const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSettingsOpen }) => {
   const { t, i18n } = useTranslation()
   const { selectTrip, loadTrips } = useTravelMode()
+  const { enterDiscoveryMode, canEnterDiscoveryMode } = useDiscoveryMode()
   const [showSetup, setShowSetup] = useState(false)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   // Simple chooser so user can pick between single-destination and multi‑city
@@ -84,13 +89,31 @@ const TravelHome = ({ trip, onNavigate }) => {
   const [currentCityIndex, setCurrentCityIndex] = useState(-1)
   const [nextCityIndex, setNextCityIndex] = useState(-1)
   const [advisory, setAdvisory] = useState(null)
+  const [advisories, setAdvisories] = useState([])
   const [isTripDeleted, setIsTripDeleted] = useState(false)
+  const [savedPlaces, setSavedPlaces] = useState([])
 
   // Effective trip used by this page.
   // When the last trip is deleted we locally treat it as null so the UI
   // can immediately fall back to the calm empty state, even if parent
   // props/context update slightly later.
   const activeTrip = isTripDeleted ? null : trip
+
+  // Layout customization hook - manages section visibility and ordering
+  const {
+    sections: layoutSections,
+    preset: layoutPreset,
+    presets: layoutPresets,
+    isSaving: isLayoutSaving,
+    hasChanges: hasLayoutChanges,
+    saveLayout,
+    applyPreset,
+    toggleSection,
+    reorderSections,
+    updateColumnOrder,
+    resetToDefaults,
+    isSectionVisible
+  } = useTripLayout(activeTrip?.id)
 
   // Listen for create trip event from TripSelector
   useEffect(() => {
@@ -374,39 +397,41 @@ const TravelHome = ({ trip, onNavigate }) => {
       if (!activeTrip?.id || isTripDeleted) {
         setLoading(false)
         setAdvisory(null)
+        setAdvisories([])
         setBudgetSummary(null)
         setPackingProgress(null)
         setUpcomingCount(0)
+        setSavedPlaces([])
         return
       }
 
       const cacheKey = `trip-summary-${activeTrip.id}`
-      
+
       try {
         // Try to get cached data first
         const cachedData = await getCached(cacheKey)
-        
+
         if (cachedData) {
           // Use cached data
           setBudgetSummary(cachedData.budgetSummary)
           setPackingProgress(cachedData.packingProgress)
           setUpcomingCount(cachedData.upcomingCount)
-          setAdvisory(cachedData.advisory || null)
+          // Advisory is handled by a dedicated effect now so it can support
+          // multi‑country trips without blocking the main summary view.
           setLoading(false)
           return
         }
 
-        // No cache, fetch from API
-        const [expenses, packingItems, events, tripAdvisory] = await Promise.all([
+        // No cache, fetch core summary data first (expenses / packing / events).
+        // Travel advisory can be slow and is purely informational, so we load it
+        // in a separate async step below to avoid blocking the main view.
+        const [expenses, packingItems, events] = await Promise.all([
           travelExpenseService.getSummary(activeTrip.id).catch(() => null),
           packingService.getByTrip(activeTrip.id).catch(() => []),
-          itineraryService.getByTrip(activeTrip.id).catch(() => []),
-          // Advisory is optional, so handle errors silently.
-          getAdvisoryForTrip(activeTrip).catch(() => null)
+          itineraryService.getByTrip(activeTrip.id).catch(() => [])
         ])
 
         setBudgetSummary(expenses)
-        setAdvisory(tripAdvisory || null)
 
         // Calculate packing progress
         let packingProgressData = null
@@ -425,14 +450,17 @@ const TravelHome = ({ trip, onNavigate }) => {
         const upcoming = events.filter(e => e.date >= today)
         const upcomingCountValue = upcoming.length
         setUpcomingCount(upcomingCountValue)
-
-        // Cache the computed summary data (cache for 5 minutes)
-        await setCached(cacheKey, {
-          budgetSummary: expenses,
-          packingProgress: packingProgressData,
-          upcomingCount: upcomingCountValue,
-          advisory: tripAdvisory || null
-        }, 5 * 60 * 1000) // 5 minutes TTL
+        // Cache the computed summary data (excluding advisory which is loaded
+        // via a dedicated, non‑blocking effect to support multi‑country trips).
+        await setCached(
+          cacheKey,
+          {
+            budgetSummary: expenses,
+            packingProgress: packingProgressData,
+            upcomingCount: upcomingCountValue
+          },
+          5 * 60 * 1000
+        ) // 5 minutes TTL
       } catch (error) {
         console.error('Error loading trip data:', error)
       } finally {
@@ -441,6 +469,95 @@ const TravelHome = ({ trip, onNavigate }) => {
     }
 
     loadTripData()
+  }, [activeTrip?.id, isTripDeleted])
+
+  // Load travel advisory / advisories in the background.
+  // Supports both single‑destination and multi‑city trips.
+  useEffect(() => {
+    let cancelled = false
+
+    const loadAdvisories = async () => {
+      if (!activeTrip?.id || isTripDeleted) {
+        setAdvisory(null)
+        setAdvisories([])
+        return
+      }
+
+      try {
+        // Multi‑city: derive distinct countries from the trip cities and
+        // fetch advisories for each one.
+        if (isMultiCity && tripCities.length > 0) {
+          const countries = Array.from(
+            new Set(
+              tripCities
+                .map(c => c.country && String(c.country).trim())
+                .filter(Boolean)
+            )
+          )
+
+          if (countries.length > 0) {
+            const results = await getAdvisories(countries).catch(() => [])
+            if (!cancelled) {
+              setAdvisories(results || [])
+              setAdvisory(results && results.length > 0 ? results[0] : null)
+            }
+            return
+          }
+        }
+
+        // Fallback: single‑destination advisory based on the trip itself.
+        const single = await getAdvisoryForTrip(activeTrip).catch(() => null)
+        if (!cancelled) {
+          setAdvisory(single || null)
+          setAdvisories(single ? [single] : [])
+        }
+      } catch (error) {
+        console.error('Error loading travel advisory for TravelHome:', error)
+        if (!cancelled) {
+          setAdvisory(null)
+          setAdvisories([])
+        }
+      }
+    }
+
+    loadAdvisories()
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeTrip?.id, isTripDeleted, isMultiCity, tripCities, activeTrip])
+
+  // Load saved places (pinned POIs) for the active trip in a lightweight way.
+  // We intentionally keep this separate from the main summary effect so that
+  // the home view stays responsive even if Dexie is a bit slow on some devices.
+  useEffect(() => {
+    let cancelled = false
+
+    const loadSavedPlaces = async () => {
+      if (!activeTrip?.id || isTripDeleted) {
+        setSavedPlaces([])
+        return
+      }
+
+      try {
+        const places = await savedPlaceService.getByTrip(activeTrip.id)
+        if (!cancelled) {
+          // Limit to a small number for the home sidebar so it stays calm.
+          setSavedPlaces((places || []).slice(0, 4))
+        }
+      } catch (error) {
+        console.error('Error loading saved places for trip:', error)
+        if (!cancelled) {
+          setSavedPlaces([])
+        }
+      }
+    }
+
+    loadSavedPlaces()
+
+    return () => {
+      cancelled = true
+    }
   }, [activeTrip?.id, isTripDeleted])
 
   // Listen for events when items are added to invalidate cache
@@ -455,7 +572,7 @@ const TravelHome = ({ trip, onNavigate }) => {
       } catch (error) {
         console.error('Error invalidating cache:', error)
       }
-      
+
       // Reload trip data
       const loadTripData = async () => {
         try {
@@ -497,7 +614,7 @@ const TravelHome = ({ trip, onNavigate }) => {
           console.error('Error reloading trip data:', error)
         }
       }
-      
+
       loadTripData()
     }
 
@@ -518,6 +635,120 @@ const TravelHome = ({ trip, onNavigate }) => {
     if (!tripCities || tripCities.length === 0) return []
     return [...tripCities].sort((a, b) => (a.order || a.orderIndex || 0) - (b.order || b.orderIndex || 0))
   }, [tripCities])
+
+  /**
+   * TodayStrip
+   * Small, always-visible strip directly under the countdown that surfaces
+   * the most important trip stats for “right now”. This is tuned for mobile
+   * first so users can see health of packing / budget / today’s plan at a glance.
+   */
+  const TodayStrip = ({
+    countdownSnapshot,
+    packingProgressSnapshot,
+    upcomingCountSnapshot,
+    budgetSummarySnapshot,
+    activeTripSnapshot,
+    onNavigateSnapshot
+  }) => {
+    if (!activeTripSnapshot) return null
+
+    const chips = []
+    const isActiveTrip = countdownSnapshot?.type === 'active'
+
+    // For active trips, emphasise “today / next up” first so travellers
+    // can quickly jump into today’s plan from the hero area.
+    if (isActiveTrip) {
+      if (upcomingCountSnapshot > 0) {
+        chips.push({
+          key: 'events',
+          icon: <FiCalendar size={14} />,
+          label: t('travel.home.upcomingEvents', 'Upcoming'),
+          value: `${upcomingCountSnapshot} ${t('travel.home.eventsPlanned', 'events')}`,
+          onClick: () => onNavigateSnapshot('itinerary')
+        })
+      }
+
+      if (budgetSummarySnapshot && activeTripSnapshot?.budget) {
+        const usedPercent = Math.round((budgetSummarySnapshot.total / activeTripSnapshot.budget) * 100)
+        chips.push({
+          key: 'budget',
+          icon: <FiDollarSign size={14} />,
+          label: t('travel.home.budgetUsed', 'Budget Used'),
+          value: `${Math.min(usedPercent, 999)}%`,
+          onClick: () => onNavigateSnapshot('budget')
+        })
+      }
+
+      if (packingProgressSnapshot) {
+        chips.push({
+          key: 'packing',
+          icon: <FiCheckSquare size={14} />,
+          label: t('travel.home.packing', 'Packing'),
+          value: `${packingProgressSnapshot.percentage}%`,
+          onClick: () => onNavigateSnapshot('packing')
+        })
+      }
+    } else {
+      // During planning, invite the user to get ready (packing / budget)
+      // before deep discovery content.
+      if (packingProgressSnapshot) {
+        chips.push({
+          key: 'packing',
+          icon: <FiCheckSquare size={14} />,
+          label: t('travel.home.packing', 'Packing'),
+          value: `${packingProgressSnapshot.percentage}%`,
+          onClick: () => onNavigateSnapshot('packing')
+        })
+      }
+
+      if (budgetSummarySnapshot && activeTripSnapshot?.budget) {
+        const usedPercent = Math.round((budgetSummarySnapshot.total / activeTripSnapshot.budget) * 100)
+        chips.push({
+          key: 'budget',
+          icon: <FiDollarSign size={14} />,
+          label: t('travel.home.budgetUsed', 'Budget Used'),
+          value: `${Math.min(usedPercent, 999)}%`,
+          onClick: () => onNavigateSnapshot('budget')
+        })
+      }
+
+      if (upcomingCountSnapshot > 0) {
+        chips.push({
+          key: 'events',
+          icon: <FiCalendar size={14} />,
+          label: t('travel.home.upcomingEvents', 'Upcoming'),
+          value: `${upcomingCountSnapshot} ${t('travel.home.eventsPlanned', 'events')}`,
+          onClick: () => onNavigateSnapshot('itinerary')
+        })
+      }
+    }
+
+    if (chips.length === 0) return null
+
+    return (
+      <div
+        className="today-strip"
+        aria-label={t('travel.home.quickStats', 'Quick Stats')}
+      >
+        {chips.map(chip => (
+          <button
+            key={chip.key}
+            type="button"
+            className="today-strip-chip"
+            onClick={chip.onClick}
+          >
+            <span className="today-strip-chip-icon">
+              {chip.icon}
+            </span>
+            <span className="today-strip-chip-text">
+              <span className="today-strip-chip-label">{chip.label}</span>
+              <span className="today-strip-chip-value">{chip.value}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    )
+  }
 
   // Helper: Format date range using locale-aware formatting
   const formatDateRange = useCallback((startDate, endDate) => {
@@ -550,7 +781,7 @@ const TravelHome = ({ trip, onNavigate }) => {
         const endDate = cityInfo.currentCity.endDate || cityInfo.currentCity.startDate
         const end = new Date(endDate)
         end.setHours(0, 0, 0, 0)
-        
+
         if (now <= end) {
           const days = Math.ceil((end - now) / (1000 * 60 * 60 * 24)) + 1
           return {
@@ -568,7 +799,7 @@ const TravelHome = ({ trip, onNavigate }) => {
         const startDate = cityInfo.nextCity.startDate
         const start = new Date(startDate)
         start.setHours(0, 0, 0, 0)
-        
+
         if (now < start) {
           const days = Math.ceil((start - now) / (1000 * 60 * 60 * 24))
           return {
@@ -618,6 +849,27 @@ const TravelHome = ({ trip, onNavigate }) => {
   const countdown = getDaysCountdown()
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  // Open a saved place directly in Google Maps. We prefer precise
+  // coordinates when available, and gracefully fall back to a text
+  // search using name + address.
+  const handleOpenSavedPlaceInMaps = useCallback((poi) => {
+    if (!poi) return
+
+    const hasCoords =
+      poi.latitude != null &&
+      poi.longitude != null
+
+    const url = hasCoords
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${poi.latitude},${poi.longitude}`
+      )}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        [poi.name, poi.address].filter(Boolean).join(' ')
+      )}`
+
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }, [])
 
   // Open Google Maps directions with full trip route:
   // Home (if known) → all cities in order → Home (loop).
@@ -716,7 +968,7 @@ const TravelHome = ({ trip, onNavigate }) => {
     try {
       // Check if trip exists in IndexedDB (might be IndexedDB-only)
       const localTrip = await db.trips.get(activeTrip.id)
-      
+
       // Delete current trip (handles both API and IndexedDB)
       await tripService.delete(activeTrip.id)
 
@@ -767,7 +1019,7 @@ const TravelHome = ({ trip, onNavigate }) => {
           await db.documents.where('tripId').equals(trip.id).delete()
           await db.travelExpenses.where('tripId').equals(trip.id).delete()
           await db.tripCities.where('tripId').equals(trip.id).delete()
-          
+
           // Reload and select next trip
           await loadTrips()
           const remainingTrips = await db.trips.toArray()
@@ -808,7 +1060,7 @@ const TravelHome = ({ trip, onNavigate }) => {
     setIsCreatingNew(false)
     // A new or updated trip means we are no longer in the "deleted" state.
     setIsTripDeleted(false)
-    
+
     // Refresh trips list to include the new or updated trip
     await loadTrips()
 
@@ -817,7 +1069,7 @@ const TravelHome = ({ trip, onNavigate }) => {
       selectTrip(createdTrip)
       return
     }
-    
+
     // If there's already a different active trip, ask user if they want to switch
     if (activeTrip?.id) {
       setNewTrip(createdTrip)
@@ -1020,452 +1272,492 @@ const TravelHome = ({ trip, onNavigate }) => {
     )
   }
 
-  return (
-    <motion.div
-      className="travel-home"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {/* Greeting - calm, personal touch */}
-      <motion.div className="greeting-section" variants={cardVariants}>
-        <span className="greeting-text">{getGreeting()}</span>
-        <div className="greeting-actions">
-          <button
-            className="create-trip-btn"
-            onClick={handleOpenCreateTrip}
-            aria-label={t('travel.trips.selector.createNew', 'Create New Trip')}
-            title={t('travel.trips.selector.createNew', 'Create New Trip')}
+  // Helper to render sections dynamically
+  const renderSection = (key) => {
+    switch (key) {
+      case 'countdown':
+        return countdown ? (
+          <motion.div
+            key="countdown"
+            className="travel-glass-card countdown-card calm-card"
+            variants={cardVariants}
           >
-            <FiPlus size={16} />
-          </button>
-          <button
-            className="edit-trip-btn"
-            onClick={() => {
-              // Edit behaviour depends on trip type:
-              // - Single-destination trips use the classic TripSetupWizard.
-              // - Multi-city trips open the MultiCityTripWizard with existing cities preloaded.
-              setIsCreatingNew(false)
-              if (isMultiCity) {
-                setShowMultiCityWizard(true)
-                setShowSetup(false)
-              } else {
-                setShowSetup(true)
-                setShowMultiCityWizard(false)
-              }
-            }}
-            aria-label={t('travel.home.editTrip', 'Edit Trip')}
-            title={t('travel.home.editTrip', 'Edit Trip')}
-          >
-            <FiEdit3 size={16} />
-          </button>
-          {activeTrip?.id && (
-            <button
-              className="edit-trip-btn delete-trip-btn"
-              onClick={() => setShowDeleteConfirm(true)}
-              aria-label={t('travel.home.deleteTrip', 'Delete Trip')}
-              title={t('travel.home.deleteTrip', 'Delete Trip')}
-            >
-              <FiTrash2 size={16} />
-            </button>
-          )}
-        </div>
-      </motion.div>
+            <div className={`countdown-content ${countdown.type}`}>
+              {countdown.type !== 'completed' && (
+                <div className="countdown-number">{countdown.days}</div>
+              )}
+              <div className="countdown-label">{countdown.label}</div>
+            </div>
+            {/* Multi-city: Show current/next city info */}
+            {isMultiCity && countdown.cityInfo && (
+              <div className="countdown-destination multi-city-info">
+                <FiMapPin size={14} />
+                <span className="city-name">{countdown.cityInfo.name}</span>
+                {countdown.cityInfo.country && (
+                  <span className="city-country">, {countdown.cityInfo.country}</span>
+                )}
+                {countdown.cityLabel && (
+                  <span className="city-label">{countdown.cityLabel}</span>
+                )}
+                {countdown.cityInfo.startDate && (
+                  <div className="city-dates">
+                    <FiCalendar size={12} />
+                    <span>{formatDateRange(countdown.cityInfo.startDate, countdown.cityInfo.endDate)}</span>
+                  </div>
+                )}
+                {/* High-level route summary: Start -> End */}
+                {tripCities.length > 1 && (() => {
+                  const ordered = getOrderedCities()
+                  const startCity = ordered[0]
+                  const endCity = ordered[ordered.length - 1]
+                  if (!startCity || !endCity) return null
+                  return (
+                    <div className="city-route-summary">
+                      <span className="route-label">
+                        {t('travel.home.routeLabel', 'Route')}
+                      </span>
+                      <span className="route-value">
+                        {startCity.name} <span className="route-arrow">→</span> {endCity.name}
+                      </span>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+            {/* Single city: Show destination */}
+            {trip?.destination && !isMultiCity && (
+              <div className="countdown-destination">
+                <FiMapPin size={14} />
+                <span>{trip.destination}</span>
+              </div>
+            )}
+            {/* Multi-city progress indicator */}
+            {isMultiCity && getCityInfo() && (
+              <div className="city-progress-indicator">
+                <span className="progress-text">
+                  {t('travel.home.cityProgress', 'City {{current}} of {{total}}', {
+                    current: getCityInfo().currentIndex >= 0 ? getCityInfo().currentIndex + 1 : (getCityInfo().nextIndex >= 0 ? getCityInfo().nextIndex : 1),
+                    total: getCityInfo().total
+                  })}
+                </span>
+              </div>
+            )}
+          </motion.div>
+        ) : null
 
-      {/* Main Content Grid - Better use of horizontal space */}
-      <div className="travel-home-grid">
-        {/* Left Column - Main Focus: Countdown */}
-        <div className="travel-home-main">
-          {/* Main Focus: Countdown - simple, centered */}
-          {countdown && (
+      case 'destinationSnapshot':
+        return !isMultiCity && activeTrip ? (
+          <React.Fragment key="destinationSnapshot">
             <motion.div
-              className="travel-glass-card countdown-card calm-card"
+              className="travel-glass-card single-destination-card"
               variants={cardVariants}
             >
-              <div className={`countdown-content ${countdown.type}`}>
-                {countdown.type !== 'completed' && (
-                  <div className="countdown-number">{countdown.days}</div>
-                )}
-                <div className="countdown-label">{countdown.label}</div>
+              <div className="single-destination-header">
+                <div className="single-destination-icon">
+                  <FiMapPin size={18} />
+                </div>
+                <div className="single-destination-heading">
+                  <span className="single-destination-title">
+                    {t('travel.home.destinationSnapshotTitle', 'Your destination')}
+                  </span>
+                  <span className="single-destination-name">
+                    {activeTrip.destination || t('travel.home.destinationFallback', 'Trip destination')}
+                  </span>
+                  {activeTrip.country && (
+                    <span className="single-destination-country">{activeTrip.country}</span>
+                  )}
+                </div>
               </div>
-              {/* Multi-city: Show current/next city info */}
-              {isMultiCity && countdown.cityInfo && (
-                <div className="countdown-destination multi-city-info">
-                  <FiMapPin size={14} />
-                  <span className="city-name">{countdown.cityInfo.name}</span>
-                  {countdown.cityInfo.country && (
-                    <span className="city-country">, {countdown.cityInfo.country}</span>
-                  )}
-                  {countdown.cityLabel && (
-                    <span className="city-label">{countdown.cityLabel}</span>
-                  )}
-                  {countdown.cityInfo.startDate && (
-                    <div className="city-dates">
-                      <FiCalendar size={12} />
-                      <span>{formatDateRange(countdown.cityInfo.startDate, countdown.cityInfo.endDate)}</span>
-                    </div>
-                  )}
-                  {/* High-level route summary: Start → End */}
-                  {tripCities.length > 1 && (() => {
-                    const ordered = getOrderedCities()
-                    const startCity = ordered[0]
-                    const endCity = ordered[ordered.length - 1]
-                    if (!startCity || !endCity) return null
-                    return (
-                      <div className="city-route-summary">
-                        <span className="route-label">
-                          {t('travel.home.routeLabel', 'Route')}
-                        </span>
-                        <span className="route-value">
-                          {startCity.name} <span className="route-arrow">→</span> {endCity.name}
-                        </span>
-                      </div>
-                    )
-                  })()}
-                </div>
-              )}
-              {/* Single city: Show destination */}
-              {trip?.destination && !isMultiCity && (
-                <div className="countdown-destination">
-                  <FiMapPin size={14} />
-                  <span>{trip.destination}</span>
-                </div>
-              )}
-              {/* Multi-city progress indicator */}
-              {isMultiCity && getCityInfo() && (
-                <div className="city-progress-indicator">
-                  <span className="progress-text">
-                    {t('travel.home.cityProgress', 'City {{current}} of {{total}}', {
-                      current: getCityInfo().currentIndex >= 0 ? getCityInfo().currentIndex + 1 : (getCityInfo().nextIndex >= 0 ? getCityInfo().nextIndex : 1),
-                      total: getCityInfo().total
-                    })}
-                  </span>
-                </div>
-              )}
-            </motion.div>
-          )}
 
-          {/* Single-city destination snapshot + gentle status and quick actions */}
-          {!isMultiCity && activeTrip && (
-            <>
-              {/* Destination snapshot card */}
-              <motion.div
-                className="travel-glass-card single-destination-card"
-                variants={cardVariants}
-              >
-                <div className="single-destination-header">
-                  <div className="single-destination-icon">
-                    <FiMapPin size={18} />
-                  </div>
-                  <div className="single-destination-heading">
-                    <span className="single-destination-title">
-                      {t('travel.home.destinationSnapshotTitle', 'Your destination')}
+              {(activeTrip.startDate || activeTrip.endDate) && (
+                <div className="single-destination-meta">
+                  {activeTrip.startDate && activeTrip.endDate && (
+                    <span className="single-destination-dates">
+                      <FiCalendar size={14} />
+                      <span>
+                        {formatDateRange(activeTrip.startDate, activeTrip.endDate)}
+                      </span>
                     </span>
-                    <span className="single-destination-name">
-                      {activeTrip.destination || t('travel.home.destinationFallback', 'Trip destination')}
+                  )}
+                  {activeTrip.startDate && activeTrip.endDate && (
+                    <span className="single-destination-duration">
+                      {(() => {
+                        const start = new Date(activeTrip.startDate)
+                        const end = new Date(activeTrip.endDate)
+                        start.setHours(0, 0, 0, 0)
+                        end.setHours(0, 0, 0, 0)
+                        const days = Math.max(
+                          1,
+                          Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
+                        )
+                        return t(
+                          'travel.home.tripDuration',
+                          '{{days}} days in total',
+                          { days }
+                        )
+                      })()}
                     </span>
-                    {activeTrip.country && (
-                      <span className="single-destination-country">{activeTrip.country}</span>
-                    )}
-                  </div>
+                  )}
                 </div>
+              )}
 
-                {(activeTrip.startDate || activeTrip.endDate) && (
-                  <div className="single-destination-meta">
-                    {activeTrip.startDate && activeTrip.endDate && (
-                      <span className="single-destination-dates">
-                        <FiCalendar size={14} />
-                        <span>
-                          {formatDateRange(activeTrip.startDate, activeTrip.endDate)}
-                        </span>
-                      </span>
-                    )}
-                    {activeTrip.startDate && activeTrip.endDate && (
-                      <span className="single-destination-duration">
-                        {(() => {
-                          const start = new Date(activeTrip.startDate)
-                          const end = new Date(activeTrip.endDate)
-                          start.setHours(0, 0, 0, 0)
-                          end.setHours(0, 0, 0, 0)
-                          const days = Math.max(
-                            1,
-                            Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
-                          )
-                          return t(
-                            'travel.home.tripDuration',
-                            '{{days}} days in total',
-                            { days }
-                          )
-                        })()}
-                      </span>
-                    )}
-                  </div>
+              <p className="single-destination-base">
+                {t(
+                  'travel.home.destinationSnapshotBase',
+                  'A calm base to organise this trip.'
                 )}
+              </p>
+            </motion.div>
 
-                <p className="single-destination-base">
-                  {t(
-                    'travel.home.destinationSnapshotBase',
-                    'A calm base to organise this trip.'
-                  )}
-                </p>
-              </motion.div>
-
-              {/* Today / trip status strip */}
-              {countdown && (
-                <div className="single-trip-status-strip">
-                  <span className="single-trip-status-label">
-                    {t('travel.home.tripStatusLabel', 'Trip status')}
-                  </span>
-                  <span className={`single-trip-status-pill ${countdown.type}`}>
-                    {countdown.type === 'active' &&
-                      t('travel.home.tripStatusActive', 'On the trip')}
-                    {countdown.type === 'countdown' &&
-                      t('travel.home.tripStatusPreparing', 'Preparing')}
-                    {countdown.type === 'completed' &&
-                      t('travel.home.tripStatusCompleted', 'Back home')}
-                  </span>
-                  <span className="single-trip-status-detail">
-                    {countdown.label}
-                  </span>
-                </div>
-              )}
-
-              {/* Quick actions cluster */}
-              <div className="single-trip-quick-actions">
-                <span className="quick-actions-label">
-                  {t('travel.home.quickActionsTitle', 'Quick actions')}
+            {/* Today / trip status strip */}
+            {countdown && (
+              <div className="single-trip-status-strip">
+                <span className="single-trip-status-label">
+                  {t('travel.home.tripStatusLabel', 'Trip status')}
                 </span>
-                <div className="quick-actions-buttons">
-                  <button
-                    type="button"
-                    className="quick-action-pill"
-                    onClick={() => onNavigate('packing')}
-                  >
-                    <span className="quick-action-icon">
-                      <FiCheckSquare size={14} />
-                    </span>
-                    <span className="quick-action-text">
-                      {t('travel.home.quickActionsPacking', 'Packing list')}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-action-pill"
-                    onClick={() => onNavigate('budget')}
-                  >
-                    <span className="quick-action-icon">
-                      <FiDollarSign size={14} />
-                    </span>
-                    <span className="quick-action-text">
-                      {t('travel.home.quickActionsBudget', 'Trip budget')}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-action-pill"
-                    onClick={() => onNavigate('itinerary')}
-                  >
-                    <span className="quick-action-icon">
-                      <FiMapPin size={14} />
-                    </span>
-                    <span className="quick-action-text">
-                      {t('travel.home.quickActionsItinerary', 'Itinerary')}
-                    </span>
-                  </button>
-                </div>
+                <span className={`single-trip-status-pill ${countdown.type}`}>
+                  {countdown.type === 'active' &&
+                    t('travel.home.tripStatusActive', 'On the trip')}
+                  {countdown.type === 'countdown' &&
+                    t('travel.home.tripStatusPreparing', 'Preparing')}
+                  {countdown.type === 'completed' &&
+                    t('travel.home.tripStatusCompleted', 'Back home')}
+                </span>
+                <span className="single-trip-status-detail">
+                  {countdown.label}
+                </span>
               </div>
-            </>
-          )}
+            )}
 
-          {/* Multi-City Trip Micrography - Below countdown on left */}
-          {isMultiCity && activeTrip && (
-            <motion.div variants={cardVariants}>
-              <TripMicrography trip={activeTrip} onNavigate={onNavigate} />
-            </motion.div>
-          )}
+            {/* Quick actions cluster */}
+            <div className="single-trip-quick-actions">
+              <span className="quick-actions-label">
+                {t('travel.home.quickActionsTitle', 'Quick actions')}
+              </span>
+              <div className="quick-actions-buttons">
+                <button
+                  type="button"
+                  className="quick-action-pill"
+                  onClick={() => onNavigate('packing')}
+                >
+                  <span className="quick-action-icon">
+                    <FiCheckSquare size={14} />
+                  </span>
+                  <span className="quick-action-text">
+                    {t('travel.home.quickActionsPacking', 'Packing list')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="quick-action-pill"
+                  onClick={() => onNavigate('budget')}
+                >
+                  <span className="quick-action-icon">
+                    <FiDollarSign size={14} />
+                  </span>
+                  <span className="quick-action-text">
+                    {t('travel.home.quickActionsBudget', 'Trip budget')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="quick-action-pill"
+                  onClick={() => onNavigate('itinerary')}
+                >
+                  <span className="quick-action-icon">
+                    <FiMapPin size={14} />
+                  </span>
+                  <span className="quick-action-text">
+                    {t('travel.home.quickActionsItinerary', 'Itinerary')}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </React.Fragment>
+        ) : null
 
-          {/* Encouraging message - changes based on trip status */}
-          <motion.p className="encouragement" variants={cardVariants}>
+      case 'todayStrip':
+        return (
+          <TodayStrip
+            key="todayStrip"
+            countdownSnapshot={countdown}
+            packingProgressSnapshot={packingProgress}
+            upcomingCountSnapshot={upcomingCount}
+            budgetSummarySnapshot={budgetSummary}
+            activeTripSnapshot={activeTrip}
+            onNavigateSnapshot={onNavigate}
+          />
+        )
+
+      case 'tripMicrography':
+        return (isMultiCity && activeTrip) ? (
+          <motion.div key="tripMicrography" variants={cardVariants}>
+            <TripMicrography trip={activeTrip} onNavigate={onNavigate} />
+          </motion.div>
+        ) : null
+
+      case 'encouragement':
+        return (
+          <motion.p key="encouragement" className="encouragement" variants={cardVariants}>
             {countdown?.type === 'countdown' && t('travel.home.encourageCountdown', 'Take your time preparing. You\'ve got this.')}
             {countdown?.type === 'active' && t('travel.home.encourageActive', 'Enjoy every moment of your journey.')}
             {countdown?.type === 'completed' && t('travel.home.encourageCompleted', 'Hope you had a wonderful trip!')}
           </motion.p>
-        </div>
+        )
 
-        {/* Right Column - Sidebar Content */}
-        <div className="travel-home-sidebar">
-          {/* Country Advisory Card - gentle safety context */}
-          {advisory && (
-            <motion.div variants={cardVariants}>
-              <TravelAdvisoryCard advisory={advisory} compact={false} />
-            </motion.div>
-          )}
+      case 'advisory':
+        return advisory ? (
+          <motion.div key="advisory" className="travel-home-sidebar-advisory" variants={cardVariants}>
+            <TravelAdvisoryCard
+              advisory={advisory}
+              advisories={advisories}
+              compact={false}
+            />
+          </motion.div>
+        ) : null
 
-          {/* Route Summary Card for Multi-City Trips */}
-          {isMultiCity && tripCities.length > 0 && (
-            <motion.div
-              className="travel-glass-card route-summary-card"
-              variants={cardVariants}
-            >
-              <div className="route-summary-content">
+      case 'routeSummary':
+        return (isMultiCity && tripCities.length > 0) ? (
+          <motion.div key="routeSummary" className="travel-glass-card route-summary-card" variants={cardVariants}>
+            <div className="route-summary-content">
+              <div className="route-stat">
+                <FiMapPin size={16} />
+                <span className="stat-value">{tripCities.length}</span>
+                <span className="stat-label">{t('travel.home.cities', 'cities')}</span>
+              </div>
+              {totalDistance > 0 && (
                 <div className="route-stat">
-                  <FiMapPin size={16} />
-                  <span className="stat-value">{tripCities.length}</span>
-                  <span className="stat-label">{t('travel.home.cities', 'cities')}</span>
+                  <FiNavigation size={16} />
+                  <span className="stat-value">{Math.round(totalDistance)}</span>
+                  <span className="stat-label">km</span>
                 </div>
-                {totalDistance > 0 && (
-                  <div className="route-stat">
-                    <FiNavigation size={16} />
-                    <span className="stat-value">{Math.round(totalDistance)}</span>
-                    <span className="stat-label">km</span>
+              )}
+              {activeTrip?.startDate && activeTrip?.endDate && (
+                <div className="route-stat">
+                  <FiCalendar size={16} />
+                  <span className="stat-value">
+                    {Math.ceil((new Date(activeTrip.endDate) - new Date(activeTrip.startDate)) / (1000 * 60 * 60 * 24)) + 1}
+                  </span>
+                  <span className="stat-label">{t('travel.home.days', 'days')}</span>
+                </div>
+              )}
+            </div>
+            {/* Compact strip: From [Start] to [End] */}
+            {tripCities.length > 1 && (() => {
+              const ordered = getOrderedCities()
+              const startCity = ordered[0]
+              const endCity = ordered[ordered.length - 1]
+              if (!startCity || !endCity) return null
+              return (
+                <div className="route-summary-strip">
+                  <span className="strip-label">
+                    {t('travel.home.routeShort', 'From')}
+                  </span>
+                  <span className="strip-value">
+                    {startCity.name}
+                  </span>
+                  <span className="strip-arrow">→</span>
+                  <span className="strip-value">
+                    {endCity.name}
+                  </span>
+                  <span className="strip-meta">
+                    · {tripCities.length} {t('travel.home.cities', 'cities')}
+                    {totalDistance > 0 && (
+                      <> · {Math.round(totalDistance).toLocaleString()} km</>
+                    )}
+                  </span>
+                </div>
+              )
+            })()}
+          </motion.div>
+        ) : null
+
+      case 'cityTimeline':
+        return (isMultiCity && tripCities.length > 0) ? (
+          <motion.div key="cityTimeline" className="travel-glass-card city-timeline-card" variants={cardVariants}>
+            <div className="city-timeline-header">
+              <h3 className="timeline-title">{t('travel.home.tripRoute', 'Trip Route')}</h3>
+              {homeLocation && homeLocation.latitude != null && homeLocation.longitude != null && (
+                <button
+                  type="button"
+                  className="trip-route-directions-btn"
+                  onClick={handleOpenGoogleDirections}
+                  title={t('travel.home.openDirections', 'Open route in Google Maps')}
+                  aria-label={t('travel.home.openDirections', 'Open route in Google Maps')}
+                >
+                  <FiExternalLink size={14} />
+                </button>
+              )}
+            </div>
+            {/* Optional legs from home to first city and last city back home */}
+            {(homeToFirstDistance > 0 || lastToHomeDistance > 0) && (
+              <div className="home-legs-summary">
+                {homeToFirstDistance > 0 && (
+                  <div className="home-leg-row">
+                    <span className="home-leg-label">
+                      {t('travel.home.homeToFirst', 'Home → First city')}
+                    </span>
+                    <span className="home-leg-distance">
+                      {Math.round(homeToFirstDistance).toLocaleString()} km
+                    </span>
                   </div>
                 )}
-                {activeTrip?.startDate && activeTrip?.endDate && (
-                  <div className="route-stat">
-                    <FiCalendar size={16} />
-                    <span className="stat-value">
-                      {Math.ceil((new Date(activeTrip.endDate) - new Date(activeTrip.startDate)) / (1000 * 60 * 60 * 24)) + 1}
+                {lastToHomeDistance > 0 && (
+                  <div className="home-leg-row">
+                    <span className="home-leg-label">
+                      {t('travel.home.lastToHome', 'Last city → Home')}
                     </span>
-                    <span className="stat-label">{t('travel.home.days', 'days')}</span>
+                    <span className="home-leg-distance">
+                      {Math.round(lastToHomeDistance).toLocaleString()} km
+                    </span>
                   </div>
                 )}
               </div>
+            )}
+            <div className="city-timeline-scroll">
+              {getOrderedCities().map((city, index) => {
+                const isCurrent = index === currentCityIndex
+                const isNext = index === nextCityIndex
+                const isPast = currentCityIndex >= 0 && index < currentCityIndex
+                const canOpenLeg =
+                  (index === 0 && homeLocation && homeLocation.latitude != null && homeLocation.longitude != null) ||
+                  (index > 0)
 
-              {/* Compact strip: From [Start] to [End] */}
-              {tripCities.length > 1 && (() => {
-                const ordered = getOrderedCities()
-                const startCity = ordered[0]
-                const endCity = ordered[ordered.length - 1]
-                if (!startCity || !endCity) return null
                 return (
-                  <div className="route-summary-strip">
-                    <span className="strip-label">
-                      {t('travel.home.routeShort', 'From')}
-                    </span>
-                    <span className="strip-value">
-                      {startCity.name}
-                    </span>
-                    <span className="strip-arrow">→</span>
-                    <span className="strip-value">
-                      {endCity.name}
-                    </span>
-                    <span className="strip-meta">
-                      · {tripCities.length} {t('travel.home.cities', 'cities')}
-                      {totalDistance > 0 && (
-                        <> · {Math.round(totalDistance).toLocaleString()} km</>
-                      )}
-                    </span>
+                  <div
+                    key={city.id || `city-${index}`}
+                    className={`city-timeline-item ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''} ${isPast ? 'past' : ''}`}
+                  >
+                    <div className="city-timeline-number">{index + 1}</div>
+                    <div className="city-timeline-content">
+                      <div className="city-timeline-main">
+                        <div className="city-timeline-text">
+                          <div className="city-timeline-name">{city.name}</div>
+                          {city.country && (
+                            <div className="city-timeline-country">{city.country}</div>
+                          )}
+                          {city.startDate && (
+                            <div className="city-timeline-dates">
+                              {formatDateRange(city.startDate, city.endDate)}
+                            </div>
+                          )}
+                        </div>
+                        {canOpenLeg && (
+                          <button
+                            type="button"
+                            className="city-timeline-leg-btn"
+                            onClick={() => handleOpenLegDirections(index)}
+                            title={t('travel.home.openLegDirections', 'Open directions for this segment')}
+                            aria-label={t('travel.home.openLegDirections', 'Open directions for this segment')}
+                          >
+                            <FiNavigation size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {isCurrent && (
+                      <div className="city-timeline-badge current-badge">
+                        {t('travel.home.current', 'Current')}
+                      </div>
+                    )}
+                    {isNext && !isCurrent && (
+                      <div className="city-timeline-badge next-badge">
+                        {t('travel.home.next', 'Next')}
+                      </div>
+                    )}
                   </div>
                 )
-              })()}
-            </motion.div>
-          )}
+              })}
+            </div>
+          </motion.div>
+        ) : null
 
-          {/* City Timeline Preview for Multi-City Trips */}
-          {isMultiCity && tripCities.length > 0 && (
-            <motion.div
-              className="travel-glass-card city-timeline-card"
-              variants={cardVariants}
-            >
-              <div className="city-timeline-header">
-                <h3 className="timeline-title">{t('travel.home.tripRoute', 'Trip Route')}</h3>
-                {homeLocation && homeLocation.latitude != null && homeLocation.longitude != null && (
+      case 'savedPlaces':
+        return activeTrip?.id ? (
+          <motion.div key="savedPlaces" className="travel-glass-card saved-places-card" variants={cardVariants}>
+            <div className="saved-places-header">
+              <h3 className="saved-places-title">
+                {t('travel.home.savedPlacesTitle', 'Saved places')}
+              </h3>
+              <div className="saved-places-header-right">
+                {savedPlaces.length > 0 && (
+                  <span className="saved-places-count">
+                    {t('travel.home.savedPlacesCount', '{{count}} saved', {
+                      count: savedPlaces.length
+                    })}
+                  </span>
+                )}
+                {canEnterDiscoveryMode && (
                   <button
                     type="button"
-                    className="trip-route-directions-btn"
-                    onClick={handleOpenGoogleDirections}
-                    title={t('travel.home.openDirections', 'Open route in Google Maps')}
-                    aria-label={t('travel.home.openDirections', 'Open route in Google Maps')}
+                    className="saved-places-view-all-btn"
+                    onClick={enterDiscoveryMode}
                   >
-                    <FiExternalLink size={14} />
+                    {t('travel.common.viewAll', 'View all')}
                   </button>
                 )}
               </div>
-              {/* Optional legs from home to first city and last city back home */}
-              {(homeToFirstDistance > 0 || lastToHomeDistance > 0) && (
-                <div className="home-legs-summary">
-                  {homeToFirstDistance > 0 && (
-                    <div className="home-leg-row">
-                      <span className="home-leg-label">
-                        {t('travel.home.homeToFirst', 'Home → First city')}
-                      </span>
-                      <span className="home-leg-distance">
-                        {Math.round(homeToFirstDistance).toLocaleString()} km
-                      </span>
-                    </div>
-                  )}
-                  {lastToHomeDistance > 0 && (
-                    <div className="home-leg-row">
-                      <span className="home-leg-label">
-                        {t('travel.home.lastToHome', 'Last city → Home')}
-                      </span>
-                      <span className="home-leg-distance">
-                        {Math.round(lastToHomeDistance).toLocaleString()} km
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="city-timeline-scroll">
-                {getOrderedCities().map((city, index) => {
-                  const isCurrent = index === currentCityIndex
-                  const isNext = index === nextCityIndex
-                  const isPast = currentCityIndex >= 0 && index < currentCityIndex
-                  const canOpenLeg =
-                    (index === 0 && homeLocation && homeLocation.latitude != null && homeLocation.longitude != null) ||
-                    (index > 0)
-                  
-                  return (
-                    <div
-                      key={city.id || `city-${index}`}
-                      className={`city-timeline-item ${isCurrent ? 'current' : ''} ${isNext ? 'next' : ''} ${isPast ? 'past' : ''}`}
-                    >
-                      <div className="city-timeline-number">{index + 1}</div>
-                      <div className="city-timeline-content">
-                        <div className="city-timeline-main">
-                          <div className="city-timeline-text">
-                            <div className="city-timeline-name">{city.name}</div>
-                            {city.country && (
-                              <div className="city-timeline-country">{city.country}</div>
-                            )}
-                            {city.startDate && (
-                              <div className="city-timeline-dates">
-                                {formatDateRange(city.startDate, city.endDate)}
-                              </div>
-                            )}
-                          </div>
-                          {canOpenLeg && (
-                            <button
-                              type="button"
-                              className="city-timeline-leg-btn"
-                              onClick={() => handleOpenLegDirections(index)}
-                              title={t('travel.home.openLegDirections', 'Open directions for this segment')}
-                              aria-label={t('travel.home.openLegDirections', 'Open directions for this segment')}
-                            >
-                              <FiNavigation size={12} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {isCurrent && (
-                        <div className="city-timeline-badge current-badge">
-                          {t('travel.home.current', 'Current')}
-                        </div>
-                      )}
-                      {isNext && !isCurrent && (
-                        <div className="city-timeline-badge next-badge">
-                          {t('travel.home.next', 'Next')}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </motion.div>
-          )}
+            </div>
 
-          {/* Simple Status Summary - collapsed by default */}
-          <motion.div className="status-summary" variants={cardVariants}>
+            {savedPlaces.length === 0 ? (
+              <p className="saved-places-empty">
+                {t(
+                  'travel.home.savedPlacesEmpty',
+                  'Pin favourite spots from the map to keep them close.'
+                )}
+              </p>
+            ) : (
+              <ul className="saved-places-list">
+                {savedPlaces.map((poi) => (
+                  <li
+                    key={poi.id || poi.poiId}
+                    className="saved-place-item"
+                  >
+                    <div className="saved-place-main">
+                      <span className="saved-place-name">
+                        {poi.name}
+                      </span>
+                      {poi.address && (
+                        <span className="saved-place-address">
+                          {poi.address}
+                        </span>
+                      )}
+                    </div>
+                    <div className="saved-place-meta">
+                      {poi.category && (
+                        <span className="saved-place-chip">
+                          {t(
+                            `travel.explore.poi.${poi.category}`,
+                            poi.category
+                          )}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        className="saved-place-map-btn"
+                        onClick={() => handleOpenSavedPlaceInMaps(poi)}
+                        aria-label={t(
+                          'travel.discovery.seeDetails',
+                          'See details in Google Maps'
+                        )}
+                        title={t(
+                          'travel.discovery.seeDetails',
+                          'See details in Google Maps'
+                        )}
+                      >
+                        <FiExternalLink size={12} />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </motion.div>
+        ) : null
+
+      case 'statusSummary':
+        return (
+          <motion.div key="statusSummary" className="status-summary" variants={cardVariants}>
             <button
               className="status-toggle"
               onClick={() => setShowDetails(!showDetails)}
@@ -1578,6 +1870,103 @@ const TravelHome = ({ trip, onNavigate }) => {
               )}
             </AnimatePresence>
           </motion.div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <motion.div
+      className="travel-home"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Greeting - calm, personal touch */}
+      <motion.div className="greeting-section" variants={cardVariants}>
+        <span className="greeting-text">{getGreeting()}</span>
+        <div className="greeting-actions">
+          <button
+            className="create-trip-btn"
+            onClick={handleOpenCreateTrip}
+            aria-label={t('travel.trips.selector.createNew', 'Create New Trip')}
+            title={t('travel.trips.selector.createNew', 'Create New Trip')}
+          >
+            <FiPlus size={16} />
+          </button>
+          <button
+            className="edit-trip-btn"
+            onClick={() => setIsLayoutSettingsOpen(true)}
+            aria-label={t('travel.home.customizeLayout', 'Customize Layout')}
+            title={t('travel.home.customizeLayout', 'Customize Layout')}
+          >
+            <FiSettings size={16} />
+          </button>
+          <button
+            className="edit-trip-btn"
+            onClick={() => {
+              // Edit behaviour depends on trip type:
+              // - Single-destination trips use the classic TripSetupWizard.
+              // - Multi-city trips open the MultiCityTripWizard with existing cities preloaded.
+              setIsCreatingNew(false)
+              if (isMultiCity) {
+                setShowMultiCityWizard(true)
+                setShowSetup(false)
+              } else {
+                setShowSetup(true)
+                setShowMultiCityWizard(false)
+              }
+            }}
+            aria-label={t('travel.home.editTrip', 'Edit Trip')}
+            title={t('travel.home.editTrip', 'Edit Trip')}
+          >
+            <FiEdit3 size={16} />
+          </button>
+          {activeTrip?.id && (
+            <button
+              className="edit-trip-btn delete-trip-btn"
+              onClick={() => setShowDeleteConfirm(true)}
+              aria-label={t('travel.home.deleteTrip', 'Delete Trip')}
+              title={t('travel.home.deleteTrip', 'Delete Trip')}
+            >
+              <FiTrash2 size={16} />
+            </button>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Compact advisory strip on mobile – keeps safety context close to the
+          countdown without overwhelming the hero. The fuller card still lives
+          in the sidebar on larger screens. */}
+      {advisory && (
+        <motion.div
+          className="travel-home-top-advisory"
+          variants={cardVariants}
+        >
+          <TravelAdvisoryCard
+            advisory={advisory}
+            advisories={advisories}
+            compact
+          />
+        </motion.div>
+      )}
+
+      {/* Main Content Grid - Dynamic based on layout preferences */}
+      <div className="travel-home-grid">
+        {/* Left Column - Main Focus */}
+        <div className="travel-home-main">
+          {layoutSections.mainColumn.map(section =>
+            section.visible && renderSection(section.key)
+          )}
+        </div>
+
+        {/* Right Column - Sidebar Content */}
+        <div className="travel-home-sidebar">
+          {layoutSections.sidebarColumn.map(section =>
+            section.visible && renderSection(section.key)
+          )}
         </div>
       </div>
 
@@ -1720,6 +2109,23 @@ const TravelHome = ({ trip, onNavigate }) => {
         confirmText={t('travel.trips.switchConfirm.switch', 'Switch')}
         cancelText={t('travel.trips.switchConfirm.keepCurrent', 'Keep Current')}
         variant="default"
+      />
+
+      {/* Layout Settings Modal */}
+      <LayoutSettingsModal
+        isOpen={isLayoutSettingsOpen}
+        onClose={() => setIsLayoutSettingsOpen(false)}
+        sections={layoutSections}
+        preset={layoutPreset}
+        presets={layoutPresets}
+        isSaving={isLayoutSaving}
+        hasChanges={hasLayoutChanges}
+        onApplyPreset={applyPreset}
+        onToggleSection={toggleSection}
+        onReorderSections={reorderSections}
+        onUpdateColumnOrder={updateColumnOrder}
+        onReset={resetToDefaults}
+        onSave={saveLayout}
       />
 
       {/* Delete Trip Confirmation Modal */}

@@ -6,6 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 // Use travel utilities and discovery services from the travel module
 import { MAP_STYLES, DISCOVERY_MAP_CONFIG } from '../utils/travelConstants'
 import { reverseGeocode, getCountryFromPlaceName, getRouteDirections } from '../services/discoveryService'
+import { getTransportSuggestions } from '../utils/transportSuggestion'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 
@@ -105,6 +106,23 @@ const CitySelectionMap = memo(({
   // Calculate route line coordinates from Home (if available) through all cities
   const routeCoordinates = buildRouteCoordinates()
 
+  // Helper: Haversine distance for transport inference
+  const getDistanceKm = (lat1, lon1, lat2, lon2) => {
+    if ([lat1, lon1, lat2, lon2].some(c => c == null)) return 0
+    const toRad = (v) => (v * Math.PI) / 180
+    const R = 6371 // km
+    const dLat = toRad(lat2 - lat1)
+    const dLng = toRad(lon2 - lon1)
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
   /**
    * Fetch realistic route geometry from Mapbox Directions API.
    * We build one continuous LineString going from Home → City 1 → City 2 → ...
@@ -179,8 +197,24 @@ const CitySelectionMap = memo(({
 
         const results = await Promise.all(
           segments.map(seg => {
+            // Infer mode if not explicitly set (or default 'driving')
+            let mode = seg.mode
+
+            // If defaulting to driving, check if distance suggests flight/ferry
+            if (!mode || mode === 'driving') {
+              const dist = getDistanceKm(seg.lat1, seg.lon1, seg.lat2, seg.lon2)
+              const suggestions = getTransportSuggestions({ distanceKm: dist })
+              // If flight is the top suggestion, use it
+              if (suggestions[0] === 'flight') {
+                mode = 'flight'
+              }
+            }
+
+            // Update segment mode for later use in geometry selection
+            seg.inferredMode = mode
+
             // For flights or ferries we skip road routing and keep a clean straight segment.
-            if (seg.mode === 'flight' || seg.mode === 'ferry') {
+            if (mode === 'flight' || mode === 'ferry') {
               return Promise.resolve(null)
             }
             return getRouteDirections(seg.lat1, seg.lon1, seg.lat2, seg.lon2, 'driving')
@@ -191,9 +225,10 @@ const CitySelectionMap = memo(({
         const allCoords = []
         segments.forEach((seg, index) => {
           const result = results[index]
+          const mode = seg.inferredMode || seg.mode
 
           // For flight legs or missing geometry, fall back to a simple straight line
-          if (seg.mode === 'flight' || !(result?.geometry?.coordinates?.length > 1)) {
+          if (mode === 'flight' || !(result?.geometry?.coordinates?.length > 1)) {
             allCoords.push(
               [seg.lon1, seg.lat1],
               [seg.lon2, seg.lat2]
@@ -247,10 +282,10 @@ const CitySelectionMap = memo(({
     try {
       // Reverse geocode to get city name and country
       const geocodeResult = await reverseGeocode(lat, lng)
-      
+
       let cityName = 'Unknown City'
       let country = ''
-      
+
       if (geocodeResult) {
         cityName = geocodeResult.name || geocodeResult.address?.split(',')[0] || 'Unknown City'
         // Try to extract country from address

@@ -31,6 +31,30 @@ namespace YouAndMeExpensesAPI.DTOs
         public bool HasData { get; set; }
         public string? ErrorMessage { get; set; }
         public int? StatusCode { get; set; }
+
+        /// <summary>
+        /// Raw TuGo advisory flags and summaries exposed for richer UIs.
+        /// These are optional and safe for clients to ignore.
+        /// </summary>
+        public bool HasAdvisoryWarning { get; set; }
+        public bool HasRegionalAdvisory { get; set; }
+        public string? AdvisoryText { get; set; }
+        public string? AdvisoryLongDescription { get; set; }
+        public string? ClimateSummary { get; set; }
+        public string? EntryExitSummary { get; set; }
+        public string? HealthSummary { get; set; }
+        public string? SafetySummary { get; set; }
+        public string? RecentUpdates { get; set; }
+
+        /// <summary>
+        /// Optional rich highlights derived from the upstream advisory payload.
+        /// These are short, traveller-friendly bullet points used in the
+        /// "More details" modal on the frontend.
+        /// </summary>
+        public List<string> ClimateHighlights { get; set; } = new();
+        public List<string> EntryExitHighlights { get; set; } = new();
+        public List<string> HealthHighlights { get; set; } = new();
+        public List<string> SafetyHighlights { get; set; } = new();
     }
 
     /// <summary>

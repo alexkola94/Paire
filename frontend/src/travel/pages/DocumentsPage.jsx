@@ -430,6 +430,24 @@ const DocumentsPage = ({ trip }) => {
     return acc
   }, {})
 
+  // Order document types so the most critical ones surface first in the list.
+  // Passports / visas -> insurance -> tickets / bookings -> other.
+  const orderedDocumentTypeEntries = Object.entries(DOCUMENT_TYPES).sort(
+    ([keyA], [keyB]) => {
+      const priority = {
+        passport: 0,
+        visa: 0,
+        insurance: 1,
+        ticket: 2,
+        booking: 2,
+        other: 3
+      }
+      const a = priority[keyA] ?? 10
+      const b = priority[keyB] ?? 10
+      return a - b
+    }
+  )
+
   // Check expiry status
   const getExpiryStatus = (expiryDate) => {
     if (!expiryDate) return null
@@ -548,10 +566,12 @@ const DocumentsPage = ({ trip }) => {
 
   return (
     <div className="documents-page">
-      {/* Compact travel advisory context above documents */}
+      {/* Compact travel advisory context above documents.
+          For multi-country trips this card now supports left/right navigation
+          between countries. */}
       {advisories && advisories.length > 0 && (
         <div className="documents-advisory-strip">
-          <TravelAdvisoryCard advisory={advisories[0]} compact />
+          <TravelAdvisoryCard advisory={advisories[0]} advisories={advisories} compact />
         </div>
       )}
       {/* Header */}
@@ -594,74 +614,20 @@ const DocumentsPage = ({ trip }) => {
         </div>
       </div>
 
-      {/* Inline helper notes form (local only) */}
-      <div className="documents-notes-card">
-        <h3 className="documents-notes-title">
-          {t('travel.documents.notesHelper.title', 'Travel notes for your documents')}
-        </h3>
-        <p className="documents-notes-subtitle">
-          {t(
-            'travel.documents.notesHelper.subtitle',
-            'Use this space to jot down questions for embassies, airlines, or your future self.'
-          )}
-        </p>
-        <form
-          className="documents-notes-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!notesTitle.trim() && !notesBody.trim()) return
-            const entry = {
-              id: Date.now(),
-              title: notesTitle.trim() || t('travel.documents.notesHelper.untitled', 'Untitled note'),
-              body: notesBody.trim()
-            }
-            setSavedNotes(prev => [entry, ...prev].slice(0, 5))
-            setNotesTitle('')
-            setNotesBody('')
-          }}
-        >
-          <div className="documents-notes-row">
-            <input
-              type="text"
-              className="documents-notes-input"
-              value={notesTitle}
-              onChange={(e) => setNotesTitle(e.target.value)}
-              placeholder={t('travel.documents.notesHelper.titlePlaceholder', 'e.g., Visa questions for Japan')}
-            />
-          </div>
-          <div className="documents-notes-row">
-            <textarea
-              className="documents-notes-textarea"
-              rows={3}
-              value={notesBody}
-              onChange={(e) => setNotesBody(e.target.value)}
-              placeholder={t(
-                'travel.documents.notesHelper.bodyPlaceholder',
-                'Add any reminders or talking points you want to keep next to your documents.'
-              )}
-            />
-          </div>
-          <div className="documents-notes-footer">
-            <button type="submit" className="travel-btn">
-              {t('travel.documents.notesHelper.save', 'Save note')}
-            </button>
-          </div>
-        </form>
-        {savedNotes.length > 0 && (
-          <div className="documents-notes-list">
-            {savedNotes.map(note => (
-              <div key={note.id} className="documents-note-chip">
-                <h4>{note.title}</h4>
-                {note.body && <p>{note.body}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Compact issues strip – summarises documents that are expired or
+          expiring soon so the most urgent items are visible above the fold. */}
+      {expiryIssues > 0 && (
+        <div className="documents-issues-strip">
+          <FiAlertTriangle size={14} />
+          <span className="documents-issues-text">
+            {expiryIssues} {t('travel.documents.expiryAlert', 'need attention')}
+          </span>
+        </div>
+      )}
 
       {/* Document sections by type */}
       <div className="documents-sections">
-        {Object.entries(DOCUMENT_TYPES).map(([key, type]) => {
+        {orderedDocumentTypeEntries.map(([key, type]) => {
           const typeDocs = groupedDocuments[key] || []
           if (typeDocs.length === 0) return null
 
@@ -733,6 +699,72 @@ const DocumentsPage = ({ trip }) => {
           </div>
         </div>
       )}
+
+      {/* Inline helper notes form (local only, intentionally placed
+          lower in the hierarchy so real documents stay the main focus). */}
+      <div className="documents-notes-card">
+        <h3 className="documents-notes-title">
+          {t('travel.documents.notesHelper.title', 'Travel notes for your documents')}
+        </h3>
+        <p className="documents-notes-subtitle">
+          {t(
+            'travel.documents.notesHelper.subtitle',
+            'Use this space to jot down questions for embassies, airlines, or your future self.'
+          )}
+        </p>
+        <form
+          className="documents-notes-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!notesTitle.trim() && !notesBody.trim()) return
+            const entry = {
+              id: Date.now(),
+              title: notesTitle.trim() || t('travel.documents.notesHelper.untitled', 'Untitled note'),
+              body: notesBody.trim()
+            }
+            setSavedNotes(prev => [entry, ...prev].slice(0, 5))
+            setNotesTitle('')
+            setNotesBody('')
+          }}
+        >
+          <div className="documents-notes-row">
+            <input
+              type="text"
+              className="documents-notes-input"
+              value={notesTitle}
+              onChange={(e) => setNotesTitle(e.target.value)}
+              placeholder={t('travel.documents.notesHelper.titlePlaceholder', 'e.g., Visa questions for Japan')}
+            />
+          </div>
+          <div className="documents-notes-row">
+            <textarea
+              className="documents-notes-textarea"
+              rows={3}
+              value={notesBody}
+              onChange={(e) => setNotesBody(e.target.value)}
+              placeholder={t(
+                'travel.documents.notesHelper.bodyPlaceholder',
+                'Add any reminders or talking points you want to keep next to your documents.'
+              )}
+            />
+          </div>
+          <div className="documents-notes-footer">
+            <button type="submit" className="travel-btn">
+              {t('travel.documents.notesHelper.save', 'Save note')}
+            </button>
+          </div>
+        </form>
+        {savedNotes.length > 0 && (
+          <div className="documents-notes-list">
+            {savedNotes.map(note => (
+              <div key={note.id} className="documents-note-chip">
+                <h4>{note.title}</h4>
+                {note.body && <p>{note.body}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Add/Edit Document Modal */}
       <AnimatePresence>

@@ -1,12 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -17,26 +13,17 @@ namespace YouAndMeExpensesAPI.Controllers
     [Route("api/[controller]")]
     public class PartnershipController : BaseApiController
     {
-        private readonly AppDbContext _dbContext;
-        private readonly IAchievementService _achievementService;
+        private readonly IPartnershipService _partnershipService;
         private readonly ILogger<PartnershipController> _logger;
-        private readonly IEmailService _emailService;
-        private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
 
         public PartnershipController(
-            AppDbContext dbContext,
-            IAchievementService achievementService,
+            IPartnershipService partnershipService,
             ILogger<PartnershipController> logger,
-            IEmailService emailService,
-            IConfiguration configuration,
             UserManager<ApplicationUser> userManager)
         {
-            _dbContext = dbContext;
-            _achievementService = achievementService;
+            _partnershipService = partnershipService;
             _logger = logger;
-            _emailService = emailService;
-            _configuration = configuration;
             _userManager = userManager;
         }
 
@@ -51,40 +38,8 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var partnerships = await _dbContext.Partnerships
-                    .Where(p => p.User1Id == userId || p.User2Id == userId)
-                    .ToListAsync();
-
-                // Load partner profiles
-                var responseList = new List<object>();
-
-                foreach (var partnership in partnerships)
-                {
-                    var user1 = await _dbContext.UserProfiles.FirstOrDefaultAsync(u => u.Id == partnership.User1Id);
-                    var user2 = await _dbContext.UserProfiles.FirstOrDefaultAsync(u => u.Id == partnership.User2Id);
-
-                    responseList.Add(new
-                    {
-                        id = partnership.Id,
-                        user1_id = partnership.User1Id,
-                        user2_id = partnership.User2Id,
-                        user1 = user1 != null ? new { 
-                            id = user1.Id, 
-                            email = user1.Email, 
-                            display_name = user1.DisplayName,
-                            avatar_url = user1.AvatarUrl
-                        } : null,
-                        user2 = user2 != null ? new { 
-                            id = user2.Id, 
-                            email = user2.Email, 
-                            display_name = user2.DisplayName,
-                            avatar_url = user2.AvatarUrl
-                        } : null,
-                        created_at = partnership.CreatedAt
-                    });
-                }
-
-                return Ok(responseList);
+                var partnerships = await _partnershipService.GetMyPartnershipsAsync(userId);
+                return Ok(partnerships);
             }
             catch (Exception ex)
             {
@@ -104,55 +59,16 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Check if partnership with THIS partner already exists
-                var existingPartnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p => 
-                        (p.User1Id == userId && p.User2Id == request.PartnerId) || 
-                        (p.User1Id == request.PartnerId && p.User2Id == userId));
-
-                if (existingPartnership != null)
-                {
-                    return BadRequest(new { message = "You already have an active partnership with this user" });
-                }
-
-                // Check if partner exists
-                var partnerExists = await _dbContext.UserProfiles
-                    .AnyAsync(u => u.Id == request.PartnerId);
-
-                if (!partnerExists)
-                {
-                    return NotFound(new { message = "Partner user not found" });
-                }
-
-
-
-                // Create partnership
-                var partnership = new Partnership
-                {
-                    Id = Guid.NewGuid(),
-                    User1Id = userId,
-                    User2Id = request.PartnerId,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                _dbContext.Partnerships.Add(partnership);
-                await _dbContext.SaveChangesAsync();
-
-                _logger.LogInformation("Partnership created between {User1} and {User2}", userId, request.PartnerId);
-
-                // Check for new achievements for both users after creating partnership
-                try
-                {
-                    await _achievementService.CheckPartnershipAchievementsAsync(userId.ToString());
-                    await _achievementService.CheckPartnershipAchievementsAsync(request.PartnerId.ToString());
-                }
-                catch (Exception ex)
-                {
-                    // Log but don't fail the partnership creation if achievement check fails
-                    _logger.LogWarning(ex, "Error checking achievements after partnership creation");
-                }
-
+                var partnership = await _partnershipService.CreatePartnershipAsync(userId, request.PartnerId);
                 return Ok(partnership);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -172,124 +88,21 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Validate email
                 if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
                 {
                     return BadRequest(new { message = "Invalid email address" });
                 }
 
-
-
-                // Check if the invitee exists (they must sign up first)
-                var inviteeUser = await _userManager.FindByEmailAsync(request.Email.ToLower());
-                if (inviteeUser == null)
+                try
                 {
-                    return BadRequest(new { message = "The user with this email address must sign up first before you can invite them" });
+                    await _partnershipService.SendInvitationAsync(userId, request);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return BadRequest(new { message = ex.Message });
                 }
 
-                // Check if already partners with this user
-                var existingPartnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p => 
-                        (p.User1Id == userId && p.User2Id == Guid.Parse(inviteeUser.Id)) || 
-                        (p.User1Id == Guid.Parse(inviteeUser.Id) && p.User2Id == userId));
-
-                if (existingPartnership != null)
-                {
-                    return BadRequest(new { message = "You are already partners with this user" });
-                }
-
-                // Check if there's already a pending invitation to this email
-                var existingInvitation = await _dbContext.PartnershipInvitations
-                    .FirstOrDefaultAsync(i => 
-                        i.InviterId == userId && 
-                        i.InviteeEmail.ToLower() == request.Email.ToLower() &&
-                        i.Status == "pending" &&
-                        i.ExpiresAt > DateTime.UtcNow);
-
-                if (existingInvitation != null)
-                {
-                    return BadRequest(new { message = "An invitation has already been sent to this email" });
-                }
-
-                // Get inviter's profile
-                var inviterProfile = await _dbContext.UserProfiles
-                    .FirstOrDefaultAsync(p => p.Id == userId);
-
-                if (inviterProfile == null)
-                {
-                    return BadRequest(new { message = "Please complete your profile first" });
-                }
-
-                // Generate unique token
-                var token = GenerateInvitationToken();
-                var expiresAt = DateTime.UtcNow.AddDays(7); // Invitation expires in 7 days
-
-                // Create invitation
-                var invitation = new PartnershipInvitation
-                {
-                    Id = Guid.NewGuid(),
-                    InviterId = userId,
-                    InviteeEmail = request.Email.ToLower(),
-                    Token = token,
-                    Status = "pending",
-                    ExpiresAt = expiresAt,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                _dbContext.PartnershipInvitations.Add(invitation);
-                await _dbContext.SaveChangesAsync();
-
-                // Send invitation email
-                var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
-                var loginUrl = $"{frontendUrl}/login";
-
-                var emailBody = $@"
-                    <html>
-                    <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-                        <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                            <h2 style='color: #7c3aed;'>Partnership Invitation</h2>
-                            <p>Hello!</p>
-                            <p><strong>{inviterProfile.DisplayName ?? inviterProfile.Email}</strong> has invited you to become their financial partner on <strong>Paire Expenses</strong>.</p>
-                            <p>By accepting this invitation, you'll be able to:</p>
-                            <ul>
-                                <li>Share expenses, income, and financial data</li>
-                                <li>Track who added each transaction</li>
-                                <li>View partner comparison in Analytics</li>
-                                <li>Manage household budget together</li>
-                            </ul>
-                            <p style='margin: 30px 0;'>
-                                <a href='{loginUrl}' 
-                                   style='background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%); 
-                                          color: white; 
-                                          padding: 12px 30px; 
-                                          text-decoration: none; 
-                                          border-radius: 6px; 
-                                          display: inline-block; 
-                                          font-weight: bold;'>
-                                    Log In
-                                </a>
-                            </p>
-                            <p style='font-size: 12px; color: #666;'>
-                                This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
-                            </p>
-                        </div>
-                    </body>
-                    </html>";
-
-                var emailMessage = new EmailMessage
-                {
-                    ToEmail = request.Email,
-                    ToName = request.Email,
-                    Subject = $"{inviterProfile.DisplayName ?? inviterProfile.Email} invited you to be their financial partner",
-                    Body = emailBody,
-                    IsHtml = true
-                };
-
-                await _emailService.SendEmailAsync(emailMessage);
-
-                _logger.LogInformation("Invitation sent from {InviterId} to {Email}", userId, request.Email);
-
-                return Ok(new { message = "Invitation sent successfully", invitationId = invitation.Id });
+                return Ok(new { message = "Invitation sent successfully" });
             }
             catch (Exception ex)
             {
@@ -309,44 +122,15 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get user's email
-                var user = await _userManager.FindByIdAsync(userId.ToString());
-                if (user == null || string.IsNullOrEmpty(user.Email))
+                try
+                {
+                    var invitations = await _partnershipService.GetPendingInvitationsAsync(userId);
+                    return Ok(invitations);
+                }
+                catch (KeyNotFoundException)
                 {
                     return NotFound(new { message = "User not found" });
                 }
-
-                // Find pending invitations for this user's email
-                var invitations = await _dbContext.PartnershipInvitations
-                    .Where(i => i.InviteeEmail.ToLower() == user.Email.ToLower() &&
-                               i.Status == "pending" &&
-                               i.ExpiresAt > DateTime.UtcNow)
-                    .OrderByDescending(i => i.CreatedAt)
-                    .ToListAsync();
-
-                // Get inviter profiles
-                var invitationList = new List<object>();
-                foreach (var invitation in invitations)
-                {
-                    var inviterProfile = await _dbContext.UserProfiles
-                        .FirstOrDefaultAsync(p => p.Id == invitation.InviterId);
-
-                    invitationList.Add(new
-                    {
-                        id = invitation.Id,
-                        token = invitation.Token,
-                        inviterId = invitation.InviterId,
-                        inviterName = inviterProfile?.DisplayName ?? "Unknown",
-                        inviterEmail = inviterProfile?.Email ?? "Unknown",
-                        inviteeEmail = invitation.InviteeEmail,
-                        status = invitation.Status,
-                        expiresAt = invitation.ExpiresAt,
-                        createdAt = invitation.CreatedAt,
-                        isExpired = invitation.ExpiresAt < DateTime.UtcNow
-                    });
-                }
-
-                return Ok(invitationList);
             }
             catch (Exception ex)
             {
@@ -372,85 +156,25 @@ namespace YouAndMeExpensesAPI.Controllers
                     return BadRequest(new { message = "Token is required" });
                 }
 
-                // Get authenticated user's email
-                var user = await _userManager.FindByIdAsync(userId.ToString());
-                if (user == null || string.IsNullOrEmpty(user.Email))
+                var (success, message, partnershipId) = await _partnershipService.AcceptInvitationAsync(userId, request.Token);
+
+                if (!success)
                 {
-                    return NotFound(new { message = "User not found" });
+                    if (message.Contains("not found") || message.Contains("already used"))
+                    {
+                        return NotFound(new { message });
+                    }
+
+                    if (message.Contains("different email") || message.Contains("expired") || message.Contains("Token is required"))
+                    {
+                        return BadRequest(new { message });
+                    }
                 }
 
-                // Find invitation by token
-                var invitation = await _dbContext.PartnershipInvitations
-                    .FirstOrDefaultAsync(i => i.Token == request.Token && i.Status == "pending");
-
-                if (invitation == null)
+                return Ok(new
                 {
-                    return NotFound(new { message = "Invitation not found or already used" });
-                }
-
-                // Verify the authenticated user's email matches the invitation
-                if (user.Email.ToLower() != invitation.InviteeEmail.ToLower())
-                {
-                    return BadRequest(new { message = "This invitation is for a different email address" });
-                }
-
-                // Check if invitation has expired
-                if (invitation.ExpiresAt < DateTime.UtcNow)
-                {
-                    invitation.Status = "expired";
-                    await _dbContext.SaveChangesAsync();
-                    return BadRequest(new { message = "This invitation has expired" });
-                }
-
-                // Check if already partners
-                var existingPartnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p => 
-                        (p.User1Id == userId && p.User2Id == invitation.InviterId) || 
-                        (p.User1Id == invitation.InviterId && p.User2Id == userId));
-
-                if (existingPartnership != null)
-                {
-                     // Already partners, just mark invitation as accepted
-                    invitation.Status = "accepted";
-                    invitation.AcceptedAt = DateTime.UtcNow;
-                    await _dbContext.SaveChangesAsync();
-                    return Ok(new { message = "You are already partners with this user" });
-                }
-
-                // Create partnership
-                var partnership = new Partnership
-                {
-                    Id = Guid.NewGuid(),
-                    User1Id = invitation.InviterId,
-                    User2Id = userId,
-                    Status = "active",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                _dbContext.Partnerships.Add(partnership);
-                invitation.Status = "accepted";
-                invitation.AcceptedAt = DateTime.UtcNow;
-                await _dbContext.SaveChangesAsync();
-
-                _logger.LogInformation("Partnership created via invitation between {User1} and {User2}", 
-                    invitation.InviterId, userId);
-
-                // Check for new achievements for both users after accepting partnership
-                try
-                {
-                    await _achievementService.CheckPartnershipAchievementsAsync(invitation.InviterId.ToString());
-                    await _achievementService.CheckPartnershipAchievementsAsync(userId.ToString());
-                }
-                catch (Exception ex)
-                {
-                    // Log but don't fail the partnership creation if achievement check fails
-                    _logger.LogWarning(ex, "Error checking achievements after partnership acceptance");
-                }
-
-                return Ok(new { 
-                    message = "Partnership created successfully", 
-                    partnershipId = partnership.Id
+                    message,
+                    partnershipId
                 });
             }
             catch (Exception ex)
@@ -469,30 +193,14 @@ namespace YouAndMeExpensesAPI.Controllers
         {
             try
             {
-                var invitation = await _dbContext.PartnershipInvitations
-                    .FirstOrDefaultAsync(i => i.Token == token);
+                var details = await _partnershipService.GetInvitationDetailsAsync(token);
 
-                if (invitation == null)
+                if (details == null)
                 {
                     return NotFound(new { message = "Invitation not found" });
                 }
 
-                // Get inviter's profile
-                var inviterProfile = await _dbContext.UserProfiles
-                    .FirstOrDefaultAsync(p => p.Id == invitation.InviterId);
-
-                var response = new
-                {
-                    id = invitation.Id,
-                    inviterEmail = inviterProfile?.Email ?? "Unknown",
-                    inviterName = inviterProfile?.DisplayName ?? "Unknown",
-                    inviteeEmail = invitation.InviteeEmail,
-                    status = invitation.Status,
-                    expiresAt = invitation.ExpiresAt,
-                    isExpired = invitation.ExpiresAt < DateTime.UtcNow
-                };
-
-                return Ok(response);
+                return Ok(details);
             }
             catch (Exception ex)
             {
@@ -512,19 +220,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var partnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p => p.Id == id && 
-                        (p.User1Id == userId || p.User2Id == userId));
+                var success = await _partnershipService.EndPartnershipAsync(userId, id);
 
-                if (partnership == null)
+                if (!success)
                 {
                     return NotFound(new { message = "Partnership not found" });
                 }
-
-                _dbContext.Partnerships.Remove(partnership);
-                await _dbContext.SaveChangesAsync();
-
-                _logger.LogInformation("Partnership {PartnershipId} ended by user {UserId}", id, userId);
 
                 return NoContent();
             }
@@ -533,23 +234,6 @@ namespace YouAndMeExpensesAPI.Controllers
                 _logger.LogError(ex, "Error ending partnership {Id}", id);
                 return StatusCode(500, new { message = "Error ending partnership", error = ex.Message });
             }
-        }
-
-        /// <summary>
-        /// Generates a unique token for partnership invitations
-        /// </summary>
-        private string GenerateInvitationToken()
-        {
-            var bytes = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(bytes);
-            }
-            return Convert.ToBase64String(bytes)
-                .Replace("+", "-")
-                .Replace("/", "_")
-                .Replace("=", "")
-                .Substring(0, 43); // Ensure consistent length
         }
     }
 

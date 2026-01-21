@@ -8,7 +8,8 @@ import db, {
   createPackingItem,
   createDocument,
   createTravelExpense,
-  createTripCity
+  createTripCity,
+  createPinnedPOI
 } from './travelDb'
 
 /**
@@ -173,6 +174,9 @@ export const processSyncQueue = async () => {
           case 'tripCities':
             endpoint = `/api/travel/trips/${tripId}/cities`
             break
+          case 'pinnedPOIs':
+            endpoint = `/api/travel/trips/${tripId}/saved-places`
+            break
           default:
             continue
         }
@@ -278,17 +282,17 @@ export const tripService = {
         // Get existing trips from IndexedDB to preserve any unsynced local trips
         const existingTrips = await db.trips.toArray()
         const existingTripIds = new Set(existingTrips.map(t => t.id))
-        
+
         // Remove trips from IndexedDB that are no longer in the server response
         // (but only if they're synced - don't delete unsynced local trips)
         const serverTripIds = new Set(trips.map(t => t.id))
-        const tripsToDelete = existingTrips.filter(t => 
+        const tripsToDelete = existingTrips.filter(t =>
           t._synced && !serverTripIds.has(t.id)
         )
         if (tripsToDelete.length > 0) {
           await db.trips.bulkDelete(tripsToDelete.map(t => t.id))
         }
-        
+
         // Add or update trips from server
         const tripsToStore = trips.map(t => ({ ...t, _synced: true }))
         await db.trips.bulkPut(tripsToStore)
@@ -351,10 +355,10 @@ export const tripService = {
    */
   async update(id, updates) {
     const updatedData = { ...updates, updatedAt: new Date().toISOString() }
-    
+
     // Check if trip exists in IndexedDB
     const localTrip = await db.trips.get(id)
-    
+
     // If trip only exists locally (not synced), just update IndexedDB
     if (localTrip && !localTrip._synced) {
       await db.trips.update(id, { ...updatedData, _synced: false })
@@ -409,7 +413,7 @@ export const tripService = {
   async delete(id) {
     // First, check if trip exists in IndexedDB
     const localTrip = await db.trips.get(id)
-    
+
     // Delete from IndexedDB and related data regardless of API status
     // This ensures IndexedDB-only trips can be deleted
     const deleteFromLocal = async () => {
@@ -800,6 +804,84 @@ export const travelExpenseService = {
 }
 
 // ========================================
+// Saved Place Service (Pinned POIs)
+// ========================================
+
+export const savedPlaceService = {
+  async getByTrip(tripId) {
+    try {
+      const places = await apiRequest(`/api/travel/trips/${tripId}/saved-places`)
+      // Clear local cache for this trip and replace with server data
+      // Note: This might overwrite unsynced local changes if we're not careful,
+      // but typical pattern here matches other services.
+      // Better strategy: merge or only delete synced ones.
+      // For now, following other services pattern which deletes by tripId then bulk adds.
+      await db.pinnedPOIs.where('tripId').equals(tripId).delete()
+
+      if (Array.isArray(places)) {
+        await db.pinnedPOIs.bulkAdd(places.map(p => ({ ...p, _synced: true })))
+      }
+      return places
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        return await db.pinnedPOIs.where('tripId').equals(tripId).toArray()
+      }
+      throw error
+    }
+  },
+
+  async create(tripId, placeData) {
+    // Ensure tripId is set
+    const place = createPinnedPOI({ ...placeData, tripId })
+
+    try {
+      const created = await apiRequest(`/api/travel/trips/${tripId}/saved-places`, {
+        method: 'POST',
+        body: JSON.stringify(place)
+      })
+      await db.pinnedPOIs.add({ ...created, _synced: true })
+      return created
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        const localId = await db.pinnedPOIs.add({ ...place, _synced: false })
+        await addToSyncQueue('create', 'pinnedPOIs', { ...place, localId })
+        return { ...place, id: localId }
+      }
+      throw error
+    }
+  },
+
+  async delete(tripId, placeId) {
+    try {
+      await apiRequest(`/api/travel/trips/${tripId}/saved-places/${placeId}`, { method: 'DELETE' })
+      await db.pinnedPOIs.delete(placeId)
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        await addToSyncQueue('delete', 'pinnedPOIs', { id: placeId, tripId })
+        await db.pinnedPOIs.delete(placeId)
+      } else {
+        throw error
+      }
+    }
+  },
+
+  async isPinned(tripId, poiId) {
+    try {
+      // Check local DB (which should be synced)
+      const existing = await db.pinnedPOIs
+        .where('[tripId+poiId]')
+        .equals([tripId, poiId])
+        .first()
+      return Boolean(existing)
+    } catch (error) {
+      // Fallback
+      const pois = await db.pinnedPOIs.where('tripId').equals(tripId).toArray()
+      return pois.some(p => p.poiId === poiId)
+    }
+  }
+}
+
+// ========================================
 // Trip City Service
 // ========================================
 
@@ -841,7 +923,7 @@ export const tripCityService = {
    */
   async create(tripId, cityData) {
     const city = createTripCity({ ...cityData, tripId })
-    
+
     // Map frontend 'order' to backend 'orderIndex'
     const apiCity = {
       ...city,
@@ -981,6 +1063,67 @@ export const tripCityService = {
 }
 
 // ========================================
+// Layout Preferences Service
+// ========================================
+
+export const layoutPreferencesService = {
+  /**
+   * Get layout preferences for a trip
+   */
+  async getByTrip(tripId) {
+    try {
+      const result = await apiRequest(`/api/travel/trips/${tripId}/layout`)
+      return result
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        // Return defaults when offline
+        return { tripId, layoutConfig: '{}', preset: null }
+      }
+      throw error
+    }
+  },
+
+  /**
+   * Update layout preferences for a trip
+   */
+  async update(tripId, layoutConfig, preset = null) {
+    const payload = {
+      layoutConfig: typeof layoutConfig === 'string' ? layoutConfig : JSON.stringify(layoutConfig),
+      preset
+    }
+
+    try {
+      const result = await apiRequest(`/api/travel/trips/${tripId}/layout`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      })
+      return result
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        // Store in localStorage as fallback when offline
+        localStorage.setItem(`trip_layout_${tripId}`, JSON.stringify(payload))
+        return { tripId, ...payload }
+      }
+      throw error
+    }
+  },
+
+  /**
+   * Parse layout config from JSON string
+   */
+  parseConfig(layoutConfig) {
+    if (!layoutConfig || layoutConfig === '{}') {
+      return null
+    }
+    try {
+      return typeof layoutConfig === 'string' ? JSON.parse(layoutConfig) : layoutConfig
+    } catch {
+      return null
+    }
+  }
+}
+
+// ========================================
 // Geocoding Service
 // ========================================
 
@@ -1014,6 +1157,7 @@ export default {
   documentService,
   travelExpenseService,
   tripCityService,
+  layoutPreferencesService,
   geocodingService,
   processSyncQueue
 }

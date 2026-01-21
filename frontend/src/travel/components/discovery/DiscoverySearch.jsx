@@ -33,7 +33,8 @@ const DiscoverySearch = memo(({
   onSearch,
   onCategoryToggle,
   activeCategories = [],
-  loading = false
+  loading = false,
+  advisory // optional: country-level travel advisory to surface contextual hints
 }) => {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
@@ -170,6 +171,21 @@ const DiscoverySearch = memo(({
           </div>
         )}
       </div>
+
+      {/* Optional country advisory hint – gives a compact, contextual nugget like
+          "Greece · Exercise normal security precautions" above the category chips. */}
+      {advisory && (
+        <div className="discovery-advisory-hint">
+          <span className="discovery-advisory-country">
+            {advisory.countryName || t('travel.advisory.unknownCountry', 'Unknown country')}
+          </span>
+          {advisory.message && (
+            <span className="discovery-advisory-message">
+              {advisory.message}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Category filters */}
       <div className="discovery-category-chips">

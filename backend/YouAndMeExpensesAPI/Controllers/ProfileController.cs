@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 
@@ -14,20 +12,14 @@ namespace YouAndMeExpensesAPI.Controllers
     [Route("api/[controller]")]
     public class ProfileController : BaseApiController
     {
-        private readonly AppDbContext _dbContext;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IStorageService _storageService;
+        private readonly IProfileService _profileService;
         private readonly ILogger<ProfileController> _logger;
 
         public ProfileController(
-            AppDbContext dbContext, 
-            UserManager<ApplicationUser> userManager,
-            IStorageService storageService,
+            IProfileService profileService,
             ILogger<ProfileController> logger)
         {
-            _dbContext = dbContext;
-            _userManager = userManager;
-            _storageService = storageService;
+            _profileService = profileService;
             _logger = logger;
         }
 
@@ -42,8 +34,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var profile = await _dbContext.UserProfiles
-                    .FirstOrDefaultAsync(p => p.Id == userId);
+                var profile = await _profileService.GetMyProfileAsync(userId);
 
                 if (profile == null)
                 {
@@ -71,24 +62,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var profile = await _dbContext.UserProfiles
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                var summary = await _profileService.GetProfileSummaryAsync(userId, id);
 
-                if (profile == null)
+                if (summary == null)
                 {
                     return NotFound(new { message = "Profile not found" });
                 }
 
-                // Return basic profile info (email, display name, avatar)
-                // Don't expose sensitive data
-                return Ok(new
-                {
-                    id = profile.Id,
-                    email = profile.Email,
-                    display_name = profile.DisplayName,
-                    avatar_url = profile.AvatarUrl,
-                    created_at = profile.CreatedAt
-                });
+                return Ok(summary);
             }
             catch (Exception ex)
             {
@@ -109,53 +90,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get ApplicationUser from Identity (AspNetUsers table) using DbContext
-                // This ensures proper tracking for updates
-                var applicationUser = await _dbContext.Users
-                    .FirstOrDefaultAsync(u => u.Id == userId.ToString());
-                if (applicationUser == null)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
+                var updated = await _profileService.UpdateMyProfileAsync(userId, request);
 
-                // Get UserProfile (user_profiles table)
-                var profile = await _dbContext.UserProfiles
-                    .FirstOrDefaultAsync(p => p.Id == userId);
-
-                if (profile == null)
+                if (updated == null)
                 {
                     return NotFound(new { message = "Profile not found" });
                 }
 
-                // Update display name in both tables if provided
-                var displayName = request.DisplayName ?? request.display_name;
-                if (!string.IsNullOrWhiteSpace(displayName))
-                {
-                    // Update in AspNetUsers (ApplicationUser) using DbContext
-                    applicationUser.DisplayName = displayName;
-                    applicationUser.UpdatedAt = DateTime.UtcNow;
-
-                    // Update in user_profiles table
-                    profile.DisplayName = displayName;
-                }
-
-                // Update avatar URL if provided
-                var avatarUrl = request.AvatarUrl ?? request.avatar_url;
-                if (avatarUrl != null)
-                {
-                    applicationUser.AvatarUrl = avatarUrl;
-                    profile.AvatarUrl = avatarUrl;
-                }
-
-                profile.UpdatedAt = DateTime.UtcNow;
-
-                // Save changes to both tables in a single transaction
-                await _dbContext.SaveChangesAsync();
-
-                _logger.LogInformation("Updated profile for user {UserId}: DisplayName={DisplayName}", 
-                    userId, displayName);
-
-                return Ok(profile);
+                return Ok(updated);
             }
             catch (Exception ex)
             {
@@ -183,53 +125,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get ApplicationUser from Identity (AspNetUsers table) using DbContext
-                // This ensures proper tracking for updates
-                var applicationUser = await _dbContext.Users
-                    .FirstOrDefaultAsync(u => u.Id == id.ToString());
-                if (applicationUser == null)
-                {
-                    return NotFound(new { message = "User not found" });
-                }
+                var updated = await _profileService.UpdateProfileAsync(id, userId, request);
 
-                // Get UserProfile (user_profiles table)
-                var profile = await _dbContext.UserProfiles
-                    .FirstOrDefaultAsync(p => p.Id == id);
-
-                if (profile == null)
+                if (updated == null)
                 {
                     return NotFound(new { message = "Profile not found" });
                 }
 
-                // Update display name in both tables if provided
-                var displayName = request.DisplayName ?? request.display_name;
-                if (!string.IsNullOrWhiteSpace(displayName))
-                {
-                    // Update in AspNetUsers (ApplicationUser) using DbContext
-                    applicationUser.DisplayName = displayName;
-                    applicationUser.UpdatedAt = DateTime.UtcNow;
-
-                    // Update in user_profiles table
-                    profile.DisplayName = displayName;
-                }
-
-                // Update avatar URL if provided
-                var avatarUrl = request.AvatarUrl ?? request.avatar_url;
-                if (avatarUrl != null)
-                {
-                    applicationUser.AvatarUrl = avatarUrl;
-                    profile.AvatarUrl = avatarUrl;
-                }
-
-                profile.UpdatedAt = DateTime.UtcNow;
-
-                // Save changes to both tables in a single transaction
-                await _dbContext.SaveChangesAsync();
-
-                _logger.LogInformation("Updated profile for user {UserId}: DisplayName={DisplayName}", 
-                    id, displayName);
-
-                return Ok(profile);
+                return Ok(updated);
             }
             catch (Exception ex)
             {
@@ -265,28 +168,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var user = await _userManager.FindByIdAsync(userId.ToString());
-                if (user == null) return NotFound(new { message = "User not found" });
+                var avatarUrl = await _profileService.UploadAvatarAsync(userId, file);
 
-                // Generate unique filename: avatar_userId_timestamp.ext
-                var extension = Path.GetExtension(file.FileName);
-                var fileName = $"avatar_{userId}_{DateTime.UtcNow.Ticks}{extension}";
-                
-                // Upload to "media" bucket
-                var avatarUrl = await _storageService.UploadFileAsync(file, fileName, "media");
-
-                // Update user profile
-                var profile = await _dbContext.UserProfiles.FirstOrDefaultAsync(p => p.Id == userId);
-                if (profile != null)
+                if (avatarUrl == null)
                 {
-                    profile.AvatarUrl = avatarUrl;
-                    profile.UpdatedAt = DateTime.UtcNow;
+                    return NotFound(new { message = "User not found" });
                 }
-
-                user.AvatarUrl = avatarUrl;
-                user.UpdatedAt = DateTime.UtcNow;
-
-                await _dbContext.SaveChangesAsync();
 
                 return Ok(new { avatar_url = avatarUrl });
             }

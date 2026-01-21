@@ -45,6 +45,8 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<TravelDocument> TravelDocuments { get; set; }
         public DbSet<TravelExpense> TravelExpenses { get; set; }
         public DbSet<TripCity> TripCities { get; set; }
+        public DbSet<TripLayoutPreferences> TripLayoutPreferences { get; set; }
+        public DbSet<SavedPlace> SavedPlaces { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -812,6 +814,63 @@ namespace YouAndMeExpensesAPI.Data
 
                 entity.HasOne(e => e.Trip)
                     .WithMany(t => t.Expenses)
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // TRIP LAYOUT PREFERENCES TABLE
+            // ============================================
+            modelBuilder.Entity<TripLayoutPreferences>(entity =>
+            {
+                entity.ToTable("trip_layout_preferences");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TripId).HasColumnName("trip_id").IsRequired();
+                entity.Property(e => e.LayoutConfig).HasColumnName("layout_config");
+                entity.Property(e => e.Preset).HasColumnName("preset").HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TripId).IsUnique();
+
+                entity.HasOne(e => e.Trip)
+                    .WithOne()
+                    .HasForeignKey<TripLayoutPreferences>(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // SAVED PLACES TABLE
+            // ============================================
+            modelBuilder.Entity<SavedPlace>(entity =>
+            {
+                entity.ToTable("saved_places");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TripId).HasColumnName("trip_id").IsRequired();
+                entity.Property(e => e.UserId).HasColumnName("user_id");
+                entity.Property(e => e.PoiId).HasColumnName("poi_id").HasMaxLength(255);
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255);
+                entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(50).HasDefaultValue("other");
+                entity.Property(e => e.Latitude).HasColumnName("latitude");
+                entity.Property(e => e.Longitude).HasColumnName("longitude");
+                entity.Property(e => e.Address).HasColumnName("address");
+                entity.Property(e => e.Phone).HasColumnName("phone").HasMaxLength(50);
+                entity.Property(e => e.Website).HasColumnName("website");
+                entity.Property(e => e.OpeningHours).HasColumnName("opening_hours");
+                entity.Property(e => e.Rating).HasColumnName("rating");
+                entity.Property(e => e.Notes).HasColumnName("notes");
+                entity.Property(e => e.Source).HasColumnName("source").HasMaxLength(50).HasDefaultValue("overpass");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TripId);
+                entity.HasIndex(e => new { e.TripId, e.UserId });
+                entity.HasIndex(e => new { e.TripId, e.PoiId });
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany()
                     .HasForeignKey(e => e.TripId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

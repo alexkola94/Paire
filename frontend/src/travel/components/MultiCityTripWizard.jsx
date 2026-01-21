@@ -14,8 +14,9 @@ import {
   FiTrash2
 } from 'react-icons/fi'
 import { tripService, geocodingService, tripCityService } from '../services/travelApi'
-import { getAdvisories } from '../services/travelAdvisoryService'
+import { getAdvisories, getAdvisory } from '../services/travelAdvisoryService'
 import TravelAdvisoryBadge from './TravelAdvisoryBadge'
+import TravelAdvisoryCard from './TravelAdvisoryCard'
 import { budgetService, savingsGoalService } from '../../services/api'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import CitySelectionMap from './CitySelectionMap'
@@ -31,14 +32,17 @@ import '../styles/MultiCityTripWizard.css'
  */
 const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   const { t } = useTranslation()
-  
+
   // Register modal to hide bottom navigation and explore button
   useModalRegistration(true)
-  
+
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+
+  // Advisory modal state
+  const [viewingAdvisory, setViewingAdvisory] = useState(null)
 
   // Budget selection state
   const [availableBudgets, setAvailableBudgets] = useState([])
@@ -110,7 +114,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           type: 'savingGoal'
         }))
 
-        const merged = [...normalizedBudgets, ...normalizedGoals].sort((a, b) => 
+        const merged = [...normalizedBudgets, ...normalizedGoals].sort((a, b) =>
           a.category.localeCompare(b.category)
         )
 
@@ -139,7 +143,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   }, [trip?.id])
 
   // Handle city addition
-  const handleCityAdd = (city) => {
+  const handleCityAdd = async (city) => {
     const newCity = {
       ...city,
       id: `temp-${Date.now()}`,
@@ -148,6 +152,20 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
       transportMode: city.transportMode || null
     }
     setCities([...cities, newCity])
+
+    // Fetch and show advisory if country is available
+    if (newCity.country) {
+      try {
+        // Clear any previous advisory first
+        setViewingAdvisory(null)
+        const advisory = await getAdvisory(newCity.country)
+        if (advisory) {
+          setViewingAdvisory(advisory)
+        }
+      } catch (err) {
+        console.error('Failed to load advisory on map click:', err)
+      }
+    }
   }
 
   // Handle city removal
@@ -286,7 +304,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
       let finalBudget = parseFloat(formData.budget) || 0
       let linkedBudgetId = null
 
-       // Determine canonical start/end cities based on route order
+      // Determine canonical start/end cities based on route order
       const ordered = getOrderedCities()
       const startCity = ordered[0]
       const endCity = ordered[ordered.length - 1]
@@ -347,15 +365,15 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           // Editing: fetch existing cities once
           const existingCities = await tripCityService.getByTrip(savedTrip.id)
           const existingIds = new Set(existingCities.map(c => c.id))
-          
+
           // Separate cities by operation type using ID matching (fastest approach)
           const toUpdate = []
           const toCreate = []
-          
+
           cities.forEach((city, index) => {
             // Check if city has a real ID (not temp) and exists in database
             const hasRealId = city.id && !city.id.startsWith('temp-') && existingIds.has(city.id)
-            
+
             if (hasRealId) {
               // UPDATE: City exists, update it with new data and order
               toUpdate.push({
@@ -376,7 +394,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               })
             }
           })
-          
+
           // Find cities to DELETE: existing cities not in new list
           const newRealIds = new Set(
             cities
@@ -386,7 +404,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           const toDelete = existingCities
             .filter(city => !newRealIds.has(city.id))
             .map(city => city.id)
-          
+
           // Execute all operations in parallel for maximum performance
           await Promise.all([
             // Update existing cities
@@ -414,7 +432,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
       if (onSave) {
         onSave(savedTrip)
       }
-      
+
       // If editing existing trip, show success screen
       // If creating new trip, close wizard to show switch confirmation modal
       if (trip?.id) {
@@ -705,7 +723,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               {orderedCities.length > 0 && (
                 <div className="selected-cities-list">
                   <h4>{t('travel.multiCity.step1.selectedCities', 'Selected Cities')}</h4>
-                  
+
                   {/* City tags - clean and minimal */}
                   <div className="selected-cities-tags">
                     {orderedCities.map((city, index) => (
@@ -802,36 +820,37 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                           )}
                         </div>
                       </div>
-                    <div className="city-date-inputs">
-                      <div className="form-group">
-                        <DatePicker
-                          label={t('travel.multiCity.step2.arrival', 'Arrival')}
-                          value={city.startDate || ''}
-                          onChange={(newValue) => {
-                            const newCities = [...cities]
-                            newCities[index] = { ...city, startDate: newValue }
-                            setCities(newCities)
-                          }}
-                          min={index > 0 ? cities[index - 1]?.endDate || cities[index - 1]?.startDate : new Date().toISOString().split('T')[0]}
-                          placeholder={t('travel.multiCity.step2.selectArrival', 'Select arrival date')}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <DatePicker
-                          label={t('travel.multiCity.step2.departure', 'Departure')}
-                          value={city.endDate || ''}
-                          onChange={(newValue) => {
-                            const newCities = [...cities]
-                            newCities[index] = { ...city, endDate: newValue }
-                            setCities(newCities)
-                          }}
-                          min={city.startDate || new Date().toISOString().split('T')[0]}
-                          placeholder={t('travel.multiCity.step2.selectDeparture', 'Select departure date')}
-                        />
+                      <div className="city-date-inputs">
+                        <div className="form-group">
+                          <DatePicker
+                            label={t('travel.multiCity.step2.arrival', 'Arrival')}
+                            value={city.startDate || ''}
+                            onChange={(newValue) => {
+                              const newCities = [...cities]
+                              newCities[index] = { ...city, startDate: newValue }
+                              setCities(newCities)
+                            }}
+                            min={index > 0 ? cities[index - 1]?.endDate || cities[index - 1]?.startDate : new Date().toISOString().split('T')[0]}
+                            placeholder={t('travel.multiCity.step2.selectArrival', 'Select arrival date')}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <DatePicker
+                            label={t('travel.multiCity.step2.departure', 'Departure')}
+                            value={city.endDate || ''}
+                            onChange={(newValue) => {
+                              const newCities = [...cities]
+                              newCities[index] = { ...city, endDate: newValue }
+                              setCities(newCities)
+                            }}
+                            min={city.startDate || new Date().toISOString().split('T')[0]}
+                            placeholder={t('travel.multiCity.step2.selectDeparture', 'Select departure date')}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )})}
+                  )
+                })}
             </div>
 
             {cities.length > 0 && cities[0]?.startDate && cities[cities.length - 1]?.endDate && (
@@ -932,7 +951,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                       >
                         <option value="">-- {t('wizard.selectBudget', 'Select a Budget')} --</option>
                         {availableBudgets.map(b => {
-                          const displayName = b.type === 'savingGoal' 
+                          const displayName = b.type === 'savingGoal'
                             ? `${b.icon || '🎯'} ${b.category}`
                             : b.category
                           const amount = b.amount || b.targetAmount || 0
@@ -973,8 +992,21 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
         {/* Header */}
         <div className="wizard-header">
           <h2>
-            {trip ? t('travel.multiCity.editTrip', 'Edit Multi-City Trip') : t('travel.multiCity.createTrip', 'Create Multi-City Trip')}
+            {trip ? t('travel.multiCity.editTrip', 'Edit Trip') : t('travel.multiCity.createTrip', 'Create Trip')}
           </h2>
+
+          {/* Progress indicator - moved into header */}
+          <div className="wizard-progress">
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={`progress-step ${s === step ? 'active' : ''} ${s < step ? 'completed' : ''}`}
+              >
+                {s < step ? <FiCheck size={14} /> : s}
+              </div>
+            ))}
+          </div>
+
           <div className="wizard-header-actions">
             {trip && (
               <button
@@ -991,18 +1023,6 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               <FiX size={24} />
             </button>
           </div>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="wizard-progress">
-          {[1, 2, 3].map((s) => (
-            <div
-              key={s}
-              className={`progress-step ${s === step ? 'active' : ''} ${s < step ? 'completed' : ''}`}
-            >
-              {s < step ? <FiCheck size={14} /> : s}
-            </div>
-          ))}
         </div>
 
         {/* Content */}

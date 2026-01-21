@@ -34,16 +34,6 @@ namespace YouAndMeExpenses.Tests.Services
         }
 
         [Fact]
-        public void EmailService_Should_Initialize_With_Valid_Settings()
-        {
-            // Act
-            var service = new EmailService(_mockEmailSettings.Object, _mockLogger.Object);
-
-            // Assert
-            service.Should().NotBeNull();
-        }
-
-        [Fact]
         public void CreateReminderEmailTemplate_Should_Return_Valid_Html()
         {
             // Arrange

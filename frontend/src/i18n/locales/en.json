@@ -1139,6 +1139,37 @@
     "errors": "Errors"
   },
   "travel": {
+    "layout": {
+      "title": "Customize Layout",
+      "presets": {
+        "title": "Quick Presets",
+        "planning": "Planning Mode",
+        "active": "On Trip",
+        "minimal": "Minimal",
+        "custom": "Custom"
+      },
+      "columns": {
+        "main": "Main Content",
+        "sidebar": "Sidebar"
+      },
+      "hint": "Drag to reorder • Click eye to toggle visibility",
+      "reset": "Reset to Defaults",
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "sections": {
+        "countdown": "Days to Go",
+        "destinationSnapshot": "Destination Info",
+        "todayStrip": "Quick Stats",
+        "tripMicrography": "Trip Micrography",
+        "encouragement": "Motivation",
+        "advisory": "Travel Advisory",
+        "routeSummary": "Route Summary",
+        "cityTimeline": "City Timeline",
+        "savedPlaces": "Saved Places",
+        "statusSummary": "Status Details"
+      }
+    },
     "common": {
       "enterTravelMode": "Travel Mode",
       "exitTravelMode": "Exit",
@@ -1260,7 +1291,10 @@
       "quickActionsTitle": "Quick actions",
       "quickActionsPacking": "Packing list",
       "quickActionsBudget": "Trip budget",
-      "quickActionsItinerary": "Itinerary"
+      "quickActionsItinerary": "Itinerary",
+      "savedPlacesTitle": "Saved places",
+      "savedPlacesCount": "{{count}} saved",
+      "savedPlacesEmpty": "Pin favourite spots from the map to keep them close."
     },
     "advisory": {
       "riskLevel": {
@@ -1374,7 +1408,7 @@
         "other": "Other"
       }
     },
-      "documents": {
+    "documents": {
       "title": "Documents",
       "noTrip": "No Trip Selected",
       "createTripFirst": "Create a trip to store your documents",
@@ -1402,57 +1436,57 @@
       "attachment": "Attachment",
       "viewAttachment": "View attachment",
       "removeAttachment": "Remove",
-        "types": {
+      "types": {
         "passport": "Passport",
         "visa": "Visa",
         "booking": "Booking",
         "insurance": "Insurance",
         "ticket": "Ticket",
         "other": "Other"
+      },
+      "aiHelper": {
+        "title": "Ask AI which documents you need",
+        "subtitle": "We will compose a clear question for your chosen AI based on your route.",
+        "askAiCta": "Ask AI: required documents",
+        "originCountry": "Origin country",
+        "originPlaceholder": "e.g., Greece",
+        "destinationCountry": "Destination country",
+        "destinationPlaceholder": "e.g., Japan",
+        "destinationCountries": "Destination countries",
+        "addCountry": "Add country",
+        "addCountryPrompt": "Enter country name:",
+        "multiCityHint": "This is a multi-city trip. Add or remove countries as needed.",
+        "providerLabel": "Send this question to",
+        "providerHint": "Opens in a new tab with your question prefilled.",
+        "promptPreview": "Preview of the question we will send",
+        "askButton": "Open AI chat with this question",
+        "originFallback": "my home country",
+        "destinationFallback": "my destination country",
+        "prompt": {
+          "line1Basic": "I am planning international travel from {{origin}} to {{destination}}{{tripNameSentence}}.",
+          "line1WithRange": "I am planning international travel from {{origin}} to {{destination}} from {{startDate}} to {{endDate}}{{tripNameSentence}}.",
+          "line1WithStart": "I am planning international travel from {{origin}} to {{destination}} starting on {{startDate}}{{tripNameSentence}}.",
+          "line2": "Please tell me which travel documents, visas, entry requirements, and health documents I may need.",
+          "line3": "Split the answer into:",
+          "line4": "- Essential documents required for entry",
+          "line5": "- Recommended / nice-to-have documents",
+          "line6": "- Any country-specific visa rules, transit rules, or passport validity rules I should know.",
+          "line6MultiCountry": "- Any country-specific visa rules, transit rules, passport validity rules, and cross-border travel requirements I should know for traveling between these countries.",
+          "line7": "Answer in a concise, traveler-friendly checklist.",
+          "tripNameSentence": " for a trip called \"{{tripName}}\"",
+          "destinationsTwo": "{{country1}} and {{country2}}",
+          "destinationsMultiple": "{{countries}}, and {{lastCountry}}"
         },
-        "aiHelper": {
-          "title": "Ask AI which documents you need",
-          "subtitle": "We will compose a clear question for your chosen AI based on your route.",
-          "askAiCta": "Ask AI: required documents",
-          "originCountry": "Origin country",
-          "originPlaceholder": "e.g., Greece",
-          "destinationCountry": "Destination country",
-          "destinationPlaceholder": "e.g., Japan",
-          "destinationCountries": "Destination countries",
-          "addCountry": "Add country",
-          "addCountryPrompt": "Enter country name:",
-          "multiCityHint": "This is a multi-city trip. Add or remove countries as needed.",
-          "providerLabel": "Send this question to",
-          "providerHint": "Opens in a new tab with your question prefilled.",
-          "promptPreview": "Preview of the question we will send",
-          "askButton": "Open AI chat with this question",
-          "originFallback": "my home country",
-          "destinationFallback": "my destination country",
-          "prompt": {
-            "line1Basic": "I am planning international travel from {{origin}} to {{destination}}{{tripNameSentence}}.",
-            "line1WithRange": "I am planning international travel from {{origin}} to {{destination}} from {{startDate}} to {{endDate}}{{tripNameSentence}}.",
-            "line1WithStart": "I am planning international travel from {{origin}} to {{destination}} starting on {{startDate}}{{tripNameSentence}}.",
-            "line2": "Please tell me which travel documents, visas, entry requirements, and health documents I may need.",
-            "line3": "Split the answer into:",
-            "line4": "- Essential documents required for entry",
-            "line5": "- Recommended / nice-to-have documents",
-            "line6": "- Any country-specific visa rules, transit rules, or passport validity rules I should know.",
-            "line6MultiCountry": "- Any country-specific visa rules, transit rules, passport validity rules, and cross-border travel requirements I should know for traveling between these countries.",
-            "line7": "Answer in a concise, traveler-friendly checklist.",
-            "tripNameSentence": " for a trip called \"{{tripName}}\"",
-            "destinationsTwo": "{{country1}} and {{country2}}",
-            "destinationsMultiple": "{{countries}}, and {{lastCountry}}"
-          },
-          "provider": {
-            "chatgpt": "ChatGPT",
-            "claude": "Claude",
-            "gemini": "Gemini",
-            "perplexity": "Perplexity",
-            "copilot": "Copilot"
-          },
-          "promptCopied": "Prompt copied to clipboard! Paste it into the AI chat.",
-          "copyFailed": "Could not copy to clipboard. Please copy the prompt manually from the preview above."
-        }
+        "provider": {
+          "chatgpt": "ChatGPT",
+          "claude": "Claude",
+          "gemini": "Gemini",
+          "perplexity": "Perplexity",
+          "copilot": "Copilot"
+        },
+        "promptCopied": "Prompt copied to clipboard! Paste it into the AI chat.",
+        "copyFailed": "Could not copy to clipboard. Please copy the prompt manually from the preview above."
+      }
     },
     "explore": {
       "title": "Explore",
@@ -1475,6 +1509,8 @@
       "tryAnother": "Try another category",
       "selectCategory": "Select a category to explore",
       "unnamed": "Unnamed",
+      "savedPlacesTitle": "Saved places nearby",
+      "savedPlacesCount": "{{count}} pinned",
       "travelTips": "Travel Tips",
       "poi": {
         "restaurant": "Restaurants",
@@ -1512,7 +1548,8 @@
         "downloadMaps": "Download offline maps for your destination",
         "localCurrency": "Locate ATMs for local currency",
         "emergency": "Note nearby hospitals for emergencies"
-      }
+      },
+      "placesForTripTitle": "Places for this trip"
     },
     "emergency": {
       "title": "Emergency Info",

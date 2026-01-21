@@ -799,3 +799,164 @@
   font-size: 1rem;
   transition: all 0.3s ease;
 }
+
+/* ================================
+   Dark Mode – Glassy Packing List
+   Tailored for Paire soft-tech aesthetic
+   ================================ */
+
+/* Overall packing page in dark mode */
+[data-theme='dark'] .packing-page {
+  color: var(--text-primary);
+}
+
+/* Glassmorphism progress card tuned for dark mode */
+[data-theme='dark'] .packing-progress {
+  background: rgba(15, 7, 26, 0.88);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-radius: 24px;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  box-shadow:
+    0 18px 50px rgba(15, 7, 26, 0.75),
+    0 0 0 1px rgba(15, 23, 42, 0.6) inset;
+}
+
+[data-theme='dark'] .packing-progress .progress-bar {
+  background: rgba(30, 41, 59, 0.85);
+}
+
+[data-theme='dark'] .packing-progress .progress-fill {
+  /* Royal Amethyst gradient for global packing progress */
+  background: linear-gradient(90deg, #8B5CF6 0%, #C4B5FD 100%);
+}
+
+/* Category containers – soft glass cards in dark mode */
+[data-theme='dark'] .category-section {
+  background: rgba(15, 7, 26, 0.82);
+  border-color: rgba(148, 163, 184, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 16px 45px rgba(15, 7, 26, 0.85),
+    0 0 0 1px rgba(15, 23, 42, 0.7) inset;
+}
+
+[data-theme='dark'] .category-header {
+  background: transparent;
+}
+
+[data-theme='dark'] .category-header:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+[data-theme='dark'] .category-progress {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+[data-theme='dark'] .category-progress-fill {
+  /* Thick, rounded vitality gradient for per-category completion */
+  background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+}
+
+[data-theme='dark'] .category-count {
+  color: var(--text-secondary);
+}
+
+/* Packing items – dark glass rows with soft separation */
+[data-theme='dark'] .category-items {
+  padding-bottom: var(--spacing-md);
+}
+
+[data-theme='dark'] .packing-item {
+  background: rgba(15, 7, 26, 0.96);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.75),
+    0 0 0 1px rgba(15, 23, 42, 0.9) inset;
+}
+
+[data-theme='dark'] .packing-item:hover {
+  border-color: rgba(139, 92, 246, 0.65);
+  background: radial-gradient(circle at top left,
+      rgba(139, 92, 246, 0.18),
+      rgba(15, 7, 26, 0.98));
+}
+
+[data-theme='dark'] .packing-item.checked {
+  opacity: 1;
+  background: linear-gradient(120deg,
+      rgba(139, 92, 246, 0.24),
+      rgba(16, 185, 129, 0.18));
+}
+
+[data-theme='dark'] .packing-item.checked .item-name {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+/* Circular tick button – amethyst halo in dark mode */
+[data-theme='dark'] .check-btn {
+  border-color: rgba(148, 163, 184, 0.85);
+  background: radial-gradient(circle at 30% 30%,
+      rgba(148, 163, 184, 0.35),
+      rgba(15, 7, 26, 0.96));
+  color: rgba(248, 250, 252, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.85),
+    0 10px 24px rgba(15, 23, 42, 0.95);
+}
+
+[data-theme='dark'] .check-btn:hover {
+  border-color: #8B5CF6;
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.8),
+    0 14px 32px rgba(15, 23, 42, 1);
+  transform: translateY(-1px) scale(1.02);
+}
+
+[data-theme='dark'] .packing-item.checked .check-btn {
+  background: linear-gradient(135deg, #8B5CF6 0%, #C4B5FD 100%);
+  border-color: transparent;
+  color: #0F071A;
+}
+
+/* Quantity pill & essential badge – tuned for dark background */
+[data-theme='dark'] .item-qty {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .essential-badge {
+  background: #EF4444;
+  box-shadow: 0 0 0 1px rgba(248, 250, 252, 0.16);
+}
+
+/* Delete affordance – softer by default, coral on hover */
+[data-theme='dark'] .delete-btn {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .delete-btn:hover {
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.12);
+  border-radius: 999px;
+}
+
+/* Empty states – keep airy but legible on dark map backdrop */
+[data-theme='dark'] .packing-empty,
+[data-theme='dark'] .packing-page.empty-state {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .packing-empty h3,
+[data-theme='dark'] .packing-page.empty-state h3 {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .packing-empty svg,
+[data-theme='dark'] .packing-page.empty-state svg {
+  opacity: 0.4;
+}

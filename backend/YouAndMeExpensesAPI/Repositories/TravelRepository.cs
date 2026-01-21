@@ -195,6 +195,52 @@ namespace YouAndMeExpensesAPI.Repositories
             return Task.CompletedTask;
         }
 
+        // Layout preferences
+
+        public async Task<TripLayoutPreferences?> GetLayoutPreferencesAsync(Guid tripId)
+        {
+            return await _dbContext.TripLayoutPreferences
+                .FirstOrDefaultAsync(p => p.TripId == tripId);
+        }
+
+        public async Task AddLayoutPreferencesAsync(TripLayoutPreferences preferences)
+        {
+            await _dbContext.TripLayoutPreferences.AddAsync(preferences);
+        }
+
+        public Task RemoveLayoutPreferencesAsync(TripLayoutPreferences preferences)
+        {
+            _dbContext.TripLayoutPreferences.Remove(preferences);
+            return Task.CompletedTask;
+        }
+
+        // Saved Places
+
+        public async Task<IReadOnlyList<SavedPlace>> GetSavedPlacesAsync(Guid tripId)
+        {
+            return await _dbContext.SavedPlaces
+                .Where(p => p.TripId == tripId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task AddSavedPlaceAsync(SavedPlace place)
+        {
+            await _dbContext.SavedPlaces.AddAsync(place);
+        }
+
+        public async Task<SavedPlace?> GetSavedPlaceAsync(Guid tripId, Guid placeId)
+        {
+            return await _dbContext.SavedPlaces
+                .FirstOrDefaultAsync(p => p.Id == placeId && p.TripId == tripId);
+        }
+
+        public Task RemoveSavedPlaceAsync(SavedPlace place)
+        {
+            _dbContext.SavedPlaces.Remove(place);
+            return Task.CompletedTask;
+        }
+
         public async Task SaveChangesAsync()
         {
             await _dbContext.SaveChangesAsync();

@@ -44,10 +44,10 @@ const geocodeDestination = async (query) => {
  */
 const TripSetupWizard = ({ trip, onClose, onSave }) => {
   const { t } = useTranslation()
-  
+
   // Register modal to hide bottom navigation and explore button
   useModalRegistration(true)
-  
+
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -108,7 +108,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
         }))
 
         // Merge budgets and saving goals, sort by category name
-        const merged = [...normalizedBudgets, ...normalizedGoals].sort((a, b) => 
+        const merged = [...normalizedBudgets, ...normalizedGoals].sort((a, b) =>
           a.category.localeCompare(b.category)
         )
 
@@ -301,8 +301,8 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
               {searchResults.length > 0 && (
                 <ul className="search-results" role="listbox">
                   {searchResults.map((result, index) => (
-                    <li 
-                      key={index} 
+                    <li
+                      key={index}
                       onClick={() => selectDestination(result)}
                       onTouchStart={(e) => {
                         // Prevent double-tap zoom on mobile
@@ -465,7 +465,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                       >
                         <option value="">-- {t('wizard.selectBudget', 'Select a Budget')} --</option>
                         {availableBudgets.map(b => {
-                          const displayName = b.type === 'savingGoal' 
+                          const displayName = b.type === 'savingGoal'
                             ? `${b.icon || '🎯'} ${b.category}`
                             : b.category
                           const amount = b.amount || b.targetAmount || 0
@@ -508,21 +508,22 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
           <h2>
             {trip ? t('travel.common.editTrip', 'Edit Trip') : t('travel.common.createTrip', 'Create Trip')}
           </h2>
+
+          {/* Progress indicator - moved into header */}
+          <div className="wizard-progress">
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={`progress-step ${s === step ? 'active' : ''} ${s < step ? 'completed' : ''}`}
+              >
+                {s < step ? <FiCheck size={14} /> : s}
+              </div>
+            ))}
+          </div>
+
           <button className="wizard-close" onClick={onClose} aria-label="Close">
             <FiX size={24} />
           </button>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="wizard-progress">
-          {[1, 2, 3].map((s) => (
-            <div
-              key={s}
-              className={`progress-step ${s === step ? 'active' : ''} ${s < step ? 'completed' : ''}`}
-            >
-              {s < step ? <FiCheck size={14} /> : s}
-            </div>
-          ))}
         </div>
 
         {/* Content */}

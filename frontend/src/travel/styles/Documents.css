@@ -48,6 +48,30 @@
   margin: 0;
 }
 
+/* Compact issues strip summarising expiring / expired documents so users
+   notice problems before scrolling into the full list. */
+.documents-issues-strip {
+  margin-top: var(--spacing-sm);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  background: rgba(231, 76, 60, 0.06);
+  border: 1px solid rgba(231, 76, 60, 0.35);
+  color: #b91c1c;
+  transition: all 0.3s ease-in-out;
+}
+
+.documents-issues-strip svg {
+  flex-shrink: 0;
+}
+
+.documents-issues-text {
+  white-space: nowrap;
+}
+
 .expiry-alert {
   display: flex;
   align-items: center;

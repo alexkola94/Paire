@@ -101,7 +101,7 @@ const discoveryLayerVariants = {
  * Travel Layout Component
  * Full-screen container for travel mode with Discovery Mode toggle
  */
-const TravelLayout = memo(({ children, activePage, onNavigate }) => {
+const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) => {
   const { t } = useTranslation()
   const { theme } = useTheme()
   const { hasOpenModals } = useModal()
@@ -294,7 +294,9 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
       )}
 
       {/* Header - Always visible, collapses in Discovery Mode */}
-      <TravelHeader trip={activeTrip} syncStatus={syncStatus} isDiscoveryMode={isDiscoveryMode} />
+      {!shouldHideNav && (
+        <TravelHeader trip={activeTrip} syncStatus={syncStatus} isDiscoveryMode={isDiscoveryMode} />
+      )}
 
       {/* Discovery Mode UI Layer */}
       <AnimatePresence mode="wait">
@@ -391,7 +393,7 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
       </AnimatePresence>
 
       {/* Bottom Navigation - Hidden in Discovery Mode */}
-      {!isDiscoveryMode && (
+      {!isDiscoveryMode && !shouldHideNav && (
         <TravelNavigation activePage={activePage} onNavigate={onNavigate} />
       )}
     </div>

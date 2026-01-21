@@ -33,4 +33,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
   </ItemGroup>
 
+  <!-- Ensure static data files (like CountryCodes.json) are copied to the output -->
+  <ItemGroup>
+    <!-- Update the implicitly-included content item instead of duplicating it -->
+    <Content Update="Data\CountryCodes.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

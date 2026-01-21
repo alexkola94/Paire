@@ -291,11 +291,13 @@
   gap: 6px;
   padding: 6px 10px;
   border-radius: 999px;
+  /* Default (dark-leaning) styling – tuned for map dark mode */
   background: rgba(15, 7, 26, 0.85);
   box-shadow: 0 10px 30px rgba(15, 7, 26, 0.8);
   border: 1px solid rgba(139, 92, 246, 0.4);
   backdrop-filter: blur(14px);
   transform: translateY(-6px);
+  transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .discovery-city-badge {
@@ -329,6 +331,28 @@
   font-size: 0.7rem;
   color: rgba(229, 231, 235, 0.7);
   white-space: nowrap;
+}
+
+/* Light mode variant for city markers – keeps the Paire soft tech aesthetic
+   while improving contrast on bright map styles. */
+[data-theme='light'] .discovery-city-marker {
+  background: rgba(249, 250, 251, 0.92);
+  border-color: rgba(139, 92, 246, 0.28);
+  box-shadow: 0 10px 30px rgba(15, 7, 26, 0.16);
+}
+
+[data-theme='light'] .discovery-city-badge {
+  /* Brighter, softer pill for the stop index in light mode */
+  background: linear-gradient(135deg, #A855F7 0%, #8B5CF6 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+[data-theme='light'] .discovery-city-name {
+  color: #111827;
+}
+
+[data-theme='light'] .discovery-city-country {
+  color: rgba(55, 65, 81, 0.7);
 }
 
 /* Home marker (user's current location - starting point) */

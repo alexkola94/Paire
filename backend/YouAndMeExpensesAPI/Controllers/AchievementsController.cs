@@ -146,42 +146,8 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var progress = await _achievementService.GetUserAchievementProgressAsync(userId.ToString());
-                var unlocked = progress.Count(p => p.IsUnlocked);
-                var total = progress.Count;
-                var totalPoints = progress
-                    .Where(p => p.IsUnlocked)
-                    .Sum(p => p.Achievement.Points);
-
-                var byCategory = progress
-                    .Where(p => p.IsUnlocked)
-                    .GroupBy(p => p.Achievement.Category)
-                    .Select(g => new
-                    {
-                        category = g.Key,
-                        count = g.Count()
-                    })
-                    .ToList();
-
-                var byRarity = progress
-                    .Where(p => p.IsUnlocked)
-                    .GroupBy(p => p.Achievement.Rarity)
-                    .Select(g => new
-                    {
-                        rarity = g.Key,
-                        count = g.Count()
-                    })
-                    .ToList();
-
-                return Ok(new
-                {
-                    unlocked,
-                    total,
-                    totalPoints,
-                    percentage = total > 0 ? (unlocked * 100.0 / total) : 0,
-                    byCategory,
-                    byRarity
-                });
+                var stats = await _achievementService.GetAchievementStatsAsync(userId.ToString());
+                return Ok(stats);
             }
             catch (Exception ex)
             {

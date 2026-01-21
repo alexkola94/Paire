@@ -20,8 +20,12 @@ import {
 } from 'react-icons/fi'
 import { WEATHER_CODES, POI_CATEGORIES } from '../utils/travelConstants'
 import { getDestinationInfo } from '../utils/travelData'
+import { tripCityService, savedPlaceService } from '../services/travelApi'
+import useDiscoveryMode from '../hooks/useDiscoveryMode'
 import EmergencyCard from '../components/explore/EmergencyCard'
 import PhrasebookCard from '../components/explore/PhrasebookCard'
+import TravelAdvisoryCard from '../components/TravelAdvisoryCard'
+import { getAdvisoryForTrip, getAdvisories } from '../services/travelAdvisoryService'
 import '../styles/Explore.css'
 
 // Weather icon mapping
@@ -62,6 +66,10 @@ const ExplorePage = ({ trip }) => {
   const [showPOISearch, setShowPOISearch] = useState(true) // Show categories by default
   const [selectedPoiCategory, setSelectedPoiCategory] = useState(null)
   const [weatherError, setWeatherError] = useState(null)
+  const [advisory, setAdvisory] = useState(null)
+  const [advisories, setAdvisories] = useState([])
+  const [savedPlaces, setSavedPlaces] = useState([])
+  const { enterDiscoveryMode, canEnterDiscoveryMode } = useDiscoveryMode()
 
   // Fetch weather data
   useEffect(() => {
@@ -91,6 +99,99 @@ const ExplorePage = ({ trip }) => {
 
     fetchWeather()
   }, [trip?.latitude, trip?.longitude, t])
+
+  // Load saved places (pinned POIs) for the current trip so the explore
+  // view can surface a gentle snapshot of favourites discovered on the map.
+  useEffect(() => {
+    let cancelled = false
+
+    const loadSavedPlaces = async () => {
+      if (!trip?.id) {
+        setSavedPlaces([])
+        return
+      }
+
+      try {
+        const places = await savedPlaceService.getByTrip(trip.id)
+        if (!cancelled) {
+          // Keep this list intentionally small so the section stays calm.
+          setSavedPlaces((places || []).slice(0, 5))
+        }
+      } catch (error) {
+        console.error('Error loading saved places for Explore page:', error)
+        if (!cancelled) {
+          setSavedPlaces([])
+        }
+      }
+    }
+
+    loadSavedPlaces()
+
+    return () => {
+      cancelled = true
+    }
+  }, [trip?.id])
+
+  // Fetch country‑level travel advisory/advisories in the background so it
+  // never blocks the main explore view. Supports multi‑city trips.
+  useEffect(() => {
+    let cancelled = false
+
+    const loadAdvisories = async () => {
+      if (!trip) {
+        setAdvisory(null)
+        setAdvisories([])
+        return
+      }
+
+      try {
+        // Multi‑city: resolve distinct destination countries from trip cities
+        // and request advisories for each.
+        if (trip.tripType === 'multi-city' && trip.id) {
+          try {
+            const cities = await tripCityService.getByTrip(trip.id)
+            const countries = Array.from(
+              new Set(
+                (cities || [])
+                  .map(c => c.country && String(c.country).trim())
+                  .filter(Boolean)
+              )
+            )
+
+            if (countries.length > 0) {
+              const results = await getAdvisories(countries).catch(() => [])
+              if (!cancelled) {
+                setAdvisories(results || [])
+                setAdvisory(results && results.length > 0 ? results[0] : null)
+              }
+              return
+            }
+          } catch (cityError) {
+            console.error('Error resolving cities for Explore advisory:', cityError)
+          }
+        }
+
+        // Fallback: single‑destination advisory based on the trip itself.
+        const single = await getAdvisoryForTrip(trip).catch(() => null)
+        if (!cancelled) {
+          setAdvisory(single || null)
+          setAdvisories(single ? [single] : [])
+        }
+      } catch (error) {
+        console.error('Error loading explore advisory:', error)
+        if (!cancelled) {
+          setAdvisory(null)
+          setAdvisories([])
+        }
+      }
+    }
+
+    loadAdvisories()
+
+    return () => {
+      cancelled = true
+    }
+  }, [trip])
 
   // Fetch POIs - only when user requests
   const fetchPois = async (category) => {
@@ -169,6 +270,26 @@ const ExplorePage = ({ trip }) => {
     return R * c
   }
 
+  // Open a saved place directly in Google Maps. Prefer coordinates when
+  // available and gracefully fall back to a text search with name/address.
+  const openSavedPlaceInMaps = (poi) => {
+    if (!poi) return
+
+    const hasCoords =
+      poi.latitude != null &&
+      poi.longitude != null
+
+    const url = hasCoords
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${poi.latitude},${poi.longitude}`
+      )}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        [poi.name, poi.address].filter(Boolean).join(' ')
+      )}`
+
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   if (!trip) {
     return (
       <motion.div
@@ -221,6 +342,13 @@ const ExplorePage = ({ trip }) => {
       animate="visible"
       variants={fadeIn}
     >
+      {/* Country advisory strip – calm, contextual risk snapshot */}
+      {advisory && (
+        <section className="explore-section advisory-section">
+          <TravelAdvisoryCard advisory={advisory} advisories={advisories} compact />
+        </section>
+      )}
+
       {/* Weather Section - Today's weather prominent, forecast expandable */}
       <section className="explore-section weather-section">
         {loadingWeather ? (
@@ -338,8 +466,76 @@ const ExplorePage = ({ trip }) => {
           </button>
         ) : (
           <>
+            {/* Saved Places snapshot – calm row of favourite pins from Discovery Mode */}
+            {savedPlaces.length > 0 && (
+              <div className="saved-places-explore">
+                <div className="saved-places-explore-header">
+                  <h3 className="saved-places-explore-title">
+                    {t('travel.explore.savedPlacesTitle', 'Saved places nearby')}
+                  </h3>
+                  <div className="saved-places-explore-header-right">
+                    <span className="saved-places-explore-count">
+                      {t(
+                        'travel.explore.savedPlacesCount',
+                        '{{count}} pinned',
+                        { count: savedPlaces.length }
+                      )}
+                    </span>
+                    {canEnterDiscoveryMode && (
+                      <button
+                        type="button"
+                        className="saved-places-explore-view-all-btn"
+                        onClick={enterDiscoveryMode}
+                      >
+                        {t('travel.common.viewAll', 'View all')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="saved-places-explore-list">
+                  {savedPlaces.map((poi) => (
+                    <div
+                      key={poi.id || poi.poiId}
+                      className="saved-place-explore-pill"
+                    >
+                      <div className="saved-place-explore-main">
+                        <span className="saved-place-explore-name">
+                          {poi.name}
+                        </span>
+                        {poi.address && (
+                          <span className="saved-place-explore-address">
+                            {poi.address}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="saved-place-explore-map-btn"
+                        onClick={() => openSavedPlaceInMaps(poi)}
+                        aria-label={t(
+                          'travel.discovery.seeDetails',
+                          'See details in Google Maps'
+                        )}
+                        title={t(
+                          'travel.discovery.seeDetails',
+                          'See details in Google Maps'
+                        )}
+                      >
+                        <FiExternalLink size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="poi-header">
-              <h3>{t('travel.explore.nearby', 'What are you looking for?')}</h3>
+              <h3>
+                {t(
+                  'travel.explore.placesForTripTitle',
+                  'Places for this trip'
+                )}
+              </h3>
             </div>
 
             {/* Simple category buttons */}

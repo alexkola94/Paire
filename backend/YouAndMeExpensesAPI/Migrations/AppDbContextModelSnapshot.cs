@@ -1337,6 +1337,104 @@ namespace YouAndMeExpensesAPI.Migrations
                     b.ToTable("reminder_preferences", (string)null);
                 });
 
+            modelBuilder.Entity("YouAndMeExpensesAPI.Models.SavedPlace", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text")
+                        .HasColumnName("address");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("other")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("OpeningHours")
+                        .HasColumnType("text")
+                        .HasColumnName("opening_hours");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("PoiId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("poi_id");
+
+                    b.Property<double?>("Rating")
+                        .HasColumnType("double precision")
+                        .HasColumnName("rating");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("overpass")
+                        .HasColumnName("source");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trip_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("Website")
+                        .HasColumnType("text")
+                        .HasColumnName("website");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TripId");
+
+                    b.HasIndex("TripId", "PoiId");
+
+                    b.HasIndex("TripId", "UserId");
+
+                    b.ToTable("saved_places", (string)null);
+                });
+
             modelBuilder.Entity("YouAndMeExpensesAPI.Models.SavingsGoal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2117,6 +2215,47 @@ namespace YouAndMeExpensesAPI.Migrations
                     b.ToTable("trip_cities", (string)null);
                 });
 
+            modelBuilder.Entity("YouAndMeExpensesAPI.Models.TripLayoutPreferences", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LayoutConfig")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("layout_config");
+
+                    b.Property<string>("Preset")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("preset");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trip_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TripId")
+                        .IsUnique();
+
+                    b.ToTable("trip_layout_preferences", (string)null);
+                });
+
             modelBuilder.Entity("YouAndMeExpensesAPI.Models.UserAchievement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2373,6 +2512,17 @@ namespace YouAndMeExpensesAPI.Migrations
                     b.Navigation("RecurringBill");
                 });
 
+            modelBuilder.Entity("YouAndMeExpensesAPI.Models.SavedPlace", b =>
+                {
+                    b.HasOne("YouAndMeExpensesAPI.Models.Trip", "Trip")
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Trip");
+                });
+
             modelBuilder.Entity("YouAndMeExpensesAPI.Models.StoredBankAccount", b =>
                 {
                     b.HasOne("YouAndMeExpensesAPI.Models.BankConnection", null)
@@ -2419,6 +2569,17 @@ namespace YouAndMeExpensesAPI.Migrations
                     b.HasOne("YouAndMeExpensesAPI.Models.Trip", "Trip")
                         .WithMany("Cities")
                         .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Trip");
+                });
+
+            modelBuilder.Entity("YouAndMeExpensesAPI.Models.TripLayoutPreferences", b =>
+                {
+                    b.HasOne("YouAndMeExpensesAPI.Models.Trip", "Trip")
+                        .WithOne()
+                        .HasForeignKey("YouAndMeExpensesAPI.Models.TripLayoutPreferences", "TripId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

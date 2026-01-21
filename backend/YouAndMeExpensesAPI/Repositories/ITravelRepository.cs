@@ -46,6 +46,17 @@ namespace YouAndMeExpensesAPI.Repositories
         Task<TravelExpense?> GetExpenseAsync(Guid tripId, Guid expenseId);
         Task RemoveExpenseAsync(TravelExpense expense);
 
+        // Layout preferences
+        Task<TripLayoutPreferences?> GetLayoutPreferencesAsync(Guid tripId);
+        Task AddLayoutPreferencesAsync(TripLayoutPreferences preferences);
+        Task RemoveLayoutPreferencesAsync(TripLayoutPreferences preferences);
+
+        // Saved Places
+        Task<IReadOnlyList<SavedPlace>> GetSavedPlacesAsync(Guid tripId);
+        Task AddSavedPlaceAsync(SavedPlace place);
+        Task<SavedPlace?> GetSavedPlaceAsync(Guid tripId, Guid placeId);
+        Task RemoveSavedPlaceAsync(SavedPlace place);
+
         // Unit of work
         Task SaveChangesAsync();
     }

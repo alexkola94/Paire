@@ -73,6 +73,11 @@ namespace YouAndMeExpensesAPI.Services
         /// Should be called once during application startup
         /// </summary>
         Task InitializeDefaultAchievementsAsync();
+
+        /// <summary>
+        /// Get aggregate achievement statistics for a user (unlocked counts, totals, breakdowns).
+        /// </summary>
+        Task<AchievementStatsDto> GetAchievementStatsAsync(string userId);
     }
 
     /// <summary>
@@ -84,6 +89,31 @@ namespace YouAndMeExpensesAPI.Services
         public UserAchievement? UserAchievement { get; set; }
         public decimal Progress { get; set; }
         public bool IsUnlocked { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for aggregate achievement statistics used by the AchievementsController.
+    /// </summary>
+    public class AchievementStatsDto
+    {
+        public int Unlocked { get; set; }
+        public int Total { get; set; }
+        public int TotalPoints { get; set; }
+        public double Percentage { get; set; }
+        public List<AchievementCategoryCountDto> ByCategory { get; set; } = new();
+        public List<AchievementRarityCountDto> ByRarity { get; set; } = new();
+    }
+
+    public class AchievementCategoryCountDto
+    {
+        public string? Category { get; set; }
+        public int Count { get; set; }
+    }
+
+    public class AchievementRarityCountDto
+    {
+        public string? Rarity { get; set; }
+        public int Count { get; set; }
     }
 }
 

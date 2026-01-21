@@ -73,7 +73,7 @@ namespace YouAndMeExpenses.Tests.Models
             var prefs = new ReminderPreferences
             {
                 Id = Guid.NewGuid(),
-                UserId = Guid.NewGuid().ToString(),
+                UserId = Guid.NewGuid(),
                 EmailEnabled = true,
                 BillRemindersEnabled = true,
                 BillReminderDays = 3,

@@ -7,7 +7,7 @@ import {
   calculateDistance,
   getZoomBasedSettings
 } from '../services/discoveryService'
-import { getPinnedPOIs, addPinnedPOI, removePinnedPOI, isPOIPinned } from '../services/travelDb'
+import { savedPlaceService } from '../services/travelApi'
 import { DISCOVERY_POI_CATEGORIES } from '../utils/travelConstants'
 
 /**
@@ -34,7 +34,7 @@ const usePOIData = () => {
       if (!activeTrip?.id) return
 
       try {
-        const pinned = await getPinnedPOIs(activeTrip.id)
+        const pinned = await savedPlaceService.getByTrip(activeTrip.id)
         setPinnedPOIs(pinned)
       } catch (err) {
         console.error('Error loading pinned POIs:', err)
@@ -206,13 +206,10 @@ const usePOIData = () => {
     if (!activeTrip?.id) return false
 
     try {
-      const id = await addPinnedPOI({
-        ...poi,
-        tripId: activeTrip.id
-      })
+      const created = await savedPlaceService.create(activeTrip.id, poi)
 
       // Update local state
-      setPinnedPOIs(prev => [...prev, { ...poi, id, tripId: activeTrip.id }])
+      setPinnedPOIs(prev => [...prev, created])
       return true
     } catch (err) {
       console.error('Error pinning POI:', err)
@@ -229,7 +226,9 @@ const usePOIData = () => {
       const pinned = pinnedPOIs.find(p => p.poiId === poiId || p.id === poiId)
       if (!pinned) return false
 
-      await removePinnedPOI(pinned.id)
+      if (!activeTrip?.id) return false
+
+      await savedPlaceService.delete(activeTrip.id, pinned.id)
 
       // Update local state
       setPinnedPOIs(prev => prev.filter(p => p.id !== pinned.id))
@@ -238,7 +237,7 @@ const usePOIData = () => {
       console.error('Error unpinning POI:', err)
       return false
     }
-  }, [pinnedPOIs])
+  }, [pinnedPOIs, activeTrip?.id])
 
   /**
    * Check if a POI is pinned

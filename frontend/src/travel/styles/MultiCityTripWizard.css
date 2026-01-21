@@ -64,17 +64,18 @@
   padding: var(--spacing-xl);
 }
 
-/* Light theme: progress strip sits on a soft pill background */
+/* Light theme: progress strip becomes transparent in the header */
 .travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-progress {
-  background: rgba(248, 250, 252, 0.9);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 /* Light theme: keep progress steps soft but readable */
 .travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step.active {
@@ -269,10 +270,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.7;
   }
+
   50% {
     transform: scale(1.5);
     opacity: 0;
@@ -404,6 +408,15 @@
   gap: var(--spacing-sm);
   padding-top: var(--spacing-md);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wizard-progress {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .city-distance-item {
@@ -554,6 +567,9 @@
   align-items: flex-end;
   gap: 0.15rem;
   flex: 1;
+  /* Needed so the custom chevron pseudo-element can be anchored neatly
+     to the right edge of the select without affecting layout. */
+  position: relative;
 }
 
 .transport-mode-select {
@@ -566,6 +582,36 @@
   font-size: 0.8rem;
   outline: none;
   transition: var(--transition);
+  /* Reset native select chrome so we avoid repeated system chevrons,
+     especially in desktop Safari / Firefox, and keep the Paire look. */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  /* Give the value a little extra space on the right for our custom chevron. */
+  padding-right: 1.9rem;
+}
+
+/* Custom soft chevron so the selector matches the Paire design language
+   instead of relying on inconsistent system arrows. */
+.transport-select-wrapper::after {
+  content: '▾';
+  position: absolute;
+  right: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  transition: var(--transition);
+}
+
+.transport-leg-row:hover .transport-select-wrapper::after,
+.transport-mode-select:focus+.transport-suggestion-text+.transport-suggestion-text~.transport-select-wrapper::after {
+  opacity: 1;
 }
 
 /* Dark theme focus/hover keep the violet accent; light theme overrides are
@@ -708,6 +754,23 @@
 /* Light theme: total distance uses primary token */
 .travel-layout:not([data-theme='dark']) .total-distance-value {
   color: var(--primary);
+}
+
+/* Header Layout */
+.multi-city-wizard .wizard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.multi-city-wizard .wizard-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
 }
 
 /* Header Delete Button */
@@ -916,6 +979,7 @@
 /* Long city names and countries should wrap naturally on compact screens so
    cards stay readable without horizontal scrolling. */
 @media (max-width: 640px) {
+
   .city-date-name,
   .city-date-country {
     word-break: break-word;
@@ -1200,4 +1264,796 @@
   background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(232, 145, 58, 0.4);
+}
+
+/* ================================
+   Enhanced Mobile Responsive Styles
+   ================================ */
+
+/* Tablet refinements (768px - 1023px) */
+@media (max-width: 1023px) {
+
+  /* Wizard container adjustments */
+  .multi-city-wizard {
+    width: 98%;
+    padding: var(--spacing-lg);
+  }
+
+  /* Header compact on tablet */
+  .multi-city-wizard .wizard-header h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Progress steps smaller */
+  .multi-city-wizard .progress-step {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Mobile breakpoint (max-width: 768px) - Enhanced */
+@media (max-width: 768px) {
+
+  /* Full-screen modal on mobile */
+  .multi-city-wizard {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    max-height: 100dvh;
+    /* Dynamic viewport for mobile browsers */
+    border-radius: 0;
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Compact header */
+  .multi-city-wizard .wizard-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+    flex-shrink: 0;
+  }
+
+  .multi-city-wizard .wizard-header h2 {
+    font-size: 1.125rem;
+    line-height: 1.3;
+  }
+
+  /* Smaller close and delete buttons */
+  .wizard-close {
+    padding: var(--spacing-xs);
+  }
+
+  .wizard-close svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .wizard-header-delete svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Progress steps - more compact */
+  .wizard-progress {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    order: 2;
+    flex: 1;
+  }
+
+
+
+  .progress-step {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+
+  .progress-step svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Wizard content scrollable */
+  .wizard-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--spacing-md);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Step titles smaller */
+  .wizard-step h3 {
+    font-size: 1.125rem;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .step-description {
+    font-size: 0.8125rem;
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* Route overview - vertical stack on mobile */
+  .route-overview-card {
+    padding: var(--spacing-sm);
+  }
+
+  .route-overview-body {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+  }
+
+  .route-endpoint {
+    width: 100%;
+  }
+
+  .endpoint-chip {
+    padding: 8px 12px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .route-arrow {
+    transform: rotate(90deg);
+    padding: var(--spacing-xs) 0;
+  }
+
+  /* Map wrapper optimized for mobile */
+  .city-selection-map-wrapper {
+    min-height: 280px;
+    height: 280px;
+    margin: var(--spacing-sm) 0;
+  }
+
+  .wizard-step-map {
+    min-height: 280px;
+  }
+
+  /* Map instructions - compact on mobile */
+  .city-selection-instructions {
+    top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.75rem;
+    max-width: calc(100% - var(--spacing-lg));
+  }
+
+  /* City tags - compact layout */
+  .selected-cities-tags {
+    gap: var(--spacing-xs);
+  }
+
+  .city-tag {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .city-tag-number {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+  }
+
+  .city-tag-name {
+    font-size: 0.8125rem;
+  }
+
+  .city-tag-country {
+    font-size: 0.65rem;
+  }
+
+  .city-tag-remove {
+    width: 18px;
+    height: 18px;
+    padding: 3px;
+  }
+
+  /* Distance summary - compact on mobile */
+  .cities-distance-summary {
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    gap: var(--spacing-xs);
+  }
+
+  .city-distance-item {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .distance-main {
+    gap: var(--spacing-sm);
+  }
+
+  .distance-step {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+  }
+
+  .distance-cities {
+    font-size: 0.8125rem;
+  }
+
+  .distance-value {
+    font-size: 0.8125rem;
+    min-width: 50px;
+  }
+
+  /* Transport row - stack on mobile */
+  .transport-leg-row {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+    padding-top: var(--spacing-sm);
+  }
+
+  .transport-mode-pill {
+    width: fit-content;
+  }
+
+  .transport-select-wrapper {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .transport-mode-select {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  /* Total distance - compact */
+  .trip-total-distance {
+    padding: var(--spacing-sm) var(--spacing-md);
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    text-align: center;
+  }
+
+  .total-distance-label {
+    font-size: 0.75rem;
+  }
+
+  .total-distance-value {
+    font-size: 1.125rem;
+  }
+
+  /* Home legs summary - compact */
+  .home-legs-summary {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .home-leg-row {
+    font-size: 0.75rem;
+  }
+
+  /* City date cards - step 2 */
+  .city-dates-list {
+    gap: var(--spacing-sm);
+  }
+
+  .city-date-card {
+    padding: var(--spacing-sm);
+  }
+
+  .city-date-header {
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .city-date-number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+
+  .city-date-name {
+    font-size: 0.9375rem;
+  }
+
+  .city-date-country {
+    font-size: 0.7rem;
+  }
+
+  /* Trip duration badge */
+  .trip-duration {
+    font-size: 0.8125rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  /* Budget section - step 3 */
+  .budget-mode-toggle {
+    flex-direction: row;
+    gap: var(--spacing-sm);
+  }
+
+  .budget-mode-toggle .mode-btn {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.8125rem;
+  }
+
+  .budget-row {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .budget-input-group,
+  .currency-group {
+    width: 100%;
+  }
+
+  /* Success state - compact */
+  .wizard-success {
+    padding: var(--spacing-lg);
+    min-height: auto;
+  }
+
+  .success-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .success-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wizard-success h3 {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .wizard-success p {
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .success-actions {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  /* Footer - fixed at bottom */
+  .wizard-footer {
+    flex-shrink: 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .wizard-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.875rem;
+    min-height: 44px;
+    /* Touch-friendly minimum */
+  }
+
+  /* Form elements - larger touch targets */
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    min-height: 44px;
+    font-size: 16px;
+    /* Prevents iOS zoom on focus */
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .form-group label {
+    font-size: 0.8125rem;
+    margin-bottom: var(--spacing-xs);
+  }
+}
+
+/* Small mobile breakpoint (max-width: 480px) */
+@media (max-width: 480px) {
+
+  /* Even more compact container */
+  .multi-city-wizard {
+    padding: var(--spacing-sm);
+  }
+
+  /* Header ultra-compact */
+  .multi-city-wizard .wizard-header {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .multi-city-wizard .wizard-header h2 {
+    font-size: 1rem;
+  }
+
+  .wizard-header-actions {
+    gap: var(--spacing-xs);
+  }
+
+  /* Progress - inline style for small screens */
+  .wizard-progress {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .progress-step {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .progress-step svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Content area */
+  .wizard-content {
+    padding: var(--spacing-sm);
+  }
+
+  .wizard-step h3 {
+    font-size: 1rem;
+  }
+
+  .step-description {
+    font-size: 0.75rem;
+  }
+
+  /* Route overview - even more compact */
+  .route-overview-card {
+    padding: var(--spacing-xs);
+    margin: var(--spacing-sm) 0;
+  }
+
+  .route-overview-header {
+    font-size: 0.75rem;
+  }
+
+  .endpoint-chip {
+    padding: 6px 10px;
+  }
+
+  .endpoint-number {
+    width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+  }
+
+  .endpoint-city {
+    font-size: 0.8125rem;
+  }
+
+  .endpoint-country {
+    font-size: 0.7rem;
+  }
+
+  /* Map - reduced height for very small screens */
+  .city-selection-map-wrapper {
+    min-height: 220px;
+    height: 220px;
+  }
+
+  .wizard-step-map {
+    min-height: 220px;
+  }
+
+  /* Instructions hide on very small screens */
+  .city-selection-instructions {
+    font-size: 0.7rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  /* City tags - wrap better */
+  .city-tag {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.75rem;
+  }
+
+  .city-tag-number {
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
+  }
+
+  .city-tag-name {
+    font-size: 0.75rem;
+  }
+
+  .city-tag-country {
+    font-size: 0.6rem;
+  }
+
+  /* Distance summary - ultra compact */
+  .distance-step {
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
+  }
+
+  .distance-cities {
+    font-size: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .distance-city-from,
+  .distance-city-to {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .distance-value {
+    font-size: 0.75rem;
+  }
+
+  /* Total distance */
+  .total-distance-label {
+    font-size: 0.7rem;
+  }
+
+  .total-distance-value {
+    font-size: 1rem;
+  }
+
+  /* City date cards */
+  .city-date-number {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .city-date-name {
+    font-size: 0.875rem;
+  }
+
+  /* Budget toggle - stack vertically on very small screens */
+  .budget-mode-toggle {
+    flex-direction: column;
+  }
+
+  .budget-mode-toggle .mode-btn {
+    width: 100%;
+  }
+
+  /* Success state */
+  .success-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .success-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .wizard-success h3 {
+    font-size: 1.125rem;
+  }
+
+  .wizard-success p {
+    font-size: 0.8125rem;
+  }
+
+  /* Footer buttons stack on very small screens */
+  .wizard-footer-right {
+    flex-direction: column-reverse;
+    gap: var(--spacing-xs);
+  }
+
+  .wizard-footer .wizard-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Very small phones (max-width: 360px) */
+@media (max-width: 360px) {
+  .multi-city-wizard .wizard-header h2 {
+    font-size: 0.9375rem;
+  }
+
+  .wizard-step h3 {
+    font-size: 0.9375rem;
+  }
+
+  /* Map even smaller */
+  .city-selection-map-wrapper {
+    min-height: 180px;
+    height: 180px;
+  }
+
+  .wizard-step-map {
+    min-height: 180px;
+  }
+
+  /* Hide map instructions on very small screens */
+  .city-selection-instructions {
+    display: none;
+  }
+
+  /* City tags - minimal */
+  .city-tag {
+    padding: 0.25rem 0.375rem;
+  }
+
+  .city-tag-country {
+    display: none;
+    /* Hide country on very small screens */
+  }
+
+  /* Distance cities - truncate more aggressively */
+  .distance-city-from,
+  .distance-city-to {
+    max-width: 60px;
+  }
+
+  /* Hide arrows on very small screens, use stacking */
+  .distance-arrow-small {
+    display: none;
+  }
+
+  .distance-cities {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .distance-cities::before {
+    content: '↓';
+    position: absolute;
+    left: 50%;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    font-size: 0.7rem;
+  }
+}
+
+/* Landscape mobile orientation */
+@media (max-height: 500px) and (orientation: landscape) {
+  .multi-city-wizard {
+    max-height: 100vh;
+    max-height: 100dvh;
+  }
+
+  .wizard-content {
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+  }
+
+  .city-selection-map-wrapper {
+    min-height: 200px;
+    height: 200px;
+  }
+
+  .wizard-step-map {
+    min-height: 200px;
+  }
+
+  .wizard-success {
+    min-height: auto;
+    padding: var(--spacing-md);
+  }
+
+  .success-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--spacing-sm);
+  }
+}
+
+/* Safe area insets for notched phones */
+@supports (padding: max(0px)) {
+  .multi-city-wizard {
+    padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+    padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom));
+  }
+
+  @media (max-width: 768px) {
+    .wizard-footer {
+      padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+
+  /* Larger touch targets */
+  .city-tag-remove {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+  }
+
+  .wizard-close,
+  .wizard-header-delete {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Remove hover effects on touch devices */
+  .city-tag:hover,
+  .city-distance-item:hover,
+  .city-date-card:hover {
+    transform: none;
+  }
+
+  /* Active states for touch feedback */
+  .city-tag:active {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(0.98);
+  }
+
+  .wizard-btn:active {
+    transform: scale(0.98);
+  }
+
+  .city-tag-remove:active {
+    background: rgba(239, 68, 68, 0.3);
+    transform: scale(0.95);
+  }
+}
+
+/* Advisory Modal in Wizard */
+.multi-city-advisory-modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+  border-radius: var(--radius-xl);
+}
+
+.multi-city-advisory-modal {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  animation: slideUpFade 0.3s ease-out;
+}
+
+.multi-city-advisory-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.multi-city-advisory-close:hover {
+  transform: scale(1.15) rotate(90deg);
+  background: #dc2626;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Light theme adjustments */
+.travel-layout:not([data-theme='dark']) .multi-city-advisory-modal-overlay {
+  background: rgba(255, 255, 255, 0.3);
 }

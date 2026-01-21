@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using YouAndMeExpensesAPI.Data;
+using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -11,12 +10,12 @@ namespace YouAndMeExpensesAPI.Controllers
     [Route("api/[controller]")]
     public class UsersController : BaseApiController
     {
-        private readonly AppDbContext _dbContext;
+        private readonly IUsersService _usersService;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(AppDbContext dbContext, ILogger<UsersController> logger)
+        public UsersController(IUsersService usersService, ILogger<UsersController> logger)
         {
-            _dbContext = dbContext;
+            _usersService = usersService;
             _logger = logger;
         }
 
@@ -37,23 +36,14 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var emailLower = email.ToLower();
-                var user = await _dbContext.UserProfiles
-                    .FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == emailLower);
+                var result = await _usersService.FindUserByEmailAsync(email);
 
-                if (user == null)
+                if (result == null)
                 {
                     return NotFound(new { message = "User not found" });
                 }
 
-                // Return only public profile info
-                return Ok(new
-                {
-                    id = user.Id,
-                    email = user.Email,
-                    display_name = user.DisplayName,
-                    avatar_url = user.AvatarUrl
-                });
+                return Ok(result);
             }
             catch (Exception ex)
             {

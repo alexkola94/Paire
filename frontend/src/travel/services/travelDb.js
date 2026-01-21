@@ -69,6 +69,24 @@ db.version(3).stores({
   tripCities: '++id, tripId, order, [tripId+order], _synced'
 })
 
+// Version 4 - Update pinnedPOIs to support sync
+db.version(4).stores({
+  trips: '++id, userId, status, startDate, endDate, destination, createdAt, _synced',
+  itineraryEvents: '++id, tripId, type, date, startTime, [tripId+date], _synced',
+  packingItems: '++id, tripId, category, name, isChecked, [tripId+category], _synced',
+  documents: '++id, tripId, type, name, expiryDate, [tripId+type], _synced',
+  travelExpenses: '++id, tripId, category, amount, currency, date, [tripId+category], [tripId+date], _synced',
+  apiCache: '++id, key, data, timestamp, ttl',
+  syncQueue: '++id, action, table, timestamp, status',
+
+  // Trip cities
+  tripCities: '++id, tripId, order, [tripId+order], _synced',
+
+  // Pinned POIs / Saved Places
+  // Added _synced for offline sync support
+  pinnedPOIs: '++id, tripId, poiId, category, [tripId+category], createdAt, _synced'
+})
+
 /**
  * Trip model factory
  * @param {Object} data - Trip data
@@ -292,7 +310,8 @@ export const createPinnedPOI = (data = {}) => ({
   rating: data.rating || null,
   notes: data.notes || '',
   source: data.source || 'overpass', // 'overpass' | 'mapbox' | 'manual'
-  createdAt: data.createdAt || new Date().toISOString()
+  createdAt: data.createdAt || new Date().toISOString(),
+  _synced: false // Default to false for new items created offline
 })
 
 /**

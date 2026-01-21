@@ -226,6 +226,123 @@
       rgba(20, 18, 35, 0.95) 100%);
 }
 
+/* Saved Places snapshot above POI search */
+.saved-places-explore {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.75rem 0.5rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.saved-places-explore-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.saved-places-explore-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.saved-places-explore-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.saved-places-explore-count {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.saved-places-explore-view-all-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.saved-places-explore-view-all-btn:hover {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.7);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.saved-places-explore-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.saved-place-explore-pill {
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.13);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.saved-place-explore-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.saved-place-explore-name {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #f9fafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-place-explore-address {
+  font-size: 0.7rem;
+  color: rgba(249, 250, 251, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-place-explore-map-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(209, 213, 219, 0.7);
+  background: rgba(17, 24, 39, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(249, 250, 251, 0.85);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.saved-place-explore-map-btn:hover {
+  border-color: rgba(248, 250, 252, 0.9);
+  background: rgba(31, 41, 55, 0.95);
+  color: #f9fafb;
+  transform: translateY(-1px);
+}
+
 /* Find Places Trigger Button */
 .poi-search-trigger {
   display: flex;

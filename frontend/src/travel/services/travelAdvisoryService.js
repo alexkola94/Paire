@@ -91,14 +91,32 @@ const fetchAdvisoryFromBackend = async (countryCode) => {
       return null
     }
 
+    // Defensive helpers so we never blow up the card UI if the backend shape changes.
+    const toStringArray = (value) => {
+      if (!Array.isArray(value)) return []
+      return value
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter(Boolean)
+    }
+
+    // Start from the backend DTO so any new fields added server‑side
+    // automatically flow through to the frontend.
+    const base = { ...data }
+
     return {
+      ...base,
       countryCode: data.countryCode || normalized,
       countryName: data.countryName || normalized,
       score: typeof data.score === 'number' ? data.score : null,
       level: data.level || 'unknown',
       message: data.message || '',
       updated: data.updated || null,
-      sourcesActive: typeof data.sourcesActive === 'number' ? data.sourcesActive : 0
+      sourcesActive: typeof data.sourcesActive === 'number' ? data.sourcesActive : 0,
+      // Rich highlight sections used by TravelAdvisoryCard's "More details" modal.
+      climateHighlights: toStringArray(data.climateHighlights),
+      entryExitHighlights: toStringArray(data.entryExitHighlights),
+      healthHighlights: toStringArray(data.healthHighlights),
+      safetyHighlights: toStringArray(data.safetyHighlights)
     }
   } catch (error) {
     console.error('Error fetching travel advisory:', error)

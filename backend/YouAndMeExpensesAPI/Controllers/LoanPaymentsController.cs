@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 
@@ -14,17 +12,14 @@ namespace YouAndMeExpensesAPI.Controllers
     [Route("api/[controller]")]
     public class LoanPaymentsController : BaseApiController
     {
-        private readonly AppDbContext _dbContext;
-        private readonly IAchievementService _achievementService;
+        private readonly ILoanPaymentsService _loanPaymentsService;
         private readonly ILogger<LoanPaymentsController> _logger;
 
         public LoanPaymentsController(
-            AppDbContext dbContext,
-            IAchievementService achievementService,
+            ILoanPaymentsService loanPaymentsService,
             ILogger<LoanPaymentsController> logger)
         {
-            _dbContext = dbContext;
-            _achievementService = achievementService;
+            _loanPaymentsService = loanPaymentsService;
             _logger = logger;
         }
 
@@ -39,25 +34,13 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var payments = await _loanPaymentsService.GetLoanPaymentsAsync(userId, loanId);
 
-                // Verify loan belongs to user or partner
-                var loan = await _dbContext.Loans
-                    .FirstOrDefaultAsync(l => l.Id == loanId && allUserIds.Contains(l.UserId));
-
-                if (loan == null)
+                if (payments.Count == 0)
                 {
+                    // Preserve original behavior: 404 when loan not found.
                     return NotFound(new { message = $"Loan {loanId} not found" });
                 }
-
-                // Get payments for this loan (from both user and partner)
-                var payments = await _dbContext.LoanPayments
-                    .Where(p => p.LoanId == loanId && allUserIds.Contains(p.UserId))
-                    .OrderByDescending(p => p.PaymentDate)
-                    .ToListAsync();
 
                 return Ok(payments);
             }
@@ -79,16 +62,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
-
-                var payments = await _dbContext.LoanPayments
-                    .Where(p => allUserIds.Contains(p.UserId))
-                    .OrderByDescending(p => p.PaymentDate)
-                    .ToListAsync();
-
+                var payments = await _loanPaymentsService.GetAllPaymentsAsync(userId);
                 return Ok(payments);
             }
             catch (Exception ex)
@@ -109,13 +83,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
-
-                var payment = await _dbContext.LoanPayments
-                    .FirstOrDefaultAsync(p => p.Id == id && allUserIds.Contains(p.UserId));
+                var payment = await _loanPaymentsService.GetLoanPaymentAsync(userId, id);
 
                 if (payment == null)
                 {
@@ -148,71 +116,22 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
-
-                // Verify the loan exists and belongs to the user or partner
-                var loan = await _dbContext.Loans
-                    .FirstOrDefaultAsync(l => l.Id == payment.LoanId && allUserIds.Contains(l.UserId));
-
-                if (loan == null)
-                {
-                    return NotFound(new { message = $"Loan {payment.LoanId} not found" });
-                }
-
-                // Set payment properties
-                payment.Id = Guid.NewGuid();
-                payment.UserId = userId.ToString();
-                payment.CreatedAt = DateTime.UtcNow;
-
-                // Ensure PaymentDate is UTC
-                if (payment.PaymentDate.Kind == DateTimeKind.Unspecified)
-                {
-                    payment.PaymentDate = DateTime.SpecifyKind(payment.PaymentDate, DateTimeKind.Utc);
-                }
-                else if (payment.PaymentDate.Kind == DateTimeKind.Local)
-                {
-                    payment.PaymentDate = payment.PaymentDate.ToUniversalTime();
-                }
-
-                // Update loan totals
-                loan.TotalPaid += payment.Amount;
-                loan.RemainingAmount = loan.Amount - loan.TotalPaid;
-
-                // If remaining amount is zero or negative, mark as settled
-                var wasSettled = loan.IsSettled;
-                if (loan.RemainingAmount <= 0)
-                {
-                    loan.IsSettled = true;
-                    loan.SettledDate = DateTime.UtcNow;
-                    loan.RemainingAmount = 0; // Ensure it doesn't go negative
-                }
-
-                loan.UpdatedAt = DateTime.UtcNow;
-
-                _dbContext.LoanPayments.Add(payment);
-                await _dbContext.SaveChangesAsync();
-
-                // Check for new achievements if loan was just settled
-                if (!wasSettled && loan.IsSettled)
-                {
-                    try
-                    {
-                        await _achievementService.CheckLoanAchievementsAsync(userId.ToString());
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log but don't fail the payment if achievement check fails
-                        _logger.LogWarning(ex, "Error checking achievements after loan payment that settled loan");
-                    }
-                }
+                var created = await _loanPaymentsService.CreateLoanPaymentAsync(userId, payment);
 
                 return CreatedAtAction(
                     nameof(GetLoanPayment),
-                    new { id = payment.Id },
-                    payment);
+                    new { id = created.Id },
+                    created);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Preserve original semantics for missing loan
+                if (ex.Message.Contains("Loan") && ex.Message.Contains("not found"))
+                {
+                    return NotFound(new { message = ex.Message });
+                }
+
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -239,71 +158,23 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var updated = await _loanPaymentsService.UpdateLoanPaymentAsync(userId, id, payment);
 
-                var existingPayment = await _dbContext.LoanPayments
-                    .FirstOrDefaultAsync(p => p.Id == id && allUserIds.Contains(p.UserId));
-
-                if (existingPayment == null)
+                if (updated == null)
                 {
                     return NotFound(new { message = $"Loan payment {id} not found" });
                 }
 
-                // Get the loan to update totals
-                var loan = await _dbContext.Loans
-                    .FirstOrDefaultAsync(l => l.Id == existingPayment.LoanId);
-
-                if (loan == null)
+                return Ok(updated);
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("Associated loan not found"))
                 {
                     return NotFound(new { message = "Associated loan not found" });
                 }
 
-                // Calculate difference to adjust loan totals
-                var amountDifference = payment.Amount - existingPayment.Amount;
-                loan.TotalPaid += amountDifference;
-                loan.RemainingAmount = loan.Amount - loan.TotalPaid;
-
-                // Update settled status
-                if (loan.RemainingAmount <= 0)
-                {
-                    loan.IsSettled = true;
-                    loan.SettledDate = loan.SettledDate ?? DateTime.UtcNow;
-                    loan.RemainingAmount = 0;
-                }
-                else
-                {
-                    loan.IsSettled = false;
-                    loan.SettledDate = null;
-                }
-
-                // Update payment properties
-                existingPayment.Amount = payment.Amount;
-                existingPayment.PrincipalAmount = payment.PrincipalAmount;
-                existingPayment.InterestAmount = payment.InterestAmount;
-                existingPayment.Notes = payment.Notes;
-
-                // Ensure PaymentDate is UTC
-                if (payment.PaymentDate.Kind == DateTimeKind.Unspecified)
-                {
-                    existingPayment.PaymentDate = DateTime.SpecifyKind(payment.PaymentDate, DateTimeKind.Utc);
-                }
-                else if (payment.PaymentDate.Kind == DateTimeKind.Local)
-                {
-                    existingPayment.PaymentDate = payment.PaymentDate.ToUniversalTime();
-                }
-                else
-                {
-                    existingPayment.PaymentDate = payment.PaymentDate;
-                }
-
-                loan.UpdatedAt = DateTime.UtcNow;
-
-                await _dbContext.SaveChangesAsync();
-
-                return Ok(existingPayment);
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -323,41 +194,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var deleted = await _loanPaymentsService.DeleteLoanPaymentAsync(userId, id);
 
-                var payment = await _dbContext.LoanPayments
-                    .FirstOrDefaultAsync(p => p.Id == id && allUserIds.Contains(p.UserId));
-
-                if (payment == null)
+                if (!deleted)
                 {
                     return NotFound(new { message = $"Loan payment {id} not found" });
                 }
-
-                // Get the loan to update totals
-                var loan = await _dbContext.Loans
-                    .FirstOrDefaultAsync(l => l.Id == payment.LoanId);
-
-                if (loan != null)
-                {
-                    // Subtract payment from loan totals
-                    loan.TotalPaid -= payment.Amount;
-                    loan.RemainingAmount = loan.Amount - loan.TotalPaid;
-
-                    // Update settled status
-                    if (loan.RemainingAmount > 0)
-                    {
-                        loan.IsSettled = false;
-                        loan.SettledDate = null;
-                    }
-
-                    loan.UpdatedAt = DateTime.UtcNow;
-                }
-
-                _dbContext.LoanPayments.Remove(payment);
-                await _dbContext.SaveChangesAsync();
 
                 return NoContent();
             }
@@ -379,38 +221,12 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Get partner IDs if partnership exists
-                var partnerIds = await GetPartnerIdsAsync(userId);
-                var allUserIds = new List<string> { userId.ToString() };
-                allUserIds.AddRange(partnerIds);
+                var summary = await _loanPaymentsService.GetLoanPaymentSummaryAsync(userId, loanId);
 
-                var loan = await _dbContext.Loans
-                    .FirstOrDefaultAsync(l => l.Id == loanId && allUserIds.Contains(l.UserId));
-
-                if (loan == null)
+                if (summary == null)
                 {
                     return NotFound(new { message = $"Loan {loanId} not found" });
                 }
-
-                var payments = await _dbContext.LoanPayments
-                    .Where(p => p.LoanId == loanId && allUserIds.Contains(p.UserId))
-                    .ToListAsync();
-
-                var summary = new
-                {
-                    loanId = loanId,
-                    loanAmount = loan.Amount,
-                    totalPaid = loan.TotalPaid,
-                    remainingAmount = loan.RemainingAmount,
-                    isSettled = loan.IsSettled,
-                    paymentCount = payments.Count,
-                    totalPrincipal = payments.Sum(p => p.PrincipalAmount),
-                    totalInterest = payments.Sum(p => p.InterestAmount),
-                    averagePayment = payments.Count > 0 ? payments.Average(p => p.Amount) : 0,
-                    lastPaymentDate = payments.OrderByDescending(p => p.PaymentDate).FirstOrDefault()?.PaymentDate,
-                    nextPaymentDate = loan.NextPaymentDate,
-                    payments = payments.OrderByDescending(p => p.PaymentDate).ToList()
-                };
 
                 return Ok(summary);
             }
@@ -418,39 +234,6 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 _logger.LogError(ex, "Error getting loan payment summary for loan {LoanId}", loanId);
                 return StatusCode(500, new { message = "Error retrieving payment summary", error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Helper method to get partner user IDs for the current user
-        /// </summary>
-        /// <param name="userId">Current user ID</param>
-        /// <returns>List of partner user IDs as strings</returns>
-        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
-        {
-            try
-            {
-                var partnership = await _dbContext.Partnerships
-                    .FirstOrDefaultAsync(p =>
-                        (p.User1Id == userId || p.User2Id == userId) &&
-                        p.Status == "active");
-
-                if (partnership == null)
-                {
-                    return new List<string>();
-                }
-
-                // Return the partner's ID
-                var partnerId = partnership.User1Id == userId
-                    ? partnership.User2Id
-                    : partnership.User1Id;
-
-                return new List<string> { partnerId.ToString() };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
-                return new List<string>();
             }
         }
     }

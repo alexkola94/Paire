@@ -20,9 +20,8 @@ import {
   FiLoader
 } from 'react-icons/fi'
 import { RiFlightTakeoffLine, RiPlaneLine } from 'react-icons/ri'
-import { itineraryService, uploadTravelFile } from '../services/travelApi'
+import { itineraryService, uploadTravelFile, savedPlaceService } from '../services/travelApi'
 import { ITINERARY_TYPES } from '../utils/travelConstants'
-import { getPinnedPOISummary } from '../services/travelDb'
 import DatePicker from '../components/DatePicker'
 import '../styles/Itinerary.css'
 import FlightStatus from '../components/FlightStatus'
@@ -129,11 +128,11 @@ const ItineraryPage = ({ trip }) => {
     try {
       // Call API in background
       await itineraryService.create(trip.id, eventData)
-      
+
       // Refresh events list to get real event from server
       const refreshedEvents = await itineraryService.getByTrip(trip.id)
       setEvents(refreshedEvents || [])
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
@@ -153,7 +152,7 @@ const ItineraryPage = ({ trip }) => {
       setEvents(prev => prev.map(e => e.id === editingEvent.id ? { ...e, ...eventData } : e))
       setShowAddModal(false)
       setEditingEvent(null)
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-updated', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
@@ -166,7 +165,7 @@ const ItineraryPage = ({ trip }) => {
     try {
       await itineraryService.delete(trip.id, eventId)
       setEvents(prev => prev.filter(e => e.id !== eventId))
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
@@ -469,7 +468,7 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
       if (!trip?.id) return
       setLoadingSavedPlaces(true)
       try {
-        const places = await getPinnedPOISummary(trip.id)
+        const places = await savedPlaceService.getByTrip(trip.id)
         setSavedPlaces(places)
       } catch (error) {
         console.error('Error loading saved places for itinerary form:', error)
@@ -785,9 +784,9 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
                   {uploading
                     ? t('common.uploading', 'Uploading...')
                     : t(
-                        'fileUpload.selectFile',
-                        'Select file'
-                      )}
+                      'fileUpload.selectFile',
+                      'Select file'
+                    )}
                 </span>
                 <input
                   type="file"

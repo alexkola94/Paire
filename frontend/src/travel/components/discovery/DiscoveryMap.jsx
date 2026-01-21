@@ -2,6 +2,7 @@ import { memo, useCallback, useRef, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiHome } from 'react-icons/fi'
 import { useTravelMode } from '../../context/TravelModeContext'
+import { useTheme } from '../../../context/ThemeContext'
 import POIMarker from './POIMarker'
 import { MAP_STYLES, DISCOVERY_MAP_CONFIG } from '../../utils/travelConstants'
 import { reverseGeocode } from '../../services/discoveryService'
@@ -26,6 +27,10 @@ const DiscoveryMap = memo(({
   showTripMarker = true,
   mapStyle = 'detailed'
 }) => {
+  // Read current theme so we can adapt map visuals for light / dark mode.
+  // Keeping this logic here keeps the Mapbox configuration close to where it is used.
+  const { theme } = useTheme()
+
   const { activeTrip, activeTripCities, mapViewState, updateMapViewState } = useTravelMode()
   const mapRef = useRef(null)
   const longPressTimer = useRef(null)
@@ -274,6 +279,7 @@ const DiscoveryMap = memo(({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Mapbox map – style is selected based on current theme for better contrast */}
       <Map
         ref={mapRef}
         {...viewState}
@@ -285,6 +291,8 @@ const DiscoveryMap = memo(({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         mapboxAccessToken={MAPBOX_TOKEN}
+        // Always use the "native" Mapbox style defined in MAP_STYLES,
+        // independent of the app's light / dark theme.
         mapStyle={MAP_STYLES[mapStyle] || MAP_STYLES.detailed}
         style={{ width: '100%', height: '100%' }}
         minZoom={DISCOVERY_MAP_CONFIG.minZoom}

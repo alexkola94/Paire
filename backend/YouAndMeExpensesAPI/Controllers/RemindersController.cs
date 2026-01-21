@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 
@@ -19,18 +16,15 @@ namespace YouAndMeExpensesAPI.Controllers
     {
         private readonly IReminderService _reminderService;
         private readonly IEmailService _emailService;
-        private readonly AppDbContext _dbContext;
         private readonly ILogger<RemindersController> _logger;
 
         public RemindersController(
             IReminderService reminderService,
             IEmailService emailService,
-            AppDbContext dbContext,
             ILogger<RemindersController> logger)
         {
             _reminderService = reminderService;
             _emailService = emailService;
-            _dbContext = dbContext;
             _logger = logger;
         }
 
@@ -82,31 +76,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Try to get existing preferences from database
-                var preferences = await _dbContext.ReminderPreferences
-                    .FirstOrDefaultAsync(p => p.UserId == userId);
-
-                // If none exist, create default settings
-                if (preferences == null)
-                {
-                    preferences = new ReminderPreferences
-                    {
-                        Id = Guid.NewGuid(),
-                        UserId = userId,
-                        EmailEnabled = true,
-                        BillRemindersEnabled = true,
-                        BillReminderDays = 3,
-                        LoanRemindersEnabled = true,
-                        LoanReminderDays = 7,
-                        BudgetAlertsEnabled = true,
-                        BudgetAlertThreshold = 90,
-                        SavingsMilestonesEnabled = true,
-                        PrivacyHideNumbers = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-                }
-
+                var preferences = await _reminderService.GetReminderSettingsAsync(userId);
                 return Ok(preferences);
             }
             catch (Exception ex)
@@ -130,69 +100,8 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Check if preferences already exist
-                var existing = await _dbContext.ReminderPreferences
-                    .FirstOrDefaultAsync(p => p.UserId == userId);
-
-                if (existing != null)
-                {
-                    // Update existing
-                    existing.EmailEnabled = preferences.EmailEnabled;
-                    existing.BillRemindersEnabled = preferences.BillRemindersEnabled;
-                    existing.BillReminderDays = preferences.BillReminderDays;
-                    existing.LoanRemindersEnabled = preferences.LoanRemindersEnabled;
-                    existing.LoanReminderDays = preferences.LoanReminderDays;
-                    existing.BudgetAlertsEnabled = preferences.BudgetAlertsEnabled;
-                    existing.BudgetAlertThreshold = preferences.BudgetAlertThreshold;
-                    existing.SavingsMilestonesEnabled = preferences.SavingsMilestonesEnabled;
-                    existing.PrivacyHideNumbers = preferences.PrivacyHideNumbers;
-                    existing.UpdatedAt = DateTime.UtcNow;
-
-                    await _dbContext.SaveChangesAsync();
-
-                    _logger.LogInformation($"Reminder settings updated for user {userId}");
-                    return Ok(existing);
-                }
-                else
-                {
-                    // Try to create new preferences
-                    try
-                    {
-                        preferences.Id = Guid.NewGuid();
-                        preferences.UserId = userId;
-                        preferences.CreatedAt = DateTime.UtcNow;
-                        preferences.UpdatedAt = DateTime.UtcNow;
-
-                        _dbContext.ReminderPreferences.Add(preferences);
-                        await _dbContext.SaveChangesAsync();
-
-                        _logger.LogInformation($"Reminder settings created for user {userId}");
-                        return Ok(preferences);
-                    }
-                    catch (DbUpdateException dbEx) when (dbEx.InnerException is PostgresException pgEx && pgEx.SqlState == "23503")
-                    {
-                        // Foreign key constraint violation (23503) - This should no longer occur after migration
-                        // but kept as a safety measure for any other foreign key issues
-                        // The foreign key constraint to auth.users(id) has been removed via migration
-                        
-                        // Detach the entity to prevent it from being tracked
-                        try
-                        {
-                            var entry = _dbContext.Entry(preferences);
-                            if (entry != null && entry.State != EntityState.Detached)
-                            {
-                                entry.State = EntityState.Detached;
-                            }
-                        }
-                        catch
-                        {
-                            // Entry might not exist, ignore
-                        }
-                        
-                        _logger.LogError(dbEx, $"Database constraint violation when saving reminder preferences for user {userId}");
-                        return StatusCode(500, new { message = "Failed to save reminder settings due to database constraint" });
-                    }
-                }
+                var updated = await _reminderService.UpdateReminderSettingsAsync(userId, preferences);
+                return Ok(updated);
             }
             catch (Exception ex)
             {

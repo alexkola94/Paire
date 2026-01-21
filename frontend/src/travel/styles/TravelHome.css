@@ -53,6 +53,95 @@
   flex: 1;
 }
 
+/* Thin, always-visible strip just under the countdown that surfaces
+   the most important trip stats for “right now” – optimised for mobile. */
+.today-strip {
+  margin-top: var(--spacing-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.today-strip-chip {
+  flex: 1 1 120px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.02);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.today-strip-chip-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--travel-accent-strong);
+}
+
+.today-strip-chip-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+}
+
+.today-strip-chip-label {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.65rem;
+  opacity: 0.75;
+}
+
+.today-strip-chip-value {
+  font-weight: 500;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.today-strip-chip:hover {
+  border-color: var(--travel-accent-border);
+  background: rgba(139, 92, 246, 0.06);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+/* Mobile-first: surface advisory as a compact strip near the top.
+   On desktop, only show the richer sidebar card. */
+.travel-home-top-advisory {
+  display: none;
+}
+
+.travel-home-sidebar-advisory {
+  display: block;
+}
+
+@media (max-width: 1024px) {
+  .today-strip {
+    margin-top: var(--spacing-md);
+  }
+
+  .travel-home-top-advisory {
+    display: block;
+    margin-top: var(--spacing-md);
+  }
+
+  .travel-home-sidebar-advisory {
+    display: none;
+  }
+}
+
 /* ================================
    Create Trip Type Picker (single vs multi‑city)
    ================================ */
@@ -2099,6 +2188,201 @@
   background: rgba(232, 145, 58, 0.1);
   color: var(--travel-accent-strong);
   border: 1px solid var(--travel-accent-border);
+}
+
+/* ================================
+   Saved Places (Pinned POIs)
+   ================================ */
+
+.saved-places-card {
+  padding: var(--spacing-lg);
+  border-radius: 1.5rem;
+  background: rgba(248, 250, 252, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  transition: all 0.3s ease-in-out;
+}
+
+[data-theme='dark'] .saved-places-card {
+  background: rgba(15, 7, 26, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+}
+
+.saved-places-card:hover {
+  border-color: var(--travel-accent-border);
+  box-shadow:
+    0 20px 50px rgba(15, 23, 42, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  transform: translateY(-1px);
+}
+
+.saved-places-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.saved-places-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.saved-places-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.saved-places-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.saved-places-view-all-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(248, 250, 252, 0.95);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.saved-places-view-all-btn:hover {
+  border-color: var(--travel-accent-border);
+  background: rgba(255, 252, 247, 0.98);
+  color: var(--travel-accent-strong);
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .saved-places-view-all-btn {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(148, 163, 184, 0.5);
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .saved-places-view-all-btn:hover {
+  border-color: rgba(139, 92, 246, 0.7);
+  background: rgba(17, 24, 39, 0.96);
+  color: #e0e7ff;
+}
+
+.saved-places-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  opacity: 0.9;
+}
+
+.saved-places-list {
+  list-style: none;
+  margin: var(--spacing-xs) 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.saved-place-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.saved-place-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.saved-place-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-place-address {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-place-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.saved-place-chip {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: rgba(232, 145, 58, 0.06);
+  border: 1px solid rgba(232, 145, 58, 0.25);
+  color: var(--travel-accent-strong);
+}
+
+[data-theme='dark'] .saved-place-chip {
+  background: rgba(139, 92, 246, 0.16);
+  border-color: rgba(139, 92, 246, 0.45);
+  color: #e0e7ff;
+}
+
+.saved-place-map-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(248, 250, 252, 0.96);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+}
+
+.saved-place-map-btn:hover {
+  border-color: var(--travel-accent-border);
+  background: rgba(255, 252, 247, 0.98);
+  color: var(--travel-accent-strong);
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .saved-place-map-btn {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .saved-place-map-btn:hover {
+  border-color: rgba(139, 92, 246, 0.85);
+  background: rgba(17, 24, 39, 0.98);
+  color: #e0e7ff;
 }
 
 @media (max-width: 640px) {
