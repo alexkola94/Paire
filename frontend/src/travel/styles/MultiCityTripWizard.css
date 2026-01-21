@@ -117,6 +117,8 @@
 
 .wizard-step-map {
   height: 100%;
+  /* Desktop height keeps the map feeling immersive; mobile overrides reduce this
+     so the wizard content does not feel vertically cramped. */
   min-height: 520px;
   display: flex;
   flex-direction: column;
@@ -822,6 +824,8 @@
   }
 
   .wizard-step-map {
+    /* Shorter min-height on tablet so the map does not dominate the viewport. */
+    min-height: 420px;
     margin-top: var(--spacing-lg);
   }
 
@@ -907,6 +911,20 @@
 .city-date-country {
   font-size: 0.75rem;
   color: var(--text-secondary);
+}
+
+/* Long city names and countries should wrap naturally on compact screens so
+   cards stay readable without horizontal scrolling. */
+@media (max-width: 640px) {
+  .city-date-name,
+  .city-date-country {
+    word-break: break-word;
+  }
+
+  .trip-duration {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
 }
 
 /* Route overview (Start → End) */
@@ -1066,6 +1084,24 @@
   opacity: 0.5;
 }
 
+/* On narrow viewports we allow the footer actions to stack so the primary and
+   secondary buttons remain easy to tap with thumbs. */
+@media (max-width: 640px) {
+  .wizard-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wizard-footer-right {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .wizard-footer .wizard-btn {
+    width: 100%;
+  }
+}
+
 .city-date-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1081,8 +1117,10 @@
   width: 100%;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .city-selection-map-wrapper {
+    /* Slightly shorter map on small tablets/phones to keep the wizard controls
+       visible without forcing excessive scrolling. */
     height: 300px;
   }
 
@@ -1094,6 +1132,35 @@
     max-width: 100%;
     max-height: 100vh;
     border-radius: 0;
+  }
+
+  /* On small viewports we gently tighten paddings so content fits comfortably
+     without losing the Paire feeling of breathable whitespace. */
+  .wizard-step-details {
+    padding: var(--spacing-lg);
+  }
+
+  .route-overview-card {
+    padding: var(--spacing-md) var(--spacing-md);
+  }
+
+  .selected-cities-list {
+    margin-top: var(--spacing-md);
+  }
+
+  .city-date-card {
+    padding: var(--spacing-md);
+  }
+
+  /* Allow labels inside chips to wrap instead of causing horizontal scroll. */
+  .city-tag-name,
+  .city-tag-country {
+    white-space: normal;
+  }
+
+  .endpoint-city,
+  .endpoint-country {
+    white-space: normal;
   }
 }
 

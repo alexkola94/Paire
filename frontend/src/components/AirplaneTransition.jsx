@@ -2,20 +2,24 @@ import { memo, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { RiPlaneFill } from 'react-icons/ri'
+import { useTheme } from '../context/ThemeContext'
 import './AirplaneTransition.css'
 
-// Mapbox configuration
+// Mapbox configuration – per-theme styles so:
+// - Dark mode keeps the cinematic dark map.
+// - Light mode shows the map in its native colors (streets).
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
-const MAPBOX_STYLE = 'dark-v11'
+const MAPBOX_STYLE_DARK = 'dark-v11'
+const MAPBOX_STYLE_LIGHT = 'streets-v12'
 
-const getMapboxStaticUrl = (lat, lon, zoom = 10, width = 1280, height = 720) => {
+const getMapboxStaticUrl = (lat, lon, zoom = 10, width = 1280, height = 720, style = MAPBOX_STYLE_DARK) => {
     if (!MAPBOX_TOKEN) return null
     // Fallback for missing coords
     const validLat = lat || 0
     const validLon = lon || 0
 
     // Mapbox Free/Standard tier limit is 1280x1280.
-    return `https://api.mapbox.com/styles/v1/mapbox/${MAPBOX_STYLE}/static/${validLon},${validLat},${zoom},0,0/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`
+    return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${validLon},${validLat},${zoom},0,0/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`
 }
 
 const AirplaneTransition = memo(({
@@ -25,6 +29,8 @@ const AirplaneTransition = memo(({
     destination = null
 }) => {
     const { t } = useTranslation()
+    const { theme } = useTheme()
+    const isLightTheme = theme === 'light'
     const isTakeoff = direction === 'takeoff'
     
     // Detect mobile screen size
@@ -54,14 +60,19 @@ const AirplaneTransition = memo(({
     const mapWidth = isMobile ? 640 : 1280
     const mapHeight = isMobile ? 360 : 720
 
+    const mapStyle = isLightTheme ? MAPBOX_STYLE_LIGHT : MAPBOX_STYLE_DARK
+
     const orbitUrl = getMapboxStaticUrl(
         hasCoords ? destination.latitude : 0,
         hasCoords ? destination.longitude : 0,
-        4, mapWidth, mapHeight
+        4,
+        mapWidth,
+        mapHeight,
+        mapStyle
     )
 
     const localUrl = hasCoords
-        ? getMapboxStaticUrl(destination.latitude, destination.longitude, 11, mapWidth, mapHeight)
+        ? getMapboxStaticUrl(destination.latitude, destination.longitude, 11, mapWidth, mapHeight, mapStyle)
         : null
 
     // Smooth ease-in-out-cubic equivalent or custom bezier
@@ -195,7 +206,13 @@ const AirplaneTransition = memo(({
                                     onError={handleImageError(setOrbitLoaded)}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />
-                                <div className="map-overlay" style={{ background: 'rgba(15, 7, 26, 0.4)' }} />
+                                <div
+                                    className="map-overlay"
+                                    // In light mode, keep the overlay very subtle so the map
+                                    // colors stay close to native; in dark mode use the
+                                    // original rich purple tint.
+                                    style={{ background: isLightTheme ? 'rgba(15, 7, 26, 0.18)' : 'rgba(15, 7, 26, 0.4)' }}
+                                />
                             </motion.div>
                         )}
 
@@ -213,7 +230,10 @@ const AirplaneTransition = memo(({
                                     onError={handleImageError(setLocalLoaded)}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />
-                                <div className="map-overlay" />
+                                <div
+                                    className="map-overlay"
+                                    style={{ background: isLightTheme ? 'rgba(15, 7, 26, 0.18)' : undefined }}
+                                />
                             </motion.div>
                         )}
 

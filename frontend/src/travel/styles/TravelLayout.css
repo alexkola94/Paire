@@ -119,6 +119,13 @@
   transition: opacity 0.5s ease;
 }
 
+/* In light mode, let the Mapbox imagery show in its native colors by
+   removing the heavy purple overlay. We keep the element for consistency,
+   but make it visually transparent. */
+.travel-layout[data-theme='light'] .map-bg-overlay {
+  background: transparent;
+}
+
 .map-bg-overlay.hidden {
   opacity: 0;
 }

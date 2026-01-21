@@ -131,6 +131,9 @@
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: all 0.2s ease;
+  /* Ensure comfortable tap targets on touch devices without hard-coding an
+     explicit height, so desktop layouts still feel light. */
+  min-height: 48px;
 }
 
 .form-group input:focus,
@@ -454,7 +457,17 @@
   cursor: not-allowed;
 }
 
-/* Mobile adjustments */
+/* Tablet & mobile layout adjustments */
+@media (max-width: 768px) {
+  /* Stack grid-based rows into a single column so mid-sized phones and small
+     tablets don’t feel cramped. */
+  .dates-row,
+  .budget-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile-specific adjustments */
 @media (max-width: 480px) {
   .wizard-overlay {
     padding: 0;

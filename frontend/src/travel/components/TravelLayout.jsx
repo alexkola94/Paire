@@ -23,19 +23,24 @@ const StayDetailsSheet = lazy(() => import('./discovery/StayDetailsSheet'))
 const DistanceOverlay = lazy(() => import('./discovery/DistanceOverlay'))
 
 // Mapbox configuration for static map fallback
+// Dark theme keeps the original dark style, light theme uses a neutral streets style
+// so the map appears in its native colors without extra tint.
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
-const MAPBOX_STYLE = 'dark-v11'
+const MAPBOX_STYLE_DARK = 'dark-v11'
+const MAPBOX_STYLE_LIGHT = 'streets-v12'
 
-const getMapboxStaticUrl = (lat, lon, zoom = 10) => {
+const getMapboxStaticUrl = (lat, lon, zoom = 10, style = MAPBOX_STYLE_DARK) => {
   if (!MAPBOX_TOKEN || !lat || !lon) return null
-  return `https://api.mapbox.com/styles/v1/mapbox/${MAPBOX_STYLE}/static/${lon},${lat},${zoom},0,0/1280x720?access_token=${MAPBOX_TOKEN}`
+  return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${lon},${lat},${zoom},0,0/1280x720?access_token=${MAPBOX_TOKEN}`
 }
 
 // Static map fallback component
 const StaticMapFallback = memo(({ trip, showOverlay = true }) => {
+  const { theme } = useTheme()
   const [mapLoaded, setMapLoaded] = useState(false)
+  const mapStyle = theme === 'light' ? MAPBOX_STYLE_LIGHT : MAPBOX_STYLE_DARK
   const mapUrl = trip?.latitude && trip?.longitude
-    ? getMapboxStaticUrl(trip.latitude, trip.longitude, 10)
+    ? getMapboxStaticUrl(trip.latitude, trip.longitude, 10, mapStyle)
     : null
 
   if (!mapUrl) return null
@@ -131,9 +136,11 @@ const TravelLayout = memo(({ children, activePage, onNavigate }) => {
   const [selectedStay, setSelectedStay] = useState(null)
   const [staysLoading, setStaysLoading] = useState(false)
 
-  // Static map URL for non-discovery mode
+  // Static map URL for non-discovery mode – pick style per theme so
+  // dark mode keeps the original dark map and light mode shows native colors.
+  const staticMapStyle = theme === 'light' ? MAPBOX_STYLE_LIGHT : MAPBOX_STYLE_DARK
   const staticMapUrl = activeTrip?.latitude && activeTrip?.longitude
-    ? getMapboxStaticUrl(activeTrip.latitude, activeTrip.longitude, 10)
+    ? getMapboxStaticUrl(activeTrip.latitude, activeTrip.longitude, 10, staticMapStyle)
     : null
 
   // Reset map loaded state when trip changes
