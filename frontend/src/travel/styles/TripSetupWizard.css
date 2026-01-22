@@ -150,17 +150,9 @@
   position: relative;
 }
 
-.destination-search .search-icon {
-  position: absolute;
-  left: var(--spacing-md);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-}
-
 .destination-search input {
   /* Extra left padding so text never overlaps the leading icon */
-  padding-left: 52px;
+  /* padding-left: 52px; removed */
 }
 
 .destination-search .searching {
@@ -310,16 +302,8 @@
   position: relative;
 }
 
-.budget-input svg {
-  position: absolute;
-  left: var(--spacing-md);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-}
-
 .budget-input input {
-  padding-left: 44px;
+  /* padding-left: 44px; removed */
 }
 
 .skip-hint {
@@ -383,16 +367,8 @@
   align-items: center;
 }
 
-.input-with-icon .input-icon {
-  position: absolute;
-  left: var(--spacing-md);
-  color: var(--text-secondary);
-  pointer-events: none;
-  z-index: 1;
-}
-
 .input-with-icon input {
-  padding-left: 44px;
+  /* padding-left: 44px; removed */
 }
 
 /* Error */
@@ -509,7 +485,7 @@
   .destination-search input {
     font-size: 16px;
     /* Prevents zoom on iOS */
-    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 44px;
+    padding: var(--spacing-md);
   }
 
   .search-results {
@@ -532,65 +508,124 @@
 
 /* Light theme overrides */
 .travel-layout:not([data-theme='dark']) .wizard-modal {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  background: var(--travel-bg-cream);
+  border: 1px solid var(--travel-glass-border-light);
+  box-shadow: var(--travel-shadow-warm);
 }
 
 .travel-layout:not([data-theme='dark']) .wizard-header {
-  border-bottom-color: rgba(148, 163, 184, 0.2);
+  border-bottom-color: var(--travel-glass-border-light);
+}
+
+.travel-layout:not([data-theme='dark']) .wizard-header h2 {
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .wizard-close {
+  color: var(--travel-text-light);
+}
+
+.travel-layout:not([data-theme='dark']) .wizard-close:hover {
+  background: rgba(232, 145, 58, 0.1);
+  color: var(--travel-text-dark);
 }
 
 .travel-layout:not([data-theme='dark']) .progress-step {
-  background: rgba(241, 245, 249, 1);
-  color: #64748b;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--travel-bg-sand);
+  color: var(--travel-text-light);
+  border: 1px solid var(--travel-glass-border-light);
 }
 
 .travel-layout:not([data-theme='dark']) .progress-step.active {
-  background: var(--primary);
+  background: var(--travel-warm-primary);
   color: white;
-  border-color: var(--primary);
+  border-color: var(--travel-warm-primary);
+}
+
+.travel-layout:not([data-theme='dark']) .progress-step.completed {
+  background: #27ae60;
+  border-color: #27ae60;
 }
 
 .travel-layout:not([data-theme='dark']) .wizard-content {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(248, 250, 252, 0.5) 100%);
+  background: linear-gradient(180deg, var(--travel-bg-cream) 0%, var(--travel-bg-warm) 100%);
+}
+
+.travel-layout:not([data-theme='dark']) .wizard-step h3 {
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .step-description {
+  color: var(--travel-text-medium);
+}
+
+.travel-layout:not([data-theme='dark']) .form-group label {
+  color: var(--travel-text-dark);
 }
 
 .travel-layout:not([data-theme='dark']) .form-group input,
 .travel-layout:not([data-theme='dark']) .form-group select {
-  background: #f8fafc;
-  border-color: rgba(148, 163, 184, 0.3);
-  color: #0f172a;
+  background: var(--travel-bg-cream);
+  border-color: rgba(232, 145, 58, 0.2);
+  color: var(--travel-text-dark);
 }
 
 .travel-layout:not([data-theme='dark']) .form-group input:focus,
 .travel-layout:not([data-theme='dark']) .form-group select:focus {
   background: #ffffff;
-  border-color: var(--primary);
+  border-color: var(--travel-warm-primary);
+  box-shadow: 0 0 0 3px rgba(232, 145, 58, 0.15);
+}
+
+.travel-layout:not([data-theme='dark']) .input-with-icon .input-icon {
+  color: var(--travel-text-light);
 }
 
 .travel-layout:not([data-theme='dark']) .budget-mode-toggle {
-  background: rgba(241, 245, 249, 0.8);
-  border-color: rgba(148, 163, 184, 0.2);
+  background: var(--travel-bg-sand);
+  border-color: var(--travel-glass-border-light);
+}
+
+.travel-layout:not([data-theme='dark']) .mode-btn {
+  color: var(--travel-text-medium);
 }
 
 .travel-layout:not([data-theme='dark']) .mode-btn:hover:not(.active) {
   background: rgba(255, 255, 255, 0.8);
-  color: #0f172a;
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .mode-btn.active {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  color: white;
 }
 
 .travel-layout:not([data-theme='dark']) .wizard-footer {
-  border-top-color: rgba(148, 163, 184, 0.2);
-  background: rgba(255, 255, 255, 0.5);
+  border-top-color: var(--travel-glass-border-light);
+  background: rgba(255, 253, 250, 0.8);
+}
+
+.travel-layout:not([data-theme='dark']) .wizard-btn.primary {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
 }
 
 .travel-layout:not([data-theme='dark']) .wizard-btn.secondary {
-  border-color: rgba(148, 163, 184, 0.3);
-  color: #475569;
+  border-color: rgba(232, 145, 58, 0.3);
+  color: var(--travel-text-medium);
 }
 
 .travel-layout:not([data-theme='dark']) .wizard-btn.secondary:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--travel-bg-sand);
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .trip-duration {
+  background: rgba(232, 145, 58, 0.1);
+  color: var(--travel-text-dark);
+  border: 1px solid rgba(232, 145, 58, 0.2);
+}
+
+.travel-layout:not([data-theme='dark']) .search-results li:hover,
+.travel-layout:not([data-theme='dark']) .search-results li:active {
+  background: rgba(232, 145, 58, 0.1);
 }

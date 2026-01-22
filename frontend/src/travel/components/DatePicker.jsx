@@ -39,17 +39,17 @@ const DatePicker = ({
   // Normalize date value to YYYY-MM-DD format (extract date part from ISO strings)
   const normalizeDateValue = (dateValue) => {
     if (!dateValue) return ''
-    
+
     // If it's already in YYYY-MM-DD format, return as is
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
       return dateValue
     }
-    
+
     // If it's an ISO string (e.g., "2026-01-21T00:00:00Z"), extract the date part
     if (dateValue.includes('T')) {
       return dateValue.split('T')[0]
     }
-    
+
     // Try to parse as date and extract YYYY-MM-DD
     try {
       const date = new Date(dateValue)
@@ -62,7 +62,7 @@ const DatePicker = ({
     } catch (error) {
       console.warn('Could not normalize date value:', dateValue)
     }
-    
+
     return dateValue
   }
 
@@ -134,7 +134,7 @@ const DatePicker = ({
           {...props}
         />
         <AnimatePresence>
-          {displayValue && !isFocused && (
+          {displayValue && (
             <motion.div
               className="date-picker-display"
               initial={{ opacity: 0 }}
@@ -146,7 +146,7 @@ const DatePicker = ({
             </motion.div>
           )}
         </AnimatePresence>
-        {!displayValue && !isFocused && placeholder && (
+        {!displayValue && placeholder && (
           <div className="date-picker-placeholder">
             {placeholder}
           </div>

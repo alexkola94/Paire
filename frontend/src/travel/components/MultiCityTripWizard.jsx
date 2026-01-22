@@ -22,6 +22,7 @@ import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import CitySelectionMap from './CitySelectionMap'
 import MultiCityDistanceSummary from './MultiCityDistanceSummary'
 import { getRouteDirections } from '../services/discoveryService'
+import { getTransportSuggestions, TRANSPORT_MODES } from '../utils/transportSuggestion'
 import DatePicker from './DatePicker'
 import '../styles/TripSetupWizard.css'
 import '../styles/MultiCityTripWizard.css'
@@ -62,6 +63,8 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   const [homeLocation, setHomeLocation] = useState(null)
   const [homeToFirstDistance, setHomeToFirstDistance] = useState(0)
   const [lastToHomeDistance, setLastToHomeDistance] = useState(0)
+  // Transport selection for the return leg (Last City → Home)
+  const [returnTransportMode, setReturnTransportMode] = useState(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -144,12 +147,32 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
 
   // Handle city addition
   const handleCityAdd = async (city) => {
+    // Determine the "from" location for this new leg
+    const prevLocation = cities.length > 0 ? cities[cities.length - 1] : homeLocation
+
+    // Default mode is null (which usually implies 'driving'), but we can infer smart default.
+    let initialMode = city.transportMode || null
+
+    if (!initialMode && prevLocation && prevLocation.latitude && prevLocation.longitude) {
+      // Inference check
+      const dist = getDistanceKm(prevLocation, city)
+      if (dist != null) {
+        const suggestions = getTransportSuggestions({ distanceKm: dist })
+        // Use the top suggestion (e.g., flight for long distance, train for regional)
+        if (suggestions.length > 0) {
+          initialMode = suggestions[0]
+        }
+      }
+    }
+
+    // console.log('[Wizard] Adding city:', city.name, 'Initial Mode:', initialMode)
+
     const newCity = {
       ...city,
       id: `temp-${Date.now()}`,
       order: cities.length,
       // Keep transport explicit on the incoming leg for this city.
-      transportMode: city.transportMode || null
+      transportMode: initialMode
     }
     setCities([...cities, newCity])
 
@@ -283,6 +306,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   // Handle next step
   const nextStep = () => {
     if (validateStep()) {
+      setError(null)
       setStep(prev => prev + 1)
     }
   }
@@ -547,25 +571,49 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           }
 
           const key = `${from.id}-${to.id}`
-          tasks.push(
-            getRouteDirections(from.latitude, from.longitude, to.latitude, to.longitude, 'driving')
-              .then(result => {
-                if (!cancelled && result) {
-                  const distanceKm =
-                    result.distanceKm != null ? result.distanceKm : getDistanceKm(from, to)
-                  if (distanceKm != null) {
-                    distances[key] = distanceKm
-                    meta[key] = {
-                      distanceKm,
-                      usedFallback: !!result.usedFallback
+          let mode = (to.transportMode || 'driving').toLowerCase()
+
+          const straightDist = getDistanceKm(from, to)
+
+          // Infer mode if not set or default
+          if ((!to.transportMode || mode === 'driving') && straightDist != null) {
+            const suggestions = getTransportSuggestions({ distanceKm: straightDist })
+            if (suggestions[0] === 'flight') {
+              mode = 'flight'
+              console.log('[Wizard] computeRoutes: Inferred FLIGHT for leg', from.name, '->', to.name)
+            }
+          }
+          console.log('[Wizard] computeRoutes Leg:', from.name, '->', to.name, 'Final Mode:', mode)
+
+          if (mode === 'flight' || mode === 'ferry') {
+            // Straight-line distance
+            if (straightDist != null) {
+              distances[key] = straightDist
+              meta[key] = { distanceKm: straightDist, usedFallback: false }
+            }
+          } else {
+            // Ground routing
+            const apiMode = ['walking', 'cycling'].includes(mode) ? mode : 'driving'
+            tasks.push(
+              getRouteDirections(from.latitude, from.longitude, to.latitude, to.longitude, apiMode)
+                .then(result => {
+                  if (!cancelled && result) {
+                    const distanceKm =
+                      result.distanceKm != null ? result.distanceKm : getDistanceKm(from, to)
+                    if (distanceKm != null) {
+                      distances[key] = distanceKm
+                      meta[key] = {
+                        distanceKm,
+                        usedFallback: !!result.usedFallback
+                      }
                     }
                   }
-                }
-              })
-              .catch(err => {
-                console.error('Error computing route distance between cities:', err)
-              })
-          )
+                })
+                .catch(err => {
+                  console.error('Error computing route distance between cities:', err)
+                })
+            )
+          }
         }
 
         // Optional home legs: from Home → first city and last city → Home.
@@ -585,8 +633,29 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           const hasLastCoords =
             lastCity?.latitude != null && lastCity?.longitude != null
 
-          const addHomeLegTask = (fromLat, fromLng, toLat, toLng, assign) =>
-            getRouteDirections(fromLat, fromLng, toLat, toLng, 'driving')
+          const addHomeLegTask = (fromLat, fromLng, toLat, toLng, assign, transportMode) => {
+            let mode = (transportMode || 'driving').toLowerCase()
+
+            // Calculate straight line distance to see if we should infer flight/ferry
+            // (Smart default fallback akin to UI)
+            const fromObj = { latitude: fromLat, longitude: fromLng }
+            const toObj = { latitude: toLat, longitude: toLng }
+            const distKm = getDistanceKm(fromObj, toObj)
+
+            if ((!transportMode || mode === 'driving') && distKm != null) {
+              const suggestions = getTransportSuggestions({ distanceKm: distKm })
+              if (suggestions[0] === 'flight') {
+                mode = 'flight'
+              }
+            }
+
+            if (mode === 'flight' || mode === 'ferry') {
+              assign(distKm || 0)
+              return Promise.resolve()
+            }
+
+            const apiMode = ['walking', 'cycling'].includes(mode) ? mode : 'driving'
+            return getRouteDirections(fromLat, fromLng, toLat, toLng, apiMode)
               .then(result => {
                 if (!cancelled && result?.distanceKm != null) {
                   assign(result.distanceKm)
@@ -595,6 +664,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               .catch(err => {
                 console.error('Error computing home leg distance in wizard:', err)
               })
+          }
 
           if (hasFirstCoords) {
             tasks.push(
@@ -603,7 +673,8 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                 homeLocation.longitude,
                 firstCity.latitude,
                 firstCity.longitude,
-                (km) => { homeToFirst = km }
+                (km) => { homeToFirst = km },
+                ordered[0].transportMode // Explicitly access mode from current ordered list
               )
             )
           }
@@ -615,7 +686,9 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                 lastCity.longitude,
                 homeLocation.latitude,
                 homeLocation.longitude,
-                (km) => { lastToHome = km }
+                (km) => { lastToHome = km },
+                // Use smart default: returnTransportMode OR fall back to last city mode (arrival mode)
+                returnTransportMode || lastCity.transportMode
               )
             )
           }
@@ -674,6 +747,17 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               <p className="step-description">
                 {t('travel.multiCity.step1.description', 'Click on the map to add cities to your trip')}
               </p>
+
+              {/* Recently added city advisory */}
+              {viewingAdvisory && (
+                <div className="wizard-advisory-banner" style={{ marginBottom: '1rem' }}>
+                  <TravelAdvisoryCard
+                    advisory={viewingAdvisory}
+                    compact={true}
+                    onClose={() => setViewingAdvisory(null)}
+                  />
+                </div>
+              )}
 
               {/* Route overview: high-level start/end points */}
               {orderedCities.length > 1 && (
@@ -757,6 +841,8 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                     lastToHomeDistance={lastToHomeDistance}
                     getDistanceKm={getDistanceKm}
                     onCityTransportChange={handleCityTransportChange}
+                    returnTransportMode={returnTransportMode}
+                    onReturnTransportChange={setReturnTransportMode}
                     routesLoading={routesLoading}
                   />
                 </div>
@@ -781,6 +867,8 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                   onCityAdd={handleCityAdd}
                   onCityRemove={handleCityRemove}
                   onCityReorder={handleCityReorder}
+                  homeLocation={homeLocation}
+                  returnTransportMode={returnTransportMode}
                 />
               </div>
             </div>
@@ -1070,58 +1158,59 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                   {renderStep()}
                 </motion.div>
               </AnimatePresence>
-
-              {error && (
-                <div className="wizard-error">{error}</div>
-              )}
             </>
           )}
         </div>
 
         {/* Footer */}
-        {!saveSuccess && (
-          <div className="wizard-footer">
-            <div className="wizard-footer-right">
-              {step > 1 ? (
-                <button className="wizard-btn secondary" onClick={prevStep} disabled={saving}>
-                  <FiChevronLeft />
-                  {t('common.back', 'Back')}
-                </button>
-              ) : (
-                <button className="wizard-btn secondary" onClick={onClose} disabled={saving}>
-                  {t('common.cancel', 'Cancel')}
-                </button>
-              )}
+        {
+          !saveSuccess && (
+            <div className="wizard-footer">
+              <div className="wizard-footer-error" style={{ flex: 1, marginRight: '1rem' }}>
+                {error && <div className="wizard-error" style={{ margin: 0, padding: '0.5rem', fontSize: '0.85rem' }}>{error}</div>}
+              </div>
+              <div className="wizard-footer-right">
+                {step > 1 ? (
+                  <button className="wizard-btn secondary" onClick={prevStep} disabled={saving}>
+                    <FiChevronLeft />
+                    {t('common.back', 'Back')}
+                  </button>
+                ) : (
+                  <button className="wizard-btn secondary" onClick={onClose} disabled={saving}>
+                    {t('common.cancel', 'Cancel')}
+                  </button>
+                )}
 
-              {step < 3 ? (
-                <button className="wizard-btn primary" onClick={nextStep} disabled={saving}>
-                  <span>{t('common.next', 'Next')}</span>
-                  <FiChevronRight />
-                </button>
-              ) : (
-                <button
-                  className="wizard-btn primary"
-                  onClick={handleSave}
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <>
-                      <span className="spinner" />
-                      <span>{t('common.saving', 'Saving...')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>{t('common.save', 'Save')}</span>
-                      <FiCheck />
-                    </>
-                  )}
-                </button>
-              )}
+                {step < 3 ? (
+                  <button className="wizard-btn primary" onClick={nextStep} disabled={saving}>
+                    <span>{t('common.next', 'Next')}</span>
+                    <FiChevronRight />
+                  </button>
+                ) : (
+                  <button
+                    className="wizard-btn primary"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <>
+                        <span className="spinner" />
+                        <span>{t('common.saving', 'Saving...')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{t('common.save', 'Save')}</span>
+                        <FiCheck />
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </motion.div>
-    </div>
+          )
+        }
+      </motion.div >
+    </div >
   )
 }
 

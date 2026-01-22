@@ -52,7 +52,7 @@ const getLevelConfig = (level, t) => {
  * Calm, glassy card showing country risk score and a short advisory message.
  * Designed to be reusable on Travel Home, Documents, and Wizard screens.
  */
-const TravelAdvisoryCard = ({ advisory, advisories, compact = false }) => {
+const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose }) => {
   const { t } = useTranslation()
   const [showDetails, setShowDetails] = useState(false)
   // Track which advisory is visible in the mini carousel
@@ -143,13 +143,15 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false }) => {
 
   const hasAnyDetails = hasAnyHighlights || hasAnySummaries || !!advisoryText
 
+  const hasNavigation = advisoryList.length > 1
+
   return (
     <>
       <div
-        className={`travel-advisory-card travel-glass-card ${compact ? 'travel-advisory-card-compact' : ''}`}
+        className={`travel-advisory-card travel-glass-card ${compact ? 'travel-advisory-card-compact' : ''} ${hasNavigation ? 'has-navigation' : ''}`}
       >
         {/* Navigation arrows stay fixed so only the content slides */}
-        {advisoryList.length > 1 && (
+        {hasNavigation && (
           <div className="travel-advisory-nav">
             <motion.button
               type="button"
@@ -216,17 +218,44 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false }) => {
               )}
               {/* Compact strips (e.g. Explore, Documents) don't render the meta row,
                 so we offer a small inline "Details" trigger in the header. */}
-              {compact && hasAnyDetails && (
-                <button
-                  type="button"
-                  className="travel-advisory-header-more"
-                  onClick={() => setShowDetails(true)}
-                >
-                  <span>{t('travel.advisory.details', 'Details')}</span>
-                  <FiChevronRight size={12} />
-                </button>
+              {compact && (
+                <div className="travel-advisory-header-actions">
+                  {hasAnyDetails && (
+                    <button
+                      type="button"
+                      className="travel-advisory-header-more"
+                      onClick={() => setShowDetails(true)}
+                    >
+                      <span>{t('travel.advisory.details', 'Details')}</span>
+                      <FiChevronRight size={12} />
+                    </button>
+                  )}
+                  {/* Optional close button for wizard banners */}
+                  {onClose && (
+                    <button
+                      type="button"
+                      className="travel-advisory-header-close"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onClose()
+                      }}
+                      aria-label={t('common.close', 'Close')}
+                    >
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
+
+            {/* In compact mode, show the brief message if available (important details) */}
+            {compact && message && (
+              <div className="travel-advisory-compact-body">
+                <p className="travel-advisory-message-compact">
+                  {message}
+                </p>
+              </div>
+            )}
 
             {!compact && (
               <div className="travel-advisory-body">

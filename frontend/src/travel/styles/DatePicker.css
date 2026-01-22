@@ -13,7 +13,8 @@
 .date-picker-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #0f172a;
+  /* Explicit dark for light mode */
   margin-bottom: 2px;
   letter-spacing: -0.01em;
 }
@@ -61,7 +62,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #e8913a; /* warm travel accent by default */
+  color: #e8913a;
+  /* warm travel accent by default */
   opacity: 0.8;
   pointer-events: none;
   transition: all 0.3s ease-in-out;
@@ -117,7 +119,8 @@
 
 .date-picker-display {
   font-size: 0.9375rem;
-  color: var(--text-primary);
+  color: #0f172a;
+  /* Explicit dark for light mode */
   font-weight: 400;
   pointer-events: none;
   user-select: none;
@@ -127,8 +130,9 @@
 
 .date-picker-placeholder {
   font-size: 0.9375rem;
-  color: var(--text-secondary);
-  opacity: 0.6;
+  color: #64748b;
+  /* Explicit slate-500 for light mode */
+  opacity: 1;
   pointer-events: none;
   user-select: none;
   flex: 1;
@@ -149,6 +153,16 @@
 [data-theme='dark'] .date-picker-container.focused {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(139, 92, 246, 0.6);
+}
+
+[data-theme='dark'] .date-picker-display,
+[data-theme='dark'] .date-picker-label {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .date-picker-placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
 /* Responsive adjustments */
@@ -176,6 +190,7 @@
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
   .date-picker-container,
   .date-picker-icon {
     transition: none;

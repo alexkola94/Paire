@@ -180,20 +180,70 @@
     0 14px 24px rgba(15, 23, 42, 0.5);
 }
 
-/* City pins – neutral but still visible, using a slate gradient so they don't
-   compete with the cyan Home chip. */
+/* City pins – gradient from green (start) to red (end) to show route progression.
+   The background is set inline via JS for the color gradient. */
 .city-marker-pin {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
-  background: linear-gradient(145deg, #111827 0%, #4b5563 50%, #9ca3af 100%);
-  border: 2px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 8px 14px rgba(15, 23, 42, 0.45);
-  color: #f9fafb;
+  /* Default fallback - actual gradient set via inline style */
+  background: linear-gradient(145deg, #10b981 0%, #059669 100%);
+  border: 2.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.1),
+    0 8px 16px rgba(15, 23, 42, 0.4);
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: center bottom;
+}
+
+.city-marker-pin:hover {
+  transform: scale(1.15) translateY(-2px);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 12px 24px rgba(15, 23, 42, 0.5);
+}
+
+/* Number inside the marker */
+.city-marker-number {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  line-height: 1;
+}
+
+/* First city marker - slightly larger with start indicator */
+.city-marker-first {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+  box-shadow:
+    0 0 0 2px rgba(16, 185, 129, 0.3),
+    0 10px 20px rgba(16, 185, 129, 0.35);
+}
+
+.city-marker-first .city-marker-number {
+  font-size: 0.8rem;
+}
+
+/* Last city marker - slightly larger with end indicator */
+.city-marker-last {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+  box-shadow:
+    0 0 0 2px rgba(244, 63, 94, 0.3),
+    0 10px 20px rgba(244, 63, 94, 0.35);
+}
+
+.city-marker-last .city-marker-number {
+  font-size: 0.8rem;
 }
 
 .city-selection-map-container {
@@ -202,6 +252,8 @@
   position: relative;
   touch-action: pan-x pan-y pinch-zoom;
   -webkit-overflow-scrolling: touch;
+  /* Ensure legend stays within bounds */
+  overflow: hidden;
 }
 
 .city-selection-map-error {
@@ -2056,4 +2108,142 @@
 /* Light theme adjustments */
 .travel-layout:not([data-theme='dark']) .multi-city-advisory-modal-overlay {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* ================================
+   Route Color Legend
+   ================================ */
+
+.route-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  z-index: 10;
+  min-width: 100px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  /* Ensure it stays within map bounds */
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+}
+
+.route-legend-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+  opacity: 0.8;
+}
+
+.route-legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.route-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.route-legend-line {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.route-legend-line--dashed {
+  /* Create dashed effect using gradient */
+  background: linear-gradient(
+    90deg,
+    currentColor 0%,
+    currentColor 40%,
+    transparent 40%,
+    transparent 60%,
+    currentColor 60%,
+    currentColor 100%
+  ) !important;
+  background-size: 8px 100% !important;
+}
+
+.route-legend-label {
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Dark theme: legend uses darker glass surface */
+[data-theme='dark'] .route-legend {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .route-legend-title {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme='dark'] .route-legend-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Mobile: compact legend */
+@media (max-width: 768px) {
+  .route-legend {
+    bottom: 8px;
+    left: 8px;
+    padding: 6px 10px;
+    min-width: 90px;
+    border-radius: 6px;
+  }
+
+  .route-legend-title {
+    font-size: 0.6rem;
+    margin-bottom: 2px;
+  }
+
+  .route-legend-items {
+    gap: 2px;
+  }
+
+  .route-legend-line {
+    width: 14px;
+    height: 2px;
+  }
+
+  .route-legend-label {
+    font-size: 0.6rem;
+  }
+}
+
+/* Very small screens: make legend even more compact */
+@media (max-width: 480px) {
+  .route-legend {
+    bottom: 6px;
+    left: 6px;
+    padding: 4px 8px;
+    min-width: 80px;
+  }
+
+  .route-legend-title {
+    font-size: 0.55rem;
+  }
+
+  .route-legend-line {
+    width: 12px;
+  }
+
+  .route-legend-label {
+    font-size: 0.55rem;
+  }
 }

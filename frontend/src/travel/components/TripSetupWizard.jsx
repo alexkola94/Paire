@@ -16,6 +16,8 @@ import { tripService, geocodingService } from '../services/travelApi'
 import { budgetService, savingsGoalService } from '../../services/api'
 import { createTrip } from '../services/travelDb'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
+import { getAdvisory } from '../services/travelAdvisoryService'
+import TravelAdvisoryCard from './TravelAdvisoryCard'
 import DatePicker from './DatePicker'
 import '../styles/TripSetupWizard.css'
 
@@ -75,6 +77,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
   const [searchQuery, setSearchQuery] = useState(trip?.destination || '')
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
+  const [advisory, setAdvisory] = useState(null)
 
   // Load existing budgets and saving goals on mount
   // Uses the same fetching pattern as SavingsGoals.jsx
@@ -155,6 +158,15 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
     }))
     setSearchQuery(result.name)
     setSearchResults([])
+
+    // Fetch advisory for the selected country
+    if (result.country) {
+      // clear previous
+      setAdvisory(null)
+      getAdvisory(result.country).then(data => {
+        if (data) setAdvisory(data)
+      }).catch(console.error)
+    }
   }
 
   // Handle form input changes
@@ -287,7 +299,6 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
             <div className="form-group">
               <label>{t('travel.trip.destination', 'Destination')}</label>
               <div className="destination-search">
-                <FiMapPin className="search-icon" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -297,6 +308,17 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                 />
                 {searching && <span className="searching">{t('common.searching', 'Searching...')}</span>}
               </div>
+
+              {/* Travel Advisory Banner - Only showing if advisory is present (after selection) */}
+              {advisory && (
+                <div className="wizard-advisory-banner" style={{ marginTop: '0.75rem' }}>
+                  <TravelAdvisoryCard
+                    advisory={advisory}
+                    compact={true}
+                    onClose={() => setAdvisory(null)}
+                  />
+                </div>
+              )}
 
               {searchResults.length > 0 && (
                 <ul className="search-results" role="listbox">
@@ -410,7 +432,6 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                   <div className="form-group budget-input-group">
                     <label>{t('wizard.budgetAmount', 'Total Budget')}</label>
                     <div className="budget-input">
-                      <FiDollarSign />
                       <input
                         type="number"
                         value={formData.budget}
@@ -440,7 +461,6 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                 <div className="form-group">
                   <label>{t('wizard.createBudgetCategory', 'Budget Name')}</label>
                   <div className="input-with-icon">
-                    <FiCreditCard className="input-icon" />
                     <input
                       type="text"
                       value={formData.budgetCategory}

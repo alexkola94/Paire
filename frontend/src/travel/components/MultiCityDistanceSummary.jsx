@@ -28,6 +28,8 @@ const MultiCityDistanceSummary = ({
   lastToHomeDistance,
   getDistanceKm,
   onCityTransportChange,
+  returnTransportMode,
+  onReturnTransportChange,
   routesLoading
 }) => {
   const { t } = useTranslation()
@@ -36,177 +38,207 @@ const MultiCityDistanceSummary = ({
     return null
   }
 
+  // Pre-calculate suggestions for return leg
+  const returnLegSuggestions = getTransportSuggestions({ distanceKm: lastToHomeDistance })
+  const returnLegAllowedModes = returnLegSuggestions.length > 0 ? returnLegSuggestions : TRANSPORT_MODES
+
+  const lastCityMode = orderedCities.length > 0 ? orderedCities[orderedCities.length - 1].transportMode : null
+
+  const returnLegMode =
+    returnTransportMode && returnLegAllowedModes.includes(returnTransportMode)
+      ? returnTransportMode
+      : (lastCityMode && returnLegAllowedModes.includes(lastCityMode))
+        ? lastCityMode
+        : returnLegAllowedModes[0] || TRANSPORT_MODES[0]
+
+  // Helper to render a single leg item (reusable for context & main legs)
+  const renderLegItem = ({
+    key,
+    stepFrom,
+    stepTo,
+    cityFrom,
+    cityTo,
+    distanceKm,
+    currentMode,
+    onModeChange,
+    isContext = false
+  }) => {
+    if (!distanceKm) return null
+
+    // Calculate suggestions based on distance
+    const suggestions = getTransportSuggestions({ distanceKm })
+    // If it's a "sea-like" leg (long distance over water fallback), restrict content
+    // Note: We'd need the "meta" to know if it's strictly sea-like, but for context 
+    // legs we might just use distance heuristics or pass a flag.
+    // For now, simple heuristic: if > 20km and strictly context, we assume standard options.
+    // Ideally we pass "isSeaLike" if we have that metadata.
+
+    const baseSuggestions = suggestions.length > 0 ? suggestions : TRANSPORT_MODES
+    // Ensure current mode is valid, else fallback
+    const validMode = currentMode && baseSuggestions.includes(currentMode)
+      ? currentMode
+      : (baseSuggestions[0] || 'driving')
+
+    // Common styles for context vs main
+    const containerStyle = isContext ? {
+      opacity: 0.85,
+      borderStyle: 'dashed',
+      backgroundColor: 'rgba(128, 128, 128, 0.05)'
+    } : {}
+
+    return (
+      <div key={key} className="city-distance-item" style={containerStyle}>
+        <div className="distance-main">
+          <div className="distance-route">
+            <span className="distance-step" style={isContext ? { background: '#64748b' } : {}}>
+              {stepFrom}
+            </span>
+            <span className="distance-arrow">→</span>
+            <span className="distance-step" style={isContext ? { background: '#64748b' } : {}}>
+              {stepTo}
+            </span>
+          </div>
+          <div className="distance-cities">
+            <span className="distance-city-from">{cityFrom}</span>
+            <span className="distance-arrow-small">→</span>
+            <span className="distance-city-to">{cityTo}</span>
+          </div>
+          <div className="distance-value">{Math.round(distanceKm).toLocaleString()} km</div>
+        </div>
+
+        {/* Transport selector */}
+        <div className="transport-leg-row">
+          <div className="transport-mode-pill" style={isContext ? { background: 'transparent', borderColor: 'rgba(148, 163, 184, 0.3)' } : {}}>
+            <span className="transport-label">{t('travel.multiCity.step1.transportLabel', 'Transport')}</span>
+            <span className="transport-current-mode">{t(`transport.mode.${validMode}`, validMode)}</span>
+          </div>
+          <div className="transport-select-wrapper">
+            <select
+              className="transport-mode-select"
+              value={validMode}
+              onChange={(e) => onModeChange && onModeChange(e.target.value)}
+              disabled={!onModeChange}
+            >
+              {TRANSPORT_MODES.map(mode => (
+                <option key={mode} value={mode}>
+                  {t(`transport.mode.${mode}`, mode)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="cities-distance-summary">
       {routesLoading && (
         <div className="route-loading-hint">
-          {t(
-            'travel.multiCity.step1.calculatingRoutes',
-            'Calculating best routes...'
-          )}
+          {t('travel.multiCity.step1.calculatingRoutes', 'Calculating best routes...')}
         </div>
       )}
 
-      {/* Optional home legs summary when we know the user's location */}
-      {(homeToFirstDistance > 0 || lastToHomeDistance > 0) && (
-        <div className="home-legs-summary">
-          {homeToFirstDistance > 0 && (
-            <div className="home-leg-row">
-              <span className="home-leg-label">
-                {t('travel.home.homeToFirst', 'Home → First city')}
-              </span>
-              <span className="home-leg-distance">
-                {Math.round(homeToFirstDistance).toLocaleString()} km
-              </span>
-            </div>
-          )}
-          {lastToHomeDistance > 0 && (
-            <div className="home-leg-row">
-              <span className="home-leg-label">
-                {t('travel.home.lastToHome', 'Last city → Home')}
-              </span>
-              <span className="home-leg-distance">
-                {Math.round(lastToHomeDistance).toLocaleString()} km
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Per‑leg rows */}
-      {orderedCities.map((city, index) => {
-        const isHomeLeg = index === 0
-
-        // For the first city, we only show a leg when we know the user's
-        // home location and have a computed distance.
-        if (isHomeLeg) {
-          if (!homeLocation || homeToFirstDistance <= 0) return null
-        } else if (index === 0) {
-          // Safety guard – there is no previous city to route from.
-          return null
-        }
-
-        const prev = isHomeLeg ? null : orderedCities[index - 1]
-        const key = !isHomeLeg && prev ? `${prev.id}-${city.id}` : null
-        const legMeta = key ? routeLegMeta[key] : null
-
-        const rawKm = isHomeLeg
-          ? homeToFirstDistance
-          : (legMeta?.distanceKm ??
-             routeDistances[key] ??
-             getDistanceKm(prev, city))
-
-        if (!rawKm) return null
-        const rounded = Math.round(rawKm)
-
-        // If routing fell back to straight-line for a longer leg, we treat it
-        // as a \"sea-like\" leg and restrict options to flight / ferry.
-        const isSeaLikeLeg = !isHomeLeg && !!legMeta?.usedFallback && rawKm > 20
-        const baseSuggestions = getTransportSuggestions({ distanceKm: rawKm })
-        const restrictedModes = isSeaLikeLeg ? ['flight', 'ferry'] : baseSuggestions
-        const suggestions = restrictedModes.length > 0 ? restrictedModes : baseSuggestions
-        const allowedModes = suggestions.length > 0 ? suggestions : TRANSPORT_MODES
-        const currentMode =
-          city.transportMode && allowedModes.includes(city.transportMode)
-            ? city.transportMode
-            : allowedModes[0] || TRANSPORT_MODES[0]
-
-        const handleModeChange = (mode) => {
-          onCityTransportChange?.(city.id, mode)
-        }
-
-        const itemKey = isHomeLeg
-          ? `home-${city.id || index}`
-          : `${prev.id}-${city.id}`
-
-        return (
-          <div key={itemKey} className="city-distance-item">
-            <div className="distance-main">
-              <div className="distance-route">
-                <span className="distance-step">
-                  {isHomeLeg ? 'H' : index}
-                </span>
-                <span className="distance-arrow">→</span>
-                <span className="distance-step">{index + 1}</span>
-              </div>
-              <div className="distance-cities">
-                <span className="distance-city-from">
-                  {isHomeLeg ? 'Home' : prev.name}
-                </span>
-                <span className="distance-arrow-small">→</span>
-                <span className="distance-city-to">{city.name}</span>
-              </div>
-              <div className="distance-value">{rounded} km</div>
-            </div>
-
-            {/* Transport suggestion + selector */}
-            <div className="transport-leg-row">
-              <div className="transport-mode-pill">
-                <span className="transport-label">
-                  {t('travel.multiCity.step1.transportLabel', 'Transport')}
-                </span>
-                <span className="transport-current-mode">
-                  {t(`transport.mode.${currentMode}`, currentMode)}
-                </span>
-              </div>
-              <div className="transport-select-wrapper">
-                <select
-                  className="transport-mode-select"
-                  value={currentMode}
-                  onChange={(e) => handleModeChange(e.target.value)}
-                >
-                  {allowedModes.map(mode => (
-                    <option key={mode} value={mode}>
-                      {t(`transport.mode.${mode}`, mode)}
-                    </option>
-                  ))}
-                  {/* Fallback: if user had a mode not in suggestions, keep it visible */}
-                  {!suggestions.includes(currentMode) && (
-                    <option value={currentMode}>
-                      {t(`transport.mode.${currentMode}`, currentMode)}
-                    </option>
-                  )}
-                </select>
-                <span className="transport-suggestion-text">
-                  {t(
-                    'travel.multiCity.step1.transportSuggested',
-                    'Suggested: {{mode}}',
-                    {
-                      mode: t(
-                        `transport.mode.${suggestions[0] || currentMode}`,
-                        suggestions[0] || currentMode
-                      )
-                    }
-                  )}
-                </span>
-                {isSeaLikeLeg && (
-                  <span className="transport-suggestion-text">
-                    {t(
-                      'travel.multiCity.step1.transportSeaHint',
-                      'This leg looks like open water, so only flight or ferry are available.'
-                    )}
-                  </span>
-                )}
-              </div>
-            </div>
+      {/* START CONTEXT: Home -> First City */}
+      {homeToFirstDistance > 0 && homeLocation && orderedCities.length > 0 && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{
+            fontSize: '0.7rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem',
+            paddingLeft: '0.5rem'
+          }}>
+            {t('travel.multiCity.context.start', 'Getting There')}
           </div>
-        )
-      })}
+          {renderLegItem({
+            key: 'home-start',
+            stepFrom: 'H',
+            stepTo: 1,
+            cityFrom: 'Home',
+            cityTo: orderedCities[0].name,
+            distanceKm: homeToFirstDistance,
+            currentMode: orderedCities[0].transportMode, // Use first city's arrival mode
+            onModeChange: (mode) => onCityTransportChange(orderedCities[0].id, mode),
+            isContext: true
+          })}
+        </div>
+      )}
+
+      {/* MAIN TRIP: City -> City */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{
+          fontSize: '0.7rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: 'var(--text-secondary)',
+          marginBottom: '0.5rem',
+          paddingLeft: '0.5rem'
+        }}>
+          {t('travel.multiCity.context.main', 'Trip Itinerary')}
+        </div>
+
+        {orderedCities.map((city, index) => {
+          if (index === 0) return null // Skip first city (it has no "previous" city in the chain)
+
+          const prev = orderedCities[index - 1]
+          const key = `${prev.id}-${city.id}`
+          const legMeta = routeLegMeta[key]
+          const distance = routeDistances[key] ?? getDistanceKm(prev, city)
+
+          return renderLegItem({
+            key: key,
+            stepFrom: index, // 1-based index (prev city is at index-1, but displayed as index)
+            stepTo: index + 1,
+            cityFrom: prev.name,
+            cityTo: city.name,
+            distanceKm: distance,
+            currentMode: city.transportMode,
+            onModeChange: (mode) => onCityTransportChange(city.id, mode),
+            isContext: false
+          })
+        })}
+      </div>
+
+      {/* END CONTEXT: Last City -> Home */}
+      {lastToHomeDistance > 0 && homeLocation && orderedCities.length > 0 && (
+        <div>
+          <div style={{
+            fontSize: '0.7rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem',
+            paddingLeft: '0.5rem'
+          }}>
+            {t('travel.multiCity.context.end', 'Return Home')}
+          </div>
+          {renderLegItem({
+            key: 'end-home',
+            stepFrom: orderedCities.length,
+            stepTo: 'H',
+            cityFrom: orderedCities[orderedCities.length - 1].name,
+            cityTo: 'Home',
+            distanceKm: lastToHomeDistance,
+            currentMode: returnLegMode,
+            onModeChange: onReturnTransportChange,
+            isContext: true
+          })}
+        </div>
+      )}
 
       {/* Total trip distance */}
       {(() => {
-        // Base: sum all city-to-city legs
         let totalKm = orderedCities.reduce((total, city, index) => {
           if (index === 0) return total
           const prev = orderedCities[index - 1]
           const key = `${prev.id}-${city.id}`
-          const km =
-            routeDistances[key] ??
-            getDistanceKm(prev, city)
+          const km = routeDistances[key] ?? getDistanceKm(prev, city)
           return total + (km || 0)
         }, 0)
 
-        // Include optional legs to and from home when available
+        // Include optional legs
         if (homeToFirstDistance > 0) totalKm += homeToFirstDistance
         if (lastToHomeDistance > 0) totalKm += lastToHomeDistance
 
@@ -215,10 +247,7 @@ const MultiCityDistanceSummary = ({
           return (
             <div className="trip-total-distance">
               <div className="total-distance-label">
-                {t(
-                  'travel.multiCity.step1.totalDistance',
-                  'Total Trip Distance'
-                )}
+                {t('travel.multiCity.step1.totalDistance', 'Total Trip Distance')}
               </div>
               <div className="total-distance-value">
                 {roundedTotal.toLocaleString()} km
@@ -230,6 +259,7 @@ const MultiCityDistanceSummary = ({
       })()}
     </div>
   )
+
 }
 
 export default MultiCityDistanceSummary

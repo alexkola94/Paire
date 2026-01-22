@@ -10,6 +10,79 @@ import { getTransportSuggestions } from '../utils/transportSuggestion'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 
+// Transport mode colors - chosen to contrast with typical map backgrounds
+// (greens, blues, browns, grays) and be distinct from each other
+const TRANSPORT_COLORS = {
+  flight: '#ec4899',   // Hot pink - stands out for air travel
+  train: '#f97316',    // Orange - classic rail association
+  car: '#84cc16',      // Lime green - distinct and visible
+  bus: '#eab308',      // Amber/Gold - visible on most backgrounds
+  ferry: '#14b8a6',    // Teal - water-related but distinct from map ocean
+  walking: '#a855f7',  // Purple - soft but visible
+  driving: '#84cc16',  // Same as car (fallback)
+  default: '#64748b'   // Slate gray - fallback
+}
+
+// Outline colors (lighter versions for contrast)
+const TRANSPORT_OUTLINE_COLORS = {
+  flight: '#fce7f3',   // Light pink
+  train: '#ffedd5',    // Light orange
+  car: '#ecfccb',      // Light lime
+  bus: '#fef3c7',      // Light amber
+  ferry: '#ccfbf1',    // Light teal
+  walking: '#f3e8ff',  // Light purple
+  driving: '#ecfccb',  // Same as car
+  default: '#f1f5f9'   // Light slate
+}
+
+// City marker colors - gradient from first to last
+const MARKER_COLORS = {
+  start: { r: 16, g: 185, b: 129 },   // Emerald green (#10b981)
+  end: { r: 244, g: 63, b: 94 }       // Rose red (#f43f5e)
+}
+
+/**
+ * Interpolate between start and end marker colors based on position
+ * @param {number} index - Current city index (0-based)
+ * @param {number} total - Total number of cities
+ * @returns {string} - Hex color string
+ */
+const getMarkerColor = (index, total) => {
+  // Single city: use start color
+  if (total <= 1) {
+    const { r, g, b } = MARKER_COLORS.start
+    return `rgb(${r}, ${g}, ${b})`
+  }
+
+  // Calculate interpolation factor (0 = first, 1 = last)
+  const t = index / (total - 1)
+
+  // Linear interpolation between start and end colors
+  const r = Math.round(MARKER_COLORS.start.r + t * (MARKER_COLORS.end.r - MARKER_COLORS.start.r))
+  const g = Math.round(MARKER_COLORS.start.g + t * (MARKER_COLORS.end.g - MARKER_COLORS.start.g))
+  const b = Math.round(MARKER_COLORS.start.b + t * (MARKER_COLORS.end.b - MARKER_COLORS.start.b))
+
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+/**
+ * Get a slightly darker shade for gradient effect
+ */
+const getDarkerShade = (index, total) => {
+  if (total <= 1) {
+    const { r, g, b } = MARKER_COLORS.start
+    return `rgb(${Math.round(r * 0.7)}, ${Math.round(g * 0.7)}, ${Math.round(b * 0.7)})`
+  }
+
+  const t = index / (total - 1)
+
+  const r = Math.round((MARKER_COLORS.start.r + t * (MARKER_COLORS.end.r - MARKER_COLORS.start.r)) * 0.7)
+  const g = Math.round((MARKER_COLORS.start.g + t * (MARKER_COLORS.end.g - MARKER_COLORS.start.g)) * 0.7)
+  const b = Math.round((MARKER_COLORS.start.b + t * (MARKER_COLORS.end.b - MARKER_COLORS.start.b)) * 0.7)
+
+  return `rgb(${r}, ${g}, ${b})`
+}
+
 /**
  * CitySelectionMap Component
  * Interactive map for selecting cities in multi-city trip planning
@@ -20,6 +93,8 @@ const CitySelectionMap = memo(({
   onCityAdd,
   onCityRemove,
   onCityReorder,
+  homeLocation, // Now passed from parent
+  returnTransportMode, // Now passed from parent
   initialViewState = null
 }) => {
   const mapRef = useRef(null)
@@ -31,7 +106,7 @@ const CitySelectionMap = memo(({
     bearing: 0
   })
   const [isAdding, setIsAdding] = useState(false)
-  const [homeLocation, setHomeLocation] = useState(null)
+  // homeLocation is now a prop
   const [routeGeojson, setRouteGeojson] = useState(null)
   const [routesLoading, setRoutesLoading] = useState(false)
 
@@ -42,7 +117,7 @@ const CitySelectionMap = memo(({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords
-        setHomeLocation({ latitude, longitude })
+        // We only set view state here; homeLocation data comes via props now
         setViewState((prev) => ({
           ...prev,
           latitude,
@@ -156,6 +231,7 @@ const CitySelectionMap = memo(({
           // instead of a road-following path.
           if (homeLocation && first.latitude && first.longitude) {
             const firstMode = first.transportMode || 'driving'
+            console.log('[Map] Home->First Mode:', firstMode, 'City Mode prop:', first.transportMode)
             segments.push({
               lat1: homeLocation.latitude,
               lon1: homeLocation.longitude,
@@ -190,7 +266,7 @@ const CitySelectionMap = memo(({
               lon1: last.longitude,
               lat2: homeLocation.latitude,
               lon2: homeLocation.longitude,
-              mode: last.transportMode || 'driving'
+              mode: returnTransportMode || last.transportMode || 'driving' // Use user selection or fallback to last-leg mode
             })
           }
         }
@@ -221,31 +297,49 @@ const CitySelectionMap = memo(({
           })
         )
 
-        // Concatenate all segment geometries into a single LineString
-        const allCoords = []
+        // Create a FeatureCollection to hold all route segments
+        const features = []
+
         segments.forEach((seg, index) => {
           const result = results[index]
           const mode = seg.inferredMode || seg.mode
+          // Normalize mode for checking
+          const m = (mode || '').toLowerCase()
 
-          // For flight legs or missing geometry, fall back to a simple straight line
-          if (mode === 'flight' || !(result?.geometry?.coordinates?.length > 1)) {
-            allCoords.push(
-              [seg.lon1, seg.lat1],
-              [seg.lon2, seg.lat2]
-            )
-          } else {
-            // Append route geometry coordinates
-            allCoords.push(...result.geometry.coordinates)
+          // 1. Flight / Ferry: Always allowed as straight line
+          if (m === 'flight' || m === 'ferry') {
+            features.push({
+              type: 'Feature',
+              properties: { mode: m },
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [seg.lon1, seg.lat1],
+                  [seg.lon2, seg.lat2]
+                ]
+              }
+            })
+            return
           }
+
+          // 2. Land Transport: ONLY draw if we have a valid route geometry.
+          // The user explicitly stated: "we cannot draw routes on the sea we haft to draw routes by land"
+          // So if Mapbox falls back or gives us nothing, we render NOTHING for this segment (a gap).
+          if (result?.geometry?.coordinates?.length > 1) {
+            features.push({
+              type: 'Feature',
+              properties: { mode: m },
+              geometry: result.geometry
+            })
+          }
+          // Else: Gap in the line. Do NOT fall back to straight line for land transport.
         })
 
-        if (!cancelled && allCoords.length > 1) {
+        if (!cancelled) {
+          // Even if features is empty, we return a valid collection (clears the map)
           setRouteGeojson({
-            type: 'Feature',
-            geometry: {
-              type: 'LineString',
-              coordinates: allCoords
-            }
+            type: 'FeatureCollection',
+            features: features
           })
         }
       } catch (error) {
@@ -268,7 +362,7 @@ const CitySelectionMap = memo(({
     // We intentionally depend on the full cities array so that changing transportMode
     // for a leg recomputes the rendered route.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeLocation, cities])
+  }, [homeLocation, cities, returnTransportMode])
 
   /**
    * Handle map click to add city
@@ -388,43 +482,96 @@ const CitySelectionMap = memo(({
           <Source
             id="route"
             type="geojson"
-            data={{
-              // Prefer detailed route geometry from Directions API,
-              // otherwise fall back to simple straight line coordinates.
+            data={routeGeojson || {
+              // Fallback for initial load (straight lines) before API returns
+              // Note: This might briefly show straight lines for cars, but will be replaced
+              // by routeGeojson (with gaps) once loaded.
               type: 'Feature',
-              geometry: routeGeojson?.geometry || {
+              geometry: {
                 type: 'LineString',
                 coordinates: routeCoordinates
               }
             }}
           >
-            <Layer
-              id="route-line"
-              type="line"
-              paint={{
-                // Neutral but standout cyan for the route so it remains visible
-                // on top of satellite/terrain in both themes
-                'line-color': '#0ea5e9',
-                'line-width': 3.5,
-                'line-opacity': 0.8
-              }}
-            />
+            {/* Outline layer (rendered first, behind main line) */}
             <Layer
               id="route-line-outline"
               type="line"
               paint={{
-                // Soft light outline to improve contrast without feeling heavy
-                'line-color': '#e0f2fe',
-                'line-width': 5.5,
-                'line-opacity': 0.65
+                // Data-driven outline color based on transport mode
+                'line-color': [
+                  'match',
+                  ['get', 'mode'],
+                  'flight', TRANSPORT_OUTLINE_COLORS.flight,
+                  'train', TRANSPORT_OUTLINE_COLORS.train,
+                  'car', TRANSPORT_OUTLINE_COLORS.car,
+                  'bus', TRANSPORT_OUTLINE_COLORS.bus,
+                  'ferry', TRANSPORT_OUTLINE_COLORS.ferry,
+                  'walking', TRANSPORT_OUTLINE_COLORS.walking,
+                  'driving', TRANSPORT_OUTLINE_COLORS.driving,
+                  TRANSPORT_OUTLINE_COLORS.default
+                ],
+                'line-width': 6,
+                'line-opacity': 0.7
+              }}
+            />
+            {/* Main route line with transport-specific colors */}
+            <Layer
+              id="route-line"
+              type="line"
+              paint={{
+                // Data-driven color based on transport mode
+                'line-color': [
+                  'match',
+                  ['get', 'mode'],
+                  'flight', TRANSPORT_COLORS.flight,
+                  'train', TRANSPORT_COLORS.train,
+                  'car', TRANSPORT_COLORS.car,
+                  'bus', TRANSPORT_COLORS.bus,
+                  'ferry', TRANSPORT_COLORS.ferry,
+                  'walking', TRANSPORT_COLORS.walking,
+                  'driving', TRANSPORT_COLORS.driving,
+                  TRANSPORT_COLORS.default
+                ],
+                'line-width': 3.5,
+                'line-opacity': 0.9
+              }}
+            />
+            {/* Dashed overlay for flights */}
+            <Layer
+              id="route-line-flight-dash"
+              type="line"
+              filter={['==', ['get', 'mode'], 'flight']}
+              paint={{
+                'line-color': '#ffffff',
+                'line-width': 1.5,
+                'line-opacity': 0.6,
+                'line-dasharray': [2, 4]
+              }}
+            />
+            {/* Dashed overlay for ferry */}
+            <Layer
+              id="route-line-ferry-dash"
+              type="line"
+              filter={['==', ['get', 'mode'], 'ferry']}
+              paint={{
+                'line-color': '#ffffff',
+                'line-width': 1.5,
+                'line-opacity': 0.5,
+                'line-dasharray': [4, 3]
               }}
             />
           </Source>
         )}
 
-        {/* City markers – neutral pins so they are clearly distinct from Home */}
+        {/* City markers – color gradient from first (green) to last (red) */}
         {orderedCities.map((city, index) => {
           if (!city.latitude || !city.longitude) return null
+
+          const markerColor = getMarkerColor(index, orderedCities.length)
+          const darkerColor = getDarkerShade(index, orderedCities.length)
+          const isFirst = index === 0
+          const isLast = index === orderedCities.length - 1
 
           return (
             <Marker
@@ -433,8 +580,13 @@ const CitySelectionMap = memo(({
               longitude={city.longitude}
               anchor="bottom"
             >
-              <div className="city-marker-pin">
-                <FiMapPin size={16} />
+              <div
+                className={`city-marker-pin ${isFirst ? 'city-marker-first' : ''} ${isLast ? 'city-marker-last' : ''}`}
+                style={{
+                  background: `linear-gradient(145deg, ${markerColor} 0%, ${darkerColor} 100%)`
+                }}
+              >
+                <span className="city-marker-number">{index + 1}</span>
               </div>
             </Marker>
           )
@@ -446,6 +598,39 @@ const CitySelectionMap = memo(({
         <div className="city-selection-instructions">
           <FiMapPin size={24} />
           <p>Click on the map to add cities to your trip</p>
+        </div>
+      )}
+
+      {/* Route color legend - shows when there are routes */}
+      {orderedCities.length >= 2 && (
+        <div className="route-legend">
+          <div className="route-legend-title">Transport</div>
+          <div className="route-legend-items">
+            <div className="route-legend-item">
+              <span className="route-legend-line" style={{ backgroundColor: TRANSPORT_COLORS.car }} />
+              <span className="route-legend-label">Car</span>
+            </div>
+            <div className="route-legend-item">
+              <span className="route-legend-line" style={{ backgroundColor: TRANSPORT_COLORS.train }} />
+              <span className="route-legend-label">Train</span>
+            </div>
+            <div className="route-legend-item">
+              <span className="route-legend-line route-legend-line--dashed" style={{ backgroundColor: TRANSPORT_COLORS.flight }} />
+              <span className="route-legend-label">Flight</span>
+            </div>
+            <div className="route-legend-item">
+              <span className="route-legend-line" style={{ backgroundColor: TRANSPORT_COLORS.bus }} />
+              <span className="route-legend-label">Bus</span>
+            </div>
+            <div className="route-legend-item">
+              <span className="route-legend-line route-legend-line--dashed" style={{ backgroundColor: TRANSPORT_COLORS.ferry }} />
+              <span className="route-legend-label">Ferry</span>
+            </div>
+            <div className="route-legend-item">
+              <span className="route-legend-line" style={{ backgroundColor: TRANSPORT_COLORS.walking }} />
+              <span className="route-legend-label">Walk</span>
+            </div>
+          </div>
         </div>
       )}
     </motion.div>

@@ -33,7 +33,7 @@ export const getTransportSuggestions = ({ distanceKm }) => {
   }
 
   // Medium distance where both train and flight are realistic.
-  if (d <= 900) {
+  if (d <= 500) {
     return ['train', 'flight', 'bus', 'car', 'ferry', 'walking']
   }
 
