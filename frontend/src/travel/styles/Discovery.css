@@ -250,14 +250,34 @@
    Responsive Adjustments
    ================================ */
 
+/* Mobile Controls */
+@media (max-width: 768px) {
+  .discovery-controls {
+    bottom: 100px;
+    right: 12px;
+    gap: 8px;
+  }
+
+  .discovery-control-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Adjust icons inside */
+  .discovery-control-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 @media (min-width: 768px) {
   .discovery-controls {
     right: 24px;
   }
 
   .discovery-control-btn {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
   }
 
   .distance-overlay {

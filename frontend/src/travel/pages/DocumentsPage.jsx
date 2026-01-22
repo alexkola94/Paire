@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { useTheme } from '../../context/ThemeContext'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
@@ -887,6 +889,15 @@ const DocumentCard = ({ document, typeConfig, getExpiryStatus, onEdit, onDelete 
 // Document Form Modal Component
 const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  // Listen for resize to update mobile state
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Register modal to hide bottom navigation
   useModalRegistration(true)
@@ -975,19 +986,39 @@ const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
     onSave(payload)
   }
 
-  return (
+  // Animation variants based on device type
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 }
+  }
+
+  const modalVariants = isMobile ? {
+    hidden: { y: '100%' },
+    visible: { y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+    exit: { y: '100%' }
+  } : {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 50 }
+  }
+
+  return createPortal(
     <motion.div
       className="modal-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      data-theme={theme}
+      variants={overlayVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
       onClick={onClose}
     >
       <motion.div
         className="document-form-modal"
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 50 }}
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
@@ -1132,7 +1163,8 @@ const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
           </div>
         </form>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    window.document.body
   )
 }
 
@@ -1145,6 +1177,15 @@ const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
  */
 const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, isMultiCity, providers, onClose }) => {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  // Listen for resize to update mobile state
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Register modal to hide bottom navigation for mobile
   useModalRegistration(true)
@@ -1289,19 +1330,39 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
     destinationCountries.length === 0 ||
     (!isMultiCity && !destinationCountries[0]?.trim())
 
-  return (
+  // Animation variants based on device type
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 }
+  }
+
+  const modalVariants = isMobile ? {
+    hidden: { y: '100%' },
+    visible: { y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+    exit: { y: '100%' }
+  } : {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 50 }
+  }
+
+  return createPortal(
     <motion.div
       className="modal-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      data-theme={theme}
+      variants={overlayVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
       onClick={onClose}
     >
       <motion.div
         className="ai-helper-modal"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 40 }}
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
@@ -1559,7 +1620,8 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
           </button>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   )
 }
 

@@ -339,94 +339,96 @@ const PackingPage = ({ trip }) => {
 
       {/* Category Lists */}
       <div className="packing-categories">
-        {Object.entries(PACKING_CATEGORIES).map(([key, category]) => {
-          const categoryItems = groupedItems[key] || []
-          if (categoryItems.length === 0 && activeCategory !== key) return null
+        {Object.entries(PACKING_CATEGORIES)
+          .sort(([, a], [, b]) => t(a.label).localeCompare(t(b.label)))
+          .map(([key, category]) => {
+            const categoryItems = groupedItems[key] || []
+            if (categoryItems.length === 0 && activeCategory !== key) return null
 
-          const checkedCount = categoryItems.filter(i => i.isChecked).length
+            const checkedCount = categoryItems.filter(i => i.isChecked).length
 
-          return (
-            <motion.div
-              key={key}
-              className="category-section"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div
-                className="category-header"
-                onClick={() => toggleCategory(key)}
+            return (
+              <motion.div
+                key={key}
+                className="category-section"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
               >
-                <div className="category-info">
-                  <span className="category-name" style={{ color: category.color }}>
-                    {t(category.label)}
-                  </span>
-                  <span className="category-count">
-                    {checkedCount}/{categoryItems.length}
-                  </span>
-                </div>
-                <div className="category-actions">
-                  <div className="category-progress">
-                    <div
-                      className="category-progress-fill"
-                      style={{
-                        width: categoryItems.length > 0
-                          ? `${(checkedCount / categoryItems.length) * 100}%`
-                          : '0%',
-                        background: category.color
-                      }}
-                    />
+                <div
+                  className="category-header"
+                  onClick={() => toggleCategory(key)}
+                >
+                  <div className="category-info">
+                    <span className="category-name" style={{ color: category.color }}>
+                      {t(category.label)}
+                    </span>
+                    <span className="category-count">
+                      {checkedCount}/{categoryItems.length}
+                    </span>
                   </div>
-                  {collapsedCategories[key] ? <FiChevronUp /> : <FiChevronDown />}
+                  <div className="category-actions">
+                    <div className="category-progress">
+                      <div
+                        className="category-progress-fill"
+                        style={{
+                          width: categoryItems.length > 0
+                            ? `${(checkedCount / categoryItems.length) * 100}%`
+                            : '0%',
+                          background: category.color
+                        }}
+                      />
+                    </div>
+                    {collapsedCategories[key] ? <FiChevronUp /> : <FiChevronDown />}
+                  </div>
                 </div>
-              </div>
 
-              <AnimatePresence>
-                {!collapsedCategories[key] && categoryItems.length > 0 && (
-                  <motion.div
-                    className="category-items"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                  >
-                    {categoryItems.map((item) => (
-                      <motion.div
-                        key={item.id}
-                        className={`packing-item ${item.isChecked ? 'checked' : ''}`}
-                        layout
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                      >
-                        <button
-                          className="check-btn"
-                          onClick={() => handleToggleItem(item)}
-                          style={{
-                            borderColor: item.isChecked ? category.color : undefined,
-                            background: item.isChecked ? category.color : undefined
-                          }}
+                <AnimatePresence>
+                  {!collapsedCategories[key] && categoryItems.length > 0 && (
+                    <motion.div
+                      className="category-items"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                    >
+                      {categoryItems.map((item) => (
+                        <motion.div
+                          key={item.id}
+                          className={`packing-item ${item.isChecked ? 'checked' : ''}`}
+                          layout
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
                         >
-                          {item.isChecked && <FiCheck size={14} />}
-                        </button>
-                        <span className="item-name">{item.name}</span>
-                        {item.quantity > 1 && (
-                          <span className="item-qty">x{item.quantity}</span>
-                        )}
-                        {item.isEssential && (
-                          <span className="essential-badge">!</span>
-                        )}
-                        <button
-                          className="delete-btn"
-                          onClick={() => handleDeleteItem(item.id)}
-                        >
-                          <FiTrash2 size={14} />
-                        </button>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )
-        })}
+                          <button
+                            className="check-btn"
+                            onClick={() => handleToggleItem(item)}
+                            style={{
+                              borderColor: item.isChecked ? category.color : undefined,
+                              background: item.isChecked ? category.color : undefined
+                            }}
+                          >
+                            {item.isChecked && <FiCheck size={14} />}
+                          </button>
+                          <span className="item-name">{item.name}</span>
+                          {item.quantity > 1 && (
+                            <span className="item-qty">x{item.quantity}</span>
+                          )}
+                          {item.isEssential && (
+                            <span className="essential-badge">!</span>
+                          )}
+                          <button
+                            className="delete-btn"
+                            onClick={() => handleDeleteItem(item.id)}
+                          >
+                            <FiTrash2 size={14} />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
       </div>
 
       {/* Empty State */}

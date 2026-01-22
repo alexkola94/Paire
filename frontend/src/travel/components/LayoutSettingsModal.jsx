@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { IoClose, IoSettingsSharp, IoReorderThree } from 'react-icons/io5'
 import { FiEye, FiEyeOff, FiRotateCcw } from 'react-icons/fi'
+import { useTheme } from '../../context/ThemeContext'
 import './LayoutSettingsModal.css'
 
 /**
@@ -25,7 +27,15 @@ export default function LayoutSettingsModal({
     onSave
 }) {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const [activeColumn, setActiveColumn] = useState('mainColumn')
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 480)
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 480)
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     if (!isOpen) return null
 
@@ -38,23 +48,44 @@ export default function LayoutSettingsModal({
         }
     }
 
-    return (
+    // Variants for animations
+    const overlayVariants = {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1 },
+        exit: { opacity: 0 }
+    }
+
+    const modalVariants = isMobile ? {
+        hidden: { y: '100%' },
+        visible: { y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+        exit: { y: '100%' }
+    } : {
+        hidden: { opacity: 0, scale: 0.95, y: 20 },
+        visible: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+        exit: { opacity: 0, scale: 0.95, y: 20 }
+    }
+
+    // Portal content
+    const content = (
         <AnimatePresence>
             {isOpen && (
                 <>
                     <motion.div
                         className="layout-modal-backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        data-theme={theme}
+                        variants={overlayVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
                         onClick={onClose}
                     />
                     <motion.div
                         className="layout-modal"
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        data-theme={theme}
+                        variants={modalVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
                     >
                         <div className="layout-modal-header">
                             <div className="layout-modal-title">
@@ -160,8 +191,11 @@ export default function LayoutSettingsModal({
                         </div>
                     </motion.div>
                 </>
-            )}
-        </AnimatePresence>
+            )
+            }
+        </AnimatePresence >
     )
+
+    return createPortal(content, window.document.body)
 }
 

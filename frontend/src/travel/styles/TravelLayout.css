@@ -181,7 +181,10 @@
   right: 20px;
   z-index: 175;
   height: 48px;
-  padding: 0 20px;
+  /* Default width controlled by React animate prop, but min-width handles icon */
+  min-width: 48px;
+  padding: 0;
+  /* Padding handled dynamically or by flex gap */
   border-radius: 24px;
   background: linear-gradient(135deg,
       rgba(168, 85, 247, 0.95) 0%,
@@ -192,16 +195,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  /* Gap is handled via margin in the label to allow clean zero-width animation */
+  gap: 0;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 24px rgba(168, 85, 247, 0.4);
   font-weight: 500;
+  overflow: hidden;
 }
 
 .immersive-toggle:hover {
   transform: scale(1.05);
   box-shadow: 0 6px 28px rgba(168, 85, 247, 0.5);
+}
+
+.immersive-toggle.expanded {
+  padding: 0 20px;
 }
 
 .immersive-toggle.active {
@@ -211,6 +220,8 @@
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  padding: 0 20px;
+  gap: 10px;
 }
 
 .immersive-toggle.active:hover {
@@ -231,6 +242,13 @@
   justify-content: center;
   padding: 2rem 0 1rem;
   width: 100%;
+}
+
+/* Hide static button on mobile since we have the floating toggle now */
+@media (max-width: 768px) {
+  .static-explore-container {
+    display: none;
+  }
 }
 
 .immersive-toggle.static {
@@ -701,6 +719,7 @@
    Clean, stable, no complex animations
    ================================ */
 @media (min-width: 1024px) {
+
   /* Fixed dock at bottom - always visible */
   .travel-nav {
     bottom: 0;

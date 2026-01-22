@@ -65,14 +65,29 @@ const TravelBackgroundMap = ({ trip, availableCities = [] }) => {
             targetZoom = 12 // Slightly zoomed in for local context
         }
 
-        if (targetLat && targetLng) {
-            setViewState(prev => ({
-                ...prev,
-                latitude: targetLat,
-                longitude: targetLng,
-                zoom: targetZoom,
-                transitionDuration: 2000 // Smooth fly-to effect
-            }))
+        // Check if coordinates are valid numbers (0 is valid, but null/undefined/NaN are not)
+        const isValidLat = (val) => typeof val === 'number' && !isNaN(val)
+        const isValidLng = (val) => typeof val === 'number' && !isNaN(val)
+
+        if (isValidLat(targetLat) && isValidLng(targetLng)) {
+            setViewState(prev => {
+                // Prevent redundant updates
+                if (
+                    Math.abs(prev.latitude - targetLat) < 0.00001 &&
+                    Math.abs(prev.longitude - targetLng) < 0.00001 &&
+                    Math.abs(prev.zoom - targetZoom) < 0.1
+                ) {
+                    return prev
+                }
+
+                return {
+                    ...prev,
+                    latitude: targetLat,
+                    longitude: targetLng,
+                    zoom: targetZoom,
+                    transitionDuration: 2000 // Smooth fly-to effect
+                }
+            })
         }
     }, [trip, availableCities, userLocation])
 

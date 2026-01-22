@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { memo, useState, useEffect, Suspense, lazy, useCallback } from 'react'
+import { memo, useState, useEffect, Suspense, lazy, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTravelMode } from '../context/TravelModeContext'
 import { useTheme } from '../../context/ThemeContext'
@@ -139,6 +139,7 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
   const [stays, setStays] = useState([])
   const [selectedStay, setSelectedStay] = useState(null)
   const [staysLoading, setStaysLoading] = useState(false)
+  const [isExploreExpanded, setIsExploreExpanded] = useState(false)
 
   // Static map URL for non-discovery mode – pick style per theme so
   // dark mode keeps the original dark map and light mode shows native colors.
@@ -209,19 +210,47 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
     setSelectedStay(null)
   }, [])
 
+  /* Click outside to collapse Explore button */
+  const exploreButtonRef = useRef(null)
+
+  useEffect(() => {
+    if (!isExploreExpanded) return
+
+    const handleClickOutside = (event) => {
+      if (exploreButtonRef.current && !exploreButtonRef.current.contains(event.target)) {
+        setIsExploreExpanded(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isExploreExpanded])
+
   /**
    * Handle toggle button click
    */
   const handleToggleClick = useCallback(() => {
     if (isDiscoveryMode) {
-      // Reset categories and search when exiting discovery mode
+      // Reset categories, search, and expansion state when exiting discovery mode
       clearCategories()
       clearSearch()
+      setIsExploreExpanded(false)
       exitDiscoveryMode()
     } else {
-      enterDiscoveryMode()
+      if (!isExploreExpanded) {
+        // First click: Expand the button
+        setIsExploreExpanded(true)
+      } else {
+        // Second click: Enter Discovery Mode
+        enterDiscoveryMode()
+      }
     }
-  }, [isDiscoveryMode, enterDiscoveryMode, exitDiscoveryMode, clearCategories, clearSearch])
+  }, [isDiscoveryMode, isExploreExpanded, enterDiscoveryMode, exitDiscoveryMode, clearCategories, clearSearch])
 
   /**
    * Handle POI marker click
@@ -335,24 +364,49 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
         )}
       </AnimatePresence>
 
-      {/* Discovery Mode Toggle Button - Fixed Position (Home Only or Active Mode) */}
-      {canEnterDiscovery && !selectedPOI && (activePage === 'home' || isDiscoveryMode) && !hasOpenModals && (
+      {/* Discovery Mode Toggle Button - Fixed Position (Active Mode or All Pages) */}
+      {canEnterDiscovery && !selectedPOI && !hasOpenModals && !shouldHideNav && (
         <motion.button
-          className={`immersive-toggle ${isDiscoveryMode ? 'active' : ''}`}
+          ref={exploreButtonRef}
+          className={`immersive-toggle ${isDiscoveryMode ? 'active' : ''} ${isExploreExpanded ? 'expanded' : ''}`}
           onClick={handleToggleClick}
-          title={isDiscoveryMode ? t('travel.discovery.exitMap', 'Exit Discovery Mode') : t('travel.discovery.enter', 'Enter Discovery Mode')}
+          title={isDiscoveryMode ? t('travel.discovery.exitMap', 'Exit Discovery Mode') : (isExploreExpanded ? t('travel.discovery.enter', 'Enter Discovery Mode') : t('travel.discovery.expand', 'Show Explore'))}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          initial={false}
+          animate={{
+            width: isDiscoveryMode || isExploreExpanded ? 'auto' : '48px',
+            borderRadius: '24px'
+          }}
         >
           {isDiscoveryMode ? (
             <>
               <FiX size={20} />
-              <span className="toggle-label">{t('travel.discovery.exitMap', 'Exit Map')}</span>
+              <motion.span
+                className="toggle-label"
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+              >
+                {t('travel.discovery.exitMap', 'Exit Map')}
+              </motion.span>
             </>
           ) : (
             <>
               <FiMap size={20} />
-              <span className="toggle-label">{t('travel.discovery.explore', 'Explore')}</span>
+              <AnimatePresence>
+                {isExploreExpanded && (
+                  <motion.span
+                    className="toggle-label"
+                    initial={{ opacity: 0, width: 0, display: 'none' }}
+                    animate={{ opacity: 1, width: 'auto', display: 'block' }}
+                    exit={{ opacity: 0, width: 0, display: 'none' }}
+                    transition={{ duration: 0.2 }}
+                    style={{ overflow: 'hidden', whiteSpace: 'nowrap', marginLeft: '8px' }}
+                  >
+                    {t('travel.discovery.explore', 'Explore')}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </>
           )}
         </motion.button>
@@ -375,7 +429,7 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
               {children}
 
               {/* Static Explore Button for non-home pages */}
-              {canEnterDiscovery && activePage !== 'home' && !hasOpenModals && (
+              {canEnterDiscovery && activePage !== 'home' && !hasOpenModals && !shouldHideNav && (
                 <div className="static-explore-container">
                   <motion.button
                     className="immersive-toggle static"

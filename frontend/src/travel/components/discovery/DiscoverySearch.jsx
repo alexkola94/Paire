@@ -8,7 +8,8 @@ import {
   FiCamera,
   FiShoppingBag,
   FiDollarSign,
-  FiHeart
+  FiHeart,
+  FiFilter
 } from 'react-icons/fi'
 import { FaBus, FaBed } from 'react-icons/fa'
 import { DISCOVERY_POI_CATEGORIES } from '../../utils/travelConstants'
@@ -39,6 +40,7 @@ const DiscoverySearch = memo(({
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [isFocused, setIsFocused] = useState(false)
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false)
   const inputRef = useRef(null)
   const debounceRef = useRef(null)
 
@@ -187,8 +189,22 @@ const DiscoverySearch = memo(({
         </div>
       )}
 
+      {/* Mobile Category Toggle */}
+      <div className="discovery-mobile-toggle-wrapper">
+        <button
+          className={`discovery-mobile-filter-btn ${isMobileCategoriesOpen ? 'active' : ''}`}
+          onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
+        >
+          <FiFilter size={16} />
+          <span>{t('travel.discovery.filters', 'Filters')}</span>
+          {activeCategories.length > 0 && (
+            <span className="filter-count-badge">{activeCategories.length}</span>
+          )}
+        </button>
+      </div>
+
       {/* Category filters */}
-      <div className="discovery-category-chips">
+      <div className={`discovery-category-chips ${isMobileCategoriesOpen ? 'mobile-open' : ''}`}>
         {DISCOVERY_POI_CATEGORIES.map((category, index) => {
           const Icon = categoryIcons[category.id] || FiCamera
           const isActive = activeCategories.includes(category.id)

@@ -361,9 +361,23 @@ const BudgetPage = ({ trip }) => {
   )
 }
 
+import { useTheme } from '../../context/ThemeContext'
+import { createPortal } from 'react-dom'
+
+// ... existing imports ...
+
 // Add Expense Modal Component
 const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  // Listen for resize to update mobile state
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Register modal to hide bottom navigation
   useModalRegistration(true)
@@ -393,19 +407,39 @@ const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
     setSaving(false)
   }
 
-  return (
+  // Animation variants based on device type
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 }
+  }
+
+  const modalVariants = isMobile ? {
+    hidden: { y: '100%' },
+    visible: { y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+    exit: { y: '100%' }
+  } : {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 50 }
+  }
+
+  return createPortal(
     <motion.div
       className="modal-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      data-theme={theme} // Apply theme to portal root
+      variants={overlayVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
       onClick={onClose}
     >
       <motion.div
         className="add-expense-modal"
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 50 }}
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
@@ -447,7 +481,7 @@ const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
                 step="0.01"
                 min="0"
                 required
-                autoFocus
+                autoFocus={!isMobile} // Disable auto-focus on mobile
               />
             </div>
             <div className="form-group currency-group">
@@ -493,7 +527,8 @@ const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
           </div>
         </form>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   )
 }
 

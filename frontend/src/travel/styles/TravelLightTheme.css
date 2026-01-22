@@ -1621,3 +1621,89 @@
 .travel-layout:not([data-theme='dark']) .itinerary-empty h3 {
     color: #3d3530;
 }
+
+/* ================================
+   Portal Overrides - Light Mode
+   Ensures modals rendered via Portal use the Travel warm theme
+   instead of defaulting to the base app theme (Purple)
+   ================================ */
+
+.modal-overlay:not([data-theme='dark']) {
+    /* Override base theme variables locally for the portal content */
+    --primary: #e8913a;
+    --primary-light: #f0a85c;
+    --primary-dark: #d35400;
+    --primary-gradient: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+
+    --bg-secondary: #fffcf7;
+    --bg-primary: #faf7f2;
+    --text-primary: #3d3530;
+    --text-secondary: #6b6058;
+
+    --glass-border: 1px solid rgba(232, 145, 58, 0.15);
+    --glass-bg: rgba(255, 252, 247, 0.95);
+}
+
+.modal-overlay:not([data-theme='dark']) .add-expense-modal {
+    background: #fffcf7;
+    border: 1px solid rgba(232, 145, 58, 0.12);
+}
+
+.modal-overlay:not([data-theme='dark']) .modal-header {
+    background: #fffcf7;
+    border-bottom: 1px solid rgba(232, 145, 58, 0.12);
+}
+
+.modal-overlay:not([data-theme='dark']) .modal-header h3 {
+    color: #3d3530;
+}
+
+.modal-overlay:not([data-theme='dark']) .category-option {
+    background: #faf7f2;
+    border: 1px solid rgba(232, 145, 58, 0.1);
+}
+
+.modal-overlay:not([data-theme='dark']) .category-option.selected {
+    background: rgba(232, 145, 58, 0.1);
+    border-color: #e8913a;
+}
+
+.modal-overlay:not([data-theme='dark']) .category-option.selected span {
+    color: #e8913a;
+    font-weight: 600;
+}
+
+.modal-overlay:not([data-theme='dark']) .category-option:hover {
+    border-color: rgba(232, 145, 58, 0.3);
+}
+
+/* Fix input colors in portal */
+.modal-overlay:not([data-theme='dark']) input,
+.modal-overlay:not([data-theme='dark']) select {
+    background: #faf7f2;
+    border: 1px solid rgba(232, 145, 58, 0.15);
+    color: #3d3530;
+}
+
+.modal-overlay:not([data-theme='dark']) input:focus,
+.modal-overlay:not([data-theme='dark']) select:focus {
+    border-color: #e8913a;
+    box-shadow: 0 0 0 3px rgba(232, 145, 58, 0.15);
+}
+
+.modal-overlay:not([data-theme='dark']) .travel-btn {
+    background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 16px rgba(232, 145, 58, 0.3);
+}
+
+.modal-overlay:not([data-theme='dark']) .cancel-btn {
+    color: #6b6058;
+    border-color: rgba(232, 145, 58, 0.15);
+}
+
+.modal-overlay:not([data-theme='dark']) .cancel-btn:hover {
+    background: rgba(232, 145, 58, 0.05);
+    color: #3d3530;
+}

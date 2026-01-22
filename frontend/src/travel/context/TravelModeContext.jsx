@@ -424,7 +424,20 @@ export const TravelModeProvider = ({ children }) => {
    * Update map view state (from map interactions)
    */
   const updateMapViewState = useCallback((viewState) => {
-    setMapViewState(viewState)
+    // Prevent infinite loops by checking if state actually changed
+    setMapViewState(prev => {
+      if (!prev) return viewState
+
+      // Simple equality check for key props to avoid deep comparison overhead
+      const isSame =
+        Math.abs(prev.latitude - viewState.latitude) < 0.000001 &&
+        Math.abs(prev.longitude - viewState.longitude) < 0.000001 &&
+        Math.abs(prev.zoom - viewState.zoom) < 0.01 &&
+        prev.pitch === viewState.pitch &&
+        prev.bearing === viewState.bearing
+
+      return isSame ? prev : viewState
+    })
   }, [])
 
   const value = {
@@ -458,7 +471,6 @@ export const TravelModeProvider = ({ children }) => {
     selectPOI,
     clearSelectedPOI,
     mapViewState,
-    updateMapViewState,
     updateMapViewState,
     activeTripCities,
     backgroundMapCities,

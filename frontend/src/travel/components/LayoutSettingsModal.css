@@ -207,7 +207,7 @@
 }
 
 .tab-btn.active {
-    background: rgba(142, 68, 173, 0.1);
+    background: color-mix(in srgb, var(--primary), transparent 90%);
     /* Based on primary color with opacity */
     border-color: var(--primary);
     color: var(--primary);

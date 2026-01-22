@@ -122,6 +122,12 @@ const DiscoveryMap = memo(({
    * Handle map move/zoom events
    */
   const handleMove = useCallback((evt) => {
+    // Basic validation
+    if (!evt.viewState || isNaN(evt.viewState.latitude) || isNaN(evt.viewState.longitude)) {
+      console.warn('DiscoveryMap: Invalid viewState in onMove ignored', evt.viewState)
+      return
+    }
+
     updateMapViewState(evt.viewState)
     // Cancel long press on move
     if (longPressTimer.current) {
@@ -265,6 +271,15 @@ const DiscoveryMap = memo(({
     latitude: activeTrip?.latitude || 0,
     longitude: activeTrip?.longitude || 0,
     zoom: DISCOVERY_MAP_CONFIG.defaultZoom
+  }
+
+  // Safety check to prevent NaN passing to Mapbox
+  if (isNaN(viewState.latitude) || isNaN(viewState.longitude)) {
+    console.warn('DiscoveryMap: Invalid viewState detected. Falling back to default.', viewState)
+    viewState.latitude = activeTrip?.latitude || 0
+    viewState.longitude = activeTrip?.longitude || 0
+    if (isNaN(viewState.latitude)) viewState.latitude = 0
+    if (isNaN(viewState.longitude)) viewState.longitude = 0
   }
 
   return (
