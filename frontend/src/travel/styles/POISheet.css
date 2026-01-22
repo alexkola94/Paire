@@ -183,7 +183,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 52px;
-  min-width: 0; /* Allow button to shrink */
+  min-width: 0;
+  /* Allow button to shrink */
 }
 
 .poi-action-btn span {
@@ -323,6 +324,16 @@
   color: #3d3530;
 }
 
+.travel-layout:not([data-theme='dark']) .poi-action-btn.primary {
+  background: linear-gradient(135deg, #e8913a 0%, #d4781f 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .poi-action-btn.primary:hover {
+  box-shadow: 0 6px 20px rgba(232, 145, 58, 0.4);
+}
+
 .travel-layout:not([data-theme='dark']) .poi-action-btn.secondary {
   background: rgba(232, 145, 58, 0.1);
   border: 1px solid rgba(232, 145, 58, 0.25);
@@ -380,12 +391,14 @@
   }
 
   .poi-action-btn.primary {
-    flex: 1.2; /* Give primary button slightly more space */
+    flex: 1.2;
+    /* Give primary button slightly more space */
   }
 
   .poi-action-btn.secondary {
     flex: 1;
-    min-width: 80px; /* Minimum width to prevent too much truncation */
+    min-width: 80px;
+    /* Minimum width to prevent too much truncation */
   }
 }
 

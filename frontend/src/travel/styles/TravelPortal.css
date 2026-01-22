@@ -1,0 +1,7 @@
+/* 
+  Ensures that when the dynamic TravelBackgroundMap is rendered into the portal,
+  the underlying static map fallback is hidden to prevent ghosting/overlay issues.
+*/
+#travel-map-portal:not(:empty)+.travel-map-container {
+    display: none;
+}

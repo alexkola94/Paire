@@ -13,7 +13,9 @@ import {
   FiChevronUp,
   FiLoader
 } from 'react-icons/fi'
-import { packingService } from '../services/travelApi'
+import { packingService, tripCityService } from '../services/travelApi'
+import TravelBackgroundMap from '../components/TravelBackgroundMap'
+
 import { PACKING_CATEGORIES } from '../utils/travelConstants'
 import { generatePackingSuggestions } from '../utils/packingSuggestions'
 import '../styles/Packing.css'
@@ -37,6 +39,27 @@ const PackingPage = ({ trip }) => {
     })
     return initial
   })
+  const [tripCities, setTripCities] = useState([])
+
+  // Load cities for multi-city context (supports background map)
+  useEffect(() => {
+    const loadCities = async () => {
+      if (!trip?.id) {
+        setTripCities([])
+        return
+      }
+
+      try {
+        const cities = await tripCityService.getByTrip(trip.id)
+        setTripCities(cities || [])
+      } catch (error) {
+        console.error('Error loading cities for PackingPage map:', error)
+        setTripCities([])
+      }
+    }
+
+    loadCities()
+  }, [trip?.id])
 
   // Load packing items and weather
   useEffect(() => {
@@ -119,7 +142,7 @@ const PackingPage = ({ trip }) => {
     try {
       const updated = await packingService.toggleChecked(trip.id, item.id, !item.isChecked)
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, isChecked: !i.isChecked } : i))
-      
+
       // Dispatch event to invalidate cache in TravelHome (packing progress changes)
       window.dispatchEvent(new CustomEvent('travel:item-updated', { detail: { type: 'packing', tripId: trip.id } }))
     } catch (error) {
@@ -132,7 +155,7 @@ const PackingPage = ({ trip }) => {
     try {
       await packingService.delete(trip.id, itemId)
       setItems(prev => prev.filter(i => i.id !== itemId))
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'packing', tripId: trip.id } }))
     } catch (error) {
@@ -164,11 +187,11 @@ const PackingPage = ({ trip }) => {
     try {
       // Call API in background
       await packingService.create(trip.id, itemData)
-      
+
       // Refresh items list to get real item from server
       const refreshedItems = await packingService.getByTrip(trip.id)
       setItems(refreshedItems || [])
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'packing', tripId: trip.id } }))
     } catch (error) {
@@ -234,6 +257,7 @@ const PackingPage = ({ trip }) => {
 
   return (
     <div className="packing-page">
+      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
       {/* Progress Header */}
       <motion.div
         className="travel-glass-card packing-progress"

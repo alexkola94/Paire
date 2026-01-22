@@ -6,6 +6,7 @@ import { Map, Marker, Source, Layer } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { MAP_STYLES, DISCOVERY_MAP_CONFIG } from '../utils/travelConstants'
 import { tripCityService } from '../services/travelApi'
+import { useTheme } from '../../context/ThemeContext'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 
@@ -68,6 +69,7 @@ const getViewStateForPoints = (points) => {
  */
 const TripMicrography = ({ trip, onNavigate }) => {
   const { t } = useTranslation()
+  const { theme } = useTheme()
   const [cities, setCities] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
@@ -254,7 +256,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
             {...defaultViewState}
             onMove={handleMove}
             mapboxAccessToken={MAPBOX_TOKEN}
-            mapStyle={MAP_STYLES.detailed}
+            mapStyle={theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.detailed}
             style={{ width: '100%', height: '100%' }}
             minZoom={DISCOVERY_MAP_CONFIG.minZoom}
             maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}

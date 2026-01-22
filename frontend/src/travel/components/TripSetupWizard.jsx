@@ -316,6 +316,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                     advisory={advisory}
                     compact={true}
                     onClose={() => setAdvisory(null)}
+                    showDetailsButton={false}
                   />
                 </div>
               )}

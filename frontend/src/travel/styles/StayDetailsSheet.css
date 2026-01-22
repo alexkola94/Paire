@@ -397,7 +397,7 @@
 }
 
 .travel-layout:not([data-theme='dark']) .stay-sheet-distance {
-    color: #9b59b6;
+    color: #e8913a;
 }
 
 .travel-layout:not([data-theme='dark']) .star.empty {
@@ -406,6 +406,11 @@
 
 .travel-layout:not([data-theme='dark']) .rating-value {
     color: #d4a50a;
+}
+
+.travel-layout:not([data-theme='dark']) .stay-price-badge {
+    background: linear-gradient(135deg, #e8913a 0%, #d4781f 100%);
+    box-shadow: 0 4px 16px rgba(232, 145, 58, 0.4);
 }
 
 .travel-layout:not([data-theme='dark']) .stay-address {
@@ -418,9 +423,22 @@
 }
 
 .travel-layout:not([data-theme='dark']) .amenity-chip {
-    background: rgba(155, 89, 182, 0.1);
-    border-color: rgba(155, 89, 182, 0.25);
+    background: rgba(232, 145, 58, 0.1);
+    border-color: rgba(232, 145, 58, 0.25);
     color: #6b6058;
+}
+
+.travel-layout:not([data-theme='dark']) .amenity-chip svg {
+    color: #e8913a;
+}
+
+.travel-layout:not([data-theme='dark']) .stay-action-btn.primary {
+    background: linear-gradient(135deg, #e8913a 0%, #d4781f 100%);
+    box-shadow: 0 4px 16px rgba(232, 145, 58, 0.35);
+}
+
+.travel-layout:not([data-theme='dark']) .stay-action-btn.primary:hover {
+    box-shadow: 0 6px 20px rgba(232, 145, 58, 0.45);
 }
 
 .travel-layout:not([data-theme='dark']) .stay-action-btn.secondary {

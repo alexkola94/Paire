@@ -2163,15 +2163,13 @@
 
 .route-legend-line--dashed {
   /* Create dashed effect using gradient */
-  background: linear-gradient(
-    90deg,
-    currentColor 0%,
-    currentColor 40%,
-    transparent 40%,
-    transparent 60%,
-    currentColor 60%,
-    currentColor 100%
-  ) !important;
+  background: linear-gradient(90deg,
+      currentColor 0%,
+      currentColor 40%,
+      transparent 40%,
+      transparent 60%,
+      currentColor 60%,
+      currentColor 100%) !important;
   background-size: 8px 100% !important;
 }
 
@@ -2246,4 +2244,169 @@
   .route-legend-label {
     font-size: 0.55rem;
   }
+}
+
+/* Map Search Overlay */
+.map-search-overlay {
+  position: absolute;
+  top: var(--spacing-md);
+  left: var(--spacing-md);
+  z-index: 100;
+  width: 300px;
+  max-width: calc(100% - 2rem);
+}
+
+.map-search-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-input-wrapper {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: var(--shadow-md);
+}
+
+.map-search-input-wrapper:focus-within {
+  border-color: var(--travel-accent, rgba(139, 92, 246, 0.5));
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-input-wrapper:focus-within {
+  border-color: var(--travel-accent);
+  box-shadow: 0 0 0 2px var(--travel-accent-border, rgba(232, 145, 58, 0.2));
+}
+
+.map-search-icon {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
+}
+
+.map-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  min-width: 0;
+}
+
+.map-search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.map-search-clear {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.map-search-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-clear:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Search Results Dropdown */
+.map-search-results {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-results {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: var(--shadow-lg);
+}
+
+.map-search-results ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.map-search-results li {
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s;
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-results li {
+  border-bottom-color: rgba(148, 163, 184, 0.15);
+}
+
+.map-search-results li:last-child {
+  border-bottom: none;
+}
+
+.map-search-results li:hover {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-results li:hover {
+  background: #f0f9ff;
+}
+
+.map-search-results .result-icon {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.map-search-results .result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.map-search-results .result-name {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-search-results .result-country {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

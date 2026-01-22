@@ -71,12 +71,12 @@
 /* States */
 .poi-marker-wrapper.selected .poi-marker-pin {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
-              0 0 0 3px rgba(255, 255, 255, 0.3);
+    0 0 0 3px rgba(255, 255, 255, 0.3);
 }
 
 .poi-marker-wrapper.pinned .poi-marker-pin {
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3),
-              0 0 0 2px rgba(46, 204, 113, 0.5);
+    0 0 0 2px rgba(46, 204, 113, 0.5);
 }
 
 /* Hover Animation */
@@ -136,6 +136,7 @@
    ================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .poi-marker-wrapper,
   .poi-marker-shadow,
   .poi-cluster-marker {
@@ -145,4 +146,17 @@
   .poi-marker-pulse {
     display: none;
   }
+}
+
+/* ================================
+   Light Theme Adjustments
+   ================================ */
+
+.travel-layout:not([data-theme='dark']) .poi-cluster-marker {
+  background: linear-gradient(135deg, rgba(232, 145, 58, 0.9) 0%, rgba(212, 120, 31, 0.9) 100%);
+  box-shadow: 0 4px 12px rgba(232, 145, 58, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .poi-marker-shadow {
+  background: rgba(0, 0, 0, 0.15);
 }

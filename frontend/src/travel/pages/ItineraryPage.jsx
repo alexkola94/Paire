@@ -20,7 +20,9 @@ import {
   FiLoader
 } from 'react-icons/fi'
 import { RiFlightTakeoffLine, RiPlaneLine } from 'react-icons/ri'
-import { itineraryService, uploadTravelFile, savedPlaceService } from '../services/travelApi'
+import { itineraryService, uploadTravelFile, savedPlaceService, tripCityService } from '../services/travelApi'
+import TravelBackgroundMap from '../components/TravelBackgroundMap'
+
 import { ITINERARY_TYPES } from '../utils/travelConstants'
 import DatePicker from '../components/DatePicker'
 import '../styles/Itinerary.css'
@@ -47,6 +49,27 @@ const ItineraryPage = ({ trip }) => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
+  const [tripCities, setTripCities] = useState([])
+
+  // Load cities for multi-city context (supports background map)
+  useEffect(() => {
+    const loadCities = async () => {
+      if (!trip?.id) {
+        setTripCities([])
+        return
+      }
+
+      try {
+        const cities = await tripCityService.getByTrip(trip.id)
+        setTripCities(cities || [])
+      } catch (error) {
+        console.error('Error loading cities for ItineraryPage map:', error)
+        setTripCities([])
+      }
+    }
+
+    loadCities()
+  }, [trip?.id])
 
   // Load itinerary events
   useEffect(() => {
@@ -212,6 +235,7 @@ const ItineraryPage = ({ trip }) => {
 
   return (
     <div className="itinerary-page">
+      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
       {/* Header */}
       <div className="itinerary-header">
         <div className="header-info">

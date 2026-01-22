@@ -1,9 +1,10 @@
 import { memo, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { FiRefreshCw, FiMapPin, FiCalendar } from 'react-icons/fi'
+import { FiRefreshCw, FiMapPin, FiCalendar, FiSun, FiMoon } from 'react-icons/fi'
 import { RiPlaneLine } from 'react-icons/ri'
 import { useTravelMode } from '../context/TravelModeContext'
+import { useTheme } from '../../context/ThemeContext'
 import { useModal } from '../../context/ModalContext'
 import TripSelector from './TripSelector'
 import '../styles/TravelLayout.css'
@@ -16,6 +17,7 @@ import '../styles/TravelLayout.css'
 const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false }) => {
   const { t } = useTranslation()
   const { exitTravelMode } = useTravelMode()
+  const { theme, toggleTheme } = useTheme()
   // When any modal is open (e.g. "Ask AI" or "Add Document"),
   // hide the travel header so it doesn't visually cut into the dialog.
   // This mirrors the behavior used for the bottom navigation.
@@ -136,6 +138,27 @@ const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false }) => {
 
         {/* Sync status indicator */}
         <div className="travel-header-actions">
+          <motion.button
+            className="travel-icon-btn theme-toggle"
+            onClick={toggleTheme}
+            whileHover={{ scale: 1.1, rotate: 15 }}
+            whileTap={{ scale: 0.9 }}
+            title={theme === 'dark' ? t('travel.theme.lightMode', 'Light Mode') : t('travel.theme.darkMode', 'Dark Mode')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '12px',
+              padding: '8px'
+            }}
+          >
+            {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
+          </motion.button>
+
           {syncStatus === 'syncing' && (
             <motion.div
               className="sync-indicator syncing"

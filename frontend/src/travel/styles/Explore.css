@@ -610,7 +610,8 @@
   .forecast-toggle {
     padding: 0.625rem;
     font-size: 0.75rem;
-    min-height: 44px; /* Touch-friendly */
+    min-height: 44px;
+    /* Touch-friendly */
   }
 
   .forecast-day {
@@ -644,14 +645,16 @@
   .poi-category-btn {
     padding: 0.5rem 0.875rem;
     font-size: 0.75rem;
-    min-height: 44px; /* Touch-friendly */
+    min-height: 44px;
+    /* Touch-friendly */
     flex: 1;
     min-width: calc(50% - 0.25rem);
   }
 
   .poi-card {
     padding: 0.875rem 1rem;
-    min-height: 44px; /* Touch-friendly */
+    min-height: 44px;
+    /* Touch-friendly */
   }
 
   .poi-name {
@@ -703,12 +706,14 @@
   .view-more-btn {
     padding: 0.625rem;
     font-size: 0.8rem;
-    min-height: 44px; /* Touch-friendly */
+    min-height: 44px;
+    /* Touch-friendly */
   }
 
   .emergency-item {
     padding: 0.625rem 0.875rem;
-    min-height: 44px; /* Touch-friendly */
+    min-height: 44px;
+    /* Touch-friendly */
   }
 
   .emergency-item .label {
@@ -722,7 +727,8 @@
   .poi-search-trigger {
     padding: 0.875rem 1.25rem;
     font-size: 0.875rem;
-    min-height: 44px; /* Touch-friendly */
+    min-height: 44px;
+    /* Touch-friendly */
   }
 }
 
@@ -1064,4 +1070,155 @@
 [data-theme='light'] .view-more-btn:hover {
   background: #e5e7eb;
   color: #111827;
+}
+
+/* Light theme empty state styling */
+[data-theme='light'] .calm-empty {
+  opacity: 1;
+}
+
+[data-theme='light'] .calm-empty svg {
+  color: #e8913a;
+  opacity: 0.85;
+}
+
+[data-theme='light'] .calm-empty h3 {
+  color: #1f2937;
+}
+
+[data-theme='light'] .calm-empty p {
+  color: #6b7280;
+}
+
+[data-theme='light'] .calm-empty-small {
+  color: #6b7280;
+}
+
+[data-theme='light'] .calm-empty-small p {
+  color: #6b7280;
+}
+
+/* Light theme loading and error states */
+[data-theme='light'] .loading-state {
+  color: #e8913a;
+}
+
+[data-theme='light'] .error-state {
+  color: #6b7280;
+}
+
+/* Light theme POI section styles */
+[data-theme='light'] .poi-header h3 {
+  color: #1f2937;
+}
+
+[data-theme='light'] .poi-category-btn {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #4b5563;
+}
+
+[data-theme='light'] .poi-category-btn:hover {
+  background: rgba(232, 145, 58, 0.1);
+  border-color: rgba(232, 145, 58, 0.4);
+  color: #e8913a;
+}
+
+[data-theme='light'] .poi-category-btn.active {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.35);
+}
+
+[data-theme='light'] .poi-card {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .poi-card:hover {
+  background: rgba(232, 145, 58, 0.08);
+  border-color: rgba(232, 145, 58, 0.25);
+}
+
+[data-theme='light'] .poi-distance {
+  color: #e8913a;
+}
+
+[data-theme='light'] .poi-link-icon {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme='light'] .poi-card:hover .poi-link-icon {
+  color: #e8913a;
+}
+
+[data-theme='light'] .poi-search-trigger {
+  background: linear-gradient(135deg,
+      rgba(232, 145, 58, 0.1) 0%,
+      rgba(240, 168, 92, 0.08) 100%);
+  border-color: rgba(232, 145, 58, 0.25);
+  color: #3d3530;
+}
+
+[data-theme='light'] .poi-search-trigger:hover {
+  background: linear-gradient(135deg,
+      rgba(232, 145, 58, 0.18) 0%,
+      rgba(240, 168, 92, 0.14) 100%);
+  border-color: rgba(232, 145, 58, 0.4);
+  box-shadow: 0 8px 24px rgba(232, 145, 58, 0.15);
+}
+
+[data-theme='light'] .poi-search-trigger svg {
+  color: #e8913a;
+}
+
+/* Light theme saved places */
+[data-theme='light'] .saved-places-explore {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .saved-places-explore-title {
+  color: #1f2937;
+}
+
+[data-theme='light'] .saved-places-explore-count {
+  color: #6b7280;
+}
+
+[data-theme='light'] .saved-places-explore-view-all-btn {
+  border-color: rgba(232, 145, 58, 0.4);
+  background: rgba(232, 145, 58, 0.06);
+  color: #3d3530;
+}
+
+[data-theme='light'] .saved-places-explore-view-all-btn:hover {
+  background: rgba(232, 145, 58, 0.15);
+  border-color: rgba(232, 145, 58, 0.6);
+  color: #e8913a;
+}
+
+[data-theme='light'] .saved-place-explore-pill {
+  background: rgba(232, 145, 58, 0.08);
+  border-color: rgba(232, 145, 58, 0.3);
+}
+
+[data-theme='light'] .saved-place-explore-name {
+  color: #1f2937;
+}
+
+[data-theme='light'] .saved-place-explore-address {
+  color: #6b7280;
+}
+
+[data-theme='light'] .saved-place-explore-map-btn {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.9);
+  color: #4b5563;
+}
+
+[data-theme='light'] .saved-place-explore-map-btn:hover {
+  border-color: #e8913a;
+  color: #e8913a;
 }

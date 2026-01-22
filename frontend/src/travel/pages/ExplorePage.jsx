@@ -24,6 +24,8 @@ import { tripCityService, savedPlaceService } from '../services/travelApi'
 import useDiscoveryMode from '../hooks/useDiscoveryMode'
 import EmergencyCard from '../components/explore/EmergencyCard'
 import PhrasebookCard from '../components/explore/PhrasebookCard'
+import TravelBackgroundMap from '../components/TravelBackgroundMap'
+
 import TravelAdvisoryCard from '../components/TravelAdvisoryCard'
 import { getAdvisoryForTrip, getAdvisories } from '../services/travelAdvisoryService'
 import '../styles/Explore.css'
@@ -69,6 +71,7 @@ const ExplorePage = ({ trip }) => {
   const [advisory, setAdvisory] = useState(null)
   const [advisories, setAdvisories] = useState([])
   const [savedPlaces, setSavedPlaces] = useState([])
+  const [tripCities, setTripCities] = useState([])
   const { enterDiscoveryMode, canEnterDiscoveryMode } = useDiscoveryMode()
 
   // Fetch weather data
@@ -147,9 +150,12 @@ const ExplorePage = ({ trip }) => {
       try {
         // Multi‑city: resolve distinct destination countries from trip cities
         // and request advisories for each.
+        // Multi‑city: resolve distinct destination countries from trip cities
+        // and request advisories for each.
         if (trip.tripType === 'multi-city' && trip.id) {
           try {
             const cities = await tripCityService.getByTrip(trip.id)
+            setTripCities(cities || [])
             const countries = Array.from(
               new Set(
                 (cities || [])
@@ -342,10 +348,12 @@ const ExplorePage = ({ trip }) => {
       animate="visible"
       variants={fadeIn}
     >
+      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
+
       {/* Country advisory strip – calm, contextual risk snapshot */}
       {advisory && (
         <section className="explore-section advisory-section">
-          <TravelAdvisoryCard advisory={advisory} advisories={advisories} compact />
+          <TravelAdvisoryCard advisory={advisory} advisories={advisories} />
         </section>
       )}
 

@@ -1,12 +1,13 @@
 import { memo, useCallback, useRef, useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { FiMapPin, FiX, FiHome } from 'react-icons/fi'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FiMapPin, FiX, FiHome, FiSearch } from 'react-icons/fi'
 import { Map, Marker, Source, Layer } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
 // Use travel utilities and discovery services from the travel module
 import { MAP_STYLES, DISCOVERY_MAP_CONFIG } from '../utils/travelConstants'
 import { reverseGeocode, getCountryFromPlaceName, getRouteDirections } from '../services/discoveryService'
 import { getTransportSuggestions } from '../utils/transportSuggestion'
+import { geocodingService } from '../services/travelApi'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 
@@ -109,6 +110,11 @@ const CitySelectionMap = memo(({
   // homeLocation is now a prop
   const [routeGeojson, setRouteGeojson] = useState(null)
   const [routesLoading, setRoutesLoading] = useState(false)
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
 
   // On first load, try to center map on the user's current location
   useEffect(() => {
@@ -231,7 +237,6 @@ const CitySelectionMap = memo(({
           // instead of a road-following path.
           if (homeLocation && first.latitude && first.longitude) {
             const firstMode = first.transportMode || 'driving'
-            console.log('[Map] Home->First Mode:', firstMode, 'City Mode prop:', first.transportMode)
             segments.push({
               lat1: homeLocation.latitude,
               lon1: homeLocation.longitude,
@@ -425,6 +430,47 @@ const CitySelectionMap = memo(({
     setViewState(evt.viewState)
   }, [])
 
+  // Handle search input change
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchQuery.length >= 3) {
+        setIsSearching(true)
+        try {
+          const results = await geocodingService.search(searchQuery, 5)
+          setSearchResults(results.map(r => ({
+            name: r.name || r.fullName?.split(',')[0] || '',
+            fullName: r.fullName || r.name || '',
+            country: r.country || '',
+            latitude: r.latitude || 0,
+            longitude: r.longitude || 0
+          })))
+        } catch (error) {
+          console.error('Search error:', error)
+          setSearchResults([])
+        } finally {
+          setIsSearching(false)
+        }
+      } else {
+        setSearchResults([])
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Handle search result selection
+  const handleSearchSelect = (result) => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [result.longitude, result.latitude],
+        zoom: 12,
+        duration: 2000
+      })
+    }
+    setSearchQuery('')
+    setSearchResults([])
+  }
+
   if (!MAPBOX_TOKEN) {
     return (
       <div className="city-selection-map-error">
@@ -441,6 +487,51 @@ const CitySelectionMap = memo(({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Search Bar Overlay */}
+      <div className="map-search-overlay">
+        <div className="map-search-input-wrapper">
+          <FiSearch className="map-search-icon" />
+          <input
+            type="text"
+            className="map-search-input"
+            placeholder="Search places..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              className="map-search-clear"
+              onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+            >
+              <FiX />
+            </button>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {searchResults.length > 0 && (
+            <motion.div
+              className="map-search-results"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <ul>
+                {searchResults.map((result, index) => (
+                  <li key={index} onClick={() => handleSearchSelect(result)}>
+                    <FiMapPin className="result-icon" />
+                    <div className="result-info">
+                      <span className="result-name">{result.name}</span>
+                      <span className="result-country">{result.country}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <Map
         ref={mapRef}
         {...viewState}
@@ -593,9 +684,9 @@ const CitySelectionMap = memo(({
         })}
       </Map>
 
-      {/* Instructions overlay */}
+      {/* Instructions overlay - pushed down if search bar is present, or positioned bottom-center */}
       {cities.length === 0 && (
-        <div className="city-selection-instructions">
+        <div className="city-selection-instructions" style={{ top: 'auto', bottom: '2rem' }}>
           <FiMapPin size={24} />
           <p>Click on the map to add cities to your trip</p>
         </div>

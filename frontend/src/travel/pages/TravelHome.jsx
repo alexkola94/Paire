@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -19,6 +19,7 @@ import {
 } from 'react-icons/fi'
 import { useTravelMode } from '../context/TravelModeContext'
 import useDiscoveryMode from '../hooks/useDiscoveryMode'
+import useScrollOnExpand from '../hooks/useScrollOnExpand'
 import { travelExpenseService, packingService, itineraryService, tripCityService, tripService, savedPlaceService } from '../services/travelApi'
 import { getCached, setCached } from '../services/travelDb'
 import db from '../services/travelDb'
@@ -33,6 +34,7 @@ import LayoutSettingsModal from '../components/LayoutSettingsModal'
 import ConfirmationModal from '../../components/ConfirmationModal'
 import { useTripLayout } from '../hooks/useTripLayout'
 import '../styles/TravelHome.css'
+import TravelBackgroundMap from '../components/TravelBackgroundMap'
 
 // Gentle animation variants - slower, smoother for calm feeling
 const containerVariants = {
@@ -92,6 +94,11 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
   const [advisories, setAdvisories] = useState([])
   const [isTripDeleted, setIsTripDeleted] = useState(false)
   const [savedPlaces, setSavedPlaces] = useState([])
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Ref for auto-scrolling saved places when expanded
+  const savedPlacesRef = useRef(null)
+  useScrollOnExpand(isExpanded, savedPlacesRef)
 
   // Effective trip used by this page.
   // When the last trip is deleted we locally treat it as null so the UI
@@ -543,7 +550,7 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
         const places = await savedPlaceService.getByTrip(activeTrip.id)
         if (!cancelled) {
           // Limit to a small number for the home sidebar so it stays calm.
-          setSavedPlaces((places || []).slice(0, 4))
+          setSavedPlaces((places || []));
         }
       } catch (error) {
         console.error('Error loading saved places for trip:', error)
@@ -1117,6 +1124,7 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
   if (!activeTrip && !loading) {
     return (
       <div className="travel-home no-trip">
+        <TravelBackgroundMap trip={null} availableCities={[]} />
         <motion.div
           className="no-trip-content"
           initial={{ opacity: 0, y: 10 }}
@@ -1272,7 +1280,9 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
     )
   }
 
-  // Helper to render sections dynamically
+  // Calculate layout sections based on preset
+  // ... (rest of logic) ...
+
   const renderSection = (key) => {
     switch (key) {
       case 'countdown':
@@ -1674,7 +1684,12 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
 
       case 'savedPlaces':
         return activeTrip?.id ? (
-          <motion.div key="savedPlaces" className="travel-glass-card saved-places-card" variants={cardVariants}>
+          <motion.div
+            key="savedPlaces"
+            ref={savedPlacesRef}
+            className="travel-glass-card saved-places-card"
+            variants={cardVariants}
+          >
             <div className="saved-places-header">
               <h3 className="saved-places-title">
                 {t('travel.home.savedPlacesTitle', 'Saved places')}
@@ -1708,48 +1723,47 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
               </p>
             ) : (
               <ul className="saved-places-list">
-                {savedPlaces.map((poi) => (
-                  <li
-                    key={poi.id || poi.poiId}
-                    className="saved-place-item"
-                  >
+                {/* Only show first 4 items if not expanded */}
+                {(isExpanded ? savedPlaces : savedPlaces.slice(0, 4)).map((poi) => (
+                  <li key={poi.id || poi.poiId} className="saved-place-item">
                     <div className="saved-place-main">
-                      <span className="saved-place-name">
-                        {poi.name}
-                      </span>
+                      <span className="saved-place-name">{poi.name}</span>
                       {poi.address && (
-                        <span className="saved-place-address">
-                          {poi.address}
-                        </span>
+                        <span className="saved-place-address">{poi.address}</span>
                       )}
                     </div>
                     <div className="saved-place-meta">
                       {poi.category && (
                         <span className="saved-place-chip">
-                          {t(
-                            `travel.explore.poi.${poi.category}`,
-                            poi.category
-                          )}
+                          {t(`travel.explore.poi.${poi.category}`, poi.category)}
                         </span>
                       )}
                       <button
                         type="button"
                         className="saved-place-map-btn"
                         onClick={() => handleOpenSavedPlaceInMaps(poi)}
-                        aria-label={t(
-                          'travel.discovery.seeDetails',
-                          'See details in Google Maps'
-                        )}
-                        title={t(
-                          'travel.discovery.seeDetails',
-                          'See details in Google Maps'
-                        )}
+                        aria-label={t('travel.discovery.seeDetails', 'See details in Google Maps')}
                       >
                         <FiExternalLink size={12} />
                       </button>
                     </div>
                   </li>
                 ))}
+
+                {/* Show button only if list is longer than 4 */}
+                {savedPlaces.length > 4 && (
+                  <motion.div layout className="view-all-container">
+                    <button
+                      type="button"
+                      className="view-all-btn"
+                      onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                      {isExpanded
+                        ? t('travel.home.showLess', 'Show Less')
+                        : t('travel.home.viewAll', `View All (${savedPlaces.length})`)}
+                    </button>
+                  </motion.div>
+                )}
               </ul>
             )}
           </motion.div>
@@ -1884,6 +1898,7 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
       initial="hidden"
       animate="visible"
     >
+      <TravelBackgroundMap trip={activeTrip} availableCities={tripCities} />
       {/* Greeting - calm, personal touch */}
       <motion.div className="greeting-section" variants={cardVariants}>
         <span className="greeting-text">{getGreeting()}</span>
@@ -1948,7 +1963,6 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
           <TravelAdvisoryCard
             advisory={advisory}
             advisories={advisories}
-            compact
           />
         </motion.div>
       )}

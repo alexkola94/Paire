@@ -24,7 +24,7 @@ const normalizeCountryCode = (code) => {
  * Build a stable cache key for a single country advisory.
  */
 const getAdvisoryCacheKey = (countryCode) =>
-  `travel-advisory-${normalizeCountryCode(countryCode)}`
+  `travel-advisory-v3-${normalizeCountryCode(countryCode)}`
 
 /**
  * Call backend advisory endpoint for a single country.
@@ -38,10 +38,10 @@ const fetchAdvisoryFromBackend = async (countryCode) => {
   try {
     // Get authentication token
     const token = getToken()
-    
+
     // Construct full backend URL
     let backendApiUrl = getBackendApiUrl()
-    
+
     // Handle IP address scenarios (same pattern as travelApi.js)
     if (typeof window !== 'undefined' && window.location) {
       const currentHostname = window.location.hostname
@@ -103,6 +103,16 @@ const fetchAdvisoryFromBackend = async (countryCode) => {
     // automatically flow through to the frontend.
     const base = { ...data }
 
+    console.log('DEBUG: Raw Advisory Data from Backend:', data)
+
+    // Helper to map nested info lists (e.g. from TuGoClimate.ClimateInfo)
+    const mapInfoList = (infoList) => {
+      if (!Array.isArray(infoList)) return []
+      return infoList
+        .map(item => item?.description ? item.description.trim() : '')
+        .filter(Boolean)
+    }
+
     return {
       ...base,
       countryCode: data.countryCode || normalized,
@@ -112,11 +122,31 @@ const fetchAdvisoryFromBackend = async (countryCode) => {
       message: data.message || '',
       updated: data.updated || null,
       sourcesActive: typeof data.sourcesActive === 'number' ? data.sourcesActive : 0,
-      // Rich highlight sections used by TravelAdvisoryCard's "More details" modal.
-      climateHighlights: toStringArray(data.climateHighlights),
-      entryExitHighlights: toStringArray(data.entryExitHighlights),
-      healthHighlights: toStringArray(data.healthHighlights),
-      safetyHighlights: toStringArray(data.safetyHighlights)
+
+      // Mapping backend data - backend may return either flat or nested structure
+      // Prefer flat properties (already set by backend), fall back to nested if needed
+      advisoryText: data.advisoryText || '',
+      advisoryLongDescription: data.advisoryLongDescription || (data.advisories && data.advisories.description) || '',
+
+      climateSummary: data.climateSummary || (data.climate && data.climate.description) || '',
+      climateHighlights: Array.isArray(data.climateHighlights) && data.climateHighlights.length > 0
+        ? data.climateHighlights
+        : (data.climate ? mapInfoList(data.climate.climateInfo) : []),
+
+      entryExitSummary: data.entryExitSummary || (data.entryExitRequirement && data.entryExitRequirement.description) || '',
+      entryExitHighlights: Array.isArray(data.entryExitHighlights) && data.entryExitHighlights.length > 0
+        ? data.entryExitHighlights
+        : (data.entryExitRequirement ? mapInfoList(data.entryExitRequirement.requirementInfo) : []),
+
+      healthSummary: data.healthSummary || (data.health && data.health.description) || '',
+      healthHighlights: Array.isArray(data.healthHighlights) && data.healthHighlights.length > 0
+        ? data.healthHighlights
+        : (data.health ? mapInfoList(data.health.healthInfo) : []),
+
+      safetySummary: data.safetySummary || (data.safety && data.safety.description) || '',
+      safetyHighlights: Array.isArray(data.safetyHighlights) && data.safetyHighlights.length > 0
+        ? data.safetyHighlights
+        : (data.safety ? mapInfoList(data.safety.safetyInfo) : [])
     }
   } catch (error) {
     console.error('Error fetching travel advisory:', error)

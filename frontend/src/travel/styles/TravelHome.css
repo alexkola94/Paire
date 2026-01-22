@@ -12,6 +12,32 @@
   max-width: 960px;
   margin: 0 auto;
   width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.view-all-container {
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  /* Optional: adds a nice separator */
+  margin-top: 8px;
+}
+
+.view-all-btn {
+  background: transparent;
+  border: none;
+  color: #e8913a;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.view-all-btn:hover {
+  background: #f0f7ff;
 }
 
 /* Travel light-theme accent palette – warm sand + soft orange */
@@ -117,6 +143,47 @@
   transform: translateY(-1px);
 }
 
+[data-theme='dark'] .today-strip-chip {
+  background: rgba(15, 7, 26, 0.75);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+[data-theme='dark'] .today-strip-chip:hover {
+  background: rgba(15, 7, 26, 0.9);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+[data-theme='dark'] .today-strip-chip-icon {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+/* Light theme today-strip – warm orange palette */
+[data-theme='light'] .today-strip-chip {
+  background: rgba(255, 252, 247, 0.96);
+  border-color: rgba(232, 145, 58, 0.28);
+  color: #6b6058;
+}
+
+[data-theme='light'] .today-strip-chip:hover {
+  border-color: rgba(232, 145, 58, 0.45);
+  background: rgba(251, 230, 210, 0.6);
+  color: #3d3530;
+}
+
+[data-theme='light'] .today-strip-chip-icon {
+  background: rgba(232, 145, 58, 0.14);
+  color: #e8913a;
+}
+
+[data-theme='light'] .today-strip-chip-label {
+  color: #9a9088;
+}
+
+[data-theme='light'] .today-strip-chip-value {
+  color: #3d3530;
+}
+
 /* Mobile-first: surface advisory as a compact strip near the top.
    On desktop, only show the richer sidebar card. */
 .travel-home-top-advisory {
@@ -210,7 +277,8 @@
 }
 
 .create-trip-type-actions {
-  display: contents; /* let individual options participate directly in the card grid */
+  display: contents;
+  /* let individual options participate directly in the card grid */
 }
 
 .create-trip-type-option {
@@ -223,7 +291,8 @@
   align-items: stretch;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
-  min-width: 0; /* allow inner text to wrap instead of forcing overflow */
+  min-width: 0;
+  /* allow inner text to wrap instead of forcing overflow */
 }
 
 /* Place single‑destination on the left under the header */
@@ -411,35 +480,44 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: var(--spacing-xl);
-  max-width: 320px;
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
+  max-width: 360px;
+  border-radius: 24px;
+  /* Glassmorphism backdrop for better readability over map */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
 }
 
 .no-trip-icon {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(232, 145, 58, 0.12) 0%, rgba(240, 168, 92, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(232, 145, 58, 0.18) 0%, rgba(240, 168, 92, 0.12) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #e8913a;
-  margin-bottom: var(--spacing-xl);
-  opacity: 0.9;
+  margin-bottom: var(--spacing-lg);
+  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.15);
 }
 
 .no-trip-content h2 {
-  margin: 0 0 var(--spacing-sm) 0;
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: #2d3436;
   letter-spacing: -0.02em;
 }
 
 .no-trip-content p {
-  margin: 0 0 var(--spacing-xl) 0;
-  color: var(--text-secondary);
-  font-size: 0.9375rem;
+  margin: 0 0 var(--spacing-lg) 0;
+  color: #636e72;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 
@@ -534,11 +612,13 @@
 
 /* Preserve darker glass look only for explicit dark theme */
 [data-theme='dark'] .countdown-card.calm-card {
-  background: rgba(15, 7, 26, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 7, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
   box-shadow:
-    0 18px 45px rgba(15, 7, 26, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+    0 24px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
 }
 
 .countdown-content {
@@ -600,6 +680,23 @@
     0 26px 60px rgba(15, 23, 42, 0.18),
     0 0 0 1px rgba(255, 255, 255, 1) inset;
   transform: translateY(-1px);
+}
+
+[data-theme='dark'] .single-destination-card {
+  background: rgba(15, 7, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
+}
+
+[data-theme='dark'] .single-destination-card:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow:
+    0 28px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(139, 92, 246, 0.15) inset;
 }
 
 .single-destination-header {
@@ -818,13 +915,19 @@
 
 .status-summary {
   background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
+  border-radius: 1.5rem;
   overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
 [data-theme='dark'] .status-summary {
-  background: var(--bg-secondary);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+  background: rgba(15, 7, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
 }
 
 .status-toggle {
@@ -1074,6 +1177,7 @@
    ================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .calm-btn,
   .status-toggle,
   .status-detail-card,
@@ -1107,9 +1211,13 @@
 }
 
 [data-theme='dark'] .trip-micrography {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: none;
+  background: rgba(15, 7, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
 }
 
 .trip-micrography:hover {
@@ -1463,8 +1571,13 @@
 }
 
 [data-theme='dark'] .route-summary-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 7, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
 }
 
 .route-summary-content {
@@ -1545,8 +1658,13 @@
 }
 
 [data-theme='dark'] .city-timeline-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 7, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
 }
 
 .city-timeline-header {
@@ -1708,7 +1826,8 @@
 
 /* Light theme greeting – stronger, warmer title over the map */
 .travel-layout:not([data-theme='dark']) .greeting-text {
-  color: #3d3530; /* soft espresso, not pure black */
+  color: #3d3530;
+  /* soft espresso, not pure black */
   font-weight: 500;
 }
 
@@ -2002,26 +2121,70 @@
   border: 1px solid rgba(232, 145, 58, 0.3);
 }
 
+[data-theme='light'] .no-trip-content {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(232, 145, 58, 0.15);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+}
+
 [data-theme='light'] .no-trip-content h2 {
-  color: #3d3530;
+  color: #2d3436;
+  font-weight: 600;
 }
 
 [data-theme='light'] .no-trip-content p {
-  color: #9a9088;
+  color: #636e72;
 }
 
 [data-theme='light'] .no-trip-icon {
-  background: linear-gradient(135deg, rgba(232, 145, 58, 0.15) 0%, rgba(240, 168, 92, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(232, 145, 58, 0.2) 0%, rgba(240, 168, 92, 0.15) 100%);
   color: #e8913a;
+  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.2);
 }
 
 [data-theme='light'] .calm-btn {
   background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
-  box-shadow: 0 2px 8px rgba(232, 145, 58, 0.25);
+  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.35);
+  font-weight: 600;
 }
 
 [data-theme='light'] .calm-btn:hover {
-  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.35);
+  box-shadow: 0 6px 24px rgba(232, 145, 58, 0.45);
+  transform: translateY(-2px);
+}
+
+/* Dark mode no-trip styling */
+[data-theme='dark'] .no-trip-content {
+  background: rgba(15, 7, 26, 0.88);
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
+}
+
+[data-theme='dark'] .no-trip-content h2 {
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .no-trip-content p {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .no-trip-icon {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(99, 102, 241, 0.18) 100%);
+  color: #a78bfa;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
+}
+
+[data-theme='dark'] .calm-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+[data-theme='dark'] .calm-btn:hover {
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.5);
 }
 
 .city-timeline-header {
@@ -2209,9 +2372,13 @@
 }
 
 [data-theme='dark'] .saved-places-card {
-  background: rgba(15, 7, 26, 0.9);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+  background: rgba(15, 7, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
 }
 
 .saved-places-card:hover {

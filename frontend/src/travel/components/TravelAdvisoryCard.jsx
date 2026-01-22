@@ -52,7 +52,7 @@ const getLevelConfig = (level, t) => {
  * Calm, glassy card showing country risk score and a short advisory message.
  * Designed to be reusable on Travel Home, Documents, and Wizard screens.
  */
-const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose }) => {
+const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, showDetailsButton = true }) => {
   const { t } = useTranslation()
   const [showDetails, setShowDetails] = useState(false)
   // Track which advisory is visible in the mini carousel
@@ -141,7 +141,7 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose }) 
     !!safetySummary ||
     !!recentUpdates
 
-  const hasAnyDetails = hasAnyHighlights || hasAnySummaries || !!advisoryText
+  const hasAnyDetails = hasAnyHighlights || hasAnySummaries || !!advisoryText || !!message
 
   const hasNavigation = advisoryList.length > 1
 
@@ -220,7 +220,7 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose }) 
                 so we offer a small inline "Details" trigger in the header. */}
               {compact && (
                 <div className="travel-advisory-header-actions">
-                  {hasAnyDetails && (
+                  {hasAnyDetails && showDetailsButton && (
                     <button
                       type="button"
                       className="travel-advisory-header-more"
@@ -341,10 +341,10 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose }) 
                     </div>
 
                     <div className="travel-advisory-modal-body">
-                      {(advisoryText || advisoryLongDescription) && (
+                      {(advisoryText || advisoryLongDescription || message) && (
                         <section className="advisory-section-block advisory-section-overview">
-                          {advisoryText && (
-                            <p className="advisory-overview-title">{advisoryText}</p>
+                          {(advisoryText || message) && (
+                            <p className="advisory-overview-title">{advisoryText || message}</p>
                           )}
                           {advisoryLongDescription && (
                             <p className="advisory-overview-text">{advisoryLongDescription}</p>

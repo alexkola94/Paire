@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
+import TravelBackgroundMap from '../components/TravelBackgroundMap'
+
 import {
   FiPlus,
   FiDollarSign,
@@ -15,7 +17,7 @@ import {
   FiX,
   FiLoader
 } from 'react-icons/fi'
-import { travelExpenseService } from '../services/travelApi'
+import { travelExpenseService, tripCityService } from '../services/travelApi'
 import { BUDGET_CATEGORIES } from '../utils/travelConstants'
 import DatePicker from '../components/DatePicker'
 import '../styles/Budget.css'
@@ -41,6 +43,29 @@ const BudgetPage = ({ trip }) => {
   const [saving, setSaving] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
+  const [tripCities, setTripCities] = useState([])
+
+  // Load cities for multi-city context (supports background map)
+  useEffect(() => {
+    const loadCities = async () => {
+      if (!trip?.id) {
+        setTripCities([])
+        return
+      }
+
+      // Check if it's a multi-city trip or just fetch cities generally to be safe/consistent
+      // We'll fetch if tripType is multi-city or just to have them available for the map
+      try {
+        const cities = await tripCityService.getByTrip(trip.id)
+        setTripCities(cities || [])
+      } catch (error) {
+        console.error('Error loading cities for BudgetPage map:', error)
+        setTripCities([])
+      }
+    }
+
+    loadCities()
+  }, [trip?.id])
 
   // Load expenses
   useEffect(() => {
@@ -105,11 +130,11 @@ const BudgetPage = ({ trip }) => {
     try {
       // Call API in background
       await travelExpenseService.create(trip.id, expenseData)
-      
+
       // Refresh expenses list to get real expense from server
       const refreshedExpenses = await travelExpenseService.getByTrip(trip.id)
       setExpenses(refreshedExpenses || [])
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'expense', tripId: trip.id } }))
     } catch (error) {
@@ -127,7 +152,7 @@ const BudgetPage = ({ trip }) => {
     try {
       await travelExpenseService.delete(trip.id, expenseId)
       setExpenses(prev => prev.filter(e => e.id !== expenseId))
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'expense', tripId: trip.id } }))
     } catch (error) {
@@ -169,6 +194,7 @@ const BudgetPage = ({ trip }) => {
 
   return (
     <div className="budget-page">
+      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
       {/* Budget Overview Card */}
       <motion.div
         className="travel-glass-card budget-overview"
@@ -334,10 +360,10 @@ const BudgetPage = ({ trip }) => {
 // Add Expense Modal Component
 const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
   const { t } = useTranslation()
-  
+
   // Register modal to hide bottom navigation
   useModalRegistration(true)
-  
+
   const [formData, setFormData] = useState({
     category: 'food',
     amount: '',

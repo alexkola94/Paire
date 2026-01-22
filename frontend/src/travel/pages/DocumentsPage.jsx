@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
+import TravelBackgroundMap from '../components/TravelBackgroundMap'
+
 import {
   FiPlus,
   FiFile,
@@ -93,11 +95,11 @@ const buildTravelDocsPrompt = ({
   const origin =
     originCountry?.trim() ||
     t('travel.documents.aiHelper.originFallback', 'my home country')
-  
+
   // Determine destination text - use multiple countries if provided, otherwise single
   let destination = ''
   const isMultiCountry = Array.isArray(destinationCountries) && destinationCountries.length > 0
-  
+
   if (isMultiCountry) {
     // Filter out empty/null countries and get unique values
     const uniqueCountries = [...new Set(destinationCountries.filter(c => c?.trim()))]
@@ -190,18 +192,18 @@ const buildTravelDocsPrompt = ({
     'travel.documents.aiHelper.prompt.line5',
     '- Recommended / nice-to-have documents'
   )
-  
+
   // For multi-country trips, add a note about transit requirements
   const line6 = isMultiCountry && destinationCountries.length > 1
     ? t(
-        'travel.documents.aiHelper.prompt.line6MultiCountry',
-        '- Any country-specific visa rules, transit rules, passport validity rules, and cross-border travel requirements I should know for traveling between these countries.'
-      )
+      'travel.documents.aiHelper.prompt.line6MultiCountry',
+      '- Any country-specific visa rules, transit rules, passport validity rules, and cross-border travel requirements I should know for traveling between these countries.'
+    )
     : t(
-        'travel.documents.aiHelper.prompt.line6',
-        '- Any country-specific visa rules, transit rules, or passport validity rules I should know.'
-      )
-  
+      'travel.documents.aiHelper.prompt.line6',
+      '- Any country-specific visa rules, transit rules, or passport validity rules I should know.'
+    )
+
   const line7 = t(
     'travel.documents.aiHelper.prompt.line7',
     'Answer in a concise, traveler-friendly checklist.'
@@ -277,6 +279,7 @@ const DocumentsPage = ({ trip }) => {
   // Resolved destination country/countries – handles both single and multi-city trips
   const [resolvedDestinationCountry, setResolvedDestinationCountry] = useState(inferredDestinationCountry)
   const [resolvedDestinationCountries, setResolvedDestinationCountries] = useState([])
+  const [tripCities, setTripCities] = useState([])
   const [isMultiCityTrip, setIsMultiCityTrip] = useState(false)
   const [advisories, setAdvisories] = useState([])
 
@@ -292,13 +295,14 @@ const DocumentsPage = ({ trip }) => {
       try {
         // Check trip type first
         const isMultiCity = trip.tripType === 'multi-city'
-        
+
         if (isMultiCity) {
           // Fetch cities for multi-city trips
           const cities = await tripCityService.getByTrip(trip.id)
+          setTripCities(cities || [])
           if (cities && cities.length > 1) {
             setIsMultiCityTrip(true)
-            
+
             // Extract countries from cities and resolve them
             const countryPromises = cities
               .filter(city => city.country || city.name)
@@ -307,7 +311,7 @@ const DocumentsPage = ({ trip }) => {
                 if (city.country?.trim()) {
                   return city.country.trim()
                 }
-                
+
                 // Otherwise, try to resolve from city name
                 try {
                   const result = await getCountryFromPlaceName(city.name)
@@ -329,11 +333,11 @@ const DocumentsPage = ({ trip }) => {
                 }
                 return null
               })
-            
+
             const resolvedCountries = (await Promise.all(countryPromises))
               .filter(c => c) // Remove nulls
               .filter((c, index, arr) => arr.indexOf(c) === index) // Get unique countries
-            
+
             setResolvedDestinationCountries(resolvedCountries)
 
             // Load advisories for the resolved destination countries.
@@ -348,7 +352,7 @@ const DocumentsPage = ({ trip }) => {
             } else {
               setAdvisories([])
             }
-            
+
             // For backward compatibility, set the first country as single destination
             if (resolvedCountries.length > 0) {
               setResolvedDestinationCountry(resolvedCountries[0])
@@ -376,7 +380,7 @@ const DocumentsPage = ({ trip }) => {
   // Resolve single destination country for non-multi-city trips
   useEffect(() => {
     if (isMultiCityTrip) return // Skip for multi-city trips
-    
+
     let cancelled = false
 
     // Always reset to the synchronous inference first for snappy UI.
@@ -495,11 +499,11 @@ const DocumentsPage = ({ trip }) => {
     try {
       // Call API in background
       await documentService.create(trip.id, docData)
-      
+
       // Refresh documents list to get real document from server
       const refreshedDocs = await documentService.getByTrip(trip.id)
       setDocuments(refreshedDocs || [])
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'document', tripId: trip.id } }))
     } catch (error) {
@@ -519,7 +523,7 @@ const DocumentsPage = ({ trip }) => {
       setDocuments(prev => prev.map(d => d.id === editingDocument.id ? { ...d, ...docData } : d))
       setShowAddModal(false)
       setEditingDocument(null)
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-updated', { detail: { type: 'document', tripId: trip.id } }))
     } catch (error) {
@@ -532,7 +536,7 @@ const DocumentsPage = ({ trip }) => {
     try {
       await documentService.delete(trip.id, docId)
       setDocuments(prev => prev.filter(d => d.id !== docId))
-      
+
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'document', tripId: trip.id } }))
     } catch (error) {
@@ -566,12 +570,13 @@ const DocumentsPage = ({ trip }) => {
 
   return (
     <div className="documents-page">
+      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
       {/* Compact travel advisory context above documents.
           For multi-country trips this card now supports left/right navigation
           between countries. */}
       {advisories && advisories.length > 0 && (
         <div className="documents-advisory-strip">
-          <TravelAdvisoryCard advisory={advisories[0]} advisories={advisories} compact />
+          <TravelAdvisoryCard advisory={advisories[0]} advisories={advisories} />
         </div>
       )}
       {/* Header */}
@@ -881,10 +886,10 @@ const DocumentCard = ({ document, typeConfig, getExpiryStatus, onEdit, onDelete 
 // Document Form Modal Component
 const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
   const { t } = useTranslation()
-  
+
   // Register modal to hide bottom navigation
   useModalRegistration(true)
-  
+
   const [formData, setFormData] = useState({
     type: document?.type || 'passport',
     name: document?.name || '',
@@ -1062,9 +1067,9 @@ const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
                   {uploading
                     ? t('common.uploading', 'Uploading...')
                     : t(
-                        'fileUpload.selectFile',
-                        'Select file'
-                      )}
+                      'fileUpload.selectFile',
+                      'Select file'
+                    )}
                 </span>
                 <input
                   type="file"
@@ -1174,11 +1179,11 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
   // Origin country – best effort auto-fill from current locale, still editable by the user.
   // This can later be wired to a real profile/location service.
   const [originCountry, setOriginCountry] = useState('')
-  
+
   // For multi-city trips, use the array of countries; otherwise use single destination
   const [destinationCountries, setDestinationCountries] = useState(
-    isMultiCity && inferredDestinations?.length > 0 
-      ? inferredDestinations 
+    isMultiCity && inferredDestinations?.length > 0
+      ? inferredDestinations
       : inferredDestination ? [inferredDestination] : []
   )
   const [selectedProviderId, setSelectedProviderId] = useState(
@@ -1278,9 +1283,9 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
   }
 
   const isConfirmDisabled =
-    !selectedProviderId || 
-    !originCountry.trim() || 
-    destinationCountries.length === 0 || 
+    !selectedProviderId ||
+    !originCountry.trim() ||
+    destinationCountries.length === 0 ||
     (!isMultiCity && !destinationCountries[0]?.trim())
 
   return (
@@ -1432,14 +1437,14 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
                       provider.id === 'chatgpt'
                         ? 'ChatGPT'
                         : provider.id === 'claude'
-                        ? 'Claude'
-                        : provider.id === 'gemini'
-                        ? 'Gemini'
-                        : provider.id === 'perplexity'
-                        ? 'Perplexity'
-                        : provider.id === 'copilot'
-                        ? 'Copilot'
-                        : provider.id
+                          ? 'Claude'
+                          : provider.id === 'gemini'
+                            ? 'Gemini'
+                            : provider.id === 'perplexity'
+                              ? 'Perplexity'
+                              : provider.id === 'copilot'
+                                ? 'Copilot'
+                                : provider.id
                     )}
                   </option>
                 ))}
@@ -1461,14 +1466,14 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
                     provider.id === 'chatgpt'
                       ? 'ChatGPT'
                       : provider.id === 'claude'
-                      ? 'Claude'
-                      : provider.id === 'gemini'
-                      ? 'Gemini'
-                      : provider.id === 'perplexity'
-                      ? 'Perplexity'
-                      : provider.id === 'copilot'
-                      ? 'Copilot'
-                      : provider.id
+                        ? 'Claude'
+                        : provider.id === 'gemini'
+                          ? 'Gemini'
+                          : provider.id === 'perplexity'
+                            ? 'Perplexity'
+                            : provider.id === 'copilot'
+                              ? 'Copilot'
+                              : provider.id
                   )
 
                   // Simple 2–3 letter monogram for logo circle
@@ -1476,22 +1481,21 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
                     provider.id === 'chatgpt'
                       ? 'GPT'
                       : provider.id === 'claude'
-                      ? 'CL'
-                      : provider.id === 'gemini'
-                      ? 'GX'
-                      : provider.id === 'perplexity'
-                      ? 'PX'
-                      : provider.id === 'copilot'
-                      ? 'CO'
-                      : 'AI'
+                        ? 'CL'
+                        : provider.id === 'gemini'
+                          ? 'GX'
+                          : provider.id === 'perplexity'
+                            ? 'PX'
+                            : provider.id === 'copilot'
+                              ? 'CO'
+                              : 'AI'
 
                   return (
                     <button
                       key={provider.id}
                       type="button"
-                      className={`ai-provider-card ${
-                        isSelected ? 'selected' : ''
-                      }`}
+                      className={`ai-provider-card ${isSelected ? 'selected' : ''
+                        }`}
                       onClick={() => setSelectedProviderId(provider.id)}
                     >
                       <span

@@ -13,6 +13,7 @@ import { fetchStays, getZoomBasedSettings } from '../services/discoveryService'
 import { FiEye, FiMap, FiX } from 'react-icons/fi'
 import '../styles/TravelLayout.css'
 import '../styles/TravelLightTheme.css'
+import '../styles/TravelPortal.css'
 
 // Lazy load Discovery components
 const DiscoveryMap = lazy(() => import('./discovery/DiscoveryMap'))
@@ -125,7 +126,9 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
     loading: poisLoading,
     activeCategories,
     toggleCategory,
+    clearCategories,
     search,
+    clearSearch,
     pinPOI,
     unpinPOI,
     checkIsPinned
@@ -210,11 +213,14 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
    */
   const handleToggleClick = useCallback(() => {
     if (isDiscoveryMode) {
+      // Reset categories and search when exiting discovery mode
+      clearCategories()
+      clearSearch()
       exitDiscoveryMode()
     } else {
       enterDiscoveryMode()
     }
-  }, [isDiscoveryMode, enterDiscoveryMode, exitDiscoveryMode])
+  }, [isDiscoveryMode, enterDiscoveryMode, exitDiscoveryMode, clearCategories, clearSearch])
 
   /**
    * Handle POI marker click
@@ -280,17 +286,22 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
           />
         </Suspense>
       ) : (
-        staticMapUrl && (
-          <div className="travel-map-container">
-            <img
-              src={staticMapUrl}
-              alt="Trip destination map"
-              className={`map-bg-image ${mapLoaded ? 'loaded' : ''}`}
-              onLoad={() => setMapLoaded(true)}
-            />
-            <div className="map-bg-overlay" />
-          </div>
-        )
+        <>
+          {/* Portal Root for TravelBackgroundMap to break out of motion.main transforms */}
+          <div id="travel-map-portal" className="travel-map-container" style={{ zIndex: 0 }} />
+
+          {staticMapUrl && (
+            <div className="travel-map-container">
+              <img
+                src={staticMapUrl}
+                alt="Trip destination map"
+                className={`map-bg-image ${mapLoaded ? 'loaded' : ''}`}
+                onLoad={() => setMapLoaded(true)}
+              />
+              <div className="map-bg-overlay" />
+            </div>
+          )}
+        </>
       )}
 
       {/* Header - Always visible, collapses in Discovery Mode */}

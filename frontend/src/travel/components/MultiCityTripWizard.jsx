@@ -755,6 +755,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                     advisory={viewingAdvisory}
                     compact={true}
                     onClose={() => setViewingAdvisory(null)}
+                    showDetailsButton={false}
                   />
                 </div>
               )}

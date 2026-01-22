@@ -352,7 +352,9 @@ export const MAP_STYLES = {
   muted: 'mapbox://styles/mapbox/dark-v11',
   detailed: 'mapbox://styles/mapbox/streets-v12',
   satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
-  outdoors: 'mapbox://styles/mapbox/outdoors-v12'
+  outdoors: 'mapbox://styles/mapbox/outdoors-v12',
+  midnight: 'mapbox://styles/mapbox/dark-v11',
+  twilight: 'mapbox://styles/mapbox/dark-v11'
 }
 
 // Default map configuration for Discovery Mode
