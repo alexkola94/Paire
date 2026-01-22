@@ -27,10 +27,6 @@ const DiscoveryMap = memo(({
   showTripMarker = true,
   mapStyle = 'detailed'
 }) => {
-  // Read current theme so we can adapt map visuals for light / dark mode.
-  // Keeping this logic here keeps the Mapbox configuration close to where it is used.
-  const { theme } = useTheme()
-
   const { activeTrip, activeTripCities, mapViewState, updateMapViewState } = useTravelMode()
   const mapRef = useRef(null)
   const longPressTimer = useRef(null)
@@ -293,7 +289,7 @@ const DiscoveryMap = memo(({
         mapboxAccessToken={MAPBOX_TOKEN}
         // Always use the "native" Mapbox style defined in MAP_STYLES,
         // independent of the app's light / dark theme.
-        mapStyle={MAP_STYLES[mapStyle] || MAP_STYLES.detailed}
+        mapStyle={MAP_STYLES.detailed}
         style={{ width: '100%', height: '100%' }}
         minZoom={DISCOVERY_MAP_CONFIG.minZoom}
         maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}

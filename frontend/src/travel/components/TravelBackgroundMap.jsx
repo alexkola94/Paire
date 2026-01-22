@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import ReactDOM from 'react-dom'
 import { Map } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useTheme } from '../../context/ThemeContext'
@@ -98,7 +97,7 @@ const TravelBackgroundMap = ({ trip, availableCities = [] }) => {
                 height: '100vh',
                 zIndex: 0, // Behind content
                 pointerEvents: 'none', // Don't steal clicks/scrolls
-                opacity: theme === 'dark' ? 0.5 : 0.25 // More transparent in light mode to be subtle
+                opacity: 1 // Full visibility for the map itself
             }}
         >
             <Map
@@ -110,24 +109,21 @@ const TravelBackgroundMap = ({ trip, availableCities = [] }) => {
                 interactive={false} // Static background
                 reuseMaps
             />
-            {/* Gradient Overlay for better text readability */}
+            {/* Gradient Overlay for better text readability - reduced intensity */}
             <div
                 style={{
                     position: 'absolute',
                     inset: 0,
                     background: theme === 'dark'
-                        ? 'linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.85))'
-                        : 'linear-gradient(to bottom, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.9))',
+                        ? 'linear-gradient(to bottom, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.5))'
+                        : 'linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.3))',
                     pointerEvents: 'none'
                 }}
             />
         </div>
     )
 
-    // Use portal to break out of any transform/overflow containment (e.g. framer-motion in TravelLayout)
-    // Try to find the specific layout portal root first, fallback to body
-    const portalRoot = document.getElementById('travel-map-portal') || document.body
-    return ReactDOM.createPortal(mapContent, portalRoot)
+    return mapContent
 }
 
 export default TravelBackgroundMap

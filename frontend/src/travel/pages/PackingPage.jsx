@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
+import { useTravelMode } from '../context/TravelModeContext'
 import {
   FiPlus,
   FiCheck,
@@ -14,7 +15,6 @@ import {
   FiLoader
 } from 'react-icons/fi'
 import { packingService, tripCityService } from '../services/travelApi'
-import TravelBackgroundMap from '../components/TravelBackgroundMap'
 
 import { PACKING_CATEGORIES } from '../utils/travelConstants'
 import { generatePackingSuggestions } from '../utils/packingSuggestions'
@@ -40,21 +40,25 @@ const PackingPage = ({ trip }) => {
     return initial
   })
   const [tripCities, setTripCities] = useState([])
+  const { setBackgroundMapCities } = useTravelMode()
 
   // Load cities for multi-city context (supports background map)
   useEffect(() => {
     const loadCities = async () => {
       if (!trip?.id) {
         setTripCities([])
+        setBackgroundMapCities([])
         return
       }
 
       try {
         const cities = await tripCityService.getByTrip(trip.id)
         setTripCities(cities || [])
+        setBackgroundMapCities(cities || [])
       } catch (error) {
         console.error('Error loading cities for PackingPage map:', error)
         setTripCities([])
+        setBackgroundMapCities([])
       }
     }
 
@@ -257,7 +261,6 @@ const PackingPage = ({ trip }) => {
 
   return (
     <div className="packing-page">
-      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
       {/* Progress Header */}
       <motion.div
         className="travel-glass-card packing-progress"

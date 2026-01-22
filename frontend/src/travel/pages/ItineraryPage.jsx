@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
+import { useTravelMode } from '../context/TravelModeContext'
 import {
   FiPlus,
   FiCalendar,
@@ -21,7 +22,6 @@ import {
 } from 'react-icons/fi'
 import { RiFlightTakeoffLine, RiPlaneLine } from 'react-icons/ri'
 import { itineraryService, uploadTravelFile, savedPlaceService, tripCityService } from '../services/travelApi'
-import TravelBackgroundMap from '../components/TravelBackgroundMap'
 
 import { ITINERARY_TYPES } from '../utils/travelConstants'
 import DatePicker from '../components/DatePicker'
@@ -50,21 +50,25 @@ const ItineraryPage = ({ trip }) => {
   const [editingEvent, setEditingEvent] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
   const [tripCities, setTripCities] = useState([])
+  const { setBackgroundMapCities } = useTravelMode()
 
   // Load cities for multi-city context (supports background map)
   useEffect(() => {
     const loadCities = async () => {
       if (!trip?.id) {
         setTripCities([])
+        setBackgroundMapCities([])
         return
       }
 
       try {
         const cities = await tripCityService.getByTrip(trip.id)
         setTripCities(cities || [])
+        setBackgroundMapCities(cities || [])
       } catch (error) {
         console.error('Error loading cities for ItineraryPage map:', error)
         setTripCities([])
+        setBackgroundMapCities([])
       }
     }
 
@@ -211,10 +215,12 @@ const ItineraryPage = ({ trip }) => {
 
   if (!trip) {
     return (
-      <div className="itinerary-page empty-state">
-        <FiCalendar size={48} />
-        <h3>{t('travel.itinerary.noTrip', 'No Trip Selected')}</h3>
-        <p>{t('travel.itinerary.createTripFirst', 'Create a trip to start planning your itinerary')}</p>
+      <div className="itinerary-page empty-state" style={{ background: 'transparent', boxShadow: 'none', border: 'none', minHeight: '50vh', backdropFilter: 'none', WebkitBackdropFilter: 'none', padding: 0 }}>
+        <FiCalendar size={40} style={{ color: 'var(--travel-accent, #eab308)', opacity: 0.9, marginBottom: '1rem' }} />
+        <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{t('travel.itinerary.noTrip', 'No Trip Selected')}</h3>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '300px', margin: '0 auto' }}>
+          {t('travel.itinerary.createTripFirst', 'Create a trip to start planning your itinerary')}
+        </p>
       </div>
     )
   }
@@ -235,7 +241,6 @@ const ItineraryPage = ({ trip }) => {
 
   return (
     <div className="itinerary-page">
-      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
       {/* Header */}
       <div className="itinerary-header">
         <div className="header-info">

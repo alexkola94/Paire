@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
-import TravelBackgroundMap from '../components/TravelBackgroundMap'
+import { useTravelMode } from '../context/TravelModeContext'
 
 import {
   FiPlus,
@@ -546,10 +546,12 @@ const DocumentsPage = ({ trip }) => {
 
   if (!trip) {
     return (
-      <div className="documents-page empty-state">
-        <FiFile size={48} />
-        <h3>{t('travel.documents.noTrip', 'No Trip Selected')}</h3>
-        <p>{t('travel.documents.createTripFirst', 'Create a trip to store your documents')}</p>
+      <div className="documents-page empty-state" style={{ background: 'transparent', boxShadow: 'none', border: 'none', minHeight: '50vh' }}>
+        <FiFile size={40} style={{ color: 'var(--travel-accent, #eab308)', opacity: 0.9, marginBottom: '1rem' }} />
+        <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{t('travel.documents.noTrip', 'No Trip Selected')}</h3>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '300px', margin: '0 auto' }}>
+          {t('travel.documents.createTripFirst', 'Create a trip to store your documents')}
+        </p>
       </div>
     )
   }
@@ -570,7 +572,6 @@ const DocumentsPage = ({ trip }) => {
 
   return (
     <div className="documents-page">
-      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
       {/* Compact travel advisory context above documents.
           For multi-country trips this card now supports left/right navigation
           between countries. */}

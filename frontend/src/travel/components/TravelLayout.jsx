@@ -13,7 +13,7 @@ import { fetchStays, getZoomBasedSettings } from '../services/discoveryService'
 import { FiEye, FiMap, FiX } from 'react-icons/fi'
 import '../styles/TravelLayout.css'
 import '../styles/TravelLightTheme.css'
-import '../styles/TravelPortal.css'
+import TravelBackgroundMap from './TravelBackgroundMap'
 
 // Lazy load Discovery components
 const DiscoveryMap = lazy(() => import('./discovery/DiscoveryMap'))
@@ -117,7 +117,8 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
     selectPOI,
     clearSelectedPOI,
     mapViewState,
-    updateMapViewState
+    updateMapViewState,
+    backgroundMapCities
   } = useTravelMode()
 
   // POI data hook
@@ -286,22 +287,10 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
           />
         </Suspense>
       ) : (
-        <>
-          {/* Portal Root for TravelBackgroundMap to break out of motion.main transforms */}
-          <div id="travel-map-portal" className="travel-map-container" style={{ zIndex: 0 }} />
-
-          {staticMapUrl && (
-            <div className="travel-map-container">
-              <img
-                src={staticMapUrl}
-                alt="Trip destination map"
-                className={`map-bg-image ${mapLoaded ? 'loaded' : ''}`}
-                onLoad={() => setMapLoaded(true)}
-              />
-              <div className="map-bg-overlay" />
-            </div>
-          )}
-        </>
+        <TravelBackgroundMap
+          trip={activeTrip}
+          availableCities={backgroundMapCities}
+        />
       )}
 
       {/* Header - Always visible, collapses in Discovery Mode */}

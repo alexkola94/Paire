@@ -40,11 +40,12 @@ export const TravelModeProvider = ({ children }) => {
   })
   const [selectedPOI, setSelectedPOI] = useState(null)
   const [activeTripCities, setActiveTripCities] = useState([])
+  const [backgroundMapCities, setBackgroundMapCities] = useState([])
   const [mapViewState, setMapViewState] = useState(null)
 
   // Scroll positions preservation for Discovery Mode
   const scrollPositionsRef = useRef({})
-  
+
   // Track previous session state to detect login
   const previousSessionRef = useRef(null)
 
@@ -458,7 +459,10 @@ export const TravelModeProvider = ({ children }) => {
     clearSelectedPOI,
     mapViewState,
     updateMapViewState,
+    updateMapViewState,
     activeTripCities,
+    backgroundMapCities,
+    setBackgroundMapCities,
 
     // Online status
     isOnline,

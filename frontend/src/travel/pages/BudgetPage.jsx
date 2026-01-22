@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
-import TravelBackgroundMap from '../components/TravelBackgroundMap'
+import { useTravelMode } from '../context/TravelModeContext'
 
 import {
   FiPlus,
@@ -44,6 +44,7 @@ const BudgetPage = ({ trip }) => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [tripCities, setTripCities] = useState([])
+  const { setBackgroundMapCities } = useTravelMode()
 
   // Load cities for multi-city context (supports background map)
   useEffect(() => {
@@ -58,9 +59,11 @@ const BudgetPage = ({ trip }) => {
       try {
         const cities = await tripCityService.getByTrip(trip.id)
         setTripCities(cities || [])
+        setBackgroundMapCities(cities || [])
       } catch (error) {
         console.error('Error loading cities for BudgetPage map:', error)
         setTripCities([])
+        setBackgroundMapCities([])
       }
     }
 
@@ -170,10 +173,12 @@ const BudgetPage = ({ trip }) => {
 
   if (!trip) {
     return (
-      <div className="budget-page empty-state">
-        <FiDollarSign size={48} />
-        <h3>{t('travel.budget.noTrip', 'No Trip Selected')}</h3>
-        <p>{t('travel.budget.createTripFirst', 'Create a trip to start tracking expenses')}</p>
+      <div className="budget-page empty-state" style={{ background: 'transparent', boxShadow: 'none', border: 'none', minHeight: '50vh' }}>
+        <FiDollarSign size={40} style={{ color: 'var(--travel-accent, #eab308)', opacity: 0.9, marginBottom: '1rem' }} />
+        <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{t('travel.budget.noTrip', 'No Trip Selected')}</h3>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '300px', margin: '0 auto' }}>
+          {t('travel.budget.createTripFirst', 'Create a trip to start tracking expenses')}
+        </p>
       </div>
     )
   }
@@ -194,7 +199,6 @@ const BudgetPage = ({ trip }) => {
 
   return (
     <div className="budget-page">
-      <TravelBackgroundMap trip={trip} availableCities={tripCities} />
       {/* Budget Overview Card */}
       <motion.div
         className="travel-glass-card budget-overview"

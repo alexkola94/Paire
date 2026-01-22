@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -34,7 +34,6 @@ import LayoutSettingsModal from '../components/LayoutSettingsModal'
 import ConfirmationModal from '../../components/ConfirmationModal'
 import { useTripLayout } from '../hooks/useTripLayout'
 import '../styles/TravelHome.css'
-import TravelBackgroundMap from '../components/TravelBackgroundMap'
 
 // Gentle animation variants - slower, smoother for calm feeling
 const containerVariants = {
@@ -66,7 +65,7 @@ const cardVariants = {
  */
 const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSettingsOpen }) => {
   const { t, i18n } = useTranslation()
-  const { selectTrip, loadTrips } = useTravelMode()
+  const { selectTrip, loadTrips, setBackgroundMapCities } = useTravelMode()
   const { enterDiscoveryMode, canEnterDiscoveryMode } = useDiscoveryMode()
   const [showSetup, setShowSetup] = useState(false)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
@@ -1120,11 +1119,11 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
     )
   }
 
-  // If no trip, show a calming create trip prompt
+  // When the user is in the calm empty state we still want to ask
+  // whether they prefer a single‑destination or multi‑city trip
   if (!activeTrip && !loading) {
     return (
       <div className="travel-home no-trip">
-        <TravelBackgroundMap trip={null} availableCities={[]} />
         <motion.div
           className="no-trip-content"
           initial={{ opacity: 0, y: 10 }}
@@ -1898,7 +1897,6 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
       initial="hidden"
       animate="visible"
     >
-      <TravelBackgroundMap trip={activeTrip} availableCities={tripCities} />
       {/* Greeting - calm, personal touch */}
       <motion.div className="greeting-section" variants={cardVariants}>
         <span className="greeting-text">{getGreeting()}</span>
