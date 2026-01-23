@@ -48,6 +48,11 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<TripLayoutPreferences> TripLayoutPreferences { get; set; }
         public DbSet<SavedPlace> SavedPlaces { get; set; }
 
+        // Travel Notification DbSets
+        public DbSet<TravelNotificationPreferences> TravelNotificationPreferences { get; set; }
+        public DbSet<PushSubscription> PushSubscriptions { get; set; }
+        public DbSet<TravelNotification> TravelNotifications { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -868,6 +873,97 @@ namespace YouAndMeExpensesAPI.Data
                 entity.HasIndex(e => e.TripId);
                 entity.HasIndex(e => new { e.TripId, e.UserId });
                 entity.HasIndex(e => new { e.TripId, e.PoiId });
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany()
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // TRAVEL NOTIFICATION PREFERENCES TABLE
+            // ============================================
+            modelBuilder.Entity<TravelNotificationPreferences>(entity =>
+            {
+                entity.ToTable("travel_notification_preferences");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.TripId).HasColumnName("trip_id");
+                entity.Property(e => e.DocumentExpiryEnabled).HasColumnName("document_expiry_enabled").HasDefaultValue(true);
+                entity.Property(e => e.DocumentExpiryDays).HasColumnName("document_expiry_days").HasMaxLength(50).HasDefaultValue("30,14,7,1");
+                entity.Property(e => e.BudgetAlertsEnabled).HasColumnName("budget_alerts_enabled").HasDefaultValue(true);
+                entity.Property(e => e.BudgetThreshold75Enabled).HasColumnName("budget_threshold_75_enabled").HasDefaultValue(true);
+                entity.Property(e => e.BudgetThreshold90Enabled).HasColumnName("budget_threshold_90_enabled").HasDefaultValue(true);
+                entity.Property(e => e.BudgetExceededEnabled).HasColumnName("budget_exceeded_enabled").HasDefaultValue(true);
+                entity.Property(e => e.ItineraryRemindersEnabled).HasColumnName("itinerary_reminders_enabled").HasDefaultValue(true);
+                entity.Property(e => e.ItineraryReminderHours).HasColumnName("itinerary_reminder_hours").HasMaxLength(50).HasDefaultValue("24,6,1");
+                entity.Property(e => e.PackingProgressEnabled).HasColumnName("packing_progress_enabled").HasDefaultValue(true);
+                entity.Property(e => e.TripApproachingEnabled).HasColumnName("trip_approaching_enabled").HasDefaultValue(true);
+                entity.Property(e => e.TripApproachingDays).HasColumnName("trip_approaching_days").HasDefaultValue(7);
+                entity.Property(e => e.EmailEnabled).HasColumnName("email_enabled").HasDefaultValue(true);
+                entity.Property(e => e.PushEnabled).HasColumnName("push_enabled").HasDefaultValue(true);
+                entity.Property(e => e.InAppEnabled).HasColumnName("in_app_enabled").HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => new { e.UserId, e.TripId }).IsUnique();
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany()
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // PUSH SUBSCRIPTIONS TABLE
+            // ============================================
+            modelBuilder.Entity<PushSubscription>(entity =>
+            {
+                entity.ToTable("push_subscriptions");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.Endpoint).HasColumnName("endpoint").IsRequired();
+                entity.Property(e => e.P256dhKey).HasColumnName("p256dh_key").IsRequired();
+                entity.Property(e => e.AuthKey).HasColumnName("auth_key").IsRequired();
+                entity.Property(e => e.UserAgent).HasColumnName("user_agent").HasMaxLength(500);
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.LastUsedAt).HasColumnName("last_used_at");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => new { e.UserId, e.IsActive });
+            });
+
+            // ============================================
+            // TRAVEL NOTIFICATIONS TABLE
+            // ============================================
+            modelBuilder.Entity<TravelNotification>(entity =>
+            {
+                entity.ToTable("travel_notifications");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.TripId).HasColumnName("trip_id");
+                entity.Property(e => e.Type).HasColumnName("type").HasConversion<string>();
+                entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.Body).HasColumnName("body").IsRequired();
+                entity.Property(e => e.Priority).HasColumnName("priority").HasMaxLength(20).HasDefaultValue("medium");
+                entity.Property(e => e.DataJson).HasColumnName("data_json");
+                entity.Property(e => e.ReferenceId).HasColumnName("reference_id");
+                entity.Property(e => e.ReferenceType).HasColumnName("reference_type").HasMaxLength(50);
+                entity.Property(e => e.EmailSent).HasColumnName("email_sent").HasDefaultValue(false);
+                entity.Property(e => e.EmailSentAt).HasColumnName("email_sent_at");
+                entity.Property(e => e.PushSent).HasColumnName("push_sent").HasDefaultValue(false);
+                entity.Property(e => e.PushSentAt).HasColumnName("push_sent_at");
+                entity.Property(e => e.ReadAt).HasColumnName("read_at");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.TripId);
+                entity.HasIndex(e => new { e.UserId, e.ReadAt });
 
                 entity.HasOne(e => e.Trip)
                     .WithMany()

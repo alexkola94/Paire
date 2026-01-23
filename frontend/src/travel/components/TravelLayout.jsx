@@ -429,18 +429,7 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
               {children}
 
               {/* Static Explore Button for non-home pages */}
-              {canEnterDiscovery && activePage !== 'home' && !hasOpenModals && !shouldHideNav && (
-                <div className="static-explore-container">
-                  <motion.button
-                    className="immersive-toggle static"
-                    onClick={handleToggleClick}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <FiMap size={20} />
-                    <span className="toggle-label">{t('travel.discovery.explore', 'Explore Map')}</span>
-                  </motion.button>
-                </div>
-              )}
+
             </div>
           </motion.main>
         )}

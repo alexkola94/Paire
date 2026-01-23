@@ -368,6 +368,7 @@ builder.Services.AddHttpClient<IEmailService, EmailService>(client =>
 // =====================================================
 
 builder.Services.AddScoped<IReminderService, ReminderService>();
+builder.Services.AddScoped<ITravelNotificationService, TravelNotificationService>();
 
 // Register Analytics Service
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
@@ -483,6 +484,9 @@ builder.Services.AddHttpClient();
 
 // Enable daily reminder checks at 9 AM
 builder.Services.AddHostedService<ReminderBackgroundService>();
+
+// Enable hourly travel notification checks
+builder.Services.AddHostedService<TravelNotificationBackgroundService>();
 
 // Uncomment the line below to enable automatic bank transaction sync every 6 hours
 // builder.Services.AddHostedService<BankTransactionSyncBackgroundService>();

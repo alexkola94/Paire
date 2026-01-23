@@ -1,0 +1,72 @@
+.notification-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-badge:hover {
+  background: var(--hover-background, rgba(0, 0, 0, 0.05));
+}
+
+.notification-badge:active {
+  transform: scale(0.95);
+}
+
+.notification-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--text-secondary, #6b7280);
+  transition: color 0.2s ease;
+}
+
+.notification-badge:hover .notification-icon {
+  color: var(--text-primary, #1f2937);
+}
+
+.notification-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--notification-badge, #ef4444);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Dark mode */
+[data-theme="dark"] .notification-badge:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .notification-icon {
+  color: var(--text-secondary-dark, #9ca3af);
+}
+
+[data-theme="dark"] .notification-badge:hover .notification-icon {
+  color: var(--text-primary-dark, #f9fafb);
+}

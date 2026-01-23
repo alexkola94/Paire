@@ -1238,11 +1238,15 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
   const hasEditedPromptRef = useRef(false)
 
   // Auto-fill origin country the first time the dialog opens, if we can infer it.
+  // Auto-fill origin country the first time the dialog opens, if we can infer it.
+  const hasAutoFilledRef = useRef(false)
   useEffect(() => {
-    if (!originCountry) {
+    // Only auto-fill if we haven't done it yet and the field is empty
+    if (!originCountry && !hasAutoFilledRef.current) {
       const inferred = detectDefaultOriginCountry()
       if (inferred) {
         setOriginCountry(inferred)
+        hasAutoFilledRef.current = true
       }
     }
   }, [originCountry])

@@ -1,7 +1,8 @@
-import { useState, Suspense, lazy } from 'react'
+import { useState, Suspense, lazy, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTravelMode } from './context/TravelModeContext'
 import { useTheme } from '../context/ThemeContext'
+import { NotificationProvider, useNotifications } from './context/NotificationContext'
 import TravelLayout from './components/TravelLayout'
 import LogoLoader from '../components/LogoLoader'
 
@@ -12,6 +13,7 @@ const ItineraryPage = lazy(() => import('./pages/ItineraryPage'))
 const PackingPage = lazy(() => import('./pages/PackingPage'))
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'))
 const ExplorePage = lazy(() => import('./pages/ExplorePage'))
+const TravelNotificationSettings = lazy(() => import('./pages/TravelNotificationSettings'))
 
 // Page transition variants
 const pageVariants = {
@@ -35,19 +37,26 @@ const pageVariants = {
 }
 
 /**
- * Travel App Entry Point
- * Full-screen travel mode with internal navigation
+ * Inner Travel App Component
+ * Separated to allow notification context usage
  */
-const TravelApp = () => {
+const TravelAppContent = () => {
   const [activePage, setActivePage] = useState('home')
   const [isLayoutSettingsOpen, setIsLayoutSettingsOpen] = useState(false)
   const { activeTrip, tripLoading } = useTravelMode()
   const { theme } = useTheme()
+  const { setTripContext } = useNotifications()
 
   // Dynamic loader accent class based on current theme
-  // Keeps logic simple and lets CSS handle the actual color tokens.
   const loaderAccentClass =
     theme === 'dark' ? 'logo-loader-accent--dark' : 'logo-loader-accent--light'
+
+  // Sync notification context with active trip
+  useEffect(() => {
+    if (activeTrip?.id) {
+      setTripContext(activeTrip.id)
+    }
+  }, [activeTrip?.id, setTripContext])
 
   // Map page IDs to components
   const pageComponents = {
@@ -56,7 +65,8 @@ const TravelApp = () => {
     itinerary: ItineraryPage,
     packing: PackingPage,
     documents: DocumentsPage,
-    explore: ExplorePage
+    explore: ExplorePage,
+    notifications: TravelNotificationSettings
   }
 
   const ActiveComponent = pageComponents[activePage] || TravelHome
@@ -109,6 +119,19 @@ const TravelApp = () => {
         </AnimatePresence>
       </Suspense>
     </TravelLayout>
+  )
+}
+
+/**
+ * Travel App Entry Point
+ * Full-screen travel mode with internal navigation
+ * Wrapped with NotificationProvider for notification state management
+ */
+const TravelApp = () => {
+  return (
+    <NotificationProvider>
+      <TravelAppContent />
+    </NotificationProvider>
   )
 }
 
