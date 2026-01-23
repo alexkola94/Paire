@@ -53,15 +53,32 @@ const DiscoveryMap = memo(({
   // Initialize view state:
   // - For multi-city trips, center between all cities (and trip center and home) with an appropriate zoom
   // - Otherwise, fall back to single trip center
+  // Initialize view state:
+  // - For multi-city trips, center between all cities (and trip center and home) with an appropriate zoom
+  // - Otherwise, fall back to single trip center
   useEffect(() => {
     if (mapViewState) return
 
-    const citiesWithCoords = (activeTripCities || []).filter(
-      c => c.latitude != null && c.longitude != null
-    )
+    // Safely parse trip coordinates
+    const tripLat = activeTrip?.latitude != null ? Number(activeTrip.latitude) : null
+    const tripLng = activeTrip?.longitude != null ? Number(activeTrip.longitude) : null
+
+    // Safely parse city coordinates
+    const citiesWithCoords = (activeTripCities || []).reduce((acc, c) => {
+      const lat = c.latitude != null ? Number(c.latitude) : null
+      const lng = c.longitude != null ? Number(c.longitude) : null
+
+      if (lat != null && !isNaN(lat) && lng != null && !isNaN(lng)) {
+        acc.push({ ...c, latitude: lat, longitude: lng })
+      }
+      return acc
+    }, [])
 
     // Helper to update viewState in one place
     const setView = (latitude, longitude, zoom) => {
+      // Final safety check
+      if (isNaN(latitude) || isNaN(longitude)) return
+
       updateMapViewState({
         latitude,
         longitude,
@@ -81,14 +98,18 @@ const DiscoveryMap = memo(({
 
       // Include home location if available
       if (homeLocation) {
-        lats.push(homeLocation.latitude)
-        lngs.push(homeLocation.longitude)
+        const homeLat = Number(homeLocation.latitude)
+        const homeLng = Number(homeLocation.longitude)
+        if (!isNaN(homeLat) && !isNaN(homeLng)) {
+          lats.push(homeLat)
+          lngs.push(homeLng)
+        }
       }
 
       // Optionally include trip center if available
-      if (activeTrip.latitude && activeTrip.longitude) {
-        lats.push(activeTrip.latitude)
-        lngs.push(activeTrip.longitude)
+      if (tripLat != null && !isNaN(tripLat) && tripLng != null && !isNaN(tripLng)) {
+        lats.push(tripLat)
+        lngs.push(tripLng)
       }
 
       const minLat = Math.min(...lats)
@@ -113,8 +134,8 @@ const DiscoveryMap = memo(({
     }
 
     // Default: center on single trip location
-    if (activeTrip?.latitude && activeTrip?.longitude) {
-      setView(activeTrip.latitude, activeTrip.longitude, DISCOVERY_MAP_CONFIG.defaultZoom)
+    if (tripLat != null && !isNaN(tripLat) && tripLng != null && !isNaN(tripLng)) {
+      setView(tripLat, tripLng, DISCOVERY_MAP_CONFIG.defaultZoom)
     }
   }, [activeTrip, activeTripCities, homeLocation, mapViewState, updateMapViewState])
 
@@ -259,7 +280,12 @@ const DiscoveryMap = memo(({
     )
   }
 
-  if (!mapViewState && (!activeTrip?.latitude || !activeTrip?.longitude)) {
+  // Ensure activeTrip coordinates are numbers
+  const tripLat = activeTrip?.latitude != null ? Number(activeTrip.latitude) : 0
+  const tripLng = activeTrip?.longitude != null ? Number(activeTrip.longitude) : 0
+  const isTripLocValid = !isNaN(tripLat) && !isNaN(tripLng) && (tripLat !== 0 || tripLng !== 0)
+
+  if (!mapViewState && !isTripLocValid) {
     return (
       <div className="discovery-map-error">
         <p>No location available for map.</p>
@@ -267,17 +293,22 @@ const DiscoveryMap = memo(({
     )
   }
 
-  const viewState = mapViewState || {
-    latitude: activeTrip?.latitude || 0,
-    longitude: activeTrip?.longitude || 0,
+  const viewState = mapViewState ? { ...mapViewState } : {
+    latitude: isTripLocValid ? tripLat : 0,
+    longitude: isTripLocValid ? tripLng : 0,
     zoom: DISCOVERY_MAP_CONFIG.defaultZoom
   }
 
   // Safety check to prevent NaN passing to Mapbox
+  // Force conversion to number one last time
+  viewState.latitude = Number(viewState.latitude)
+  viewState.longitude = Number(viewState.longitude)
+
   if (isNaN(viewState.latitude) || isNaN(viewState.longitude)) {
     console.warn('DiscoveryMap: Invalid viewState detected. Falling back to default.', viewState)
-    viewState.latitude = activeTrip?.latitude || 0
-    viewState.longitude = activeTrip?.longitude || 0
+    viewState.latitude = isTripLocValid ? tripLat : 0
+    viewState.longitude = isTripLocValid ? tripLng : 0
+    // If still NaN, default to 0,0
     if (isNaN(viewState.latitude)) viewState.latitude = 0
     if (isNaN(viewState.longitude)) viewState.longitude = 0
   }
