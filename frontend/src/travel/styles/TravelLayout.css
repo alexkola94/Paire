@@ -935,28 +935,42 @@
    Responsive Adjustments
    ================================ */
 
-/* Mobile optimizations for Greek text */
+/* Mobile optimizations */
 @media (max-width: 480px) {
   .travel-header {
     padding: var(--spacing-xs) var(--spacing-sm);
-    min-height: 50px;
+    min-height: 48px;
   }
 
   .travel-header-content {
-    gap: 4px;
-    min-height: 50px;
+    gap: 6px;
+    min-height: 48px;
   }
 
+  /* Compact exit button - icon only on very small screens */
   .travel-exit-btn {
-    padding: 6px 8px;
+    padding: 6px 10px;
     font-size: 0.6875rem;
     gap: 4px;
-    min-height: 32px;
+    min-height: 34px;
+    min-width: 34px;
   }
 
   .travel-exit-btn svg {
     width: 18px;
     height: 18px;
+  }
+
+  /* Hide exit text on mobile */
+  .travel-exit-btn .exit-text {
+    display: none !important;
+  }
+
+  /* Trip info takes more space */
+  .travel-header-info {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
   }
 
   .trip-name {
@@ -983,10 +997,12 @@
     flex-shrink: 0;
   }
 
+  /* Smaller badge */
   .trip-status-badge {
-    font-size: 0.625rem;
-    padding: 2px 6px;
+    font-size: 0.5625rem;
+    padding: 2px 5px;
     line-height: 1.2;
+    white-space: nowrap;
   }
 
   .sync-indicator {
@@ -999,8 +1015,54 @@
     height: 14px;
   }
 
+  /* Compact actions */
   .travel-header-actions {
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Smaller theme toggle */
+  .travel-header-actions .theme-toggle {
+    padding: 6px !important;
+    margin-right: 4px !important;
+  }
+
+  .travel-header-actions .theme-toggle svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Extra small screens (< 360px) */
+@media (max-width: 360px) {
+  .travel-header {
+    padding: 4px 8px;
+    min-height: 44px;
+  }
+
+  .travel-header-content {
     gap: 4px;
+  }
+
+  .travel-exit-btn {
+    padding: 5px 8px;
+    min-height: 30px;
+    min-width: 30px;
+  }
+
+  .travel-exit-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .trip-status-badge {
+    font-size: 0.5rem;
+    padding: 1px 4px;
+  }
+
+  .travel-header-actions .theme-toggle {
+    padding: 4px !important;
+    margin-right: 2px !important;
   }
 }
 

@@ -19,6 +19,7 @@ import { packingService, tripCityService } from '../services/travelApi'
 import { PACKING_CATEGORIES } from '../utils/travelConstants'
 import { generatePackingSuggestions } from '../utils/packingSuggestions'
 import '../styles/Packing.css'
+import db from '../services/travelDb'
 
 /**
  * Packing Page Component
@@ -143,27 +144,61 @@ const PackingPage = ({ trip }) => {
 
   // Toggle item checked
   const handleToggleItem = async (item) => {
+    // Optimistic update
+    const previousItems = [...items]
+    const newItemState = { ...item, isChecked: !item.isChecked }
+
+    // Update UI immediately
+    setItems(prev => prev.map(i => i.id === item.id ? newItemState : i))
+
     try {
-      const updated = await packingService.toggleChecked(trip.id, item.id, !item.isChecked)
-      setItems(prev => prev.map(i => i.id === item.id ? { ...i, isChecked: !i.isChecked } : i))
+      // FIX: Send full object to prevent backend from nulling out other fields
+      // The backend uses a full update strategy, so partial updates result in null fields
+      const updatePayload = {
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        isEssential: item.isEssential,
+        isChecked: !item.isChecked,
+        notes: item.notes
+      }
+
+      await packingService.update(trip.id, item.id, updatePayload)
+
+      // Invalidate TravelHome cache
+      db.apiCache.where('key').equals(`trip-summary-${trip.id}`).delete().catch(() => { })
 
       // Dispatch event to invalidate cache in TravelHome (packing progress changes)
       window.dispatchEvent(new CustomEvent('travel:item-updated', { detail: { type: 'packing', tripId: trip.id } }))
     } catch (error) {
       console.error('Error toggling item:', error)
+      // Revert on error
+      setItems(previousItems)
     }
   }
 
   // Delete item
   const handleDeleteItem = async (itemId) => {
+    const itemToDelete = items.find(i => i.id === itemId)
+    if (!itemToDelete) return
+
+    const previousItems = [...items]
+
+    // Optimistic delete
+    setItems(prev => prev.filter(i => i.id !== itemId))
+
     try {
       await packingService.delete(trip.id, itemId)
-      setItems(prev => prev.filter(i => i.id !== itemId))
+
+      // Invalidate TravelHome cache
+      db.apiCache.where('key').equals(`trip-summary-${trip.id}`).delete().catch(() => { })
 
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'packing', tripId: trip.id } }))
     } catch (error) {
       console.error('Error deleting item:', error)
+      // Revert on error
+      setItems(previousItems)
     }
   }
 
@@ -189,12 +224,14 @@ const PackingPage = ({ trip }) => {
     setSaving(true)
 
     try {
-      // Call API in background
-      await packingService.create(trip.id, itemData)
+      // Call API
+      const createdItem = await packingService.create(trip.id, itemData)
 
-      // Refresh items list to get real item from server
-      const refreshedItems = await packingService.getByTrip(trip.id)
-      setItems(refreshedItems || [])
+      // Replace optimistic item with real item from server
+      setItems(prev => prev.map(i => i.id === tempId ? createdItem : i))
+
+      // Invalidate TravelHome cache
+      db.apiCache.where('key').equals(`trip-summary-${trip.id}`).delete().catch(() => { })
 
       // Dispatch event to invalidate cache in TravelHome
       window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'packing', tripId: trip.id } }))
@@ -202,7 +239,6 @@ const PackingPage = ({ trip }) => {
       console.error('Error adding item:', error)
       // Remove optimistic item on error
       setItems(prev => prev.filter(i => i.id !== tempId))
-      // TODO: Show error message to user (toast or inline)
     } finally {
       setSaving(false)
     }

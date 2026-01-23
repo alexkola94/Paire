@@ -324,7 +324,7 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
 
       {/* Header - Always visible, collapses in Discovery Mode */}
       {!shouldHideNav && (
-        <TravelHeader trip={activeTrip} syncStatus={syncStatus} isDiscoveryMode={isDiscoveryMode} />
+        <TravelHeader trip={activeTrip} syncStatus={syncStatus} isDiscoveryMode={isDiscoveryMode} onNavigate={onNavigate} />
       )}
 
       {/* Discovery Mode UI Layer */}

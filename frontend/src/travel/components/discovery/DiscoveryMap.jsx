@@ -33,6 +33,8 @@ const DiscoveryMap = memo(({
   const isLongPress = useRef(false)
   const touchStartTime = useRef(0)
   const [homeLocation, setHomeLocation] = useState(null)
+  const [isMapReady, setIsMapReady] = useState(false)
+  const isInitializing = useRef(false)
 
   // Get user's current location (Home) on mount
   useEffect(() => {
@@ -50,14 +52,23 @@ const DiscoveryMap = memo(({
     )
   }, [])
 
-  // Initialize view state:
-  // - For multi-city trips, center between all cities (and trip center and home) with an appropriate zoom
-  // - Otherwise, fall back to single trip center
+  // Reset map ready state when activeTrip changes to allow re-initialization
+  useEffect(() => {
+    return () => {
+      setIsMapReady(false)
+      isInitializing.current = false
+    }
+  }, [activeTrip?.id])
+
   // Initialize view state:
   // - For multi-city trips, center between all cities (and trip center and home) with an appropriate zoom
   // - Otherwise, fall back to single trip center
   useEffect(() => {
-    if (mapViewState) return
+    // If view state is already initialized or initialization is in progress, do not re-calculate.
+    // This prevents an infinite loop where setting the view triggers this effect again.
+    if (mapViewState || isInitializing.current) return
+
+    isInitializing.current = true
 
     // Safely parse trip coordinates
     const tripLat = activeTrip?.latitude != null ? Number(activeTrip.latitude) : null
@@ -74,10 +85,13 @@ const DiscoveryMap = memo(({
       return acc
     }, [])
 
-    // Helper to update viewState in one place
+    // Helper to update viewState in one place with comprehensive validation
     const setView = (latitude, longitude, zoom) => {
-      // Final safety check
-      if (isNaN(latitude) || isNaN(longitude)) return
+      // Final safety check - must be finite numbers (not NaN, Infinity, or -Infinity)
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isFinite(zoom)) {
+        console.warn('DiscoveryMap: setView received invalid values', { latitude, longitude, zoom })
+        return
+      }
 
       updateMapViewState({
         latitude,
@@ -100,22 +114,35 @@ const DiscoveryMap = memo(({
       if (homeLocation) {
         const homeLat = Number(homeLocation.latitude)
         const homeLng = Number(homeLocation.longitude)
-        if (!isNaN(homeLat) && !isNaN(homeLng)) {
+        if (Number.isFinite(homeLat) && Number.isFinite(homeLng)) {
           lats.push(homeLat)
           lngs.push(homeLng)
         }
       }
 
       // Optionally include trip center if available
-      if (tripLat != null && !isNaN(tripLat) && tripLng != null && !isNaN(tripLng)) {
+      if (Number.isFinite(tripLat) && Number.isFinite(tripLng)) {
         lats.push(tripLat)
         lngs.push(tripLng)
+      }
+
+      // Guard against empty arrays (would cause Infinity from Math.min/max)
+      if (lats.length === 0 || lngs.length === 0) {
+        console.warn('DiscoveryMap: No valid coordinates for multi-city view')
+        return
       }
 
       const minLat = Math.min(...lats)
       const maxLat = Math.max(...lats)
       const minLng = Math.min(...lngs)
       const maxLng = Math.max(...lngs)
+
+      // Verify calculated values are finite
+      if (!Number.isFinite(minLat) || !Number.isFinite(maxLat) ||
+          !Number.isFinite(minLng) || !Number.isFinite(maxLng)) {
+        console.warn('DiscoveryMap: Invalid bounds calculated', { minLat, maxLat, minLng, maxLng })
+        return
+      }
 
       const centerLat = (minLat + maxLat) / 2
       const centerLng = (minLng + maxLng) / 2
@@ -134,27 +161,39 @@ const DiscoveryMap = memo(({
     }
 
     // Default: center on single trip location
-    if (tripLat != null && !isNaN(tripLat) && tripLng != null && !isNaN(tripLng)) {
-      setView(tripLat, tripLng, DISCOVERY_MAP_CONFIG.defaultZoom)
+    if (Number.isFinite(tripLat) && Number.isFinite(tripLng)) {
+      setView(tripLat, tripLng, DISCOVERY_MAP_CONFIG.defaultZoom || 12)
     }
-  }, [activeTrip, activeTripCities, homeLocation, mapViewState, updateMapViewState])
+  }, [activeTrip, activeTripCities, homeLocation, updateMapViewState]) // REMOVED mapViewState from dependencies to break loop
 
   /**
-   * Handle map move/zoom events
+   * Handle map move end - sync to context
    */
-  const handleMove = useCallback((evt) => {
-    // Basic validation
-    if (!evt.viewState || isNaN(evt.viewState.latitude) || isNaN(evt.viewState.longitude)) {
-      console.warn('DiscoveryMap: Invalid viewState in onMove ignored', evt.viewState)
-      return
-    }
-
-    updateMapViewState(evt.viewState)
+  const handleMoveEnd = useCallback((evt) => {
     // Cancel long press on move
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
     }
+
+    const vs = evt.viewState
+    if (!vs ||
+        !Number.isFinite(vs.latitude) ||
+        !Number.isFinite(vs.longitude) ||
+        !Number.isFinite(vs.zoom)) {
+      return
+    }
+
+    // Clamp values to valid Mapbox ranges before updating context
+    const clamp = (val, min, max) => Math.max(min, Math.min(max, val))
+
+    updateMapViewState({
+      latitude: clamp(vs.latitude, -85, 85),
+      longitude: clamp(vs.longitude, -180, 180),
+      zoom: clamp(vs.zoom, 0, 22),
+      pitch: clamp(Number.isFinite(vs.pitch) ? vs.pitch : 0, 0, 85),
+      bearing: clamp(Number.isFinite(vs.bearing) ? vs.bearing : 0, -180, 180)
+    })
   }, [updateMapViewState])
 
   /**
@@ -162,8 +201,8 @@ const DiscoveryMap = memo(({
    */
   const handleLoad = useCallback(() => {
     if (mapRef.current) {
-      // Map is ready
-      console.log('Discovery Map loaded')
+      setIsMapReady(true)
+      console.log('Discovery Map loaded and ready')
     }
   }, [])
 
@@ -285,32 +324,48 @@ const DiscoveryMap = memo(({
   const tripLng = activeTrip?.longitude != null ? Number(activeTrip.longitude) : 0
   const isTripLocValid = !isNaN(tripLat) && !isNaN(tripLng) && (tripLat !== 0 || tripLng !== 0)
 
+  // Show loading state while initializing to prevent freeze
   if (!mapViewState && !isTripLocValid) {
     return (
-      <div className="discovery-map-error">
-        <p>No location available for map.</p>
+      <div className="discovery-map-loading">
+        <div className="discovery-map-spinner" />
+        <p>Loading map...</p>
       </div>
     )
   }
 
-  const viewState = mapViewState ? { ...mapViewState } : {
-    latitude: isTripLocValid ? tripLat : 0,
-    longitude: isTripLocValid ? tripLng : 0,
-    zoom: DISCOVERY_MAP_CONFIG.defaultZoom
+  // Helper to validate, sanitize, and clamp a number within bounds
+  const safeNumber = (value, fallback, min = -Infinity, max = Infinity) => {
+    const num = Number(value)
+    if (!Number.isFinite(num)) return fallback
+    return Math.max(min, Math.min(max, num))
   }
 
-  // Safety check to prevent NaN passing to Mapbox
-  // Force conversion to number one last time
-  viewState.latitude = Number(viewState.latitude)
-  viewState.longitude = Number(viewState.longitude)
+  // Build viewState with comprehensive validation and bounds clamping
+  // This prevents the Mapbox matrix calculation from entering infinite recursion
+  const defaultLat = isTripLocValid ? tripLat : 40.7128 // NYC fallback
+  const defaultLng = isTripLocValid ? tripLng : -74.0060
+  const defaultZoom = DISCOVERY_MAP_CONFIG.defaultZoom || 12
 
-  if (isNaN(viewState.latitude) || isNaN(viewState.longitude)) {
-    console.warn('DiscoveryMap: Invalid viewState detected. Falling back to default.', viewState)
-    viewState.latitude = isTripLocValid ? tripLat : 0
-    viewState.longitude = isTripLocValid ? tripLng : 0
-    // If still NaN, default to 0,0
-    if (isNaN(viewState.latitude)) viewState.latitude = 0
-    if (isNaN(viewState.longitude)) viewState.longitude = 0
+  // Build initial view state with validation and clamping
+  const initialViewState = {
+    latitude: safeNumber(mapViewState?.latitude, defaultLat, -85, 85),
+    longitude: safeNumber(mapViewState?.longitude, defaultLng, -180, 180),
+    zoom: safeNumber(mapViewState?.zoom, defaultZoom, 0, 22),
+    pitch: safeNumber(mapViewState?.pitch, 0, 0, 85),
+    bearing: safeNumber(mapViewState?.bearing, 0, -180, 180)
+  }
+
+  // Final validation - if coordinates are still invalid, show loading
+  if (!Number.isFinite(initialViewState.latitude) || !Number.isFinite(initialViewState.longitude) ||
+      !Number.isFinite(initialViewState.zoom)) {
+    console.warn('DiscoveryMap: Invalid viewState after sanitization', initialViewState)
+    return (
+      <div className="discovery-map-loading">
+        <div className="discovery-map-spinner" />
+        <p>Loading map...</p>
+      </div>
+    )
   }
 
   return (
@@ -321,11 +376,11 @@ const DiscoveryMap = memo(({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Mapbox map – style is selected based on current theme for better contrast */}
+      {/* Mapbox map using UNCONTROLLED mode with initialViewState */}
       <Map
         ref={mapRef}
-        {...viewState}
-        onMove={handleMove}
+        initialViewState={initialViewState}
+        onMoveEnd={handleMoveEnd}
         onLoad={handleLoad}
         onClick={handleMapClick}
         onMouseDown={onMouseDown}
@@ -333,20 +388,17 @@ const DiscoveryMap = memo(({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         mapboxAccessToken={MAPBOX_TOKEN}
-        // Always use the "native" Mapbox style defined in MAP_STYLES,
-        // independent of the app's light / dark theme.
         mapStyle={MAP_STYLES.detailed}
         style={{ width: '100%', height: '100%' }}
         minZoom={DISCOVERY_MAP_CONFIG.minZoom}
         maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}
         attributionControl={false}
-        reuseMaps
-        scrollWheelZoom={true}
+        scrollZoom={true}
         dragPan={true}
         dragRotate={true}
         doubleClickZoom={true}
-        touchZoom={true}
-        touchRotate={true}
+        touchZoomRotate={true}
+        touchPitch={true}
         keyboard={true}
       >
         {/* Navigation controls (zoom buttons) - hidden, we use custom */}
@@ -410,10 +462,18 @@ const DiscoveryMap = memo(({
               </Marker>
             ))}
 
-        {/* POI markers */}
-        {pois.map((poi, index) => (
+        {/* POI markers - deduplicate by id/poiId to prevent duplicate key warnings */}
+        {(() => {
+          const seen = new Set()
+          return pois.filter(poi => {
+            const key = poi.id || poi.poiId
+            if (!key || seen.has(key)) return false
+            seen.add(key)
+            return true
+          })
+        })().map((poi, index) => (
           <Marker
-            key={poi.id || poi.poiId || index}
+            key={`poi-${poi.id || poi.poiId}-${index}`}
             latitude={poi.latitude}
             longitude={poi.longitude}
             anchor="bottom"
@@ -430,10 +490,18 @@ const DiscoveryMap = memo(({
           </Marker>
         ))}
 
-        {/* Accommodation/Stay markers */}
-        {stays.map((stay, index) => (
+        {/* Accommodation/Stay markers - deduplicate by id */}
+        {(() => {
+          const seen = new Set()
+          return stays.filter(stay => {
+            const key = stay.id
+            if (!key || seen.has(key)) return false
+            seen.add(key)
+            return true
+          })
+        })().map((stay, index) => (
           <Marker
-            key={stay.id || `stay-${index}`}
+            key={`stay-${stay.id}-${index}`}
             latitude={stay.latitude}
             longitude={stay.longitude}
             anchor="bottom"

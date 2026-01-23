@@ -148,7 +148,7 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, sh
   return (
     <>
       <div
-        className={`travel-advisory-card travel-glass-card ${compact ? 'travel-advisory-card-compact' : ''} ${hasNavigation ? 'has-navigation' : ''}`}
+        className={`travel-advisory-card travel-glass-card ${compact ? 'travel-advisory-card-compact' : ''} ${hasNavigation ? 'has-navigation' : ''} ${onClose ? 'has-close' : ''}`}
       >
         {/* Navigation arrows stay fixed so only the content slides */}
         {hasNavigation && (
@@ -179,6 +179,21 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, sh
               ›
             </motion.button>
           </div>
+        )}
+
+        {/* Global close button (fixed position) */}
+        {onClose && (
+          <button
+            type="button"
+            className="travel-advisory-close-absolute"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClose()
+            }}
+            aria-label={t('common.close', 'Close')}
+          >
+            <FiX size={16} />
+          </button>
         )}
 
         {/* AnimatePresence + motion.div give us a soft slide effect between advisories */}
@@ -230,20 +245,8 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, sh
                       <FiChevronRight size={12} />
                     </button>
                   )}
-                  {/* Optional close button for wizard banners */}
-                  {onClose && (
-                    <button
-                      type="button"
-                      className="travel-advisory-header-close"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onClose()
-                      }}
-                      aria-label={t('common.close', 'Close')}
-                    >
-                      <FiX size={14} />
-                    </button>
-                  )}
+                  {/* Optional close button for wizard banners - MOVED TO TOP LEVEL */}
+                  {/* {onClose && ... } */}
                 </div>
               )}
             </div>
@@ -369,7 +372,7 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, sh
                         </section>
                       )}
 
-                      {entryExitHighlights.length > 0 && (
+                      {(entryExitHighlights.length > 0 || entryExitSummary) && (
                         <section className="advisory-section-block">
                           <h4>{t('travel.advisory.entryExitTitle', 'Entry & exit')}</h4>
                           {entryExitSummary && (
@@ -383,7 +386,7 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, sh
                         </section>
                       )}
 
-                      {healthHighlights.length > 0 && (
+                      {(healthHighlights.length > 0 || healthSummary) && (
                         <section className="advisory-section-block">
                           <h4>{t('travel.advisory.healthTitle', 'Health & vaccines')}</h4>
                           {healthSummary && (
@@ -397,7 +400,7 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, sh
                         </section>
                       )}
 
-                      {safetyHighlights.length > 0 && (
+                      {(safetyHighlights.length > 0 || safetySummary) && (
                         <section className="advisory-section-block">
                           <h4>{t('travel.advisory.safetyTitle', 'Safety & security')}</h4>
                           {safetySummary && (
@@ -411,7 +414,7 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, sh
                         </section>
                       )}
 
-                      {climateHighlights.length > 0 && (
+                      {(climateHighlights.length > 0 || climateSummary) && (
                         <section className="advisory-section-block">
                           <h4>{t('travel.advisory.climateTitle', 'Climate & weather')}</h4>
                           {climateSummary && (

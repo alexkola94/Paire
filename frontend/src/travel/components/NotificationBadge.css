@@ -1,3 +1,8 @@
+/* ================================
+   Notification Badge
+   Theme-aware styles for dark/light modes
+   ================================ */
+
 .notification-badge {
   position: relative;
   display: flex;
@@ -13,7 +18,7 @@
 }
 
 .notification-badge:hover {
-  background: var(--hover-background, rgba(0, 0, 0, 0.05));
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .notification-badge:active {
@@ -23,12 +28,12 @@
 .notification-icon {
   width: 22px;
   height: 22px;
-  color: var(--text-secondary, #6b7280);
+  color: rgba(255, 255, 255, 0.7);
   transition: color 0.2s ease;
 }
 
 .notification-badge:hover .notification-icon {
-  color: var(--text-primary, #1f2937);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .notification-count {
@@ -38,7 +43,7 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  background: var(--notification-badge, #ef4444);
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -47,6 +52,7 @@
   align-items: center;
   justify-content: center;
   animation: pulse 2s infinite;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
 }
 
 @keyframes pulse {
@@ -58,15 +64,68 @@
   }
 }
 
-/* Dark mode */
-[data-theme="dark"] .notification-badge:hover {
-  background: rgba(255, 255, 255, 0.1);
+/* ================================
+   LIGHT MODE - Warm Travel Theme
+   ================================ */
+
+.travel-layout:not([data-theme='dark']) .notification-badge:hover {
+  background: rgba(232, 145, 58, 0.1);
 }
 
-[data-theme="dark"] .notification-icon {
-  color: var(--text-secondary-dark, #9ca3af);
+.travel-layout:not([data-theme='dark']) .notification-icon {
+  color: #6b6058;
 }
 
-[data-theme="dark"] .notification-badge:hover .notification-icon {
-  color: var(--text-primary-dark, #f9fafb);
+.travel-layout:not([data-theme='dark']) .notification-badge:hover .notification-icon {
+  color: #3d3530;
+}
+
+.travel-layout:not([data-theme='dark']) .notification-count {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  box-shadow: 0 2px 8px rgba(232, 145, 58, 0.4);
+}
+
+/* ================================
+   Mobile Optimizations
+   ================================ */
+
+@media (max-width: 480px) {
+  .notification-badge {
+    width: 32px;
+    height: 32px;
+  }
+
+  .notification-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .notification-count {
+    top: 0;
+    right: 0;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    font-size: 9px;
+    border-radius: 7px;
+  }
+}
+
+@media (max-width: 360px) {
+  .notification-badge {
+    width: 28px;
+    height: 28px;
+  }
+
+  .notification-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .notification-count {
+    min-width: 12px;
+    height: 12px;
+    padding: 0 2px;
+    font-size: 8px;
+  }
 }

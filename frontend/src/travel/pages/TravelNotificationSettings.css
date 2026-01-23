@@ -1,3 +1,8 @@
+/* ================================
+   Travel Notification Settings
+   Theme-aware styles for dark/light modes
+   ================================ */
+
 .travel-notification-settings {
   max-width: 800px;
   margin: 0 auto;
@@ -14,8 +19,8 @@
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--border-color, #e5e7eb);
-  border-top-color: var(--primary-color, #6366f1);
+  border: 3px solid rgba(168, 85, 247, 0.2);
+  border-top-color: var(--primary, #a855f7);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -23,6 +28,10 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ================================
+   Header Styles
+   ================================ */
 
 .settings-header {
   margin-bottom: 2rem;
@@ -34,14 +43,18 @@
   gap: 0.5rem;
   font-size: 1.75rem;
   font-weight: 600;
-  color: var(--text-primary, #1f2937);
+  color: rgba(255, 255, 255, 0.95);
   margin: 0 0 0.5rem 0;
 }
 
 .settings-header .subtitle {
-  color: var(--text-secondary, #6b7280);
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
 }
+
+/* ================================
+   Message Styles
+   ================================ */
 
 .message {
   display: flex;
@@ -54,19 +67,26 @@
 }
 
 .message-success {
-  background: var(--success-bg, #dcfce7);
-  color: var(--success-text, #166534);
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
 .message-error {
-  background: var(--error-bg, #fee2e2);
-  color: var(--error-text, #991b1b);
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .message-info {
-  background: var(--info-bg, #dbeafe);
-  color: var(--info-text, #1e40af);
+  background: rgba(168, 85, 247, 0.15);
+  color: #c4b5fd;
+  border: 1px solid rgba(168, 85, 247, 0.3);
 }
+
+/* ================================
+   Settings Content & Sections
+   ================================ */
 
 .settings-content {
   display: flex;
@@ -75,11 +95,12 @@
 }
 
 .settings-section {
-  background: var(--card-background, #ffffff);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border-color, #e5e7eb);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .section-header {
@@ -89,16 +110,24 @@
 .section-header h2 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--text-primary, #1f2937);
+  color: rgba(255, 255, 255, 0.95);
   margin: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+.section-header h2 svg {
+  color: var(--primary, #a855f7);
+}
+
+/* ================================
+   Setting Items
+   ================================ */
+
 .setting-item {
   padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border-light, #f3f4f6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .setting-item:last-child {
@@ -108,10 +137,14 @@
 
 .setting-item.sub-setting {
   padding-left: 2rem;
-  background: var(--background-subtle, #f9fafb);
+  background: rgba(255, 255, 255, 0.02);
   margin: 0.5rem -1.5rem;
   padding: 0.75rem 1.5rem 0.75rem 3.5rem;
 }
+
+/* ================================
+   Toggle Controls
+   ================================ */
 
 .toggle-label {
   display: flex;
@@ -132,7 +165,7 @@
   position: relative;
   width: 44px;
   height: 24px;
-  background: var(--toggle-off, #d1d5db);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 12px;
   transition: background 0.2s ease;
   flex-shrink: 0;
@@ -148,11 +181,11 @@
   background: white;
   border-radius: 50%;
   transition: transform 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .toggle-label input:checked + .toggle-slider {
-  background: var(--primary-color, #6366f1);
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
 }
 
 .toggle-label input:checked + .toggle-slider::after {
@@ -169,22 +202,26 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
-  color: var(--text-primary, #1f2937);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .setting-description {
   font-size: 0.875rem;
-  color: var(--text-secondary, #6b7280);
+  color: rgba(255, 255, 255, 0.5);
   margin: 0.5rem 0 0 0;
   padding-left: calc(44px + 0.75rem);
 }
 
 .setting-warning {
   font-size: 0.75rem;
-  color: var(--warning-text, #b45309);
+  color: #fbbf24;
   margin: 0.5rem 0 0 0;
   padding-left: calc(44px + 0.75rem);
 }
+
+/* ================================
+   Checkbox Groups
+   ================================ */
 
 .checkbox-group {
   display: flex;
@@ -199,53 +236,63 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
-  color: var(--text-primary, #1f2937);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: var(--primary-color, #6366f1);
+  accent-color: var(--primary, #a855f7);
 }
+
+/* ================================
+   Number Inputs
+   ================================ */
 
 .number-input {
   width: 80px;
   padding: 0.5rem;
-  border: 1px solid var(--border-color, #d1d5db);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
   font-size: 0.875rem;
-  color: var(--text-primary, #1f2937);
-  background: var(--input-background, #ffffff);
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
   margin-left: 0.5rem;
 }
 
 .number-input:focus {
   outline: none;
-  border-color: var(--primary-color, #6366f1);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  border-color: var(--primary, #a855f7);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
 }
+
+/* ================================
+   Action Buttons
+   ================================ */
 
 .settings-actions {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-color, #e5e7eb);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-primary {
   padding: 0.75rem 1.5rem;
-  background: var(--primary-color, #6366f1);
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
   color: white;
   border: none;
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--primary-hover, #4f46e5);
+  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
 }
 
 .btn-primary:disabled {
@@ -256,8 +303,8 @@
 .btn-secondary {
   padding: 0.75rem 1.5rem;
   background: transparent;
-  color: var(--primary-color, #6366f1);
-  border: 1px solid var(--primary-color, #6366f1);
+  color: var(--primary, #a855f7);
+  border: 1px solid rgba(168, 85, 247, 0.4);
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
@@ -265,7 +312,8 @@
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--primary-light, #eef2ff);
+  background: rgba(168, 85, 247, 0.1);
+  border-color: var(--primary, #a855f7);
 }
 
 .btn-secondary:disabled {
@@ -280,19 +328,139 @@
   margin-top: 0.5rem;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .settings-section {
-    background: var(--card-background-dark, #1f2937);
-    border-color: var(--border-color-dark, #374151);
-  }
+/* ================================
+   LIGHT MODE - Warm Travel Theme
+   ================================ */
 
-  .setting-item.sub-setting {
-    background: var(--background-subtle-dark, #111827);
-  }
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .settings-header h1 {
+  color: #3d3530;
 }
 
-/* Mobile responsive */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .settings-header .subtitle {
+  color: #9a9088;
+}
+
+/* Messages - Light Mode */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .message-success {
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .message-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #991b1b;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .message-info {
+  background: rgba(232, 145, 58, 0.1);
+  color: #b07d5b;
+  border-color: rgba(232, 145, 58, 0.3);
+}
+
+/* Settings Section - Light Mode */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .settings-section {
+  background: rgba(255, 253, 250, 0.95);
+  border: 1px solid rgba(232, 145, 58, 0.12);
+  box-shadow: 0 4px 24px rgba(180, 120, 60, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .section-header h2 {
+  color: #3d3530;
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .section-header h2 svg {
+  color: #e8913a;
+}
+
+/* Setting Items - Light Mode */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .setting-item {
+  border-bottom-color: rgba(232, 145, 58, 0.08);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .setting-item.sub-setting {
+  background: rgba(232, 145, 58, 0.04);
+}
+
+/* Toggle - Light Mode */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .toggle-slider {
+  background: #d1d5db;
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .toggle-label input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .toggle-text {
+  color: #3d3530;
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .setting-description {
+  color: #9a9088;
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .setting-warning {
+  color: #b45309;
+}
+
+/* Checkbox - Light Mode */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .checkbox-label {
+  color: #6b6058;
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .checkbox-label input[type="checkbox"] {
+  accent-color: #e8913a;
+}
+
+/* Number Input - Light Mode */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .number-input {
+  background: rgba(255, 253, 250, 0.9);
+  border: 1px solid rgba(232, 145, 58, 0.2);
+  color: #3d3530;
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .number-input:focus {
+  border-color: #e8913a;
+  box-shadow: 0 0 0 3px rgba(232, 145, 58, 0.15);
+}
+
+/* Buttons - Light Mode */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .settings-actions {
+  border-top-color: rgba(232, 145, 58, 0.1);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .btn-primary {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d07a28 0%, #e8913a 100%);
+  box-shadow: 0 6px 20px rgba(232, 145, 58, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .btn-secondary {
+  color: #e8913a;
+  border-color: rgba(232, 145, 58, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .btn-secondary:hover:not(:disabled) {
+  background: rgba(232, 145, 58, 0.1);
+  border-color: #e8913a;
+}
+
+/* Loading Spinner - Light Mode */
+.travel-layout:not([data-theme='dark']) .travel-notification-settings .loading-spinner {
+  border-color: rgba(232, 145, 58, 0.2);
+  border-top-color: #e8913a;
+}
+
+/* ================================
+   Mobile Responsive
+   ================================ */
+
 @media (max-width: 640px) {
   .travel-notification-settings {
     padding: 1rem;

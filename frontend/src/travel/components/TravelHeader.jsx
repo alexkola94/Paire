@@ -6,7 +6,10 @@ import { RiPlaneLine } from 'react-icons/ri'
 import { useTravelMode } from '../context/TravelModeContext'
 import { useTheme } from '../../context/ThemeContext'
 import { useModal } from '../../context/ModalContext'
+import { useNotifications } from '../context/NotificationContext'
 import TripSelector from './TripSelector'
+import NotificationBadge from './NotificationBadge'
+import NotificationCenter from './NotificationCenter'
 import '../styles/TravelLayout.css'
 
 /**
@@ -14,7 +17,7 @@ import '../styles/TravelLayout.css'
  * Shows trip info, sync status, and exit button
  * Partially hides in Discovery Mode, expands on hover
  */
-const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false }) => {
+const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false, onNavigate }) => {
   const { t } = useTranslation()
   const { exitTravelMode } = useTravelMode()
   const { theme, toggleTheme } = useTheme()
@@ -22,7 +25,17 @@ const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false }) => {
   // hide the travel header so it doesn't visually cut into the dialog.
   // This mirrors the behavior used for the bottom navigation.
   const { hasOpenModals } = useModal()
+  const { unreadCount } = useNotifications()
   const [isHovered, setIsHovered] = useState(false)
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false)
+
+  // Handle opening notification settings page
+  const handleOpenNotificationSettings = useCallback(() => {
+    setIsNotificationCenterOpen(false)
+    if (onNavigate) {
+      onNavigate('notifications')
+    }
+  }, [onNavigate])
 
   // Format date range for display
   const formatDateRange = () => {
@@ -138,6 +151,19 @@ const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false }) => {
 
         {/* Sync status indicator */}
         <div className="travel-header-actions">
+          {/* Notification Bell */}
+          <div style={{ position: 'relative', marginRight: '8px' }}>
+            <NotificationBadge
+              count={unreadCount}
+              onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)}
+            />
+            <NotificationCenter
+              isOpen={isNotificationCenterOpen}
+              onClose={() => setIsNotificationCenterOpen(false)}
+              onOpenSettings={handleOpenNotificationSettings}
+            />
+          </div>
+
           <motion.button
             className="travel-icon-btn theme-toggle"
             onClick={toggleTheme}

@@ -24,7 +24,7 @@ const normalizeCountryCode = (code) => {
  * Build a stable cache key for a single country advisory.
  */
 const getAdvisoryCacheKey = (countryCode) =>
-  `travel-advisory-v3-${normalizeCountryCode(countryCode)}`
+  `travel-advisory-v4-${normalizeCountryCode(countryCode)}`
 
 /**
  * Call backend advisory endpoint for a single country.

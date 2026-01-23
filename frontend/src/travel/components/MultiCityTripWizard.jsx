@@ -43,7 +43,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   const [saveSuccess, setSaveSuccess] = useState(false)
 
   // Advisory modal state
-  const [viewingAdvisory, setViewingAdvisory] = useState(null)
+  const [isAdvisoryBannerOpen, setIsAdvisoryBannerOpen] = useState(false)
 
   // Budget selection state
   const [availableBudgets, setAvailableBudgets] = useState([])
@@ -179,11 +179,14 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     // Fetch and show advisory if country is available
     if (newCity.country) {
       try {
-        // Clear any previous advisory first
-        setViewingAdvisory(null)
         const advisory = await getAdvisory(newCity.country)
-        if (advisory) {
-          setViewingAdvisory(advisory)
+        if (advisory && advisory.countryCode) {
+          // Update local cache so it's available immediately
+          setCityAdvisories(prev => ({
+            ...prev,
+            [advisory.countryCode.toLowerCase()]: advisory
+          }))
+          setIsAdvisoryBannerOpen(true)
         }
       } catch (err) {
         console.error('Failed to load advisory on map click:', err)
@@ -739,6 +742,14 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
         const startCity = orderedCities[0]
         const endCity = orderedCities[orderedCities.length - 1]
 
+        // Derive advisories list for the banner (showing newest/last city first)
+        const uniqueCountries = [...new Set(cities.map(c => c.country).filter(Boolean))]
+        const advisoriesList = uniqueCountries.reverse().map(cName =>
+          Object.values(cityAdvisories).find(a =>
+            (a.countryName || a.name || '').toLowerCase() === cName.toLowerCase()
+          )
+        ).filter(Boolean)
+
         return (
           <div className="wizard-step wizard-step-split">
             {/* Left column: details */}
@@ -749,12 +760,13 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               </p>
 
               {/* Recently added city advisory */}
-              {viewingAdvisory && (
+              {/* Recently added city advisory (with navigation history) */}
+              {isAdvisoryBannerOpen && advisoriesList.length > 0 && (
                 <div className="wizard-advisory-banner" style={{ marginBottom: '1rem' }}>
                   <TravelAdvisoryCard
-                    advisory={viewingAdvisory}
+                    advisories={advisoriesList}
                     compact={true}
-                    onClose={() => setViewingAdvisory(null)}
+                    onClose={() => setIsAdvisoryBannerOpen(false)}
                     showDetailsButton={false}
                   />
                 </div>

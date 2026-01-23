@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiMapPin, FiMaximize2, FiX, FiHome } from 'react-icons/fi'
@@ -70,10 +70,10 @@ const getViewStateForPoints = (points) => {
 const TripMicrography = ({ trip, onNavigate }) => {
   const { t } = useTranslation()
   const { theme } = useTheme()
+  const mapRef = useRef(null)
   const [cities, setCities] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
-  const [viewState, setViewState] = useState(null)
   const [homeLocation, setHomeLocation] = useState(null)
 
   // Get user's current location (Home) on mount
@@ -106,35 +106,24 @@ const TripMicrography = ({ trip, onNavigate }) => {
 
       try {
         const tripCities = await tripCityService.getByTrip(trip.id)
-        setCities(tripCities || [])
+        // Ensure coordinates are numbers to prevent math errors in view state calculation
+        const parsedCities = (tripCities || []).map(c => ({
+          ...c,
+          latitude: Number(c.latitude),
+          longitude: Number(c.longitude)
+        }))
+        setCities(parsedCities)
+
+        // Debug log
         console.log(
-          '[TripMicrography] loadCities - fetched cities:',
-          (tripCities || []).map(c => ({
-            id: c.id,
-            name: c.name,
-            lat: c.latitude,
-            lng: c.longitude
-          }))
+          '[TripMicrography] loadCities - parsed cities:',
+          parsedCities.map(c => ({ id: c.id, lat: c.latitude, lng: c.longitude }))
         )
 
         // Calculate initial view state to fit all cities + optional home location
-        if (tripCities && tripCities.length > 0) {
-          const validCities = tripCities.filter(c => c.latitude && c.longitude)
+        if (parsedCities && parsedCities.length > 0) {
+          const validCities = parsedCities.filter(c => !isNaN(c.latitude) && !isNaN(c.longitude))
           console.log('[TripMicrography] loadCities - validCities count:', validCities.length)
-          if (validCities.length > 0) {
-            const allPoints = [
-              ...validCities,
-              ...(homeLocation
-                ? [{ latitude: homeLocation.latitude, longitude: homeLocation.longitude }]
-                : [])
-            ]
-
-            const nextViewState = getViewStateForPoints(allPoints)
-            if (nextViewState) {
-              console.log('[TripMicrography] loadCities - setting initial viewState:', nextViewState)
-              setViewState(nextViewState)
-            }
-          }
         }
       } catch (error) {
         console.error('Error loading cities:', error)
@@ -149,7 +138,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
   // Ensure we can quickly re-fit the map to show the whole trip (home + all cities)
   // when the user expands the view.
   const fitToRoute = useCallback(() => {
-    const validCities = cities.filter(c => c.latitude && c.longitude)
+    const validCities = cities.filter(c => !isNaN(c.latitude) && !isNaN(c.longitude))
     console.log('[TripMicrography] fitToRoute - validCities count:', validCities.length, 'homeLocation:', homeLocation)
     if (validCities.length === 0 && !homeLocation) {
       console.warn('[TripMicrography] fitToRoute - no coordinates available to fit')
@@ -164,9 +153,9 @@ const TripMicrography = ({ trip, onNavigate }) => {
     ]
 
     const nextViewState = getViewStateForPoints(allPoints)
-    if (nextViewState) {
-      console.log('[TripMicrography] fitToRoute - applying viewState:', nextViewState)
-      setViewState(nextViewState)
+    if (nextViewState && mapRef.current) {
+      console.log('[TripMicrography] fitToRoute - flying to viewState:', nextViewState)
+      mapRef.current.flyTo({ ...nextViewState, duration: 2000 })
     }
   }, [cities, homeLocation])
 
@@ -175,15 +164,9 @@ const TripMicrography = ({ trip, onNavigate }) => {
     ...(homeLocation ? [[homeLocation.longitude, homeLocation.latitude]] : []),
     ...cities
       .sort((a, b) => (a.order || 0) - (b.order || 0))
-      .filter(city => city.latitude && city.longitude)
+      .filter(city => !isNaN(city.latitude) && !isNaN(city.longitude))
       .map(city => [city.longitude, city.latitude])
   ]
-
-  // Handle map move
-  const handleMove = useCallback((evt) => {
-    // Keep view state in sync while user moves the map (expanded)
-    setViewState(evt.viewState)
-  }, [])
 
   if (loading || cities.length === 0) {
     return null
@@ -194,10 +177,21 @@ const TripMicrography = ({ trip, onNavigate }) => {
     return null
   }
 
-  const defaultViewState = viewState || {
+  // Calculate optimal start view based on Loaded Cities
+  // This ensures the map mounts with the correct view without needing an imperative jumpTo
+  const allPoints = [
+    ...cities.filter(c => !isNaN(c.latitude) && !isNaN(c.longitude)),
+    ...(homeLocation ? [{ latitude: homeLocation.latitude, longitude: homeLocation.longitude }] : [])
+  ]
+  const calculatedViewState = getViewStateForPoints(allPoints)
+
+  const initialViewState = calculatedViewState || {
     latitude: cities[0]?.latitude || 0,
     longitude: cities[0]?.longitude || 0,
-    zoom: 3
+    zoom: 3,
+    bearing: 0,
+    pitch: 0,
+    padding: { top: 0, bottom: 0, left: 0, right: 0 }
   }
 
   return (
@@ -236,7 +230,8 @@ const TripMicrography = ({ trip, onNavigate }) => {
             onClick={() => {
               // Toggle expanded state and re-fit the route when opening
               if (!expanded) {
-                fitToRoute()
+                // Small timeout to allow map to resize before flying
+                setTimeout(() => fitToRoute(), 100)
               }
               setExpanded(prev => !prev)
             }}
@@ -251,78 +246,82 @@ const TripMicrography = ({ trip, onNavigate }) => {
         </div>
 
         <div className={`micrography-map-container ${expanded ? 'expanded' : ''}`}>
-          {/* Single Map instance that smoothly grows/shrinks with the card */}
-          <Map
-            {...defaultViewState}
-            onMove={handleMove}
-            mapboxAccessToken={MAPBOX_TOKEN}
-            mapStyle={theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.detailed}
-            style={{ width: '100%', height: '100%' }}
-            minZoom={DISCOVERY_MAP_CONFIG.minZoom}
-            maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}
-            attributionControl={false}
-            // Always allow basic interactivity (drag); enable scroll zoom only when expanded
-            interactive={true}
-            scrollZoom={expanded}
-          >
-            {/* Route line */}
-            {routeCoordinates.length > 1 && (
-              <Source
-                id="route"
-                type="geojson"
-                data={{
-                  type: 'Feature',
-                  geometry: {
-                    type: 'LineString',
-                    coordinates: routeCoordinates
-                  }
-                }}
-              >
-                <Layer
-                  id="route-line"
-                  type="line"
-                  paint={{
-                    'line-color': '#8B5CF6',
-                    'line-width': 2,
-                    'line-opacity': 0.7
+          {/* Inner container to isolate Mapbox from flex/grid layout shifts */}
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+            <Map
+              initialViewState={initialViewState}
+              // Force re-mount if trip changes to reset view
+              key={trip?.id}
+              ref={mapRef}
+              mapboxAccessToken={MAPBOX_TOKEN}
+              mapStyle={theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.detailed}
+              style={{ width: '100%', height: '100%' }}
+              minZoom={DISCOVERY_MAP_CONFIG.minZoom}
+              maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}
+              attributionControl={false}
+              // Always allow basic interactivity (drag); enable scroll zoom only when expanded
+              interactive={true}
+              scrollZoom={expanded}
+            >
+              {/* Route line */}
+              {routeCoordinates.length > 1 && (
+                <Source
+                  id="route"
+                  type="geojson"
+                  data={{
+                    type: 'Feature',
+                    geometry: {
+                      type: 'LineString',
+                      coordinates: routeCoordinates
+                    }
                   }}
-                />
-              </Source>
-            )}
+                >
+                  <Layer
+                    id="route-line"
+                    type="line"
+                    paint={{
+                      'line-color': '#8B5CF6',
+                      'line-width': 2,
+                      'line-opacity': 0.7
+                    }}
+                  />
+                </Source>
+              )}
 
-            {/* Home marker (starting point) */}
-            {homeLocation && (
-              <Marker
-                latitude={homeLocation.latitude}
-                longitude={homeLocation.longitude}
-                anchor="center"
-              >
-                <div className="micrography-home-marker">
-                  <FiHome size={14} />
-                </div>
-              </Marker>
-            )}
+              {/* Home marker (starting point) */}
+              {homeLocation && (
+                <Marker
+                  latitude={homeLocation.latitude}
+                  longitude={homeLocation.longitude}
+                  anchor="center"
+                >
+                  <div className="micrography-home-marker">
+                    <FiHome size={14} />
+                  </div>
+                </Marker>
+              )}
 
-            {/* City markers */}
-            {cities
-              .sort((a, b) => (a.order || 0) - (b.order || 0))
-              .map((city, index) => {
-                if (!city.latitude || !city.longitude) return null
+              {/* City markers */}
+              {cities
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .map((city, index) => {
+                  if (!city.latitude || !city.longitude) return null
 
-                return (
-                  <Marker
-                    key={city.id || `city-${index}`}
-                    latitude={city.latitude}
-                    longitude={city.longitude}
-                    anchor="center"
-                  >
-                    <div className="micrography-marker">
-                      <div className="micrography-marker-number">{index + 1}</div>
-                    </div>
-                  </Marker>
-                )
-              })}
-          </Map>
+                  return (
+                    <Marker
+                      key={city.id || `city-${index}`}
+                      latitude={city.latitude}
+                      longitude={city.longitude}
+                      anchor="center"
+                    >
+                      <div className="micrography-marker">
+                        <div className="micrography-marker-number">{index + 1}</div>
+                      </div>
+                    </Marker>
+                  )
+                })}
+            </Map>
+          </div>
         </div>
 
         {/* Cities list */}

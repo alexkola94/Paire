@@ -695,3 +695,65 @@
   color: #fed7aa;
   border-color: rgba(194, 65, 12, 0.5);
 }
+
+/* Close Button (Absolute) */
+.travel-advisory-close-absolute {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  z-index: 6;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.travel-advisory-close-absolute:hover {
+  background: #f1f5f9;
+  color: #ef4444;
+  transform: scale(1.05);
+}
+
+/* Shift navigation arrows when close button is present */
+.travel-advisory-card.has-close .travel-advisory-nav {
+  right: 3rem;
+  /* Shift left to make room for close button */
+}
+
+
+
+/* Dark Mode Overrides for Close Button */
+[data-theme='dark'] .travel-advisory-close-absolute {
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .travel-advisory-close-absolute:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ef4444;
+}
+
+/* Adjust nav background in dark mode if needed to match close button style consistency */
+[data-theme='dark'] .travel-advisory-nav {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] .travel-advisory-close-absolute {
+  background: rgba(255, 252, 247, 0.95);
+  border: 1px solid rgba(232, 145, 58, 0.1);
+  color: #9a9088;
+}
+
+[data-theme='light'] .travel-advisory-close-absolute:hover {
+  background: rgba(232, 145, 58, 0.1);
+  color: #ef4444;
+}

@@ -302,16 +302,77 @@
 }
 
 @media (max-width: 480px) {
+  .trip-selector-button {
+    padding: 6px 10px;
+    border-radius: 0.75rem;
+  }
+
+  .trip-selector-button-content {
+    gap: 6px;
+  }
+
+  .trip-selector-name {
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+  }
+
   .trip-selector-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.65rem;
+    flex-wrap: nowrap;
+  }
+
+  /* Hide destination on mobile if trip name contains it */
+  .trip-selector-destination {
+    display: none;
+  }
+
+  .trip-selector-dates {
+    gap: 3px;
+  }
+
+  .trip-selector-dates svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .trip-selector-chevron {
+    width: 14px;
+    height: 14px;
   }
 
   .trip-selector-item-meta {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  .trip-selector-button {
+    padding: 5px 8px;
+  }
+
+  .trip-selector-name {
+    font-size: 0.6875rem;
+  }
+
+  .trip-selector-meta {
+    font-size: 0.6rem;
+    gap: 6px;
+  }
+
+  .trip-selector-dates svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .trip-selector-chevron {
+    width: 12px;
+    height: 12px;
   }
 }
 
