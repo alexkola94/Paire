@@ -23,7 +23,7 @@ import db, {
 // API Request Helper (matches api.js pattern)
 // ========================================
 
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+const CACHE_TTL = 30 * 60 * 1000 // 30 minutes
 
 /**
  * Check if a resource should be fetched from API
@@ -57,6 +57,25 @@ const markFetched = async (key) => {
     })
   } catch (error) {
     console.warn('Error updating sync state:', error)
+  }
+}
+
+
+/**
+ * Clear sync state for a trip to force re-fetch
+ * Clears specific trip resources or all resources for the trip if no type specified
+ */
+export const clearTripCache = async (tripId) => {
+  try {
+    // Find all keys starting with trip_{tripId}
+    const keys = await db.resourceSyncState.where('key').startsWith(`trip_${tripId}`).primaryKeys()
+    if (keys.length > 0) {
+      await db.resourceSyncState.bulkDelete(keys)
+    }
+    // Also clear global trips list cache marker
+    await db.resourceSyncState.delete('trips_all')
+  } catch (error) {
+    console.error('Error clearing trip cache:', error)
   }
 }
 
@@ -1363,5 +1382,6 @@ export default {
   tripCityService,
   layoutPreferencesService,
   geocodingService,
-  processSyncQueue
+  processSyncQueue,
+  clearTripCache
 }

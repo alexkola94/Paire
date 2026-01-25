@@ -41,7 +41,7 @@ const PackingPage = ({ trip }) => {
     return initial
   })
   const [tripCities, setTripCities] = useState([])
-  const { setBackgroundMapCities } = useTravelMode()
+  const { setBackgroundMapCities, refreshKey } = useTravelMode()
 
   // Load cities for multi-city context (supports background map)
   useEffect(() => {
@@ -91,7 +91,7 @@ const PackingPage = ({ trip }) => {
     }
 
     loadData()
-  }, [trip?.id, trip?.latitude, trip?.longitude])
+  }, [trip?.id, trip?.latitude, trip?.longitude, refreshKey])
 
   // Fetch weather for suggestions
   const [weatherCondition, setWeatherCondition] = useState(null)

@@ -44,7 +44,7 @@ const BudgetPage = ({ trip }) => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [tripCities, setTripCities] = useState([])
-  const { setBackgroundMapCities } = useTravelMode()
+  const { setBackgroundMapCities, refreshKey } = useTravelMode()
 
   // Load cities for multi-city context (supports background map)
   useEffect(() => {
@@ -89,7 +89,7 @@ const BudgetPage = ({ trip }) => {
     }
 
     loadExpenses()
-  }, [trip?.id])
+  }, [trip?.id, refreshKey])
 
   // Calculate totals
   const calculateTotals = () => {

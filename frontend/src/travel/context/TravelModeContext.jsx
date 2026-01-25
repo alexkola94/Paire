@@ -29,6 +29,9 @@ export const TravelModeProvider = ({ children }) => {
   // Sync status: 'idle' | 'syncing' | 'error'
   const [syncStatus, setSyncStatus] = useState('idle')
 
+  // Refresh key to force re-fetches
+  const [refreshKey, setRefreshKey] = useState(0)
+
   // Transition animation state
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [transitionDirection, setTransitionDirection] = useState('takeoff') // 'takeoff' | 'landing'
@@ -336,7 +339,41 @@ export const TravelModeProvider = ({ children }) => {
   }, [])
 
   /**
-   * Refresh the active trip from database
+   * Refresh the active trip data from server (Force Refresh)
+   */
+  const refreshTripData = useCallback(async () => {
+    if (!activeTrip?.id) return
+
+    setSyncStatus('syncing')
+    try {
+      // Lazy load clearTripCache to avoid circular deps
+      const { clearTripCache, tripService } = await import('../services/travelApi')
+
+      // Clear cache for this trip
+      await clearTripCache(activeTrip.id)
+
+      // Re-fetch trip details
+      const trip = await tripService.getById(activeTrip.id)
+      if (trip) {
+        setActiveTrip(trip)
+      }
+
+      // Increment key to trigger re-fetch in listening components
+      setRefreshKey(prev => prev + 1)
+
+      // Also refresh trips list
+      await loadTrips()
+
+      setSyncStatus('idle')
+    } catch (error) {
+      console.error('Error refreshing trip data:', error)
+      setSyncStatus('error')
+      setTimeout(() => setSyncStatus('idle'), 3000)
+    }
+  }, [activeTrip?.id, loadTrips])
+
+  /**
+   * Refresh the active trip from database (Internal update)
    */
   const refreshActiveTrip = useCallback(async () => {
     if (!activeTrip?.id) return
@@ -481,7 +518,11 @@ export const TravelModeProvider = ({ children }) => {
 
     // Sync status
     syncStatus,
-    setSyncStatus
+    setSyncStatus,
+
+    // Refresh control
+    refreshKey,
+    refreshTripData
   }
 
   return (

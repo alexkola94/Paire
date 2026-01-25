@@ -232,6 +232,8 @@ const DocumentsPage = ({ trip }) => {
   const [savedNotes, setSavedNotes] = useState([])
   const [loadingNotes, setLoadingNotes] = useState(false)
 
+  const { refreshKey } = useTravelMode()
+
   // Load notes
   useEffect(() => {
     const loadNotes = async () => {
@@ -247,7 +249,7 @@ const DocumentsPage = ({ trip }) => {
       }
     }
     loadNotes()
-  }, [trip?.id])
+  }, [trip?.id, refreshKey])
 
   // Handle saving note
   const handleSaveNote = async (e) => {
@@ -314,7 +316,7 @@ const DocumentsPage = ({ trip }) => {
     }
 
     loadDocuments()
-  }, [trip?.id])
+  }, [trip?.id, refreshKey])
 
   // Derive a best-effort destination country string from the trip destination.
   // This stays very simple on purpose and is refined asynchronously via Mapbox when possible.

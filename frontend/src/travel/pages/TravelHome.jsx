@@ -65,7 +65,7 @@ const cardVariants = {
  */
 const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSettingsOpen }) => {
   const { t, i18n } = useTranslation()
-  const { selectTrip, loadTrips, setBackgroundMapCities } = useTravelMode()
+  const { selectTrip, loadTrips, setBackgroundMapCities, refreshKey } = useTravelMode()
   const { enterDiscoveryMode, canEnterDiscoveryMode } = useDiscoveryMode()
   const [showSetup, setShowSetup] = useState(false)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
@@ -475,7 +475,7 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
     }
 
     loadTripData()
-  }, [activeTrip?.id, isTripDeleted])
+  }, [activeTrip?.id, isTripDeleted, refreshKey])
 
   // Load travel advisory / advisories in the background.
   // Supports both single‑destination and multi‑city trips.

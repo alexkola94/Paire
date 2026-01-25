@@ -50,7 +50,7 @@ const ItineraryPage = ({ trip }) => {
   const [editingEvent, setEditingEvent] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
   const [tripCities, setTripCities] = useState([])
-  const { setBackgroundMapCities } = useTravelMode()
+  const { setBackgroundMapCities, refreshKey } = useTravelMode()
 
   // Load cities for multi-city context (supports background map)
   useEffect(() => {
@@ -94,7 +94,7 @@ const ItineraryPage = ({ trip }) => {
     }
 
     loadEvents()
-  }, [trip?.id])
+  }, [trip?.id, refreshKey])
 
   // Generate date range for trip
   const generateDateRange = () => {

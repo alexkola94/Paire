@@ -19,7 +19,7 @@ import '../styles/TravelLayout.css'
  */
 const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false, onNavigate }) => {
   const { t } = useTranslation()
-  const { exitTravelMode } = useTravelMode()
+  const { exitTravelMode, refreshTripData } = useTravelMode()
   const { theme, toggleTheme } = useTheme()
   // When any modal is open (e.g. "Ask AI" or "Add Document"),
   // hide the travel header so it doesn't visually cut into the dialog.
@@ -36,6 +36,8 @@ const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false, onNaviga
       onNavigate('notifications')
     }
   }, [onNavigate])
+
+  // ... existing helper functions ...
 
   // Format date range for display
   const formatDateRange = () => {
@@ -81,8 +83,6 @@ const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false, onNaviga
       exitTravelMode()
     }, 800)
   }, [exitTravelMode])
-
-  // ... (existing helper functions)
 
   const tripStatus = getTripStatus()
   const dateRange = formatDateRange()
@@ -185,15 +185,35 @@ const TravelHeader = memo(({ trip, syncStatus, isDiscoveryMode = false, onNaviga
             {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
           </motion.button>
 
-          {syncStatus === 'syncing' && (
+          <motion.button
+            className="travel-icon-btn refresh-btn"
+            onClick={refreshTripData}
+            disabled={syncStatus === 'syncing'}
+            whileHover={{ scale: 1.1, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+            whileTap={{ scale: 0.9 }}
+            title={t('travel.common.refresh', 'Refresh Data')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '50%', // Smoothen the touch target
+              cursor: 'pointer',
+              color: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '8px',
+              padding: '10px', // Larger touch target
+              opacity: syncStatus === 'syncing' ? 0.8 : 1
+            }}
+          >
             <motion.div
-              className="sync-indicator syncing"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              animate={syncStatus === 'syncing' ? { rotate: 360 } : { rotate: 0 }}
+              transition={syncStatus === 'syncing' ? { duration: 1.2, repeat: Infinity, ease: 'linear' } : { duration: 0.3 }}
             >
               <FiRefreshCw size={18} />
             </motion.div>
-          )}
+          </motion.button>
+
           {tripStatus && (
             <div className={`trip-status-badge ${tripStatus.type}`}>
               {tripStatus.type === 'upcoming' && (
