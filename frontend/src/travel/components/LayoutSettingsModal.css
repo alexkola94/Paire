@@ -4,18 +4,46 @@
    ======================================== */
 
 /* Local Theme Variables - Light Mode */
+/* Local Theme Variables - Light Mode (Warm/Orange Palette) */
 :root {
-    --modal-item-bg: rgba(0, 0, 0, 0.04);
-    --modal-item-border: rgba(0, 0, 0, 0.08);
-    --modal-item-hover: rgba(0, 0, 0, 0.08);
-    --modal-footer-bg: rgba(0, 0, 0, 0.02);
-    --modal-backdrop: rgba(0, 0, 0, 0.6);
+    /* Warm beige background like TravelLightTheme */
+    --modal-bg: #fffcf7;
+    --modal-item-bg: rgba(232, 145, 58, 0.04);
+    --modal-item-border: rgba(232, 145, 58, 0.12);
+    --modal-item-hover: rgba(232, 145, 58, 0.08);
+    --modal-footer-bg: rgba(250, 248, 245, 0.5);
+    /* Subtle warm tint */
+    --modal-backdrop: rgba(45, 41, 38, 0.4);
+
+    /* Warm primary accent */
+    --primary: #e8913a;
+    --primary-gradient: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
     --modal-btn-text: #ffffff;
+
+    /* Text colors */
+    --text-primary: #3d3530;
+    --text-secondary: #6b6058;
+    --text-light: #9a9088;
+
     --modal-danger-bg: rgba(239, 68, 68, 0.1);
     --modal-danger-bg-subtle: rgba(239, 68, 68, 0.05);
     --modal-danger-border: rgba(239, 68, 68, 0.3);
-    --scrollbar-thumb: rgba(0, 0, 0, 0.2);
-    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
+
+    /* Scrollbar consistent with theme */
+    --scrollbar-thumb: rgba(232, 145, 58, 0.2);
+    --scrollbar-thumb-hover: rgba(232, 145, 58, 0.4);
+
+    /* Animations */
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --shadow-md: 0 4px 6px -1px rgba(180, 120, 60, 0.1), 0 2px 4px -1px rgba(180, 120, 60, 0.06);
+    --radius-lg: 24px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+
+    /* Glass border */
+    --glass-border: 1px solid rgba(232, 145, 58, 0.12);
+    --glass-bg: rgba(255, 252, 247, 0.95);
+    --glass-shadow: 0 8px 32px rgba(180, 120, 60, 0.08);
 }
 
 /* Dark Mode Overrides */
