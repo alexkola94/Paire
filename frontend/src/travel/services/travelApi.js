@@ -23,6 +23,43 @@ import db, {
 // API Request Helper (matches api.js pattern)
 // ========================================
 
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+/**
+ * Check if a resource should be fetched from API
+ * Returns true if:
+ * 1. Online
+ * 2. Cache is expired OR unused
+ */
+const shouldFetch = async (key) => {
+  if (!navigator.onLine) return false
+
+  try {
+    const syncState = await db.resourceSyncState.get(key)
+    if (!syncState) return true // Never fetched
+
+    const now = Date.now()
+    return (now - syncState.timestamp) > CACHE_TTL
+  } catch (error) {
+    console.warn('Error checking sync state:', error)
+    return true // Fail safe: fetch if checking failed
+  }
+}
+
+/**
+ * Mark a resource as successfully fetched
+ */
+const markFetched = async (key) => {
+  try {
+    await db.resourceSyncState.put({
+      key,
+      timestamp: Date.now()
+    })
+  } catch (error) {
+    console.warn('Error updating sync state:', error)
+  }
+}
+
 const handleSessionExpiration = () => {
   sessionManager.clearSession()
   window.dispatchEvent(new CustomEvent('session-invalidated', {
@@ -280,6 +317,15 @@ export const tripService = {
    */
   async getAll() {
     try {
+      // Check if we should fetch from API
+      const shouldFetchData = await shouldFetch('trips_all')
+
+      // If we have local data and don't need to fetch, return local
+      if (!shouldFetchData) {
+        const cached = await db.trips.toArray()
+        if (cached && cached.length > 0) return cached
+      }
+
       const trips = await apiRequest('/api/travel/trips')
       // Cache in IndexedDB - use bulkPut instead of clear+bulkAdd to preserve existing trips
       if (Array.isArray(trips)) {
@@ -300,6 +346,7 @@ export const tripService = {
         // Add or update trips from server
         const tripsToStore = trips.map(t => ({ ...t, _synced: true }))
         await db.trips.bulkPut(tripsToStore)
+        await markFetched('trips_all')
       }
       return trips
     } catch (error) {
@@ -316,9 +363,18 @@ export const tripService = {
    */
   async getById(id) {
     try {
+      // Check cache first
+      const shouldFetchData = await shouldFetch(`trip_${id}`)
+
+      if (!shouldFetchData) {
+        const cached = await db.trips.get(id)
+        if (cached) return cached
+      }
+
       const trip = await apiRequest(`/api/travel/trips/${id}`)
       // Update cache
       await db.trips.put({ ...trip, _synced: true })
+      await markFetched(`trip_${id}`)
       return trip
     } catch (error) {
       if (error instanceof OfflineError || error.isOffline) {
@@ -478,10 +534,19 @@ export const tripService = {
 export const itineraryService = {
   async getByTrip(tripId) {
     try {
+      const cacheKey = `trip_${tripId}_events`
+      const shouldFetchData = await shouldFetch(cacheKey)
+
+      if (!shouldFetchData) {
+        const cached = await db.itineraryEvents.where('tripId').equals(tripId).toArray()
+        if (cached && cached.length > 0) return cached
+      }
+
       const events = await apiRequest(`/api/travel/trips/${tripId}/events`)
       await db.itineraryEvents.where('tripId').equals(tripId).delete()
       if (Array.isArray(events)) {
         await db.itineraryEvents.bulkAdd(events.map(e => ({ ...e, _synced: true })))
+        await markFetched(cacheKey)
       }
       return events
     } catch (error) {
@@ -554,10 +619,19 @@ export const itineraryService = {
 export const packingService = {
   async getByTrip(tripId) {
     try {
+      const cacheKey = `trip_${tripId}_packing`
+      const shouldFetchData = await shouldFetch(cacheKey)
+
+      if (!shouldFetchData) {
+        const cached = await db.packingItems.where('tripId').equals(tripId).toArray()
+        if (cached && cached.length > 0) return cached
+      }
+
       const items = await apiRequest(`/api/travel/trips/${tripId}/packing`)
       await db.packingItems.where('tripId').equals(tripId).delete()
       if (Array.isArray(items)) {
         await db.packingItems.bulkAdd(items.map(i => ({ ...i, _synced: true })))
+        await markFetched(cacheKey)
       }
       return items
     } catch (error) {
@@ -643,10 +717,19 @@ export const packingService = {
 export const documentService = {
   async getByTrip(tripId) {
     try {
+      const cacheKey = `trip_${tripId}_docs`
+      const shouldFetchData = await shouldFetch(cacheKey)
+
+      if (!shouldFetchData) {
+        const cached = await db.documents.where('tripId').equals(tripId).toArray()
+        if (cached && cached.length > 0) return cached
+      }
+
       const docs = await apiRequest(`/api/travel/trips/${tripId}/documents`)
       await db.documents.where('tripId').equals(tripId).delete()
       if (Array.isArray(docs)) {
         await db.documents.bulkAdd(docs.map(d => ({ ...d, _synced: true })))
+        await markFetched(cacheKey)
       }
       return docs
     } catch (error) {
@@ -719,10 +802,19 @@ export const documentService = {
 export const travelExpenseService = {
   async getByTrip(tripId) {
     try {
+      const cacheKey = `trip_${tripId}_expenses`
+      const shouldFetchData = await shouldFetch(cacheKey)
+
+      if (!shouldFetchData) {
+        const cached = await db.travelExpenses.where('tripId').equals(tripId).toArray()
+        if (cached && cached.length > 0) return cached
+      }
+
       const expenses = await apiRequest(`/api/travel/trips/${tripId}/expenses`)
       await db.travelExpenses.where('tripId').equals(tripId).delete()
       if (Array.isArray(expenses)) {
         await db.travelExpenses.bulkAdd(expenses.map(e => ({ ...e, _synced: true })))
+        await markFetched(cacheKey)
       }
       return expenses
     } catch (error) {
@@ -814,10 +906,19 @@ export const travelExpenseService = {
 export const noteService = {
   async getByTrip(tripId) {
     try {
+      const cacheKey = `trip_${tripId}_notes`
+      const shouldFetchData = await shouldFetch(cacheKey)
+
+      if (!shouldFetchData) {
+        const cached = await db.travelNotes.where('tripId').equals(tripId).toArray()
+        if (cached && cached.length > 0) return cached
+      }
+
       const notes = await apiRequest(`/api/travel/trips/${tripId}/notes`)
       await db.travelNotes.where('tripId').equals(tripId).delete()
       if (Array.isArray(notes)) {
         await db.travelNotes.bulkAdd(notes.map(n => ({ ...n, _synced: true })))
+        await markFetched(cacheKey)
       }
       return notes
     } catch (error) {
@@ -890,6 +991,14 @@ export const noteService = {
 export const savedPlaceService = {
   async getByTrip(tripId) {
     try {
+      const cacheKey = `trip_${tripId}_places`
+      const shouldFetchData = await shouldFetch(cacheKey)
+
+      if (!shouldFetchData) {
+        const cached = await db.pinnedPOIs.where('tripId').equals(tripId).toArray()
+        if (cached && cached.length > 0) return cached
+      }
+
       const places = await apiRequest(`/api/travel/trips/${tripId}/saved-places`)
       // Clear local cache for this trip and replace with server data
       // Note: This might overwrite unsynced local changes if we're not careful,
@@ -900,6 +1009,7 @@ export const savedPlaceService = {
 
       if (Array.isArray(places)) {
         await db.pinnedPOIs.bulkAdd(places.map(p => ({ ...p, _synced: true })))
+        await markFetched(cacheKey)
       }
       return places
     } catch (error) {
@@ -971,6 +1081,19 @@ export const tripCityService = {
    */
   async getByTrip(tripId) {
     try {
+      const cacheKey = `trip_${tripId}_cities`
+      const shouldFetchData = await shouldFetch(cacheKey)
+
+      if (!shouldFetchData) {
+        const cached = await db.tripCities.where('tripId').equals(tripId).sortBy('order')
+        if (cached && cached.length > 0) {
+          return cached.map(c => ({
+            ...c,
+            order: c.order || 0
+          }))
+        }
+      }
+
       const cities = await apiRequest(`/api/travel/trips/${tripId}/cities`)
       // Map backend 'orderIndex' to frontend 'order'
       const mappedCities = (cities || []).map(c => ({
@@ -983,6 +1106,7 @@ export const tripCityService = {
         const citiesToStore = mappedCities.map(c => ({ ...c, _synced: true }))
         // Use bulkPut instead of bulkAdd to handle cases where records might still exist
         await db.tripCities.bulkPut(citiesToStore)
+        await markFetched(cacheKey)
       }
       return mappedCities
     } catch (error) {
