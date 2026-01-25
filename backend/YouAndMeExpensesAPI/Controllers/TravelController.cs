@@ -874,6 +874,70 @@ namespace YouAndMeExpensesAPI.Controllers
 
             return NoContent();
         }
+
+        // ==========================================
+        // Travel Notes
+        // ==========================================
+
+        /// <summary>
+        /// Get all notes for a trip
+        /// </summary>
+        [HttpGet("trips/{tripId}/notes")]
+        public async Task<ActionResult<IEnumerable<TravelNote>>> GetNotes(Guid tripId)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var notes = await _travelService.GetNotesAsync(userId, tripId);
+            if (notes == null) return NotFound("Trip not found");
+
+            return Ok(notes);
+        }
+
+        /// <summary>
+        /// Create a note
+        /// </summary>
+        [HttpPost("trips/{tripId}/notes")]
+        public async Task<ActionResult<TravelNote>> CreateNote(Guid tripId, [FromBody] TravelNote note)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var created = await _travelService.CreateNoteAsync(userId, tripId, note);
+            if (created == null) return NotFound("Trip not found");
+
+            return CreatedAtAction(nameof(GetNotes), new { tripId }, created);
+        }
+
+        /// <summary>
+        /// Update a note
+        /// </summary>
+        [HttpPut("trips/{tripId}/notes/{noteId}")]
+        public async Task<ActionResult<TravelNote>> UpdateNote(Guid tripId, Guid noteId, [FromBody] TravelNote updates)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var updated = await _travelService.UpdateNoteAsync(userId, tripId, noteId, updates);
+            if (updated == null) return NotFound("Trip or note not found");
+
+            return Ok(updated);
+        }
+
+        /// <summary>
+        /// Delete a note
+        /// </summary>
+        [HttpDelete("trips/{tripId}/notes/{noteId}")]
+        public async Task<IActionResult> DeleteNote(Guid tripId, Guid noteId)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var success = await _travelService.DeleteNoteAsync(userId, tripId, noteId);
+            if (!success) return NotFound("Trip or note not found");
+
+            return NoContent();
+        }
     }
 
     /// <summary>

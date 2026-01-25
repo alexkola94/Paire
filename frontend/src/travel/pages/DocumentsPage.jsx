@@ -25,7 +25,7 @@ import {
   FiMessageCircle,
   FiLoader
 } from 'react-icons/fi'
-import { documentService, uploadTravelFile, tripCityService } from '../services/travelApi'
+import { documentService, uploadTravelFile, tripCityService, noteService } from '../services/travelApi'
 import { getCountryFromPlaceName } from '../services/discoveryService'
 import { getAdvisories } from '../services/travelAdvisoryService'
 import TravelAdvisoryCard from '../components/TravelAdvisoryCard'
@@ -226,10 +226,74 @@ const DocumentsPage = ({ trip }) => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingDocument, setEditingDocument] = useState(null)
   const [showAiHelper, setShowAiHelper] = useState(false)
-  // Inline notes form state (light-theme helper, local only)
+  // Notes state - Persisted via API
   const [notesTitle, setNotesTitle] = useState('')
   const [notesBody, setNotesBody] = useState('')
   const [savedNotes, setSavedNotes] = useState([])
+  const [loadingNotes, setLoadingNotes] = useState(false)
+
+  // Load notes
+  useEffect(() => {
+    const loadNotes = async () => {
+      if (!trip?.id) return
+      try {
+        setLoadingNotes(true)
+        const notes = await noteService.getByTrip(trip.id)
+        setSavedNotes(notes || [])
+      } catch (error) {
+        console.error('Error loading notes:', error)
+      } finally {
+        setLoadingNotes(false)
+      }
+    }
+    loadNotes()
+  }, [trip?.id])
+
+  // Handle saving note
+  const handleSaveNote = async (e) => {
+    e.preventDefault()
+    if (!notesTitle.trim() && !notesBody.trim()) return
+
+    try {
+      const noteData = {
+        title: notesTitle.trim() || t('travel.documents.notesHelper.untitled', 'Untitled note'),
+        body: notesBody.trim()
+      }
+
+      // Optimistic update
+      const tempId = Date.now() // temporary ID
+      const optimisticNote = {
+        id: tempId,
+        tripId: trip.id,
+        ...noteData,
+        createdAt: new Date().toISOString()
+      }
+      setSavedNotes(prev => [optimisticNote, ...prev])
+      setNotesTitle('')
+      setNotesBody('')
+
+      // API call
+      const created = await noteService.create(trip.id, noteData)
+
+      // Replace optimistic note with real one
+      setSavedNotes(prev => prev.map(n => n.id === tempId ? created : n))
+    } catch (error) {
+      console.error('Error saving note:', error)
+      // Revert optimistic update (could be improved with error toast)
+    }
+  }
+
+  // Handle deleting note
+  const handleDeleteNote = async (noteId) => {
+    try {
+      // Optimistic update
+      setSavedNotes(prev => prev.filter(n => n.id !== noteId))
+      await noteService.delete(trip.id, noteId)
+    } catch (error) {
+      console.error('Error deleting note:', error)
+      // Revert if needed, though usually safe to ignore for deletion
+    }
+  }
 
   // Load documents
   useEffect(() => {
@@ -722,18 +786,7 @@ const DocumentsPage = ({ trip }) => {
         </p>
         <form
           className="documents-notes-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!notesTitle.trim() && !notesBody.trim()) return
-            const entry = {
-              id: Date.now(),
-              title: notesTitle.trim() || t('travel.documents.notesHelper.untitled', 'Untitled note'),
-              body: notesBody.trim()
-            }
-            setSavedNotes(prev => [entry, ...prev].slice(0, 5))
-            setNotesTitle('')
-            setNotesBody('')
-          }}
+          onSubmit={handleSaveNote}
         >
           <div className="documents-notes-row">
             <input
@@ -766,8 +819,18 @@ const DocumentsPage = ({ trip }) => {
           <div className="documents-notes-list">
             {savedNotes.map(note => (
               <div key={note.id} className="documents-note-chip">
-                <h4>{note.title}</h4>
-                {note.body && <p>{note.body}</p>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <h4>{note.title}</h4>
+                  <button
+                    onClick={() => handleDeleteNote(note.id)}
+                    className="delete-note-btn"
+                    title={t('common.delete', 'Delete')}
+                    style={{ background: 'none', border: 'none', padding: '0', color: 'var(--text-tertiary)', cursor: 'pointer', marginLeft: '0.5rem' }}
+                  >
+                    <FiX size={14} />
+                  </button>
+                </div>
+                {note.body && <p style={{ whiteSpace: 'pre-wrap' }}>{note.body}</p>}
               </div>
             ))}
           </div>

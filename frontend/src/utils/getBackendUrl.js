@@ -22,8 +22,8 @@ export const getBackendUrl = () => {
 
   // CRITICAL: Force check window.location at call time, not module load time
   if (typeof window === 'undefined' || !window.location) {
-    // Prefer HTTPS for local development to avoid HTTP->HTTPS redirects (301)
-    return 'https://localhost:5038';
+    // Use HTTP for local development (backend runs on HTTP profile)
+    return 'http://localhost:5038';
   }
 
   // Get fresh values from window.location
@@ -37,9 +37,8 @@ export const getBackendUrl = () => {
     /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
 
   if (isIPAddress) {
-    // Construct URL with IP
-    // Prefer HTTPS to avoid dev redirect loops
-    const scheme = protocol === 'https:' ? 'https:' : 'https:';
+    // Construct URL with IP - use same protocol as frontend
+    const scheme = protocol === 'https:' ? 'https:' : 'http:';
     return `${scheme}//${hostname}:5038`;
   }
 
@@ -54,13 +53,13 @@ export const getBackendUrl = () => {
   }
 
   // Default to localhost ONLY if we're actually on localhost
-  // Prefer HTTPS dev profile (matches launchSettings https profile)
-  const defaultUrl = 'https://localhost:5038';
+  // Use HTTP for local development (matches launchSettings http profile)
+  const defaultUrl = 'http://localhost:5038';
 
   // SAFETY CHECK: If we're on an IP but returning localhost, something is very wrong
   if (hostname && /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
     // Force return IP-based URL
-    const scheme = protocol === 'https:' ? 'https:' : 'https:';
+    const scheme = protocol === 'https:' ? 'https:' : 'http:';
     return `${scheme}//${hostname}:5038`;
   }
 

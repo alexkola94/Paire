@@ -635,6 +635,78 @@ namespace YouAndMeExpensesAPI.Services
 
             return true;
         }
+
+        // Notes
+
+        public async Task<IReadOnlyList<TravelNote>?> GetNotesAsync(string userId, Guid tripId)
+        {
+            var exists = await _repository.TripExistsForUserAsync(tripId, userId);
+            if (!exists)
+            {
+                return null;
+            }
+
+            return await _repository.GetNotesAsync(tripId);
+        }
+
+        public async Task<TravelNote?> CreateNoteAsync(string userId, Guid tripId, TravelNote note)
+        {
+            var exists = await _repository.TripExistsForUserAsync(tripId, userId);
+            if (!exists)
+            {
+                return null;
+            }
+
+            note.Id = Guid.NewGuid();
+            note.TripId = tripId;
+            note.CreatedAt = DateTime.UtcNow;
+            note.UpdatedAt = DateTime.UtcNow;
+
+            await _repository.AddNoteAsync(note);
+            await _repository.SaveChangesAsync();
+            return note;
+        }
+
+        public async Task<TravelNote?> UpdateNoteAsync(string userId, Guid tripId, Guid noteId, TravelNote updates)
+        {
+            var exists = await _repository.TripExistsForUserAsync(tripId, userId);
+            if (!exists)
+            {
+                return null;
+            }
+
+            var note = await _repository.GetNoteAsync(tripId, noteId);
+            if (note == null)
+            {
+                return null;
+            }
+
+            note.Title = updates.Title;
+            note.Body = updates.Body;
+            note.UpdatedAt = DateTime.UtcNow;
+
+            await _repository.SaveChangesAsync();
+            return note;
+        }
+
+        public async Task<bool> DeleteNoteAsync(string userId, Guid tripId, Guid noteId)
+        {
+            var exists = await _repository.TripExistsForUserAsync(tripId, userId);
+            if (!exists)
+            {
+                return false;
+            }
+
+            var note = await _repository.GetNoteAsync(tripId, noteId);
+            if (note == null)
+            {
+                return false;
+            }
+
+            await _repository.RemoveNoteAsync(note);
+            await _repository.SaveChangesAsync();
+            return true;
+        }
     }
 
     /// <summary>

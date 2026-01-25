@@ -53,6 +53,12 @@ namespace YouAndMeExpensesAPI.Services
         Task<IReadOnlyList<SavedPlace>?> GetSavedPlacesAsync(string userId, Guid tripId);
         Task<SavedPlace?> CreateSavedPlaceAsync(string userId, Guid tripId, SavedPlace place);
         Task<bool> DeleteSavedPlaceAsync(string userId, Guid tripId, Guid placeId);
+
+        // Notes
+        Task<IReadOnlyList<TravelNote>?> GetNotesAsync(string userId, Guid tripId);
+        Task<TravelNote?> CreateNoteAsync(string userId, Guid tripId, TravelNote note);
+        Task<TravelNote?> UpdateNoteAsync(string userId, Guid tripId, Guid noteId, TravelNote updates);
+        Task<bool> DeleteNoteAsync(string userId, Guid tripId, Guid noteId);
     }
 
     /// <summary>

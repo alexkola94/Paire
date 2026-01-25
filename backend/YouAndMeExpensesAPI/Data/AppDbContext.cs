@@ -47,6 +47,7 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<TripCity> TripCities { get; set; }
         public DbSet<TripLayoutPreferences> TripLayoutPreferences { get; set; }
         public DbSet<SavedPlace> SavedPlaces { get; set; }
+        public DbSet<TravelNote> TravelNotes { get; set; }
 
         // Travel Notification DbSets
         public DbSet<TravelNotificationPreferences> TravelNotificationPreferences { get; set; }
@@ -876,6 +877,28 @@ namespace YouAndMeExpensesAPI.Data
 
                 entity.HasOne(e => e.Trip)
                     .WithMany()
+                    .HasForeignKey(e => e.TripId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // TRAVEL NOTES TABLE
+            // ============================================
+            modelBuilder.Entity<TravelNote>(entity =>
+            {
+                entity.ToTable("travel_notes");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TripId).HasColumnName("trip_id").IsRequired();
+                entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255);
+                entity.Property(e => e.Body).HasColumnName("body");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TripId);
+
+                entity.HasOne(e => e.Trip)
+                    .WithMany(t => t.TravelNotes)
                     .HasForeignKey(e => e.TripId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

@@ -9,7 +9,8 @@ import db, {
   createDocument,
   createTravelExpense,
   createTripCity,
-  createPinnedPOI
+  createPinnedPOI,
+  createTravelNote
 } from './travelDb'
 
 /**
@@ -176,6 +177,9 @@ export const processSyncQueue = async () => {
             break
           case 'pinnedPOIs':
             endpoint = `/api/travel/trips/${tripId}/saved-places`
+            break
+          case 'travelNotes':
+            endpoint = `/api/travel/trips/${tripId}/notes`
             break
           default:
             continue
@@ -800,6 +804,82 @@ export const travelExpenseService = {
     })
 
     return summary
+  }
+}
+
+// ========================================
+// Travel Note Service
+// ========================================
+
+export const noteService = {
+  async getByTrip(tripId) {
+    try {
+      const notes = await apiRequest(`/api/travel/trips/${tripId}/notes`)
+      await db.travelNotes.where('tripId').equals(tripId).delete()
+      if (Array.isArray(notes)) {
+        await db.travelNotes.bulkAdd(notes.map(n => ({ ...n, _synced: true })))
+      }
+      return notes
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        return await db.travelNotes.where('tripId').equals(tripId).toArray()
+      }
+      throw error
+    }
+  },
+
+  async create(tripId, noteData) {
+    const note = createTravelNote({ ...noteData, tripId })
+
+    try {
+      const created = await apiRequest(`/api/travel/trips/${tripId}/notes`, {
+        method: 'POST',
+        body: JSON.stringify(note)
+      })
+      await db.travelNotes.add({ ...created, _synced: true })
+      return created
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        const localId = await db.travelNotes.add({ ...note, _synced: false })
+        await addToSyncQueue('create', 'travelNotes', { ...note, localId })
+        return { ...note, id: localId }
+      }
+      throw error
+    }
+  },
+
+  async update(tripId, noteId, updates) {
+    const updatedData = { ...updates, updatedAt: new Date().toISOString() }
+
+    try {
+      const updated = await apiRequest(`/api/travel/trips/${tripId}/notes/${noteId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedData)
+      })
+      await db.travelNotes.update(noteId, { ...updated, _synced: true })
+      return updated
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        await db.travelNotes.update(noteId, { ...updatedData, _synced: false })
+        await addToSyncQueue('update', 'travelNotes', { id: noteId, tripId, ...updatedData })
+        return await db.travelNotes.get(noteId)
+      }
+      throw error
+    }
+  },
+
+  async delete(tripId, noteId) {
+    try {
+      await apiRequest(`/api/travel/trips/${tripId}/notes/${noteId}`, { method: 'DELETE' })
+      await db.travelNotes.delete(noteId)
+    } catch (error) {
+      if (error instanceof OfflineError || error.isOffline) {
+        await addToSyncQueue('delete', 'travelNotes', { id: noteId, tripId })
+        await db.travelNotes.delete(noteId)
+      } else {
+        throw error
+      }
+    }
   }
 }
 

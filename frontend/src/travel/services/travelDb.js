@@ -87,6 +87,43 @@ db.version(4).stores({
   pinnedPOIs: '++id, tripId, poiId, category, [tripId+category], createdAt, _synced'
 })
 
+// Version 5 - Add travelNotes table
+db.version(5).stores({
+  trips: '++id, userId, status, startDate, endDate, destination, createdAt, _synced',
+  itineraryEvents: '++id, tripId, type, date, startTime, [tripId+date], _synced',
+  packingItems: '++id, tripId, category, name, isChecked, [tripId+category], _synced',
+  documents: '++id, tripId, type, name, expiryDate, [tripId+type], _synced',
+  travelExpenses: '++id, tripId, category, amount, currency, date, [tripId+category], [tripId+date], _synced',
+  apiCache: '++id, key, data, timestamp, ttl',
+  syncQueue: '++id, action, table, timestamp, status',
+  tripCities: '++id, tripId, order, [tripId+order], _synced',
+  pinnedPOIs: '++id, tripId, poiId, category, [tripId+category], createdAt, _synced',
+
+  // Travel Notes
+  // Notes associated with a trip, persists across devices
+  travelNotes: '++id, tripId, [tripId+createdAt], _synced'
+})
+
+// Version 6 - Add resourceSyncState for time-based caching
+db.version(6).stores({
+  trips: '++id, userId, status, startDate, endDate, destination, createdAt, _synced',
+  itineraryEvents: '++id, tripId, type, date, startTime, [tripId+date], _synced',
+  packingItems: '++id, tripId, category, name, isChecked, [tripId+category], _synced',
+  documents: '++id, tripId, type, name, expiryDate, [tripId+type], _synced',
+  travelExpenses: '++id, tripId, category, amount, currency, date, [tripId+category], [tripId+date], _synced',
+  apiCache: '++id, key, data, timestamp, ttl',
+  syncQueue: '++id, action, table, timestamp, status',
+  tripCities: '++id, tripId, order, [tripId+order], _synced',
+  pinnedPOIs: '++id, tripId, poiId, category, [tripId+category], createdAt, _synced',
+  travelNotes: '++id, tripId, [tripId+createdAt], _synced',
+
+  // Resource Sync State
+  // Tracks when a specific resource (e.g. "trips/123/events") was last fetched from API
+  // key: unique resource identifier string
+  // timestamp: last successful fetch timestamp
+  resourceSyncState: 'key, timestamp'
+})
+
 /**
  * Trip model factory
  * @param {Object} data - Trip data
@@ -413,6 +450,19 @@ export const createTripCity = (data = {}) => ({
   order: data.order || 0, // Order in the trip sequence
   startDate: data.startDate || null, // Arrival date in this city
   endDate: data.endDate || null, // Departure date from this city
+  createdAt: data.createdAt || new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+})
+
+/**
+ * Travel note model factory
+ * @param {Object} data - Note data
+ * @returns {Object} Travel note object with defaults
+ */
+export const createTravelNote = (data = {}) => ({
+  tripId: data.tripId,
+  title: data.title || '',
+  body: data.body || '',
   createdAt: data.createdAt || new Date().toISOString(),
   updatedAt: new Date().toISOString()
 })

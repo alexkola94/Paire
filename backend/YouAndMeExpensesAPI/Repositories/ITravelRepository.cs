@@ -57,6 +57,12 @@ namespace YouAndMeExpensesAPI.Repositories
         Task<SavedPlace?> GetSavedPlaceAsync(Guid tripId, Guid placeId);
         Task RemoveSavedPlaceAsync(SavedPlace place);
 
+        // Notes
+        Task<IReadOnlyList<TravelNote>> GetNotesAsync(Guid tripId);
+        Task AddNoteAsync(TravelNote note);
+        Task<TravelNote?> GetNoteAsync(Guid tripId, Guid noteId);
+        Task RemoveNoteAsync(TravelNote note);
+
         // Unit of work
         Task SaveChangesAsync();
     }

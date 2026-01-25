@@ -241,6 +241,33 @@ namespace YouAndMeExpensesAPI.Repositories
             return Task.CompletedTask;
         }
 
+        // Notes
+
+        public async Task<IReadOnlyList<TravelNote>> GetNotesAsync(Guid tripId)
+        {
+            return await _dbContext.TravelNotes
+                .Where(n => n.TripId == tripId)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task AddNoteAsync(TravelNote note)
+        {
+            await _dbContext.TravelNotes.AddAsync(note);
+        }
+
+        public async Task<TravelNote?> GetNoteAsync(Guid tripId, Guid noteId)
+        {
+            return await _dbContext.TravelNotes
+                .FirstOrDefaultAsync(n => n.Id == noteId && n.TripId == tripId);
+        }
+
+        public Task RemoveNoteAsync(TravelNote note)
+        {
+            _dbContext.TravelNotes.Remove(note);
+            return Task.CompletedTask;
+        }
+
         public async Task SaveChangesAsync()
         {
             await _dbContext.SaveChangesAsync();

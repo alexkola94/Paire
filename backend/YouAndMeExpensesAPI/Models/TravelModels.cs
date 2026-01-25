@@ -77,6 +77,7 @@ namespace YouAndMeExpensesAPI.Models
         public virtual ICollection<PackingItem> PackingItems { get; set; } = new List<PackingItem>();
         public virtual ICollection<TravelDocument> Documents { get; set; } = new List<TravelDocument>();
         public virtual ICollection<TravelExpense> Expenses { get; set; } = new List<TravelExpense>();
+        public virtual ICollection<TravelNote> TravelNotes { get; set; } = new List<TravelNote>();
 
         /// <summary>
         /// Ordered list of cities for multi-city trips.
@@ -515,6 +516,38 @@ namespace YouAndMeExpensesAPI.Models
         [Column("source")]
         [MaxLength(50)]
         public string Source { get; set; } = "overpass";
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; }
+
+        // Navigation
+        [ForeignKey("TripId")]
+        public virtual Trip? Trip { get; set; }
+    }
+
+    /// <summary>
+    /// Travel note for storing user notes on the Documents page.
+    /// Syncs across devices via backend API.
+    /// </summary>
+    [Table("travel_notes")]
+    public class TravelNote
+    {
+        [Key]
+        [Column("id")]
+        public Guid Id { get; set; }
+
+        [Column("trip_id")]
+        public Guid TripId { get; set; }
+
+        [Column("title")]
+        [MaxLength(255)]
+        public string Title { get; set; } = string.Empty;
+
+        [Column("body")]
+        public string? Body { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
