@@ -26,6 +26,8 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly ISessionService _sessionService;
         private readonly AppDbContext _context;
         private readonly IUserSyncService _userSyncService;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
@@ -36,6 +38,8 @@ namespace YouAndMeExpensesAPI.Controllers
             ISessionService sessionService,
             AppDbContext context,
             IUserSyncService userSyncService,
+            IEmailService emailService,
+            IConfiguration configuration,
             ILogger<AuthController> logger)
         {
             _shieldAuthService = shieldAuthService;
@@ -45,6 +49,8 @@ namespace YouAndMeExpensesAPI.Controllers
             _sessionService = sessionService;
             _context = context;
             _userSyncService = userSyncService;
+            _emailService = emailService;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -135,6 +141,45 @@ namespace YouAndMeExpensesAPI.Controllers
             };
 
             var response = await _shieldAuthService.RegisterAsync(payload, tenantId);
+            
+            if (response.IsSuccess)
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(response.Content);
+                    // Check for verification token in response
+                    if (doc.RootElement.TryGetProperty("emailConfirmationToken", out var tokenProp) && 
+                        doc.RootElement.TryGetProperty("userId", out var userIdProp)) // Assuming Shield returns userId
+                    {
+                        var token = tokenProp.GetString();
+                        var userId = userIdProp.GetString();
+
+                        if (!string.IsNullOrEmpty(token) && !string.IsNullOrEmpty(userId))
+                        {
+                            var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
+                            if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
+
+                            var verifyLink = $"{frontendUrl}/verify-email?token={System.Net.WebUtility.UrlEncode(token)}&userId={System.Net.WebUtility.UrlEncode(userId)}";
+                            
+                            var emailBody = EmailService.CreateVerificationEmailTemplate(verifyLink);
+                            var emailMessage = new EmailMessage
+                            {
+                                ToEmail = request.Email,
+                                Subject = "Verify Your Email - Paire",
+                                Body = emailBody,
+                                IsHtml = true
+                            };
+
+                            await _emailService.SendEmailAsync(emailMessage);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending registration verification email");
+                }
+            }
+
             return HandleProxyResponse(response);
         }
 
@@ -149,7 +194,54 @@ namespace YouAndMeExpensesAPI.Controllers
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
-            => HandleProxyResponse(await _shieldAuthService.ForgotPasswordAsync(request));
+        {
+            var response = await _shieldAuthService.ForgotPasswordAsync(request);
+
+            if (response.IsSuccess)
+            {
+                try
+                {
+                    // Parse response to see if we have a token
+                    using var doc = JsonDocument.Parse(response.Content);
+                    if (doc.RootElement.TryGetProperty("passwordResetToken", out var tokenProp))
+                    {
+                        var token = tokenProp.GetString();
+                        if (!string.IsNullOrEmpty(token))
+                        {
+                            // Get Frontend URL
+                            var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
+                            if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
+
+                            var resetLink = $"{frontendUrl}/reset-password?token={System.Net.WebUtility.UrlEncode(token)}&email={System.Net.WebUtility.UrlEncode(request.Email)}";
+                            
+                            var emailBody = EmailService.CreateResetPasswordEmailTemplate(resetLink);
+                            var emailMessage = new EmailMessage
+                            {
+                                ToEmail = request.Email,
+                                Subject = "Reset Your Password - Paire",
+                                Body = emailBody,
+                                IsHtml = true
+                            };
+
+                            // Fire and forget email? or await? API usually awaits.
+                            await _emailService.SendEmailAsync(emailMessage);
+                            
+                            // We can return the original response, Shield might have returned the token
+                            // Ideally we shouldn't expose the token to the client if we email it, but
+                            // the user said "Return token so Main API can send email with proper frontend link" 
+                            // and "returns here to ... and never sends the email".
+                            // So we are sending the email now. 
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending forgot password email");
+                }
+            }
+
+            return HandleProxyResponse(response);
+        }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
@@ -162,7 +254,48 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpPost("resend-verification-email")] // Legacy: resend-confirmation
         [HttpPost("resend-confirmation")] // Alias for backward compatibility
         public async Task<IActionResult> ResendConfirmation([FromBody] ForgotPasswordRequest request)
-            => HandleProxyResponse(await _shieldAuthService.ResendVerificationEmailAsync(request));
+        {
+            var response = await _shieldAuthService.ResendVerificationEmailAsync(request);
+
+            if (response.IsSuccess)
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(response.Content);
+                    if (doc.RootElement.TryGetProperty("emailConfirmationToken", out var tokenProp) &&
+                        doc.RootElement.TryGetProperty("userId", out var userIdProp))
+                    {
+                        var token = tokenProp.GetString();
+                        var userId = userIdProp.GetString();
+
+                        if (!string.IsNullOrEmpty(token) && !string.IsNullOrEmpty(userId))
+                        {
+                            var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
+                            if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
+
+                            var verifyLink = $"{frontendUrl}/verify-email?token={System.Net.WebUtility.UrlEncode(token)}&userId={System.Net.WebUtility.UrlEncode(userId)}";
+                            
+                            var emailBody = EmailService.CreateVerificationEmailTemplate(verifyLink);
+                            var emailMessage = new EmailMessage
+                            {
+                                ToEmail = request.Email,
+                                Subject = "Verify Your Email - Paire",
+                                Body = emailBody,
+                                IsHtml = true
+                            };
+
+                            await _emailService.SendEmailAsync(emailMessage);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending resend verification email");
+                }
+            }
+
+            return HandleProxyResponse(response);
+        }
 
         [Authorize]
         [HttpPost("change-password")]

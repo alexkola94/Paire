@@ -180,5 +180,33 @@ namespace YouAndMeExpensesAPI.Services
 </body>
 </html>";
         }
+        public static string CreateResetPasswordEmailTemplate(string resetLink)
+        {
+            var title = "Reset Your Password";
+            var message = $@"
+                <p>Hello,</p>
+                <p>We received a request to reset your password. Click the button below to proceed:</p>
+                <div style='text-align: center; margin: 30px 0;'>
+                    <a href='{resetLink}' class='button'>Reset Password</a>
+                </div>
+                <p>If you didn't request this change, you can safely ignore this email.</p>
+                <p><small>Or copy this link: <a href='{resetLink}'>{resetLink}</a></small></p>";
+
+            return CreateReminderEmailTemplate(title, message, "", resetLink);
+        }
+
+        public static string CreateVerificationEmailTemplate(string verificationLink)
+        {
+            var title = "Verify Your Email";
+            var message = $@"
+                <p>Welcome to Paire!</p>
+                <p>Please verify your email address to get started:</p>
+                <div style='text-align: center; margin: 30px 0;'>
+                    <a href='{verificationLink}' class='button'>Verify Email</a>
+                </div>
+                <p><small>Or copy this link: <a href='{verificationLink}'>{verificationLink}</a></small></p>";
+
+            return CreateReminderEmailTemplate(title, message, "", verificationLink);
+        }
     }
 }
