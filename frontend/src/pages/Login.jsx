@@ -44,6 +44,12 @@ function Login() {
   // Password visibility state
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isConfirmPasswordTouched, setIsConfirmPasswordTouched] = useState(false)
+
+  // Derived state for password match
+  const passwordsMatch = formData.password === formData.confirmPassword
+  const showMatchError = isSignUp && isConfirmPasswordTouched && !passwordsMatch && formData.confirmPassword.length > 0
+  const showMatchSuccess = isSignUp && passwordsMatch && formData.confirmPassword.length > 0
 
   /**
    * Check URL parameters and load saved email on mount
@@ -73,10 +79,16 @@ function Login() {
    * Handle input changes
    */
   const handleChange = (e) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     })
+
+    if (name === 'confirmPassword') {
+      setIsConfirmPasswordTouched(true)
+    }
+
     setError('') // Clear error on input change
   }
 
@@ -294,6 +306,7 @@ function Login() {
     setError('')
     setSuccess('')
     setFormData({ email: '', password: '', confirmPassword: '', emailNotificationsEnabled: false })
+    setIsConfirmPasswordTouched(false)
   }
 
   // Show 2FA verification screen if required
@@ -311,14 +324,14 @@ function Login() {
 
   return (
     <div className="login-page">
-      <motion.div 
+      <motion.div
         className="login-container"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       >
         {/* Mobile Branding - shown on mobile only */}
-        <motion.div 
+        <motion.div
           className="login-branding-mobile"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -336,13 +349,13 @@ function Login() {
         </motion.div>
 
         {/* Left side - Branding (Desktop/Tablet) */}
-        <motion.div 
+        <motion.div
           className="login-branding"
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <motion.div 
+          <motion.div
             className="branding-content"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -361,13 +374,13 @@ function Login() {
         </motion.div>
 
         {/* Right side - Form */}
-        <motion.div 
+        <motion.div
           className="login-form-container"
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <motion.div 
+          <motion.div
             className="login-form-wrapper"
             initial="hidden"
             animate="visible"
@@ -379,12 +392,12 @@ function Login() {
               }
             }}
           >
-            <motion.h2 
+            <motion.h2
               className="form-title"
               variants={{
                 hidden: { opacity: 0, y: 20 },
-                visible: { 
-                  opacity: 1, 
+                visible: {
+                  opacity: 1,
                   y: 0,
                   transition: {
                     duration: 0.4,
@@ -409,8 +422,8 @@ function Login() {
             )}
 
             {/* Login/Signup Form */}
-            <motion.form 
-              onSubmit={handleSubmit} 
+            <motion.form
+              onSubmit={handleSubmit}
               className="login-form"
               variants={{
                 hidden: { opacity: 0 },
@@ -423,12 +436,12 @@ function Login() {
               }}
             >
               {/* Email Input */}
-              <motion.div 
+              <motion.div
                 className="form-group"
                 variants={{
                   hidden: { opacity: 0, x: -20 },
-                  visible: { 
-                    opacity: 1, 
+                  visible: {
+                    opacity: 1,
                     x: 0,
                     transition: {
                       duration: 0.4,
@@ -454,12 +467,12 @@ function Login() {
               </motion.div>
 
               {/* Password Input */}
-              <motion.div 
+              <motion.div
                 className="form-group"
                 variants={{
                   hidden: { opacity: 0, x: -20 },
-                  visible: { 
-                    opacity: 1, 
+                  visible: {
+                    opacity: 1,
                     x: 0,
                     transition: {
                       duration: 0.4,
@@ -497,12 +510,12 @@ function Login() {
               {/* Confirm Password (Sign Up only) */}
               {isSignUp && (
                 <>
-                  <motion.div 
+                  <motion.div
                     className="form-group"
                     variants={{
                       hidden: { opacity: 0, x: -20 },
-                      visible: { 
-                        opacity: 1, 
+                      visible: {
+                        opacity: 1,
                         x: 0,
                         transition: {
                           duration: 0.4,
@@ -535,14 +548,37 @@ function Login() {
                         {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                       </button>
                     </div>
+                    {/* Password Match Indicator */}
+                    {isSignUp && formData.confirmPassword.length > 0 && (
+                      <div className={`password-match-indicator ${passwordsMatch ? 'match-success' : 'match-error'}`}>
+                        <small style={{
+                          color: passwordsMatch ? '#10B981' : '#EF4444',
+                          marginTop: '0.25rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          fontSize: '0.85rem'
+                        }}>
+                          {passwordsMatch ? (
+                            <>
+                              <span>✓</span> Passwords match
+                            </>
+                          ) : (
+                            <>
+                              <span>✕</span> Passwords do not match
+                            </>
+                          )}
+                        </small>
+                      </div>
+                    )}
                   </motion.div>
 
-                  <motion.div 
+                  <motion.div
                     className="form-group checkbox-group"
                     variants={{
                       hidden: { opacity: 0, x: -20 },
-                      visible: { 
-                        opacity: 1, 
+                      visible: {
+                        opacity: 1,
                         x: 0,
                         transition: {
                           duration: 0.4,
@@ -570,12 +606,12 @@ function Login() {
 
               {/* Remember Me Checkbox */}
               {!isSignUp && (
-                <motion.div 
+                <motion.div
                   className="form-group remember-me-container"
                   variants={{
                     hidden: { opacity: 0, x: -20 },
-                    visible: { 
-                      opacity: 1, 
+                    visible: {
+                      opacity: 1,
                       x: 0,
                       transition: {
                         duration: 0.4,
@@ -607,8 +643,8 @@ function Login() {
               <motion.button
                 variants={{
                   hidden: { opacity: 0, y: 20 },
-                  visible: { 
-                    opacity: 1, 
+                  visible: {
+                    opacity: 1,
                     y: 0,
                     transition: {
                       duration: 0.4,
@@ -632,7 +668,7 @@ function Login() {
             </motion.form>
 
             {/* Toggle Sign In/Sign Up */}
-            <motion.div 
+            <motion.div
               className="form-footer"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

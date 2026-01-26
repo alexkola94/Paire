@@ -129,8 +129,39 @@ const apiRequest = async (url, options = {}) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      const errorMessage = errorData.error || `HTTP error! status: ${response.status}`
-      console.error('API error response:', { status: response.status, error: errorData });
+
+      // Extract human-readable error message from various formats
+      let errorMessage = `HTTP error! status: ${response.status}`;
+
+      if (errorData) {
+        // 1. Check for 'errors' object (ASP.NET Identity / FluentValidation)
+        // Format: { errors: { "Password": ["Too short"], "Email": ["Taken"] } }
+        if (errorData.errors && typeof errorData.errors === 'object') {
+          // Join all error messages into a single string
+          const allErrors = Object.values(errorData.errors).flat();
+          if (allErrors.length > 0) {
+            errorMessage = allErrors.join('. ');
+          }
+        }
+        // 2. Check for standard 'error' property (simple JSON)
+        else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        // 3. Check for 'message' property (common API pattern)
+        else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        // 4. Check for 'detail' (RFC 7807 Problem Details)
+        else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        }
+        // 5. Fallback to title
+        else if (errorData.title) {
+          errorMessage = errorData.title;
+        }
+      }
+
+      console.error('API error response:', { status: response.status, error: errorData, parsedMessage: errorMessage });
       throw new Error(errorMessage)
     }
 
