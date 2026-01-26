@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using YouAndMeExpensesAPI.Services;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 
 namespace YouAndMeExpensesAPI.Middleware
 {
@@ -11,11 +13,19 @@ namespace YouAndMeExpensesAPI.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<SessionValidationMiddleware> _logger;
+        private readonly IMemoryCache _cache;
+        private readonly IConfiguration _configuration;
 
-        public SessionValidationMiddleware(RequestDelegate next, ILogger<SessionValidationMiddleware> logger)
+        public SessionValidationMiddleware(
+            RequestDelegate next, 
+            ILogger<SessionValidationMiddleware> logger,
+            IMemoryCache cache,
+            IConfiguration configuration)
         {
             _next = next;
             _logger = logger;
+            _cache = cache;
+            _configuration = configuration;
         }
 
         public async Task InvokeAsync(HttpContext context, IShieldAuthService shieldAuthService)
@@ -62,9 +72,30 @@ namespace YouAndMeExpensesAPI.Middleware
 
                         if (!string.IsNullOrEmpty(sessionIdClaim))
                         {
-                            // Validate session via Shield API
-                            var isValid = await shieldAuthService.ValidateSessionAsync(sessionIdClaim);
+                            // CACHE LOGIC START
+                            var cacheKey = $"AuthSession:{sessionIdClaim}";
                             
+                            // Try to get from cache (using generic extension method)
+                            if (!_cache.TryGetValue(cacheKey, out bool isValid))
+                            {
+                                // Not in cache, validate via Shield API
+                                isValid = await shieldAuthService.ValidateSessionAsync(sessionIdClaim);
+                                
+                                // Cache the result if valid
+                                if (isValid)
+                                {
+                                    // Get cache duration from config or default to 10 minutes
+                                    var cacheMinutes = _configuration.GetValue<int>("JwtSettings:SessionValidationCacheMinutes", 10);
+                                    
+                                    var cacheEntryOptions = new MemoryCacheEntryOptions
+                                    {
+                                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(cacheMinutes)
+                                    };
+                                    
+                                    _cache.Set(cacheKey, true, cacheEntryOptions);
+                                }
+                            }
+
                             if (!isValid)
                             {
                                 _logger.LogWarning($"Invalid or revoked session: {sessionIdClaim}");
@@ -72,6 +103,7 @@ namespace YouAndMeExpensesAPI.Middleware
                                 await context.Response.WriteAsJsonAsync(new { error = "Session expired or revoked. Please log in again." });
                                 return;
                             }
+                            // CACHE LOGIC END
                         }
                     }
                     catch (Exception ex)
