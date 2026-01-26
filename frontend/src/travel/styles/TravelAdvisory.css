@@ -103,8 +103,15 @@
 }
 
 /* Push score left when nav arrows are present */
+/* Push score left when nav arrows are present */
 .travel-advisory-card.has-navigation .travel-advisory-score-wrapper {
   margin-right: 4.5rem;
+}
+
+/* Ensure even more space when both nav and close button are present */
+.travel-advisory-card.has-navigation.has-close .travel-advisory-score-wrapper {
+  margin-right: 8rem;
+  /* Increased to prevent overlap with shifted nav arrows */
 }
 
 .travel-advisory-score-label {

@@ -1635,6 +1635,7 @@
       }
     },
     "multiCity": {
+      "selectedCount": "cities selected",
       "createTrip": "Create Multi-City Trip",
       "editTrip": "Edit Multi-City Trip",
       "deleteTrip": "Delete Trip",

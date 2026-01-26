@@ -490,7 +490,6 @@ const CitySelectionMap = memo(({
       {/* Search Bar Overlay */}
       <div className="map-search-overlay">
         <div className="map-search-input-wrapper">
-          <FiSearch className="map-search-icon" />
           <input
             type="text"
             className="map-search-input"

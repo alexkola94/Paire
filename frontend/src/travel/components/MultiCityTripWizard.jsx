@@ -21,11 +21,19 @@ import { budgetService, savingsGoalService } from '../../services/api'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import CitySelectionMap from './CitySelectionMap'
 import MultiCityDistanceSummary from './MultiCityDistanceSummary'
-import { getRouteDirections } from '../services/discoveryService'
+import { getRouteDirections, calculateDistance } from '../services/discoveryService'
 import { getTransportSuggestions, TRANSPORT_MODES } from '../utils/transportSuggestion'
 import DatePicker from './DatePicker'
 import '../styles/TripSetupWizard.css'
 import '../styles/MultiCityTripWizard.css'
+
+// Helper to calculate distance between two location objects
+const getDistanceKm = (loc1, loc2) => {
+  if (!loc1 || !loc2 || !loc1.latitude || !loc1.longitude || !loc2.latitude || !loc2.longitude) {
+    return null
+  }
+  return calculateDistance(loc1.latitude, loc1.longitude, loc2.latitude, loc2.longitude)
+}
 
 /**
  * MultiCityTripWizard Component
@@ -212,6 +220,13 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     const [moved] = newCities.splice(fromIndex, 1)
     newCities.splice(toIndex, 0, moved)
     setCities(newCities.map((c, idx) => ({ ...c, order: idx })))
+  }
+
+  // Handle transport change
+  const handleCityTransportChange = (cityId, newMode) => {
+    setCities(cities.map(city =>
+      city.id === cityId ? { ...city, transportMode: newMode } : city
+    ))
   }
 
   // Load advisories whenever the ordered list of city countries changes.
@@ -500,7 +515,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   // --- Render Helpers ---
 
   const renderMapSection = (orderedCities) => (
-    <div className="wizard-step-map" style={isMobile ? { height: '100%', minHeight: '60vh' } : {}}>
+    <div className="wizard-step-map" style={isMobile ? { height: '100%' } : {}}>
       <div className="city-selection-map-wrapper">
         <CitySelectionMap
           cities={orderedCities}
@@ -637,23 +652,39 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     if (isMobile) {
       switch (step) {
         case 1: // Mobile Map Only
-          return (
-            <div className="wizard-step mobile-map-step" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <div style={{ padding: '0 0 var(--spacing-sm)', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '1.1rem', margin: 0 }}>{t('travel.multiCity.step1.title', 'Select Cities')}</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                  {t('travel.multiCity.step1.description', 'Search and tap map to add stops')}
-                </p>
-              </div>
-              {renderMapSection(orderedCities)}
-              {/* Hints for mobile users */}
-              <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', padding: '4px 12px', borderRadius: '12px' }}>
-                  {orderedCities.length} {t('cities.selected')}
-                </div>
+          <div className="wizard-step mobile-map-step" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div className="city-selection-map-wrapper" style={{ margin: '-0.75rem', width: 'calc(100% + 1.5rem)', height: 'calc(100% + 1.5rem)', borderRadius: 0 }}>
+              <CitySelectionMap
+                cities={orderedCities}
+                onCityAdd={handleCityAdd}
+                onCityRemove={handleCityRemove}
+                onCityReorder={handleCityReorder}
+                homeLocation={homeLocation}
+                returnTransportMode={returnTransportMode}
+              />
+
+              {/* Floating City Counter Overlay */}
+              <div style={{
+                position: 'absolute',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(8px)',
+                padding: '6px 16px',
+                borderRadius: '20px',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                pointerEvents: 'none',
+                zIndex: 10,
+                whiteSpace: 'nowrap'
+              }}>
+                {orderedCities.length} {t('travel.multiCity.selectedCount', 'cities selected')}
               </div>
             </div>
-          )
+          </div>
         case 2: // Mobile List Review
           return (
             <div className="wizard-step">
