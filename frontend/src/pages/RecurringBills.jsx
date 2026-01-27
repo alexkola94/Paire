@@ -5,13 +5,13 @@ import { motion } from 'framer-motion'
 import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
-  FiGrid, FiList, FiChevronLeft, FiChevronRight, FiPaperclip, FiDownload, FiX, FiFileText
+  FiGrid, FiList, FiChevronLeft, FiChevronRight, FiPaperclip, FiDownload, FiX, FiFileText, FiTarget
 } from 'react-icons/fi'
 import {
   addMonths, addYears, addWeeks, startOfMonth, endOfMonth, isSameMonth,
   isAfter, isBefore, startOfDay, endOfDay, eachDayOfInterval, getDay
 } from 'date-fns'
-import { recurringBillService, loanService, loanPaymentService } from '../services/api'
+import { recurringBillService, loanService, loanPaymentService, savingsGoalService } from '../services/api'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
@@ -44,11 +44,17 @@ function RecurringBills() {
     queryFn: recurringBillService.getAll
   })
 
-  // Loans stored in a separate query if needed, or fetched together. 
+  // Loans stored in a separate query if needed, or fetched together.
   // Assuming separate for now as per original code.
   const { data: loans = [] } = useQuery({
     queryKey: ['loans'],
     queryFn: loanService.getAll
+  })
+
+  // Savings Goals for linking bills to automatic deposits
+  const { data: savingsGoals = [] } = useQuery({
+    queryKey: ['savingsGoals'],
+    queryFn: savingsGoalService.getAll
   })
 
   const { data: summary } = useQuery({
@@ -76,7 +82,8 @@ function RecurringBills() {
     reminderDays: '3',
     isActive: true,
     notes: '',
-    loanId: ''
+    loanId: '',
+    savingsGoalId: ''
   })
   const [processingBillId, setProcessingBillId] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
@@ -209,10 +216,17 @@ function RecurringBills() {
       setFormLoading(true)
 
       let notes = formData.notes || ''
+      // Clean existing references
       notes = notes.replace(/\[LOAN_REF:[^\]]+\]\s*/g, '').trim()
+      notes = notes.replace(/\[SAVINGS_REF:[^\]]+\]\s*/g, '').trim()
 
+      // Add loan reference if applicable
       if (formData.category === 'loan' && formData.loanId) {
         notes = `${notes} [LOAN_REF:${formData.loanId}]`.trim()
+      }
+      // Add savings goal reference if applicable
+      if (formData.category === 'savings' && formData.savingsGoalId) {
+        notes = `${notes} [SAVINGS_REF:${formData.savingsGoalId}]`.trim()
       }
 
       const billData = {
@@ -261,8 +275,9 @@ function RecurringBills() {
   const handleMarkPaid = async (billId, billAmount, notes) => {
     if (processingBillId || animatingBill.id) return
 
-    // Keep local references for loan logic if needed
+    // Keep local references for loan and savings logic
     const loanRefMatch = notes && notes.match(/\[LOAN_REF:([^\]]+)\]/)
+    const savingsRefMatch = notes && notes.match(/\[SAVINGS_REF:([^\]]+)\]/)
 
     // Phase 1: Start checkmark animation
     setAnimatingBill({ id: billId, type: 'marking-paid' })
@@ -303,6 +318,15 @@ function RecurringBills() {
             // Invalidate loans to refresh balance
             queryClient.invalidateQueries({ queryKey: ['loans'] })
           } catch (e) { console.error(e) }
+        }
+
+        // Additional Logic: Savings Goal Deposit
+        if (savingsRefMatch && savingsRefMatch[1]) {
+          const goalId = savingsRefMatch[1]
+          try {
+            await savingsGoalService.addDeposit(goalId, parseFloat(billAmount))
+            queryClient.invalidateQueries({ queryKey: ['savingsGoals'] })
+          } catch (e) { console.error('Error adding savings deposit:', e) }
         }
 
       } catch (error) {
@@ -366,6 +390,16 @@ function RecurringBills() {
           }
         }
 
+        // Savings Goal Withdrawal Logic
+        const savingsRefMatch = bill.notes && bill.notes.match(/\[SAVINGS_REF:([^\]]+)\]/)
+        if (savingsRefMatch && savingsRefMatch[1]) {
+          const goalId = savingsRefMatch[1]
+          try {
+            await savingsGoalService.withdraw(goalId, parseFloat(bill.amount))
+            queryClient.invalidateQueries({ queryKey: ['savingsGoals'] })
+          } catch (e) { console.error('Error withdrawing from savings:', e) }
+        }
+
       } catch (error) {
         console.error('Error unmarking bill:', error)
         alert(t('recurringBills.errorUnmarking'))
@@ -388,8 +422,13 @@ function RecurringBills() {
     const loanRefMatch = bill.notes && bill.notes.match(/\[LOAN_REF:([^\]]+)\]/)
     const loanId = loanRefMatch ? loanRefMatch[1] : ''
 
+    // Check for savings goal reference in notes
+    const savingsRefMatch = bill.notes && bill.notes.match(/\[SAVINGS_REF:([^\]]+)\]/)
+    const savingsGoalId = savingsRefMatch ? savingsRefMatch[1] : ''
+
     // Clean notes for display
-    const displayNotes = bill.notes ? bill.notes.replace(/\[LOAN_REF:[^\]]+\]\s*/g, '').trim() : ''
+    let displayNotes = bill.notes ? bill.notes.replace(/\[LOAN_REF:[^\]]+\]\s*/g, '').trim() : ''
+    displayNotes = displayNotes.replace(/\[SAVINGS_REF:[^\]]+\]\s*/g, '').trim()
 
     setFormData({
       name: bill.name,
@@ -402,7 +441,8 @@ function RecurringBills() {
       reminderDays: (bill.reminderDays ?? bill.reminder_days ?? '3').toString(),
       isActive: bill.isActive ?? bill.is_active ?? true,
       notes: displayNotes,
-      loanId: loanId
+      loanId: loanId,
+      savingsGoalId: savingsGoalId
     })
     setShowForm(true)
   }
@@ -529,7 +569,8 @@ function RecurringBills() {
       reminderDays: '3',
       isActive: true,
       notes: '',
-      loanId: ''
+      loanId: '',
+      savingsGoalId: ''
     })
   }
 
@@ -683,6 +724,9 @@ function RecurringBills() {
 
   // Filter for active loans only for the dropdown
   const activeLoanOptions = loans.filter(l => !(l.isSettled ?? l.is_settled))
+
+  // Filter for active (non-achieved) savings goals for the dropdown
+  const activeSavingsGoals = savingsGoals.filter(g => !(g.isAchieved ?? g.is_achieved))
 
   if (loading) {
     return (
@@ -1248,6 +1292,39 @@ function RecurringBills() {
                 </div>
               )}
 
+              {/* Savings Goal Selection - ONLY if "Savings" category is selected and we have active goals */}
+              {formData.category === 'savings' && activeSavingsGoals.length > 0 && (
+                <div className="form-layout-item-full fade-in">
+                  <div className="form-group">
+                    <label style={{ color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FiTarget /> {t('recurringBills.linkToSavingsGoal') || 'Link to Savings Goal'}
+                    </label>
+                    <select
+                      name="savingsGoalId"
+                      value={formData.savingsGoalId}
+                      onChange={handleChange}
+                      className="form-select"
+                      style={{ borderColor: 'var(--success-color)' }}
+                    >
+                      <option value="">-- {t('recurringBills.selectSavingsGoal') || 'Select a Savings Goal (Optional)'} --</option>
+                      {activeSavingsGoals.map(goal => {
+                        const currentAmount = goal.currentAmount ?? goal.current_amount ?? 0
+                        const targetAmount = goal.targetAmount ?? goal.target_amount ?? 0
+
+                        return (
+                          <option key={goal.id} value={goal.id}>
+                            {goal.name} - {formatCurrency(currentAmount)} / {formatCurrency(targetAmount)}
+                          </option>
+                        )
+                      })}
+                    </select>
+                    <small className="form-hint">
+                      {t('recurringBills.savingsGoalHint') || 'Marking this bill as paid will automatically add money to this savings goal.'}
+                    </small>
+                  </div>
+                </div>
+              )}
+
             </FormSection>
 
             <div className="form-row">
@@ -1558,6 +1635,7 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
   const icon = getCategoryIcon(bill.category)
   const daysUntil = getDaysUntil(bill.nextDueDate || bill.next_due_date)
   const hasLoanLink = bill.notes && bill.notes.includes('[LOAN_REF:')
+  const hasSavingsLink = bill.notes && bill.notes.includes('[SAVINGS_REF:')
 
   const swipeProps = getSwipeProps(bill.id)
   const offset = swipeProps.offset || 0
@@ -1605,6 +1683,7 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
           <h3>
             {bill.name}
             {hasLoanLink && <FiLink className="linked-icon" title="Linked to Loan" style={{ marginLeft: '6px', color: 'var(--primary-color)' }} />}
+            {hasSavingsLink && <FiTarget className="linked-icon" title="Linked to Savings Goal" style={{ marginLeft: '6px', color: 'var(--success-color)' }} />}
           </h3>
           <span className="bill-frequency">{t(`recurringBills.frequencies.${bill.frequency}`)}</span>
         </div>
@@ -1666,7 +1745,7 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
 
       {bill.notes && (
         <div className="bill-notes">
-          <p>{bill.notes.replace(/\[LOAN_REF:[^\]]+\]/, '').trim()}</p>
+          <p>{bill.notes.replace(/\[LOAN_REF:[^\]]+\]/, '').replace(/\[SAVINGS_REF:[^\]]+\]/, '').trim()}</p>
         </div>
       )}
 

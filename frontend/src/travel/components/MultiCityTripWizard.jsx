@@ -301,6 +301,29 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     setError(null)
   }
 
+  // Handle trip deletion
+  const handleDeleteTrip = async () => {
+    if (!trip?.id) return
+
+    // Confirm deletion
+    const confirmDelete = window.confirm(
+      t('travel.multiCity.confirmDelete', 'Are you sure you want to delete this trip? This action cannot be undone.')
+    )
+    if (!confirmDelete) return
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      await tripService.delete(trip.id)
+      onClose() // Close the wizard after successful deletion
+    } catch (err) {
+      console.error('Failed to delete trip:', err)
+      setError(t('travel.multiCity.deleteError', 'Failed to delete trip. Please try again.'))
+      setSaving(false)
+    }
+  }
+
   // Helper: always work with cities in a stable route order
   const getOrderedCities = () => {
     // Keep logic simple and explicit so it's easy to reason about.

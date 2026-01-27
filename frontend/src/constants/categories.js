@@ -21,6 +21,7 @@ export const CATEGORIES = {
         'subscription',
         'rent',
         'loan',
+        'savings',
         'internet',
         'phone',
         'gym',

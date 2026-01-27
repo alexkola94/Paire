@@ -100,9 +100,10 @@ html {
   -moz-osx-font-smoothing: grayscale;
   /* Mobile Layout Stability */
   overflow-x: hidden;
+  overflow-y: scroll; /* Explicit Y scroll - fixes mouse wheel not working */
   width: 100%;
   max-width: 100vw;
-  overscroll-behavior-y: none;
+  height: 100%;
 }
 
 /* Accessibility: High Contrast */
@@ -134,12 +135,12 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
-  min-height: 100vh;
+  min-height: 100%;
   /* Mobile Layout Stability */
   overflow-x: hidden;
+  overflow-y: auto; /* Explicit Y scroll - fixes mouse wheel not working */
   width: 100%;
   max-width: 100vw;
-  overscroll-behavior-y: none;
   position: relative;
   /* Prevent white flash during route transitions */
   transition: background-color 0.2s ease;
@@ -155,7 +156,7 @@ html {
 /* Root element should also have background */
 #root {
   background-color: var(--bg-primary);
-  min-height: 100vh;
+  min-height: 100%;
   /* Mobile Layout Stability */
   overflow-x: hidden;
   width: 100%;
@@ -163,6 +164,7 @@ html {
   /* Smooth transitions */
   transition: background-color 0.2s ease;
 }
+
 
 /* ================================
    Typography
