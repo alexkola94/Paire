@@ -17,7 +17,8 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 1rem; /* rounded-2xl */
+  border-radius: 1rem;
+  /* rounded-2xl */
   padding: var(--spacing-sm) var(--spacing-md);
   cursor: pointer;
   transition: all 0.3s ease-in-out;
@@ -96,16 +97,21 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 1rem; /* rounded-2xl */
+  border-radius: 1rem;
+  /* rounded-2xl */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   z-index: 300;
   max-height: 400px;
   overflow-y: auto;
   overflow-x: hidden;
-  min-height: 100px; /* Ensure dropdown has minimum height */
-  display: block !important; /* Force display */
-  visibility: visible !important; /* Force visibility */
-  opacity: 1 !important; /* Force opacity */
+  min-height: 100px;
+  /* Ensure dropdown has minimum height */
+  display: block !important;
+  /* Force display */
+  visibility: visible !important;
+  /* Force visibility */
+  opacity: 1 !important;
+  /* Force opacity */
 }
 
 /* Dark theme adjustments */
@@ -168,7 +174,8 @@
   width: 100%;
   background: transparent;
   border: none;
-  border-radius: 0.75rem; /* rounded-xl */
+  border-radius: 0.75rem;
+  /* rounded-xl */
   padding: var(--spacing-sm) var(--spacing-md);
   cursor: pointer;
   transition: all 0.3s ease-in-out;
@@ -256,7 +263,8 @@
 
 .trip-selector-item-status.active {
   background: rgba(16, 185, 129, 0.15);
-  color: #10b981; /* Vitality Green */
+  color: #10b981;
+  /* Vitality Green */
 }
 
 .trip-selector-item-status.completed {
@@ -385,6 +393,8 @@
 
 .trip-selector-create-btn {
   width: 100%;
+  min-height: 44px;
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -398,6 +408,12 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
+}
+
+.trip-selector-create-btn span {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
 }
 
 .trip-selector-create-btn:hover {

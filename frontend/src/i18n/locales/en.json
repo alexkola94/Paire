@@ -837,7 +837,8 @@
     "preview": "File preview",
     "attachedFile": "Attached file",
     "remove": "Remove file",
-    "uploadComplete": "Upload complete"
+    "uploadComplete": "Upload complete",
+    "uploadError": "Upload failed: {{error}}"
   },
   "confirmationModal": {
     "deleteTitle": "Confirm Deletion",
@@ -1186,7 +1187,12 @@
       "saving": "Saving...",
       "ascending": "Ascending",
       "descending": "Descending",
-      "loadingTripView": "Loading your trip view..."
+      "loadingTripView": "Loading your trip view...",
+      "refresh": "Refresh Data"
+    },
+    "theme": {
+      "lightMode": "Light Mode",
+      "darkMode": "Dark Mode"
     },
     "nav": {
       "home": "Home",
@@ -1194,7 +1200,50 @@
       "itinerary": "Itinerary",
       "packing": "Packing",
       "documents": "Documents",
-      "explore": "Explore"
+      "explore": "Explore",
+      "seeDetails": "See details in Google Maps"
+    },
+    "notifications": {
+      "title": "Notification Settings",
+      "subtitle": "Configure how you receive travel alerts and reminders",
+      "settingsSaved": "Settings saved successfully",
+      "errorSaving": "Failed to save settings",
+      "noTripSelected": "No trip selected",
+      "notificationsSent": "{{count}} notifications sent",
+      "noNotificationsToSend": "No notifications to send at this time",
+      "errorTesting": "Failed to check notifications",
+      "deliveryChannels": "Delivery Channels",
+      "emailNotifications": "Email Notifications",
+      "emailDescription": "Receive notifications via email",
+      "pushNotifications": "Push Notifications",
+      "pushDescription": "Receive browser push notifications",
+      "enablePush": "Enable Push",
+      "pushNotSupported": "Push notifications are not supported in this browser",
+      "inAppNotifications": "In-App Notifications",
+      "inAppDescription": "Show notifications within the app",
+      "documentAlerts": "Document Alerts",
+      "documentExpiry": "Document Expiry Warnings",
+      "documentExpiryDescription": "Get alerts when documents are about to expire",
+      "alertDaysBefore": "Alert me before expiry:",
+      "budgetAlerts": "Budget Alerts",
+      "budgetAlertsToggle": "Budget Threshold Alerts",
+      "budgetAlertsDescription": "Get alerts when approaching budget limits",
+      "at75Percent": "Alert at 75% spent",
+      "at90Percent": "Alert at 90% spent",
+      "whenExceeded": "Alert when budget exceeded",
+      "itineraryReminders": "Itinerary Reminders",
+      "eventReminders": "Event Reminders",
+      "eventRemindersDescription": "Get reminded before flights, hotels, and activities",
+      "remindMeBefore": "Remind me before events:",
+      "packingProgress": "Packing Progress",
+      "packingMilestones": "Packing Milestones",
+      "packingMilestonesDescription": "Get notified at 50%, 75%, and 100% packing completion",
+      "tripReminders": "Trip Reminders",
+      "tripApproaching": "Trip Approaching Alert",
+      "tripApproachingDescription": "Get a reminder before your trip starts",
+      "daysBeforeTrip": "Days before trip:",
+      "checking": "Checking...",
+      "testNotifications": "Test Notifications"
     },
     "trip": {
       "createTrip": "Create Trip",
@@ -1225,7 +1274,9 @@
         "duration": "{{days}} days"
       },
       "step3Title": "Budget",
-      "step3Description": "Set your travel budget (optional)"
+      "step3Description": "Set your travel budget (optional)",
+      "adding": "Adding expense...",
+      "selectDate": "Select date"
     },
     "home": {
       "welcome": "Welcome to Travel Mode",
@@ -1376,7 +1427,13 @@
         "transit": "Transit",
         "restaurant": "Restaurant",
         "other": "Other"
-      }
+      },
+      "adding": "Adding event...",
+      "savedPlaces": "Saved places from Discovery",
+      "chooseSavedPlace": "Choose a saved place",
+      "notes": "Notes",
+      "notesPlaceholder": "Add details, reservation numbers, etc.",
+      "attachFile": "Attach File"
     },
     "packing": {
       "title": "Packing",
@@ -1406,7 +1463,8 @@
         "documents": "Documents",
         "medications": "Medications",
         "other": "Other"
-      }
+      },
+      "adding": "Adding item..."
     },
     "documents": {
       "title": "Documents",
@@ -1486,6 +1544,13 @@
         },
         "promptCopied": "Prompt copied to clipboard! Paste it into the AI chat.",
         "copyFailed": "Could not copy to clipboard. Please copy the prompt manually from the preview above."
+      },
+      "adding": "Adding document...",
+      "notesHelper": {
+        "untitled": "Untitled note",
+        "title": "Travel notes for your documents",
+        "subtitle": "Use this space to jot down questions for embassies, airlines, or your future self.",
+        "titlePlaceholder": "e.g., Visa questions for Japan"
       }
     },
     "explore": {
@@ -1511,6 +1576,7 @@
       "unnamed": "Unnamed",
       "savedPlacesTitle": "Saved places nearby",
       "savedPlacesCount": "{{count}} pinned",
+      "placesForTripTitle": "Places for this trip",
       "travelTips": "Travel Tips",
       "poi": {
         "restaurant": "Restaurants",
@@ -1581,6 +1647,7 @@
       "enter": "Enter Discovery Mode",
       "exitMap": "Exit Discovery Mode",
       "explore": "Explore",
+      "expand": "Show Explore",
       "fromCenter": "from trip",
       "getDirections": "Get Directions",
       "seeDetails": "See details in Google Maps",
@@ -1634,6 +1701,53 @@
         "completed": "Completed"
       }
     },
+    "advisory": {
+      "riskLevel": {
+        "low": "Low risk",
+        "medium": "Medium risk",
+        "high": "High risk",
+        "critical": "Critical risk",
+        "unknown": "Risk level unknown"
+      },
+      "scoreLabel": "Risk score",
+      "details": "Details",
+      "genericMessage": "Check official guidance before you travel.",
+      "lastUpdated": "Last updated {{date}}",
+      "sources": "{{count}} advisory sources",
+      "moreDetails": "More safety & entry info",
+      "prevCountry": "Previous country",
+      "nextCountry": "Next country",
+      "unknownCountry": "Unknown country",
+      "flagWarning": "Official warning in place",
+      "flagRegional": "Includes regional advisories",
+      "entryExitTitle": "Entry & exit",
+      "healthTitle": "Health & vaccines",
+      "safetyTitle": "Safety & security",
+      "climateTitle": "Climate & weather",
+      "recentUpdatesTitle": "Recent updates"
+    },
+    "citySelection": {
+      "searchPlaceholder": "Search places...",
+      "instructions": "Click on the map to add cities to your trip",
+      "legendTitle": "Transport"
+    },
+    "setup": {
+      "step1": {
+        "namePlaceholder": "e.g., Summer Trip"
+      },
+      "step2": {
+        "duration": "{{days}} days"
+      },
+      "step3": {
+        "title": "Set your budget",
+        "description": "Link an existing budget or create a new one",
+        "skipHint": "You can skip this step and set a budget later"
+      },
+      "errors": {
+        "budgetCategoryRequired": "Please name your budget",
+        "saveFailed": "Failed to save trip. Please try again."
+      }
+    },
     "multiCity": {
       "selectedCount": "cities selected",
       "createTrip": "Create Multi-City Trip",
@@ -1650,16 +1764,22 @@
         "totalDistance": "Total Trip Distance",
         "transportLabel": "Transport",
         "transportSuggested": "Suggested: {{mode}}",
-        "transportSeaHint": "This leg looks like open water, so only flight or ferry are available."
+        "transportSeaHint": "This leg looks like open water, so only flight or ferry are available.",
+        "routeOverview": "Route overview",
+        "startLabel": "Start",
+        "endLabel": "End"
       },
       "step2": {
         "title": "Set Dates",
         "description": "Set arrival and departure dates for each city",
+        "manageRoute": "Review Route",
+        "manageDescription": "Arrange your stops and choose transport.",
         "arrival": "Arrival",
         "departure": "Departure",
         "selectArrival": "Select arrival date",
         "selectDeparture": "Select departure date"
       },
+      "tapMapToAdd": "Tap map to add cities",
       "errors": {
         "minCities": "Please select at least 2 cities",
         "cityDateRequired": "Please set arrival date for {{city}}",

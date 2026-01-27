@@ -195,6 +195,10 @@
 }
 
 @media (max-width: 1024px) {
+  .travel-home {
+    padding-top: 2px;
+  }
+
   .today-strip {
     margin-top: var(--spacing-md);
   }

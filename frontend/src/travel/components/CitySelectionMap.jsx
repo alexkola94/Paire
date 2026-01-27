@@ -503,7 +503,7 @@ const CitySelectionMap = memo(({
           <input
             type="text"
             className="map-search-input"
-            placeholder="Search places..."
+            placeholder={t('travel.citySelection.searchPlaceholder', 'Search places...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

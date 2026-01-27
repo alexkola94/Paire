@@ -1583,20 +1583,64 @@
 
   .step-description {
     font-size: 0.85rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     line-height: 1.4;
   }
 
   /* Compact list items in Step 2 */
   .city-tag {
-    padding: 0.35rem 0.6rem;
-    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Less spacing between tags */
+  .selected-cities-tags {
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
   }
 
   .cities-distance-summary {
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    gap: 0.5rem;
+  }
+
+  /* Maximize width for step 2 cards */
+  .route-overview-card,
+  .city-distance-item,
+  .trip-total-distance {
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+  }
+
+  .city-distance-item {
+    padding: 0.6rem;
+  }
+
+  /* Adjust transport row for mobile */
+  .transport-leg-row {
+    margin-top: 0.25rem;
     padding-top: 0.5rem;
     gap: 0.5rem;
+  }
+
+  .transport-mode-pill {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 400px) {
+
+    /* Even tighter for small phones */
+    .multi-city-wizard .wizard-content {
+      padding: 0.5rem;
+    }
+
+    .wizard-step-details {
+      padding: 0;
+    }
   }
 
   .city-distance-item {
@@ -1633,5 +1677,48 @@
     margin: 0 0 0.5rem 0 !important;
     /* Override inline styles */
     text-align: center;
+  }
+}
+
+/* =================================================================
+   AGGRESSIVE MOBILE OVERRIDES (Step 2 Specifics)
+   ================================================================= */
+@media (max-width: 1024px) {
+  .multi-city-wizard .wizard-content {
+    padding: 0.5rem !important;
+  }
+
+  /* Remove the boxed look of the details container on mobile to let cards expand */
+  .wizard-step-details {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  /* Force cards to near full width */
+  .route-overview-card,
+  .city-distance-item,
+  .trip-total-distance,
+  .city-date-card {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: none !important;
+    /* Optional: flatter look */
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  /* Ensure the container allows full width children */
+  .wizard-step-details>* {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Reduce gap in the main list */
+  .city-selection-map-wrapper {
+    margin-bottom: 0.5rem !important;
   }
 }

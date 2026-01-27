@@ -231,6 +231,11 @@ const TravelAdvisoryCard = ({ advisory, advisories, compact = false, onClose, sh
                   </div>
                 </div>
               )}
+
+              {/* Spacer to prevent text from overlapping with absolute navigation/close buttons */}
+              {(hasNavigation || onClose) && (
+                <div className={`travel-advisory-nav-spacer ${hasNavigation ? 'has-nav' : ''} ${onClose ? 'has-close' : ''}`} />
+              )}
               {/* Compact strips (e.g. Explore, Documents) don't render the meta row,
                 so we offer a small inline "Details" trigger in the header. */}
               {compact && (

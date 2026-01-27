@@ -58,18 +58,28 @@
   width: 100%;
 }
 
+/*** HEADER LAYOUT (FLEX WRAP) ***/
 .travel-advisory-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 1rem;
+  gap: 0.5rem;
+  position: relative;
+  /* Enable wrapping for stacked layout on mobile */
+  flex-wrap: wrap;
 }
 
 .travel-advisory-title {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex: 1 1 auto;
+  /* Allow grow/shrink */
+  min-width: 0;
+  margin-right: 0.5rem;
+  /* Always put title first */
+  order: 1;
 }
 
 .travel-advisory-icon {
@@ -79,6 +89,8 @@
 .travel-advisory-title-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  width: 100%;
 }
 
 .travel-advisory-country {
@@ -86,32 +98,57 @@
   font-size: 0.95rem;
   color: #1e293b;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .travel-advisory-level-badge {
   font-size: 0.75rem;
   font-weight: 600;
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .travel-advisory-score-wrapper {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  margin-left: auto;
+  flex-shrink: 0;
   transition: margin-right 0.2s ease;
+  position: relative;
+  z-index: 2;
+  /* On wide screens, it sits to the right using margin-left: auto */
+  margin-left: auto;
+  /* Order 3 ensures it comes after spacer, or visually last */
+  order: 3;
 }
 
-/* Push score left when nav arrows are present */
-/* Push score left when nav arrows are present */
+/* Spacer element that mimics the space taken by absolute nav */
+.travel-advisory-nav-spacer {
+  flex-shrink: 0;
+  width: 3.5rem;
+  /* Standard nav width */
+  height: 1px;
+  /* Minimal height, we just need width reservation */
+  order: 2;
+  /* Sits between title and score visually */
+}
+
+/* If both nav and close button are present */
+.travel-advisory-nav-spacer.has-nav.has-close {
+  width: 6.5rem;
+}
+
+/* We removed margin hacks for .has-navigation */
 .travel-advisory-card.has-navigation .travel-advisory-score-wrapper {
-  margin-right: 4.5rem;
+  margin-right: 0;
 }
 
-/* Ensure even more space when both nav and close button are present */
 .travel-advisory-card.has-navigation.has-close .travel-advisory-score-wrapper {
-  margin-right: 8rem;
-  /* Increased to prevent overlap with shifted nav arrows */
+  margin-right: 0;
 }
 
 .travel-advisory-score-label {
@@ -121,6 +158,11 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   margin-bottom: 2px;
+  text-align: right;
+  max-width: 120px;
+  line-height: 1.1;
+  white-space: normal;
+  /* Allow wrapping */
 }
 
 .travel-advisory-score-pill {
@@ -188,7 +230,8 @@
 
 .travel-advisory-meta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  /* Changed from center to allow multi-line button alignment */
   gap: 1rem;
   font-size: 0.75rem;
   color: #64748b;
@@ -207,6 +250,12 @@
   cursor: pointer;
   padding: 0;
   font-size: 0.8rem;
+  /* Updated for wrapping text */
+  text-align: right;
+  white-space: normal;
+  max-width: 50%;
+  /* Prevent taking full width if wrapped */
+  line-height: 1.3;
 }
 
 .travel-advisory-more-btn:hover {
