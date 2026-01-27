@@ -266,6 +266,35 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     // We deliberately only depend on cities so the effect runs when user edits route.
   }, [cities])
 
+  // Calculate home-to-first and last-to-home distances when homeLocation or cities change
+  useEffect(() => {
+    if (!homeLocation || cities.length === 0) {
+      setHomeToFirstDistance(0)
+      setLastToHomeDistance(0)
+      return
+    }
+
+    const orderedCities = [...cities].sort((a, b) => (a.order || 0) - (b.order || 0))
+    const firstCity = orderedCities[0]
+    const lastCity = orderedCities[orderedCities.length - 1]
+
+    // Calculate distance from home to first city
+    if (firstCity && firstCity.latitude && firstCity.longitude) {
+      const distToFirst = getDistanceKm(homeLocation, firstCity)
+      setHomeToFirstDistance(distToFirst || 0)
+    } else {
+      setHomeToFirstDistance(0)
+    }
+
+    // Calculate distance from last city to home
+    if (lastCity && lastCity.latitude && lastCity.longitude) {
+      const distFromLast = getDistanceKm(lastCity, homeLocation)
+      setLastToHomeDistance(distFromLast || 0)
+    } else {
+      setLastToHomeDistance(0)
+    }
+  }, [homeLocation, cities])
+
   // Handle form input changes
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -964,7 +993,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
                 <FiTrash2 size={20} />
               </button>
             )}
-            <button className="wizard-close" onClick={onClose} aria-label="Close">
+            <button className="wizard-close" onClick={onClose} aria-label={t('common.close', 'Close')}>
               <FiX size={24} />
             </button>
           </div>

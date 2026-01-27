@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { FiPlus, FiMinus, FiNavigation, FiCrosshair } from 'react-icons/fi'
 import { useTravelMode } from '../../context/TravelModeContext'
@@ -9,6 +10,7 @@ import '../../styles/Discovery.css'
  * Floating map controls for zoom, compass, and centering
  */
 const DiscoveryControls = memo(({ onCenterOnTrip, onCenterOnUser }) => {
+  const { t } = useTranslation()
   const { mapViewState, updateMapViewState } = useTravelMode()
 
   /**
@@ -131,7 +133,7 @@ const DiscoveryControls = memo(({ onCenterOnTrip, onCenterOnUser }) => {
           className="discovery-control-btn"
           variants={buttonVariants}
           onClick={handleZoomIn}
-          title="Zoom in"
+          title={t('travel.discovery.zoomIn', 'Zoom in')}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -141,7 +143,7 @@ const DiscoveryControls = memo(({ onCenterOnTrip, onCenterOnUser }) => {
           className="discovery-control-btn"
           variants={buttonVariants}
           onClick={handleZoomOut}
-          title="Zoom out"
+          title={t('travel.discovery.zoomOut', 'Zoom out')}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -155,7 +157,7 @@ const DiscoveryControls = memo(({ onCenterOnTrip, onCenterOnUser }) => {
           className={`discovery-control-btn compass-btn ${compassRotation !== 0 ? 'rotated' : ''}`}
           variants={buttonVariants}
           onClick={handleResetCompass}
-          title="Reset compass"
+          title={t('travel.discovery.resetCompass', 'Reset compass')}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -168,7 +170,7 @@ const DiscoveryControls = memo(({ onCenterOnTrip, onCenterOnUser }) => {
           className="discovery-control-btn"
           variants={buttonVariants}
           onClick={handleCenterOnTrip}
-          title="Center on trip"
+          title={t('travel.discovery.centerOnTrip', 'Center on trip')}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >

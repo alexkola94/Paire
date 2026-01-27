@@ -161,7 +161,7 @@ export default function LayoutSettingsModal({
                                                     onToggleSection(activeColumn, section.key)
                                                 }}
                                                 onPointerDown={(e) => e.stopPropagation()} // Vital for Reorder to ignore this area
-                                                aria-label={section.visible ? 'Hide section' : 'Show section'}
+                                                aria-label={t(section.visible ? 'common.hideSection' : 'common.showSection', section.visible ? 'Hide section' : 'Show section')}
                                             >
                                                 {section.visible ? <FiEye /> : <FiEyeOff />}
                                             </button>

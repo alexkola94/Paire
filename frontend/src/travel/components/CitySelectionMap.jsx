@@ -1,4 +1,5 @@
 import { memo, useCallback, useRef, useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiMapPin, FiX, FiHome, FiSearch } from 'react-icons/fi'
 import { Map, Marker, Source, Layer } from 'react-map-gl/mapbox'
@@ -99,6 +100,7 @@ const CitySelectionMap = memo(({
   initialViewState = null,
   showInstructions = true
 }) => {
+  const { t } = useTranslation()
   const mapRef = useRef(null)
   const [viewState, setViewState] = useState(initialViewState || {
     latitude: 40.7128,

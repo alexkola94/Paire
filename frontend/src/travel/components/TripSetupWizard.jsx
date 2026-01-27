@@ -542,7 +542,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
             ))}
           </div>
 
-          <button className="wizard-close" onClick={onClose} aria-label="Close">
+          <button className="wizard-close" onClick={onClose} aria-label={t('common.close', 'Close')}>
             <FiX size={24} />
           </button>
         </div>

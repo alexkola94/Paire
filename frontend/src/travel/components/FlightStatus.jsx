@@ -122,7 +122,7 @@ const FlightStatus = ({ flightNumber, date, compact = false }) => {
         return (
             <div className="flight-status-hint">
                 <FiClock size={12} />
-                <span>Add API key for live tracking</span>
+                <span>{t('travel.flightStatus.addApiKey', 'Add API key for live tracking')}</span>
             </div>
         )
     }
@@ -133,7 +133,7 @@ const FlightStatus = ({ flightNumber, date, compact = false }) => {
             return (
                 <div className="flight-status-compact status-gray">
                     <FiClock size={12} />
-                    <span className="status-label">Tracking</span>
+                    <span className="status-label">{t('travel.flightStatus.tracking', 'Tracking')}</span>
                 </div>
             )
         }

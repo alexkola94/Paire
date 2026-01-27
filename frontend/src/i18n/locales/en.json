@@ -792,6 +792,8 @@
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
     "close": "Close",
+    "hideSection": "Hide section",
+    "showSection": "Show section",
     "processing": "Processing...",
     "optional": "Optional",
     "undo": "Undo",
@@ -1140,6 +1142,10 @@
     "errors": "Errors"
   },
   "travel": {
+    "flightStatus": {
+      "addApiKey": "Add API key for live tracking",
+      "tracking": "Tracking"
+    },
     "layout": {
       "title": "Customize Layout",
       "presets": {
@@ -1647,6 +1653,10 @@
       "enter": "Enter Discovery Mode",
       "exitMap": "Exit Discovery Mode",
       "explore": "Explore",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "resetCompass": "Reset compass",
+      "centerOnTrip": "Center on trip",
       "expand": "Show Explore",
       "fromCenter": "from trip",
       "getDirections": "Get Directions",
