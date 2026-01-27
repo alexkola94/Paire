@@ -6,6 +6,13 @@
 /* Local Theme Variables - Light Mode */
 /* Local Theme Variables - Light Mode (Warm/Orange Palette) */
 :root {
+    /* Spacing variables - required for layout */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+
     /* Warm beige background like TravelLightTheme */
     --modal-bg: #fffcf7;
     --modal-item-bg: rgba(232, 145, 58, 0.04);
@@ -24,6 +31,9 @@
     --text-primary: #3d3530;
     --text-secondary: #6b6058;
     --text-light: #9a9088;
+
+    /* Error color for reset button */
+    --error: #ef4444;
 
     --modal-danger-bg: rgba(239, 68, 68, 0.1);
     --modal-danger-bg-subtle: rgba(239, 68, 68, 0.05);
@@ -59,6 +69,13 @@
     --modal-danger-border: rgba(248, 113, 113, 0.4);
     --scrollbar-thumb: rgba(255, 255, 255, 0.2);
     --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-light: #64748b;
+    --error: #f87171;
+    --glass-bg: rgba(30, 27, 36, 0.98);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .layout-modal-backdrop {
@@ -407,25 +424,37 @@
     .layout-modal {
         width: 100%;
         max-height: 85vh;
+        height: auto;
         top: auto;
         left: 0;
         right: 0;
         bottom: 0;
         margin: 0;
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        border-radius: 24px 24px 0 0;
         border-bottom: none;
+        display: flex;
+        flex-direction: column;
     }
 
     .layout-modal-header {
-        padding: var(--spacing-md);
+        padding: 12px;
+        flex-shrink: 0;
     }
 
     .layout-modal-content {
-        padding: var(--spacing-md);
+        padding: 12px;
+        flex: 1;
+        overflow-y: auto;
+        min-height: 200px;
+        max-height: calc(85vh - 140px); /* Account for header and footer */
+    }
+
+    .sections-list-container {
+        min-height: 150px;
     }
 
     .presets-row {
-        gap: var(--spacing-sm);
+        gap: 8px;
     }
 
     .preset-btn {
@@ -440,10 +469,25 @@
         max-width: 100%;
     }
 
+    .column-tabs {
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .tab-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .section-item {
+        padding: 10px 12px;
+    }
+
     .layout-modal-footer {
         flex-direction: column;
-        gap: var(--spacing-sm);
-        padding: var(--spacing-md);
+        gap: 8px;
+        padding: 12px;
+        flex-shrink: 0;
     }
 
     .footer-actions {
@@ -452,7 +496,7 @@
         /* Show actions first */
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: var(--spacing-sm);
+        gap: 8px;
     }
 
     .cancel-btn,
@@ -481,6 +525,6 @@
 
     /* Safe area for iOS devices */
     .layout-modal-footer {
-        padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     }
 }

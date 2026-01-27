@@ -11,7 +11,6 @@ import './NotificationCenter.css'
 function NotificationCenter({ isOpen, onClose, onOpenSettings }) {
     const { t } = useTranslation()
     const isMobile = useIsMobile()
-    // checking usage in file
 
     const {
         notifications,
@@ -23,27 +22,80 @@ function NotificationCenter({ isOpen, onClose, onOpenSettings }) {
         deleteNotification
     } = useNotifications()
 
-    // console.log('NotificationCenter render:', { isOpen, isMobile, unreadCount })
-
-    // ... existing hooks
-
-    // Add click outside handling for portal if needed, though the existing useEffect handles generic document mousedown
-    // but we might need to ensure the portal doesn't bubble incorrectly or blocking clicks. 
-    // The existing logic checks containerRef which IS attached to the motion.div, so it should keep working even in Portal.
-
-    // ... existing code ...
-
     const containerRef = useRef(null)
+
+    // Format time helper
+    const formatTime = useCallback((dateString) => {
+        if (!dateString) return ''
+        const date = new Date(dateString)
+        const now = new Date()
+        const diffMs = now - date
+        const diffMins = Math.floor(diffMs / 60000)
+        const diffHours = Math.floor(diffMs / 3600000)
+        const diffDays = Math.floor(diffMs / 86400000)
+
+        if (diffMins < 1) return t('notifications.justNow', 'Just now')
+        if (diffMins < 60) return t('notifications.minutesAgo', '{{count}}m ago', { count: diffMins })
+        if (diffHours < 24) return t('notifications.hoursAgo', '{{count}}h ago', { count: diffHours })
+        if (diffDays < 7) return t('notifications.daysAgo', '{{count}}d ago', { count: diffDays })
+        return date.toLocaleDateString()
+    }, [t])
+
+    // Handle notification click
+    const handleNotificationClick = useCallback((notification) => {
+        if (!notification.isRead) {
+            markAsRead(notification.id)
+        }
+        // If notification has an action URL, navigate to it
+        if (notification.actionUrl) {
+            window.location.href = notification.actionUrl
+        }
+    }, [markAsRead])
+
+    // Handle delete
+    const handleDelete = useCallback((e, notificationId) => {
+        e.stopPropagation()
+        deleteNotification(notificationId)
+    }, [deleteNotification])
+
+    // Close on click outside
+    useEffect(() => {
+        if (!isOpen) return
+
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                onClose()
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [isOpen, onClose])
 
     const panelContent = (
         <motion.div
+            key="notification-panel"
             ref={containerRef}
             className={`notification-center ${isMobile ? 'mobile-portal' : ''}`}
             initial={isMobile ? { y: '100%' } : { opacity: 0, y: -10, scale: 0.95 }}
             animate={isMobile ? { y: 0 } : { opacity: 1, y: 0, scale: 1 }}
             exit={isMobile ? { y: '100%' } : { opacity: 0, y: -10, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            style={isMobile ? { position: 'fixed', bottom: 0, left: 0, right: 0, top: 'auto', width: '100%', maxHeight: '80vh', borderRadius: '20px 20px 0 0', margin: 0 } : {}}
+            style={isMobile ? {
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                top: 'auto',
+                width: '100%',
+                maxHeight: '80vh',
+                borderRadius: '20px 20px 0 0',
+                margin: 0,
+                zIndex: 9999,
+                background: 'var(--modal-bg, #1e1e28)',
+                boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.3)',
+                overflow: 'hidden'
+            } : {}}
         >
             {/* ... header ... */}
             <div className="notification-center-header">
@@ -152,24 +204,39 @@ function NotificationCenter({ isOpen, onClose, onOpenSettings }) {
         </motion.div>
     )
 
-    return (
-        <AnimatePresence>
-            {isOpen && (
-                isMobile ? createPortal(
+    // For mobile, render portal with AnimatePresence inside
+    if (isMobile) {
+        return createPortal(
+            <AnimatePresence>
+                {isOpen && (
                     <>
                         <motion.div
+                            key="notification-backdrop"
                             className="notification-mobile-backdrop"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={onClose}
-                            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9998 }}
+                            style={{
+                                position: 'fixed',
+                                inset: 0,
+                                background: 'rgba(0,0,0,0.5)',
+                                zIndex: 9998,
+                                backdropFilter: 'blur(4px)'
+                            }}
                         />
                         {panelContent}
-                    </>,
-                    document.body
-                ) : panelContent
-            )}
+                    </>
+                )}
+            </AnimatePresence>,
+            document.body
+        )
+    }
+
+    // Desktop: render inline with AnimatePresence
+    return (
+        <AnimatePresence>
+            {isOpen && panelContent}
         </AnimatePresence>
     )
 }

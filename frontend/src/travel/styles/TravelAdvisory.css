@@ -126,29 +126,24 @@
   order: 3;
 }
 
-/* Spacer element that mimics the space taken by absolute nav */
+/* Spacer element - hidden, we use margin on score wrapper instead */
 .travel-advisory-nav-spacer {
-  flex-shrink: 0;
-  width: 3.5rem;
-  /* Standard nav width */
-  height: 1px;
-  /* Minimal height, we just need width reservation */
-  order: 2;
-  /* Sits between title and score visually */
+  display: none;
 }
 
-/* If both nav and close button are present */
-.travel-advisory-nav-spacer.has-nav.has-close {
-  width: 6.5rem;
-}
-
-/* We removed margin hacks for .has-navigation */
+/* Add right margin to score wrapper when navigation arrows are present */
 .travel-advisory-card.has-navigation .travel-advisory-score-wrapper {
-  margin-right: 0;
+  margin-right: 5rem; /* Space for nav buttons */
 }
 
+/* When both nav and close button are present, need more space */
 .travel-advisory-card.has-navigation.has-close .travel-advisory-score-wrapper {
-  margin-right: 0;
+  margin-right: 7.5rem;
+}
+
+/* Only close button, no navigation */
+.travel-advisory-card.has-close:not(.has-navigation) .travel-advisory-score-wrapper {
+  margin-right: 2.5rem;
 }
 
 .travel-advisory-score-label {
@@ -812,4 +807,83 @@
 [data-theme='light'] .travel-advisory-close-absolute:hover {
   background: rgba(232, 145, 58, 0.1);
   color: #ef4444;
+}
+
+/* =================================================================
+   Mobile Responsive - Prevent arrow/score overlap
+   ================================================================= */
+
+@media (max-width: 480px) {
+  .travel-advisory-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .travel-advisory-title {
+    width: 100%;
+    margin-right: 0;
+    padding-right: 4rem; /* Space for absolute nav/close buttons */
+  }
+
+  /* Reset desktop margins on mobile - use stacked layout instead */
+  .travel-advisory-score-wrapper,
+  .travel-advisory-card.has-navigation .travel-advisory-score-wrapper,
+  .travel-advisory-card.has-navigation.has-close .travel-advisory-score-wrapper,
+  .travel-advisory-card.has-close:not(.has-navigation) .travel-advisory-score-wrapper {
+    margin-left: 0;
+    margin-right: 0;
+    align-items: flex-start;
+    order: 2;
+  }
+
+  .travel-advisory-nav {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .travel-advisory-card.has-close .travel-advisory-nav {
+    right: 2.5rem;
+  }
+
+  .travel-advisory-close-absolute {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .travel-advisory-header-actions {
+    margin-left: 0;
+    margin-top: 0.25rem;
+  }
+
+  .travel-advisory-card-compact .travel-advisory-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .travel-advisory-card-compact .travel-advisory-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-right: 3rem;
+  }
+
+  .travel-advisory-card-compact .travel-advisory-score-wrapper {
+    position: absolute;
+    top: 0.75rem;
+    right: 3.5rem;
+    margin: 0;
+  }
+
+  .travel-advisory-card-compact.has-navigation .travel-advisory-score-wrapper {
+    right: 6rem;
+  }
+
+  .travel-advisory-card-compact.has-close .travel-advisory-score-wrapper {
+    right: 6rem;
+  }
+
+  .travel-advisory-card-compact.has-navigation.has-close .travel-advisory-score-wrapper {
+    right: 8.5rem;
+  }
 }
