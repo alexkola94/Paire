@@ -1197,13 +1197,22 @@
   padding: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+
+  /* Desktop: Side-by-side layout */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xl);
 }
 
 .city-date-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  /* No margin bottom on desktop */
+  margin-bottom: 0;
+  flex: 1;
+  /* Take available space */
 }
 
 .city-date-number {
@@ -1218,6 +1227,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .city-date-info {
@@ -1241,9 +1251,28 @@
 }
 
 .city-date-inputs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-md);
+  /* Desktop: Fixed width for picker or flex based */
+  flex: 0 0 350px;
+  width: 350px;
+}
+
+/* Mobile Responsive - Stack back to column */
+@media (max-width: 768px) {
+  .city-date-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .city-date-header {
+    margin-bottom: var(--spacing-sm);
+    width: 100%;
+  }
+
+  .city-date-inputs {
+    width: 100%;
+    flex: auto;
+  }
 }
 
 /* Light Theme Overrides for Step 2 */

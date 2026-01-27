@@ -139,7 +139,7 @@ const DiscoveryMap = memo(({
 
       // Verify calculated values are finite
       if (!Number.isFinite(minLat) || !Number.isFinite(maxLat) ||
-          !Number.isFinite(minLng) || !Number.isFinite(maxLng)) {
+        !Number.isFinite(minLng) || !Number.isFinite(maxLng)) {
         console.warn('DiscoveryMap: Invalid bounds calculated', { minLat, maxLat, minLng, maxLng })
         return
       }
@@ -178,9 +178,9 @@ const DiscoveryMap = memo(({
 
     const vs = evt.viewState
     if (!vs ||
-        !Number.isFinite(vs.latitude) ||
-        !Number.isFinite(vs.longitude) ||
-        !Number.isFinite(vs.zoom)) {
+      !Number.isFinite(vs.latitude) ||
+      !Number.isFinite(vs.longitude) ||
+      !Number.isFinite(vs.zoom)) {
       return
     }
 
@@ -202,7 +202,6 @@ const DiscoveryMap = memo(({
   const handleLoad = useCallback(() => {
     if (mapRef.current) {
       setIsMapReady(true)
-      console.log('Discovery Map loaded and ready')
     }
   }, [])
 
@@ -358,7 +357,7 @@ const DiscoveryMap = memo(({
 
   // Final validation - if coordinates are still invalid, show loading
   if (!Number.isFinite(initialViewState.latitude) || !Number.isFinite(initialViewState.longitude) ||
-      !Number.isFinite(initialViewState.zoom)) {
+    !Number.isFinite(initialViewState.zoom)) {
     console.warn('DiscoveryMap: Invalid viewState after sanitization', initialViewState)
     return (
       <div className="discovery-map-loading">

@@ -24,6 +24,7 @@ import MultiCityDistanceSummary from './MultiCityDistanceSummary'
 import { getRouteDirections, calculateDistance } from '../services/discoveryService'
 import { getTransportSuggestions, TRANSPORT_MODES } from '../utils/transportSuggestion'
 import DatePicker from './DatePicker'
+import DateRangePicker from './DateRangePicker'
 import '../styles/TripSetupWizard.css'
 import '../styles/MultiCityTripWizard.css'
 
@@ -178,7 +179,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
       }
     }
 
-    // console.log('[Wizard] Adding city:', city.name, 'Initial Mode:', initialMode)
+
 
     const newCity = {
       ...city,
@@ -235,66 +236,62 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   }
 
   // Smart Date Selection Logic
-  const handleCityDateChange = useCallback((index, field, value) => {
-    if (!value) return // Handle clear if needed, but for now ignore
+  const handleCityDateChange = useCallback((index, changes) => {
+    // changes is object { startDate, endDate } or field/value from old calls (transition safety)
 
     setCities(prevCities => {
       const newCities = [...prevCities]
-      // Ensure we are working with the correct order
-      // But here we are operating on the 'cities' state array which might be unordered vs 'orderedCities'.
-      // The render loop uses 'orderedCities' but passes the original 'city' object which has an ID.
-      // However, the input 'index' in the render loop comes from 'orderedCities.map'.
-      // So we need to match by ID or ensure we map back to the main array correctly.
-
-      // Better strategy: Find city by ID if possible, or assume caller provides correct context.
-      // The render loop sorts cities. 'index' is the index in the SORTED array.
-      // We need to find the corresponding city in the main 'cities' array.
-
-      // Let's trust the 'cities' state has the same objects, just need to find the one we are editing.
-      // Actually, let's look at how the render passes data.
-      // It maps over `orderedCities`.
-
-      // Work with ordered array for logic, then map back to state
       const ordered = [...newCities].sort((a, b) => (a.order || 0) - (b.order || 0))
       const targetCity = { ...ordered[index] }
 
-      if (field === 'startDate') {
-        targetCity.startDate = value
+      let updatedDateReceived = false
+      let newStartDate = targetCity.startDate
+      let newEndDate = targetCity.endDate
 
-        // 1. Auto-set End Date if missing or invalid
-        if (value && (!targetCity.endDate || new Date(targetCity.endDate) < new Date(value))) {
-          const d = new Date(value)
-          d.setDate(d.getDate() + 2) // Default: 2 nights
-          targetCity.endDate = d.toISOString().split('T')[0]
+      if (changes && typeof changes === 'object' && (changes.startDate !== undefined || changes.endDate !== undefined)) {
+        // New DateRangePicker object style
+        if (changes.startDate !== undefined) {
+          newStartDate = changes.startDate
+          targetCity.startDate = newStartDate
+          updatedDateReceived = true
         }
-      } else if (field === 'endDate') {
-        targetCity.endDate = value
+        if (changes.endDate !== undefined) {
+          newEndDate = changes.endDate
+          targetCity.endDate = newEndDate
+          updatedDateReceived = true
+        }
+      } else {
+        // Fallback for old calls if any: (index, field, value)
+        // But our new call signature is (index, changes), so we assume changes IS the object.
+        // If changes is string (field), this logic would fail. 
+        // Since we updated the call site, we assume correct object.
+        return prevCities
+      }
 
-        // 2. Cascade to Next City
-        if (index < ordered.length - 1) {
-          const nextCityIndex = index + 1
-          const nextCity = { ...ordered[nextCityIndex] }
+      if (!updatedDateReceived) return newCities
 
-          // If next city starts before this one ends (or hasn't been set), suggest seamless travel
-          if (!nextCity.startDate || new Date(nextCity.startDate) < new Date(value)) {
-            nextCity.startDate = value
+      // Cascade to Next City
+      if (newEndDate && index < ordered.length - 1) {
+        const nextCityIndex = index + 1
+        const nextCity = { ...ordered[nextCityIndex] }
 
-            // Optional: Push next city end date directly? 
-            // Let's keep it simple: just fix the start date collision.
-            if (nextCity.endDate && new Date(nextCity.endDate) <= new Date(value)) {
-              const d = new Date(value)
-              d.setDate(d.getDate() + 2)
-              nextCity.endDate = d.toISOString().split('T')[0]
-            }
+        if (!nextCity.startDate || new Date(nextCity.startDate) < new Date(newEndDate)) {
+          // Suggest seamless start
+          nextCity.startDate = newEndDate
 
-            // Update the next city in the main array
-            const realNextIndex = newCities.findIndex(c => c.id === nextCity.id)
-            if (realNextIndex !== -1) newCities[realNextIndex] = nextCity
+          // Shift next city end date if needed
+          if (nextCity.endDate && new Date(nextCity.endDate) <= new Date(newEndDate)) {
+            const d = new Date(newEndDate)
+            d.setDate(d.getDate() + 2)
+            nextCity.endDate = d.toISOString().split('T')[0]
           }
+
+          const realNextIndex = newCities.findIndex(c => c.id === nextCity.id)
+          if (realNextIndex !== -1) newCities[realNextIndex] = nextCity
         }
       }
 
-      // Update target city in main array
+      // Update target
       const realIndex = newCities.findIndex(c => c.id === targetCity.id)
       if (realIndex !== -1) newCities[realIndex] = targetCity
 
@@ -865,66 +862,64 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           </p>
 
           <div className="city-dates-list">
-            {cities
-              .sort((a, b) => (a.order || 0) - (b.order || 0))
-              .map((city, index) => {
-                const advisoryKey = (city.country || '').toLowerCase()
-                const advisory = cityAdvisories[advisoryKey]
+            {orderedCities.map((city, index) => {
+              const advisoryKey = (city.country || '').toLowerCase()
+              const advisory = cityAdvisories[advisoryKey]
 
-                return (
-                  <div key={city.id || index} className="city-date-card">
-                    <div className="city-date-header">
-                      <div className="city-date-number">{index + 1}</div>
-                      <div className="city-date-info">
-                        <span className="city-date-name">{city.name}</span>
-                        {city.country && (
-                          <span className="city-date-country">
-                            {city.country}
-                            {advisory && (
-                              <span className="city-advisory-inline">
-                                <TravelAdvisoryBadge advisory={advisory} />
-                              </span>
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="city-date-inputs">
-                      <div className="form-group">
-                        <DatePicker
-                          label={t('travel.multiCity.step2.arrival', 'Arrival')}
-                          value={city.startDate || ''}
-                          onChange={(newValue) => handleCityDateChange(index, 'startDate', newValue)}
-                          min={index > 0 ? cities[index - 1]?.endDate || cities[index - 1]?.startDate : new Date().toISOString().split('T')[0]}
-                          placeholder={t('travel.multiCity.step2.selectArrival', 'Select arrival date')}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <DatePicker
-                          label={t('travel.multiCity.step2.departure', 'Departure')}
-                          value={city.endDate || ''}
-                          onChange={(newValue) => handleCityDateChange(index, 'endDate', newValue)}
-                          min={city.startDate || new Date().toISOString().split('T')[0]}
-                          placeholder={t('travel.multiCity.step2.selectDeparture', 'Select departure date')}
-                        />
-                      </div>
+              return (
+                <div
+                  key={city.id || index}
+                  className="city-date-card"
+                  style={{
+                    zIndex: orderedCities.length - index,
+                    position: 'relative' // Ensure z-index works
+                  }}
+                >
+                  <div className="city-date-header">
+                    <div className="city-date-number">{index + 1}</div>
+                    <div className="city-date-info">
+                      <span className="city-date-name">{city.name}</span>
+                      {city.country && (
+                        <span className="city-date-country">
+                          {city.country}
+                          {advisory && (
+                            <span className="city-advisory-inline">
+                              <TravelAdvisoryBadge advisory={advisory} />
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </div>
                   </div>
-                )
-              })}
+                  <div className="city-date-inputs">
+                    <div className="form-group" style={{ width: '100%' }}>
+                      <DateRangePicker
+                        startDate={city.startDate}
+                        endDate={city.endDate}
+                        onChange={(range) => handleCityDateChange(index, range)}
+                        minDate={index > 0 ? orderedCities[index - 1]?.endDate || orderedCities[index - 1]?.startDate : new Date().toISOString().split('T')[0]}
+                        placeholder={t('travel.multiCity.step2.selectDates', 'Select arrival and departure')}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
-          {cities.length > 0 && cities[0]?.startDate && cities[cities.length - 1]?.endDate && (
-            <div className="trip-duration">
-              {(() => {
-                const start = new Date(cities[0].startDate)
-                const end = new Date(cities[cities.length - 1].endDate)
-                const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
-                return t('travel.setup.step2.duration', '{{days}} days', { days })
-              })()}
-            </div>
-          )}
-        </div>
+          {
+            cities.length > 0 && cities[0]?.startDate && cities[cities.length - 1]?.endDate && (
+              <div className="trip-duration">
+                {(() => {
+                  const start = new Date(cities[0].startDate)
+                  const end = new Date(cities[cities.length - 1].endDate)
+                  const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
+                  return t('travel.setup.step2.duration', '{{days}} days', { days })
+                })()}
+              </div>
+            )
+          }
+        </div >
       )
     }
 

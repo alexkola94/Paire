@@ -14,7 +14,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 // Keeps logic in one place so both mini-map and expanded map can reuse it.
 const getViewStateForPoints = (points) => {
   // Log how many points we try to fit (for debugging purposes)
-  console.log('[TripMicrography] getViewStateForPoints - points count:', points?.length ?? 0)
+
   if (!points || points.length === 0) return null
 
   // Single point – center directly on it with a closer zoom
@@ -78,8 +78,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
 
   // Get user's current location (Home) on mount
   useEffect(() => {
-    console.log('[TripMicrography] mount - MAPBOX token present:', Boolean(MAPBOX_TOKEN))
-    console.log('[TripMicrography] mount - trip id:', trip?.id)
+
 
     if (!('geolocation' in navigator)) return
 
@@ -99,7 +98,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
   useEffect(() => {
     const loadCities = async () => {
       if (!trip?.id) {
-        console.log('[TripMicrography] loadCities - no trip id, skipping')
+
         setLoading(false)
         return
       }
@@ -123,7 +122,8 @@ const TripMicrography = ({ trip, onNavigate }) => {
         // Calculate initial view state to fit all cities + optional home location
         if (parsedCities && parsedCities.length > 0) {
           const validCities = parsedCities.filter(c => !isNaN(c.latitude) && !isNaN(c.longitude))
-          console.log('[TripMicrography] loadCities - validCities count:', validCities.length)
+
+
         }
       } catch (error) {
         console.error('Error loading cities:', error)
@@ -139,7 +139,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
   // when the user expands the view.
   const fitToRoute = useCallback(() => {
     const validCities = cities.filter(c => !isNaN(c.latitude) && !isNaN(c.longitude))
-    console.log('[TripMicrography] fitToRoute - validCities count:', validCities.length, 'homeLocation:', homeLocation)
+
     if (validCities.length === 0 && !homeLocation) {
       console.warn('[TripMicrography] fitToRoute - no coordinates available to fit')
       return
@@ -154,7 +154,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
 
     const nextViewState = getViewStateForPoints(allPoints)
     if (nextViewState && mapRef.current) {
-      console.log('[TripMicrography] fitToRoute - flying to viewState:', nextViewState)
+
       mapRef.current.flyTo({ ...nextViewState, duration: 2000 })
     }
   }, [cities, homeLocation])

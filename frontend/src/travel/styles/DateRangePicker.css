@@ -1,0 +1,244 @@
+.date-range-picker {
+    position: relative;
+    width: 100%;
+}
+
+.picker-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1rem;
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 50px;
+}
+
+.picker-trigger:hover:not(.disabled) {
+    border-color: var(--primary, #8B5CF6);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+}
+
+.picker-trigger.active {
+    border-color: var(--primary, #8B5CF6);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.picker-trigger.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--bg-secondary, #f8fafc);
+}
+
+.picker-icon {
+    color: var(--text-tertiary, #94a3b8);
+    font-size: 1.1rem;
+}
+
+.picker-text {
+    flex: 1;
+    font-size: 0.95rem;
+    color: var(--text-primary, #1e293b);
+    font-weight: 500;
+}
+
+.picker-text.placeholder {
+    color: var(--text-tertiary, #94a3b8);
+    font-weight: 400;
+}
+
+.picker-clear {
+    background: none;
+    border: none;
+    color: var(--text-tertiary, #94a3b8);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.picker-clear:hover {
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-secondary, #64748b);
+}
+
+/* Dropdown */
+.picker-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    width: 320px;
+    background: var(--bg-card, #ffffff);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+/* Controls */
+.picker-controls {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    pointer-events: none;
+    /* Let clicks pass through to header text if needed, but buttons need pointer-events */
+}
+
+.picker-nav-btn {
+    pointer-events: auto;
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary, #64748b);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.picker-nav-btn:hover {
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-primary, #1e293b);
+}
+
+/* Calendar Month */
+.picker-month {
+    text-align: center;
+}
+
+.picker-month-header {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary, #1e293b);
+}
+
+/* Grid */
+.picker-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 0.5rem;
+}
+
+.picker-weekday {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary, #94a3b8);
+    text-align: center;
+}
+
+.picker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 4px;
+}
+
+.picker-day {
+    aspect-ratio: 1;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    color: var(--text-primary, #1e293b);
+    cursor: pointer;
+    border-radius: 8px;
+    /* Default radius */
+    position: relative;
+    z-index: 1;
+}
+
+.picker-day.empty {
+    cursor: default;
+}
+
+.picker-day:hover:not(.disabled):not(.selected-start):not(.selected-end) {
+    background: var(--bg-hover, #f1f5f9);
+}
+
+.picker-day.disabled {
+    color: var(--text-disabled, #cbd5e1);
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.picker-day.today {
+    font-weight: 700;
+    color: var(--primary, #8B5CF6);
+}
+
+.picker-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Selection Styles */
+.picker-day.selected-start,
+.picker-day.selected-end {
+    background: var(--primary, #8B5CF6);
+    color: white;
+    z-index: 2;
+}
+
+.picker-day.in-range {
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--text-primary, #1e293b);
+    border-radius: 0;
+}
+
+/* Rounded corners for range edges */
+.picker-day.selected-start {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* If it's a single day range or start=end? Usually start=end is just one circle */
+.picker-day.selected-start.selected-end {
+    border-radius: 8px;
+}
+
+.picker-day.selected-end {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Footer */
+.picker-footer {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color, #e2e8f0);
+    text-align: center;
+}
+
+.picker-hint {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #64748b);
+    font-style: italic;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+    .picker-dropdown {
+        width: 300px;
+        left: 50%;
+        transform: translateX(-50%) !important;
+        /* Override framer motion x if needed, usually managed by layout */
+    }
+}

@@ -19,6 +19,7 @@ import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import { getAdvisory } from '../services/travelAdvisoryService'
 import TravelAdvisoryCard from './TravelAdvisoryCard'
 import DatePicker from './DatePicker'
+import DateRangePicker from './DateRangePicker'
 import '../styles/TripSetupWizard.css'
 
 // Geocoding service using backend proxy to avoid CORS issues
@@ -171,16 +172,26 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
 
   // Handle form input changes
   const handleChange = (field, value) => {
-    let newFormData = { ...formData, [field]: value }
+    let newFormData = { ...formData }
 
-    // Smart Date Logic
-    if (field === 'startDate') {
-      // If picking start date, and end date is not set or invalid, auto-suggest end date (+4 days)
-      if (value && (!formData.endDate || new Date(formData.endDate) < new Date(value))) {
-        const d = new Date(value)
-        d.setDate(d.getDate() + 4)
-        newFormData.endDate = d.toISOString().split('T')[0]
-      }
+    // Check if field is actually an object from DateRangePicker
+    if (typeof field === 'object' && field !== null) {
+      // field is result object e.g. {startDate, endDate}
+      const changes = field
+      if (changes.startDate !== undefined) newFormData.startDate = changes.startDate
+      if (changes.endDate !== undefined) newFormData.endDate = changes.endDate
+    } else {
+      // Standard field/value
+      newFormData[field] = value
+    }
+
+    // Smart Date Logic: If startDate is set and endDate is not set or is before startDate,
+    // auto-suggest endDate (+4 days from startDate).
+    // This logic applies after any changes have been made to newFormData.
+    if (newFormData.startDate && (!newFormData.endDate || new Date(newFormData.endDate) < new Date(newFormData.startDate))) {
+      const d = new Date(newFormData.startDate)
+      d.setDate(d.getDate() + 4)
+      newFormData.endDate = d.toISOString().split('T')[0]
     }
 
     setFormData(newFormData)
@@ -375,49 +386,20 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
       case 2:
         return (
           <div className="wizard-step">
-            <h3>{t('travel.setup.step2.title', 'When are you traveling?')}</h3>
+            <h3>{t('travel.setup.step2.title', 'When are you going?')}</h3>
             <p className="step-description">
-              {t('travel.setup.step2.description', 'Select your departure and return dates')}
+              {t('travel.setup.step2.description', 'Select your travel dates')}
             </p>
 
-            <div className="dates-row">
-              <div className="form-group">
-                <DatePicker
-                  label={t('travel.trip.startDate', 'Departure')}
-                  value={formData.startDate}
-                  onChange={(value) => handleChange('startDate', value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  placeholder={t('travel.setup.step2.selectDeparture', 'Select departure date')}
-                />
-              </div>
-
-              <div className="form-group">
-                <DatePicker
-                  label={t('travel.trip.endDate', 'Return')}
-                  value={formData.endDate}
-                  onChange={(value) => handleChange('endDate', value)}
-                  min={formData.startDate || new Date().toISOString().split('T')[0]}
-                  placeholder={t('travel.setup.step2.selectReturn', 'Select return date')}
-                />
-              </div>
+            <div className="date-selection-container">
+              <DateRangePicker
+                startDate={formData.startDate}
+                endDate={formData.endDate}
+                onChange={(range) => handleChange(range)}
+                minDate={new Date().toISOString().split('T')[0]}
+                placeholder={t('travel.setup.step2.selectDates', 'Select travel dates')}
+              />
             </div>
-
-            {formData.startDate && formData.endDate && (
-              <div className="trip-duration">
-                {(() => {
-                  const start = new Date(formData.startDate)
-                  const end = new Date(formData.endDate)
-                  const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
-                  return t('travel.setup.step2.duration', '{{days}} days', { days })
-                })()}
-              </div>
-            )}
-          </div>
-        )
-
-      case 3:
-        return (
-          <div className="wizard-step">
             <h3>{t('travel.setup.step3.title', 'Set your budget')}</h3>
             <p className="step-description">
               {t('travel.setup.step3.description', 'Link an existing budget or create a new one')}
