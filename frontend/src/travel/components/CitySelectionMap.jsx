@@ -96,7 +96,8 @@ const CitySelectionMap = memo(({
   onCityReorder,
   homeLocation, // Now passed from parent
   returnTransportMode, // Now passed from parent
-  initialViewState = null
+  initialViewState = null,
+  showInstructions = true
 }) => {
   const mapRef = useRef(null)
   const [viewState, setViewState] = useState(initialViewState || {
@@ -115,6 +116,9 @@ const CitySelectionMap = memo(({
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
+
+  // Marker delete interaction state
+  const [deleteCandidateId, setDeleteCandidateId] = useState(null)
 
   // On first load, try to center map on the user's current location
   useEffect(() => {
@@ -373,6 +377,12 @@ const CitySelectionMap = memo(({
    * Handle map click to add city
    */
   const handleMapClick = useCallback(async (evt) => {
+    // If we have a delete candidate active, clicking elsewhere dismisses it
+    if (deleteCandidateId) {
+      setDeleteCandidateId(null)
+      return
+    }
+
     if (isAdding) return
 
     setIsAdding(true)
@@ -663,20 +673,101 @@ const CitySelectionMap = memo(({
           const isFirst = index === 0
           const isLast = index === orderedCities.length - 1
 
+          const isCandidate = deleteCandidateId === city.id
+
           return (
             <Marker
               key={city.id || `city-${index}`}
               latitude={city.latitude}
               longitude={city.longitude}
               anchor="bottom"
+              style={{ zIndex: isCandidate ? 50 : 'auto' }} // Bring candidate to front
             >
               <div
                 className={`city-marker-pin ${isFirst ? 'city-marker-first' : ''} ${isLast ? 'city-marker-last' : ''}`}
                 style={{
-                  background: `linear-gradient(145deg, ${markerColor} 0%, ${darkerColor} 100%)`
+                  background: `linear-gradient(145deg, ${markerColor} 0%, ${darkerColor} 100%)`,
+                  transform: isCandidate ? 'scale(1.15) translateY(-2px)' : undefined
+                }}
+                onContextMenu={(e) => {
+                  // Prevent context menu on long press on mobile
+                  e.preventDefault()
+                }}
+                // Long Press Handlers
+                onTouchStart={(e) => {
+                  // e.stopPropagation() // Don't stop propagation immediately, let map handle gestures, but we start a timer
+                  const timer = setTimeout(() => {
+                    setDeleteCandidateId(city.id)
+                    // Haptic feedback if available
+                    if (navigator.vibrate) navigator.vibrate(50)
+                  }, 600)
+                  e.target.dataset.longPressTimer = timer
+                }}
+                onTouchEnd={(e) => {
+                  const timer = parseInt(e.target.dataset.longPressTimer)
+                  if (timer) clearTimeout(timer)
+                }}
+                onTouchMove={(e) => {
+                  // If user scrolls/drags, cancel the long press
+                  const timer = parseInt(e.target.dataset.longPressTimer)
+                  if (timer) clearTimeout(timer)
+                }}
+                // Mouse handlers for desktop testing
+                onMouseDown={(e) => {
+                  const timer = setTimeout(() => {
+                    setDeleteCandidateId(city.id)
+                  }, 600)
+                  e.target.dataset.longPressTimer = timer
+                }}
+                onMouseUp={(e) => {
+                  const timer = parseInt(e.target.dataset.longPressTimer)
+                  if (timer) clearTimeout(timer)
+                }}
+                onMouseLeave={(e) => {
+                  const timer = parseInt(e.target.dataset.longPressTimer)
+                  if (timer) clearTimeout(timer)
+                }}
+                // Clean up any double click handlers from before
+                onDoubleClick={(e) => {
+                  e.stopPropagation()
                 }}
               >
                 <span className="city-marker-number">{index + 1}</span>
+
+                {/* Delete Button Overlay */}
+                <AnimatePresence>
+                  {isCandidate && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                      className="marker-delete-action"
+                      style={{
+                        position: 'absolute',
+                        top: -12,
+                        right: -12,
+                        width: 24,
+                        height: 24,
+                        background: '#EF4444',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                        cursor: 'pointer',
+                        zIndex: 60
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (onCityRemove) onCityRemove(city.id)
+                        setDeleteCandidateId(null)
+                      }}
+                    >
+                      <FiX size={14} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </Marker>
           )
@@ -684,7 +775,7 @@ const CitySelectionMap = memo(({
       </Map>
 
       {/* Instructions overlay - pushed down if search bar is present, or positioned bottom-center */}
-      {cities.length === 0 && (
+      {showInstructions && cities.length === 0 && (
         <div className="city-selection-instructions" style={{ top: 'auto', bottom: '2rem' }}>
           <FiMapPin size={24} />
           <p>Click on the map to add cities to your trip</p>

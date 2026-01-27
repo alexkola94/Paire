@@ -652,39 +652,52 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     if (isMobile) {
       switch (step) {
         case 1: // Mobile Map Only
-          <div className="wizard-step mobile-map-step" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="city-selection-map-wrapper" style={{ margin: '-0.75rem', width: 'calc(100% + 1.5rem)', height: 'calc(100% + 1.5rem)', borderRadius: 0 }}>
-              <CitySelectionMap
-                cities={orderedCities}
-                onCityAdd={handleCityAdd}
-                onCityRemove={handleCityRemove}
-                onCityReorder={handleCityReorder}
-                homeLocation={homeLocation}
-                returnTransportMode={returnTransportMode}
-              />
+          return (
+            <div className="wizard-step mobile-map-step" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div className="city-selection-map-wrapper" style={{ margin: '-1.5rem', width: 'calc(100% + 3rem)', height: 'calc(100% + 3rem)', borderRadius: 0 }}>
+                <CitySelectionMap
+                  cities={orderedCities}
+                  onCityAdd={handleCityAdd}
+                  onCityRemove={handleCityRemove}
+                  onCityReorder={handleCityReorder}
+                  homeLocation={homeLocation}
+                  returnTransportMode={returnTransportMode}
+                  showInstructions={!isMobile}
+                />
 
-              {/* Floating City Counter Overlay */}
-              <div style={{
-                position: 'absolute',
-                bottom: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(8px)',
-                padding: '6px 16px',
-                borderRadius: '20px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                color: 'var(--text-primary)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                pointerEvents: 'none',
-                zIndex: 10,
-                whiteSpace: 'nowrap'
-              }}>
-                {orderedCities.length} {t('travel.multiCity.selectedCount', 'cities selected')}
+                {/* Floating City Counter Overlay / Instructions */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '80px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(8px)',
+                  padding: '8px 16px',
+                  borderRadius: '24px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  color: 'var(--text-primary)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  pointerEvents: 'none',
+                  zIndex: 10,
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  {orderedCities.length === 0 ? (
+                    <>
+                      <FiMapPin size={16} color="var(--primary)" />
+                      <span>{t('travel.multiCity.tapMapToAdd', 'Tap map to add cities')}</span>
+                    </>
+                  ) : (
+                    <span>{orderedCities.length} {t('travel.multiCity.selectedCount', 'cities selected')}</span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )
         case 2: // Mobile List Review
           return (
             <div className="wizard-step">
