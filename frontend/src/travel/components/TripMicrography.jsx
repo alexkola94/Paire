@@ -225,24 +225,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
               })()}
             </div>
           )}
-          <button
-            className="micrography-expand"
-            onClick={() => {
-              // Toggle expanded state and re-fit the route when opening
-              if (!expanded) {
-                // Small timeout to allow map to resize before flying
-                setTimeout(() => fitToRoute(), 100)
-              }
-              setExpanded(prev => !prev)
-            }}
-            aria-label={
-              expanded
-                ? t('travel.micrography.collapse', 'Collapse map')
-                : t('travel.micrography.expand', 'Expand map')
-            }
-          >
-            {expanded ? <FiX size={16} /> : <FiMaximize2 size={16} />}
-          </button>
+
         </div>
 
         <div className={`micrography-map-container ${expanded ? 'expanded' : ''}`}>
@@ -280,9 +263,9 @@ const TripMicrography = ({ trip, onNavigate }) => {
                     id="route-line"
                     type="line"
                     paint={{
-                      'line-color': '#8B5CF6',
-                      'line-width': 2,
-                      'line-opacity': 0.7
+                      'line-color': theme === 'dark' ? '#A78BFA' : '#8B5CF6', // Brighter purple (Violet-400) for dark mode contrast
+                      'line-width': 3,
+                      'line-opacity': 0.8
                     }}
                   />
                 </Source>

@@ -171,7 +171,19 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
 
   // Handle form input changes
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    let newFormData = { ...formData, [field]: value }
+
+    // Smart Date Logic
+    if (field === 'startDate') {
+      // If picking start date, and end date is not set or invalid, auto-suggest end date (+4 days)
+      if (value && (!formData.endDate || new Date(formData.endDate) < new Date(value))) {
+        const d = new Date(value)
+        d.setDate(d.getDate() + 4)
+        newFormData.endDate = d.toISOString().split('T')[0]
+      }
+    }
+
+    setFormData(newFormData)
     setError(null)
   }
 

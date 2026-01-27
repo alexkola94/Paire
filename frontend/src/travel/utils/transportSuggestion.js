@@ -9,14 +9,40 @@ export const TRANSPORT_MODES = ['car', 'train', 'flight', 'bus', 'ferry', 'walki
  * - Uses straight-line or routed distance in km (already computed in the wizard).
  * - Returns an ordered array of mode strings from most to least recommended.
  */
-export const getTransportSuggestions = ({ distanceKm }) => {
+export const getTransportSuggestions = ({ distanceKm, fromCity, toCity }) => {
   const d = typeof distanceKm === 'number' && !Number.isNaN(distanceKm) ? distanceKm : null
+
+  // Island / Water detection heuristics
+  // In a real app, this would use the graph or map data. Here we use keywords.
+  const ISLAND_KEYWORDS = ['island', 'isle', 'mykonos', 'santorini', 'crete', 'rhodes', 'corfu', 'ibiza', 'mallorca', 'tenerife', 'cyprus', 'malta', 'hawaii', 'bali']
+
+  const isIsland = (city) => {
+    if (!city || !city.name) return false
+    const name = city.name.toLowerCase()
+    return ISLAND_KEYWORDS.some(k => name.includes(k))
+  }
+
+  const fromIsIsland = fromCity ? isIsland(fromCity) : false
+  const toIsIsland = toCity ? isIsland(toCity) : false
+  const involvesIsland = fromIsIsland || toIsIsland
 
   // If we have no distance, fall back to a safe, generic ordering.
   if (d == null) {
+    if (involvesIsland) return ['ferry', 'flight', 'car', 'bus', 'train', 'walking']
     return ['train', 'car', 'bus', 'flight', 'ferry', 'walking']
   }
 
+  // Island Logic
+  if (involvesIsland) {
+    // Close islands -> Ferry
+    if (d <= 300) {
+      return ['ferry', 'flight', 'car', 'bus', 'train', 'walking']
+    }
+    // Far islands -> Flight
+    return ['flight', 'ferry', 'train', 'bus', 'car', 'walking']
+  }
+
+  // Standard Logic
   // Short hops: inside a city or very close-by towns.
   if (d <= 5) {
     return ['walking', 'bus', 'car', 'train', 'ferry', 'flight']

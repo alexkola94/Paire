@@ -174,42 +174,7 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
   }, [t])
 
   // Check if trip is multi-city and load cities
-  useEffect(() => {
-    const checkMultiCity = async () => {
-      if (!activeTrip?.id) {
-        setIsMultiCity(false)
-        setTripCities([])
-        return
-      }
 
-      // Check tripType or cities count
-      let cities = []
-      if (activeTrip.tripType === 'multi-city') {
-        setIsMultiCity(true)
-        try {
-          cities = await tripCityService.getByTrip(activeTrip.id)
-          setTripCities(cities || [])
-        } catch (error) {
-          console.error('Error loading cities:', error)
-          setTripCities([])
-        }
-      } else {
-        // Fallback: check if trip has multiple cities
-        try {
-          cities = await tripCityService.getByTrip(activeTrip.id)
-          const isMulti = cities && cities.length > 1
-          setIsMultiCity(isMulti)
-          setTripCities(isMulti ? (cities || []) : [])
-        } catch (error) {
-          console.error('Error checking cities:', error)
-          setIsMultiCity(false)
-          setTripCities([])
-        }
-      }
-    }
-
-    checkMultiCity()
-  }, [activeTrip?.id, activeTrip?.tripType])
 
   // Calculate route distances for multi-city trips.
   // NOTE:
@@ -394,12 +359,12 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
     setNextCityIndex(nextIdx)
   }, [isMultiCity, tripCities])
 
-  // Load minimal trip data - only what's needed for summary
-  // Uses caching to avoid API calls on every mount
+  // Consolidated Data Loading Effect
   useEffect(() => {
-    const loadTripData = async () => {
-      // If there is no active trip (e.g. after deleting the last one),
-      // clear summary state and fall back to the calm empty view.
+    let cancelled = false
+
+    const loadAllData = async () => {
+      // 1. Reset/Clear if no trip
       if (!activeTrip?.id || isTripDeleted) {
         setLoading(false)
         setAdvisory(null)
@@ -408,163 +373,118 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
         setPackingProgress(null)
         setUpcomingCount(0)
         setSavedPlaces([])
+        setTripCities([])
+        setIsMultiCity(false)
         return
       }
 
-      const cacheKey = `trip-summary-${activeTrip.id}`
+      setLoading(true)
+      const tripId = activeTrip.id
 
       try {
-        // Try to get cached data first
-        const cachedData = await getCached(cacheKey)
+        // --- Step 1: Load Cities (Prerequisite for logic) ---
+        let currentCities = []
+        let currentIsMulti = false
 
-        if (cachedData) {
-          // Use cached data
-          setBudgetSummary(cachedData.budgetSummary)
-          setPackingProgress(cachedData.packingProgress)
-          setUpcomingCount(cachedData.upcomingCount)
-          // Advisory is handled by a dedicated effect now so it can support
-          // multi‑country trips without blocking the main summary view.
-          setLoading(false)
-          return
+        try {
+          // Always fetch cities to ensure consistent state
+          const cities = await tripCityService.getByTrip(tripId)
+          if (!cancelled) {
+            currentCities = cities || []
+            currentIsMulti = (activeTrip.tripType === 'multi-city') || (currentCities.length > 1)
+
+            // Update state
+            setTripCities(currentCities)
+            setIsMultiCity(currentIsMulti)
+          }
+        } catch (err) {
+          console.error('Error loading cities:', err)
         }
 
-        // No cache, fetch core summary data first (expenses / packing / events).
-        // Travel advisory can be slow and is purely informational, so we load it
-        // in a separate async step below to avoid blocking the main view.
-        const [expenses, packingItems, events] = await Promise.all([
-          travelExpenseService.getSummary(activeTrip.id).catch(() => null),
-          packingService.getByTrip(activeTrip.id).catch(() => []),
-          itineraryService.getByTrip(activeTrip.id).catch(() => [])
+        // --- Step 2: Parallel Fetch Summary & Ancillary Data ---
+        const cacheKey = `trip-summary-${tripId}`
+
+        // A. Summary Data (Cacheable)
+        let summaryData = await getCached(cacheKey)
+        let summaryPromise = Promise.resolve(summaryData)
+
+        if (!summaryData) {
+          summaryPromise = Promise.all([
+            travelExpenseService.getSummary(tripId).catch(() => null),
+            packingService.getByTrip(tripId).catch(() => []),
+            itineraryService.getByTrip(tripId).catch(() => [])
+          ]).then(([expenses, packingItems, events]) => {
+            let pProgress = null
+            if (packingItems.length > 0) {
+              const checked = packingItems.filter(item => item.isChecked).length
+              pProgress = {
+                total: packingItems.length,
+                checked,
+                percentage: Math.round((checked / packingItems.length) * 100)
+              }
+            }
+
+            const today = new Date().toISOString().split('T')[0]
+            const upcoming = events.filter(e => e.date >= today).length
+
+            const data = {
+              budgetSummary: expenses,
+              packingProgress: pProgress,
+              upcomingCount: upcoming
+            }
+            // Cache it
+            setCached(cacheKey, data, 5 * 60 * 1000)
+            return data
+          })
+        }
+
+        // B. Advisories
+        const fetchAdvisoriesPromise = (async () => {
+          if (currentIsMulti && currentCities.length > 0) {
+            const countries = Array.from(new Set(currentCities.map(c => c.country && String(c.country).trim()).filter(Boolean)))
+            if (countries.length > 0) return getAdvisories(countries).catch(() => [])
+          }
+          // Fallback
+          const single = await getAdvisoryForTrip(activeTrip).catch(() => null)
+          return single ? [single] : []
+        })()
+
+        // C. Saved Places
+        const fetchPlacesPromise = savedPlaceService.getByTrip(tripId).catch(() => [])
+
+        // Wait for all
+        const [summaryResult, advisoriesResult, placesResult] = await Promise.all([
+          summaryPromise,
+          fetchAdvisoriesPromise,
+          fetchPlacesPromise
         ])
 
-        setBudgetSummary(expenses)
-
-        // Calculate packing progress
-        let packingProgressData = null
-        if (packingItems.length > 0) {
-          const checked = packingItems.filter(item => item.isChecked).length
-          packingProgressData = {
-            total: packingItems.length,
-            checked,
-            percentage: Math.round((checked / packingItems.length) * 100)
+        if (!cancelled) {
+          // Summary
+          if (summaryResult) {
+            setBudgetSummary(summaryResult.budgetSummary)
+            setPackingProgress(summaryResult.packingProgress)
+            setUpcomingCount(summaryResult.upcomingCount)
           }
-          setPackingProgress(packingProgressData)
-        }
 
-        // Just count upcoming events, don't show details
-        const today = new Date().toISOString().split('T')[0]
-        const upcoming = events.filter(e => e.date >= today)
-        const upcomingCountValue = upcoming.length
-        setUpcomingCount(upcomingCountValue)
-        // Cache the computed summary data (excluding advisory which is loaded
-        // via a dedicated, non‑blocking effect to support multi‑country trips).
-        await setCached(
-          cacheKey,
-          {
-            budgetSummary: expenses,
-            packingProgress: packingProgressData,
-            upcomingCount: upcomingCountValue
-          },
-          5 * 60 * 1000
-        ) // 5 minutes TTL
-      } catch (error) {
-        console.error('Error loading trip data:', error)
+          // Advisories
+          setAdvisories(advisoriesResult || [])
+          setAdvisory((advisoriesResult && advisoriesResult.length > 0) ? advisoriesResult[0] : null)
+
+          // Places
+          setSavedPlaces(placesResult || [])
+        }
+      } catch (err) {
+        console.error('Error loading consolidated trip data:', err)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
-    loadTripData()
+    loadAllData()
+
+    return () => { cancelled = true }
   }, [activeTrip?.id, isTripDeleted, refreshKey])
-
-  // Load travel advisory / advisories in the background.
-  // Supports both single‑destination and multi‑city trips.
-  useEffect(() => {
-    let cancelled = false
-
-    const loadAdvisories = async () => {
-      if (!activeTrip?.id || isTripDeleted) {
-        setAdvisory(null)
-        setAdvisories([])
-        return
-      }
-
-      try {
-        // Multi‑city: derive distinct countries from the trip cities and
-        // fetch advisories for each one.
-        if (isMultiCity && tripCities.length > 0) {
-          const countries = Array.from(
-            new Set(
-              tripCities
-                .map(c => c.country && String(c.country).trim())
-                .filter(Boolean)
-            )
-          )
-
-          if (countries.length > 0) {
-            const results = await getAdvisories(countries).catch(() => [])
-            if (!cancelled) {
-              setAdvisories(results || [])
-              setAdvisory(results && results.length > 0 ? results[0] : null)
-            }
-            return
-          }
-        }
-
-        // Fallback: single‑destination advisory based on the trip itself.
-        const single = await getAdvisoryForTrip(activeTrip).catch(() => null)
-        if (!cancelled) {
-          setAdvisory(single || null)
-          setAdvisories(single ? [single] : [])
-        }
-      } catch (error) {
-        console.error('Error loading travel advisory for TravelHome:', error)
-        if (!cancelled) {
-          setAdvisory(null)
-          setAdvisories([])
-        }
-      }
-    }
-
-    loadAdvisories()
-
-    return () => {
-      cancelled = true
-    }
-  }, [activeTrip?.id, isTripDeleted, isMultiCity, tripCities, activeTrip])
-
-  // Load saved places (pinned POIs) for the active trip in a lightweight way.
-  // We intentionally keep this separate from the main summary effect so that
-  // the home view stays responsive even if Dexie is a bit slow on some devices.
-  useEffect(() => {
-    let cancelled = false
-
-    const loadSavedPlaces = async () => {
-      if (!activeTrip?.id || isTripDeleted) {
-        setSavedPlaces([])
-        return
-      }
-
-      try {
-        const places = await savedPlaceService.getByTrip(activeTrip.id)
-        if (!cancelled) {
-          // Limit to a small number for the home sidebar so it stays calm.
-          setSavedPlaces((places || []));
-        }
-      } catch (error) {
-        console.error('Error loading saved places for trip:', error)
-        if (!cancelled) {
-          setSavedPlaces([])
-        }
-      }
-    }
-
-    loadSavedPlaces()
-
-    return () => {
-      cancelled = true
-    }
-  }, [activeTrip?.id, isTripDeleted])
 
   // Listen for events when items are added to invalidate cache
   useEffect(() => {
