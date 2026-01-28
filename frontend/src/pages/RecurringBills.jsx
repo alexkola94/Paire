@@ -24,7 +24,9 @@ import Skeleton from '../components/Skeleton'
 import useSwipeGesture from '../hooks/useSwipeGesture'
 import CalendarView from '../components/CalendarView'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import AddToCalculatorButton from '../components/AddToCalculatorButton'
 import './RecurringBills.css'
+import '../styles/AddToCalculator.css'
 
 /**
  * Recurring Bills Page Component
@@ -748,21 +750,27 @@ function RecurringBills() {
         </div>
         <div className="bills-section">
           <Skeleton height="24px" width="150px" style={{ marginBottom: '1rem' }} />
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bill-card card" style={{ height: '140px', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                <Skeleton type="circular" width="48px" height="48px" />
-                <div style={{ flex: 1 }}>
-                  <Skeleton height="20px" width="60%" style={{ marginBottom: '8px' }} />
-                  <Skeleton height="16px" width="100px" />
+          <div className="data-cards-grid">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bill-card card data-card skeleton-card">
+                <div className="data-card-header" style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <Skeleton type="circular" width="48px" height="48px" />
+                  <div style={{ flex: 1 }}>
+                    <Skeleton height="20px" width="60%" style={{ marginBottom: '8px' }} />
+                    <Skeleton height="16px" width="100px" />
+                  </div>
+                </div>
+                <div className="data-card-body" style={{ minHeight: '3rem' }} />
+                <div className="data-card-meta">
+                  <Skeleton height="20px" width="120px" />
+                </div>
+                <div className="data-card-actions" style={{ display: 'flex', gap: '8px' }}>
+                  <Skeleton height="32px" width="80px" />
+                  <Skeleton height="32px" width="100px" />
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Skeleton height="20px" width="120px" />
-                <Skeleton height="24px" width="80px" />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -954,7 +962,7 @@ function RecurringBills() {
               <FiAlertCircle /> {t('recurringBills.overdueBills')} ({overdueBills.length})
             </h2>
             <motion.div 
-              className="bills-grid"
+              className="data-cards-grid"
               initial="hidden"
               animate="visible"
               variants={{
@@ -1010,7 +1018,7 @@ function RecurringBills() {
               <FiClock /> {t('recurringBills.dueThisMonth') || "Due This Month"} ({dueThisMonthBills.length})
             </h2>
             <motion.div 
-              className="bills-grid"
+              className="data-cards-grid"
               initial="hidden"
               animate="visible"
               variants={{
@@ -1066,7 +1074,7 @@ function RecurringBills() {
               <FiCheck /> {t('recurringBills.paidThisMonth') || "Paid This Month"} ({paidThisMonthBills.length})
             </h2>
             <motion.div 
-              className="bills-grid" 
+              className="data-cards-grid" 
               style={{ opacity: 0.8 }}
               initial="hidden"
               animate="visible"
@@ -1123,7 +1131,7 @@ function RecurringBills() {
               <FiCalendar /> {t('recurringBills.futureBills') || "Upcoming & Future"} ({futureBills.length})
             </h2>
             <motion.div 
-              className="bills-grid"
+              className="data-cards-grid"
               initial="hidden"
               animate="visible"
               variants={{
@@ -1643,9 +1651,13 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
   const isSwipeLeft = offset < 0
   const swipeProgress = Math.min(100, (Math.abs(offset) / 80) * 100)
 
+  const displayNotes = bill.notes
+    ? bill.notes.replace(/\[LOAN_REF:[^\]]+\]/g, '').replace(/\[SAVINGS_REF:[^\]]+\]/g, '').trim()
+    : ''
+
   return (
     <div
-      className={`bill-card ${status} ${animationClass || ''} ${swipeProps.className || ''}`}
+      className={`bill-card data-card ${status} ${animationClass || ''} ${swipeProps.className || ''}`}
       style={swipeProps.style}
       onTouchStart={(e) => handleTouchStart(bill.id, e)}
       onTouchMove={(e) => handleTouchMove(bill.id, e)}
@@ -1677,18 +1689,77 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
         </div>
       )}
 
-      <div className="bill-header">
-        <div className="bill-icon">{icon}</div>
-        <div className="bill-info">
-          <h3>
-            {bill.name}
-            {hasLoanLink && <FiLink className="linked-icon" title="Linked to Loan" style={{ marginLeft: '6px', color: 'var(--primary-color)' }} />}
-            {hasSavingsLink && <FiTarget className="linked-icon" title="Linked to Savings Goal" style={{ marginLeft: '6px', color: 'var(--success-color)' }} />}
-          </h3>
-          <span className="bill-frequency">{t(`recurringBills.frequencies.${bill.frequency}`)}</span>
+      {/* Header: name, frequency, amount */}
+      <div className="data-card-header">
+        <div className="bill-header">
+          <div className="bill-icon">{icon}</div>
+          <div className="bill-info">
+            <h3>
+              {bill.name}
+              {hasLoanLink && <FiLink className="linked-icon" title="Linked to Loan" style={{ marginLeft: '6px', color: 'var(--primary-color)' }} />}
+              {hasSavingsLink && <FiTarget className="linked-icon" title="Linked to Savings Goal" style={{ marginLeft: '6px', color: 'var(--success-color)' }} />}
+            </h3>
+            <span className="bill-frequency">{t(`recurringBills.frequencies.${bill.frequency}`)}</span>
+          </div>
         </div>
-        <div className="bill-actions">
+        <div className="bill-amount">
+          <div className="add-to-calc-row">
+            <span className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(bill.amount)}</span>
+            {(bill.autoPay ?? bill.auto_pay) && <span className="auto-pay-badge">{t('recurringBills.autoPayEnabled')}</span>}
+            <AddToCalculatorButton value={bill.amount} isPrivate={isPrivate} size={16} />
+          </div>
+        </div>
+      </div>
+
+      {/* Body: notes with line-clamp */}
+      <div className="data-card-body">
+        {displayNotes ? (
+          <div className="bill-notes">
+            <p>{displayNotes}</p>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Meta: due date and attachments link */}
+      <div className="data-card-meta">
+        <div className="bill-due-date">
+          <FiCalendar />
+          <span>{t('recurringBills.dueOn')} {formatDueDate(bill.nextDueDate || bill.next_due_date)}</span>
+          {daysUntil >= 0 ? (
+            <span className="days-until">
+              {daysUntil === 0 ? t('recurringBills.today') :
+                daysUntil === 1 ? t('recurringBills.tomorrow') :
+                  `${daysUntil} ${t('recurringBills.daysLeft')}`}
+            </span>
+          ) : (
+            <span className="days-overdue">
+              {Math.abs(daysUntil)} {t('recurringBills.daysOverdue')}
+            </span>
+          )}
+        </div>
+        <div className="bill-extras" style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button
+            type="button"
+            className="btn-text-icon"
+            onClick={(e) => { e.stopPropagation(); onAttachments(bill); }}
+            onTouchEnd={(e) => { e.stopPropagation(); }}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'transparent', border: 'none', padding: '4px 0', cursor: 'pointer' }}
+          >
+            <FiPaperclip />
+            {bill.attachments?.length > 0 ? (
+              <span>{bill.attachments.length} {t('recurringBills.attachments') || "Attachments"}</span>
+            ) : (
+              <span>{t('common.addAttachment') || "Add Attachment"}</span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Actions: edit, delete, unmark, mark paid */}
+      <div className="data-card-actions bill-actions-row">
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
             className="icon-btn"
             onClick={() => onEdit(bill)}
             title={t('common.edit')}
@@ -1696,6 +1767,7 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
             <FiEdit />
           </button>
           <button
+            type="button"
             className="icon-btn danger"
             onClick={() => onDelete(bill.id)}
             title={t('common.delete')}
@@ -1703,72 +1775,29 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
             <FiTrash2 />
           </button>
         </div>
-      </div>
-
-      <div className="bill-amount">
-        <span className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(bill.amount)}</span>
-        {(bill.autoPay ?? bill.auto_pay) && <span className="auto-pay-badge">{t('recurringBills.autoPayEnabled')}</span>}
-      </div>
-
-      <div className="bill-due-date">
-        <FiCalendar />
-        <span>{t('recurringBills.dueOn')} {formatDueDate(bill.nextDueDate || bill.next_due_date)}</span>
-        {daysUntil >= 0 ? (
-          <span className="days-until">
-            {daysUntil === 0 ? t('recurringBills.today') :
-              daysUntil === 1 ? t('recurringBills.tomorrow') :
-                `${daysUntil} ${t('recurringBills.daysLeft')}`}
-          </span>
-        ) : (
-          <span className="days-overdue">
-            {Math.abs(daysUntil)} {t('recurringBills.daysOverdue')}
-          </span>
-        )}
-      </div>
-
-      {/* Attachment Button Row */}
-      <div className="bill-extras" style={{ display: 'flex', gap: '8px', margin: '8px 0' }}>
-        <button
-          className="btn-text-icon"
-          onClick={(e) => { e.stopPropagation(); onAttachments(bill); }} // Prevent card click if any
-          onTouchEnd={(e) => { e.stopPropagation(); }} // Prevent swipe
-          style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'transparent', border: 'none', padding: '4px 0', cursor: 'pointer' }}
-        >
-          <FiPaperclip />
-          {bill.attachments?.length > 0 ? (
-            <span>{bill.attachments.length} {t('recurringBills.attachments') || "Attachments"}</span>
-          ) : (
-            <span>{t('common.addAttachment') || "Add Attachment"}</span>
-          )}
-        </button>
-      </div>
-
-      {bill.notes && (
-        <div className="bill-notes">
-          <p>{bill.notes.replace(/\[LOAN_REF:[^\]]+\]/, '').replace(/\[SAVINGS_REF:[^\]]+\]/, '').trim()}</p>
+        <div className="bill-footer" style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flex: 1, minWidth: 0 }}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => onUnmark(bill)}
+            title={t('recurringBills.unmarkPaid') || "Revert Last Payment"}
+          >
+            <FiRotateCcw />
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-success"
+            onClick={() => onMarkPaid(bill.id, bill.amount, bill.notes)}
+            style={{ flex: 1 }}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <><div className="spinner-small" style={{ width: '12px', height: '12px', marginRight: '5px' }}></div> {t('common.processing')}</>
+            ) : (
+              <><FiCheck /> {t('recurringBills.markPaid')}</>
+            )}
+          </button>
         </div>
-      )}
-
-      <div className="bill-footer" style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-        <button
-          className="btn btn-sm btn-outline-secondary"
-          onClick={() => onUnmark(bill)}
-          title={t('recurringBills.unmarkPaid') || "Revert Last Payment"}
-        >
-          <FiRotateCcw />
-        </button>
-        <button
-          className="btn btn-sm btn-success"
-          onClick={() => onMarkPaid(bill.id, bill.amount, bill.notes)}
-          style={{ flex: 1 }}
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <><div className="spinner-small" style={{ width: '12px', height: '12px', marginRight: '5px' }}></div> {t('common.processing')}</>
-          ) : (
-            <><FiCheck /> {t('recurringBills.markPaid')}</>
-          )}
-        </button>
       </div>
     </div>
   )

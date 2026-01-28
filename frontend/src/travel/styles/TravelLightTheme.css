@@ -967,16 +967,21 @@
     background: transparent;
 }
 
+/* Map overlay visibility: high-contrast greeting over map */
 .travel-layout:not([data-theme='dark']) .greeting-text {
     color: #3d3530;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
+/* Map overlay visibility: action buttons stay visible over map */
 .travel-layout:not([data-theme='dark']) .create-trip-btn,
 .travel-layout:not([data-theme='dark']) .edit-trip-btn,
 .travel-layout:not([data-theme='dark']) .delete-trip-btn {
     background: rgba(255, 252, 247, 0.95);
-    border: 1px solid rgba(232, 145, 58, 0.2);
-    color: #6b6058;
+    border: 1px solid rgba(232, 145, 58, 0.25);
+    color: #3d3530;
+    box-shadow: 0 2px 8px rgba(180, 120, 60, 0.08);
 }
 
 .travel-layout:not([data-theme='dark']) .create-trip-btn:hover,
@@ -1096,8 +1101,11 @@
     background: linear-gradient(90deg, #e8913a 0%, #f0a85c 100%);
 }
 
+/* Map overlay visibility: encouragement readable over map */
 .travel-layout:not([data-theme='dark']) .encouragement {
-    color: #6b6058;
+    color: #3d3530;
+    opacity: 1;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 /* ================================

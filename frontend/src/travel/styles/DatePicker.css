@@ -1,16 +1,16 @@
 /* ================================
-   Custom DatePicker Component
-   Paire Design System Styling
+   Custom DatePicker Component (Travel only)
+   Scoped to .travel-layout so main app DatePicker is not affected when returning from Travel
    ================================ */
 
-.date-picker-wrapper {
+.travel-layout .date-picker-wrapper {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs, 8px);
 }
 
-.date-picker-label {
+.travel-layout .date-picker-label {
   font-size: 0.875rem;
   font-weight: 500;
   color: #0f172a;
@@ -19,7 +19,7 @@
   letter-spacing: -0.01em;
 }
 
-.date-picker-container {
+.travel-layout .date-picker-container {
   position: relative;
   display: flex;
   align-items: center;
@@ -38,25 +38,25 @@
   overflow: hidden;
 }
 
-.date-picker-container:hover:not(.disabled) {
+.travel-layout .date-picker-container:hover:not(.disabled) {
   background: rgba(255, 252, 247, 1);
   border-color: rgba(232, 145, 58, 0.4);
   box-shadow: 0 4px 14px rgba(180, 120, 60, 0.18);
 }
 
-.date-picker-container.focused {
+.travel-layout .date-picker-container.focused {
   border-color: rgba(232, 145, 58, 0.55);
   box-shadow: 0 6px 18px rgba(180, 120, 60, 0.25);
   outline: none;
 }
 
-.date-picker-container.disabled {
+.travel-layout .date-picker-container.disabled {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
 }
 
-.date-picker-icon {
+.travel-layout .date-picker-icon {
   position: absolute;
   left: var(--spacing-md, 16px);
   display: flex;
@@ -70,13 +70,13 @@
   z-index: 1;
 }
 
-.date-picker-container.focused .date-picker-icon {
+.travel-layout .date-picker-container.focused .date-picker-icon {
   color: #e8913a;
   opacity: 1;
   transform: scale(1.1);
 }
 
-.date-picker-input {
+.travel-layout .date-picker-input {
   position: absolute;
   top: 0;
   left: 0;
@@ -93,17 +93,17 @@
 }
 
 /* Ensure input value text is not visible */
-.date-picker-input::-webkit-datetime-edit,
-.date-picker-input::-webkit-datetime-edit-fields-wrapper,
-.date-picker-input::-webkit-datetime-edit-text,
-.date-picker-input::-webkit-datetime-edit-month-field,
-.date-picker-input::-webkit-datetime-edit-day-field,
-.date-picker-input::-webkit-datetime-edit-year-field {
+.travel-layout .date-picker-input::-webkit-datetime-edit,
+.travel-layout .date-picker-input::-webkit-datetime-edit-fields-wrapper,
+.travel-layout .date-picker-input::-webkit-datetime-edit-text,
+.travel-layout .date-picker-input::-webkit-datetime-edit-month-field,
+.travel-layout .date-picker-input::-webkit-datetime-edit-day-field,
+.travel-layout .date-picker-input::-webkit-datetime-edit-year-field {
   color: transparent;
   background: transparent;
 }
 
-.date-picker-input::-webkit-calendar-picker-indicator {
+.travel-layout .date-picker-input::-webkit-calendar-picker-indicator {
   position: absolute;
   top: 0;
   left: 0;
@@ -117,7 +117,7 @@
   z-index: 3;
 }
 
-.date-picker-display {
+.travel-layout .date-picker-display {
   font-size: 0.9375rem;
   color: #0f172a;
   /* Explicit dark for light mode */
@@ -128,7 +128,7 @@
   line-height: 1.5;
 }
 
-.date-picker-placeholder {
+.travel-layout .date-picker-placeholder {
   font-size: 0.9375rem;
   color: #64748b;
   /* Explicit slate-500 for light mode */
@@ -139,70 +139,69 @@
   line-height: 1.5;
 }
 
-/* Dark theme adjustments (opt‑in via data-theme) */
-[data-theme='dark'] .date-picker-container {
+/* Dark theme adjustments - scoped to travel layout */
+.travel-layout[data-theme='dark'] .date-picker-container {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme='dark'] .date-picker-icon {
+.travel-layout[data-theme='dark'] .date-picker-icon {
   color: #a78bfa;
   /* Light violet for dark mode */
   opacity: 0.9;
 }
 
-[data-theme='dark'] .date-picker-container:hover:not(.disabled) {
+.travel-layout[data-theme='dark'] .date-picker-container:hover:not(.disabled) {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(139, 92, 246, 0.4);
 }
 
-[data-theme='dark'] .date-picker-container.focused {
+.travel-layout[data-theme='dark'] .date-picker-container.focused {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(139, 92, 246, 0.6);
 }
 
-[data-theme='dark'] .date-picker-display,
-[data-theme='dark'] .date-picker-label {
+.travel-layout[data-theme='dark'] .date-picker-display,
+.travel-layout[data-theme='dark'] .date-picker-label {
   color: var(--text-primary);
 }
 
-[data-theme='dark'] .date-picker-placeholder {
+.travel-layout[data-theme='dark'] .date-picker-placeholder {
   color: var(--text-secondary);
   opacity: 0.6;
 }
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  .date-picker-container {
+  .travel-layout .date-picker-container {
     min-height: 44px;
     padding: var(--spacing-xs, 8px) var(--spacing-sm, 12px);
     padding-left: 44px;
   }
 
-  .date-picker-icon {
+  .travel-layout .date-picker-icon {
     left: var(--spacing-sm, 12px);
   }
 
-  .date-picker-icon svg {
+  .travel-layout .date-picker-icon svg {
     width: 16px;
     height: 16px;
   }
 
-  .date-picker-display,
-  .date-picker-placeholder {
+  .travel-layout .date-picker-display,
+  .travel-layout .date-picker-placeholder {
     font-size: 0.875rem;
   }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-
-  .date-picker-container,
-  .date-picker-icon {
+  .travel-layout .date-picker-container,
+  .travel-layout .date-picker-icon {
     transition: none;
   }
 
-  .date-picker-container:hover:not(.disabled) {
+  .travel-layout .date-picker-container:hover:not(.disabled) {
     transform: none;
   }
 }

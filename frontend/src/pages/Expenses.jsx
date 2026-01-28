@@ -23,6 +23,7 @@ import Skeleton from '../components/Skeleton'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import TransactionDetailModal from '../components/TransactionDetailModal'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import AddToCalculatorButton from '../components/AddToCalculatorButton'
 import './Expenses.css'
 
 function Expenses() {
@@ -395,9 +396,9 @@ function Expenses() {
           </div>
           <Skeleton height="40px" width="140px" style={{ borderRadius: '8px' }} />
         </div>
-        <div className="expenses-grid">
+        <div className="data-cards-grid">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="expense-card card" style={{ height: '200px' }}>
+            <div key={i} className="expense-card card data-card skeleton-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <Skeleton height="24px" width="120px" />
                 <Skeleton height="24px" width="80px" />
@@ -534,7 +535,7 @@ function Expenses() {
         </div>
       ) : (
         <motion.div 
-          className="expenses-grid"
+          className="data-cards-grid"
           initial="hidden"
           animate="visible"
           variants={{
@@ -548,7 +549,7 @@ function Expenses() {
           {displayedExpenses.map((expense) => (
             <motion.div 
               key={expense.id} 
-              className="expense-card card clickable"
+              className="expense-card card clickable data-card"
               onClick={() => setDetailModal(expense)}
               role="button"
               tabIndex={0}
@@ -566,22 +567,33 @@ function Expenses() {
                 }
               }}
             >
-              <div className="expense-header">
+              <div className="expense-header data-card-header">
                 <div className="expense-category">
                   {t(`categories.${(expense.category || '').toLowerCase()}`)}
                 </div>
-                <div className={`expense-amount ${isPrivate ? 'masked-number' : ''}`}>
-                  {formatCurrency(expense.amount)}
+                {/* Amount with visible "Add to calculator" button (opens operation picker: +, -, ×, ÷) */}
+                <div className="expense-amount-row">
+                  <span className={`expense-amount ${isPrivate ? 'masked-number' : ''}`}>
+                    {formatCurrency(expense.amount)}
+                  </span>
+                  <AddToCalculatorButton
+                    value={expense.amount}
+                    isPrivate={isPrivate}
+                    size={18}
+                    className="expense-add-to-calc-btn"
+                  />
                 </div>
               </div>
 
-              {expense.description && (
-                <p className="expense-description">
-                  {expense.description}
-                </p>
-              )}
+              <div className="data-card-body">
+                {expense.description ? (
+                  <p className="expense-description">
+                    {expense.description}
+                  </p>
+                ) : null}
+              </div>
 
-              <div className="expense-date">
+              <div className="expense-date data-card-meta">
                 {format(new Date(expense.date), 'MMMM dd, yyyy')}
                 {expense.paidBy === 'Bank' || expense.isBankSynced ? (
                   <span className="added-by">
@@ -604,7 +616,7 @@ function Expenses() {
                 )}
               </div>
 
-              <div className="expense-actions" onClick={(e) => e.stopPropagation()}>
+              <div className="expense-actions data-card-actions" onClick={(e) => e.stopPropagation()}>
                 {expense.attachmentUrl && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setViewModal(expense); }}

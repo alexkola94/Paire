@@ -25,8 +25,10 @@ import LogoLoader from '../components/LogoLoader'
 import Dropdown from '../components/Dropdown'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import AddToCalculatorButton from '../components/AddToCalculatorButton'
 import ExcelJS from 'exceljs'
 import './Analytics.css'
+import '../styles/AddToCalculator.css'
 
 // Register Chart.js components
 ChartJS.register(
@@ -992,10 +994,13 @@ function Analytics() {
                         {t(`categories.${(cat.category || '').toLowerCase()}`) || cat.category}
                       </span>
                     </div>
-                    <span className={`category-amount ${isPrivate ? 'masked-number' : ''}`}>
-                      {formatCurrency(cat.amount)}
-                      <small> ({cat.percentage.toFixed(1)}%)</small>
-                    </span>
+                    <div className="add-to-calc-row">
+                      <span className={`category-amount ${isPrivate ? 'masked-number' : ''}`}>
+                        {formatCurrency(cat.amount)}
+                        <small> ({cat.percentage.toFixed(1)}%)</small>
+                      </span>
+                      <AddToCalculatorButton value={cat.amount} isPrivate={isPrivate} size={16} />
+                    </div>
                   </div>
                 ))}
               </div>

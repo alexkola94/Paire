@@ -124,14 +124,14 @@ const TravelBackgroundMap = ({ trip, availableCities = [] }) => {
                 interactive={false} // Static background
                 reuseMaps
             />
-            {/* Gradient Overlay for better text readability - reduced intensity */}
+            {/* Gradient overlay: subdued map so overlay text stays readable (light/dark) */}
             <div
                 style={{
                     position: 'absolute',
                     inset: 0,
                     background: theme === 'dark'
-                        ? 'linear-gradient(to bottom, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.5))'
-                        : 'linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.3))',
+                        ? 'linear-gradient(to bottom, rgba(15, 23, 42, 0.28), rgba(15, 23, 42, 0.55))'
+                        : 'linear-gradient(to bottom, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.38))',
                     pointerEvents: 'none'
                 }}
             />

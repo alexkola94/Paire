@@ -373,19 +373,30 @@ function Chatbot() {
   const toggleChat = () => {
     setIsOpen(!isOpen)
     setIsMinimized(false)
-    // On mobile, when closing, reset revealed state
-    if (isMobile && isOpen) {
+    // When closing, reset revealed state
+    if (isOpen) {
       setIsRevealed(false)
-    }
-    // On mobile, reveal when opening
-    if (isMobile && !isOpen) {
-      setIsRevealed(true)
     }
     // Clear unread count when opening chat
     if (!isOpen) {
       setUnreadCount(0)
     }
   }
+  
+  /**
+   * Hide calculator when chatbot is revealed or open
+   */
+  useEffect(() => {
+    if (isRevealed || (isOpen && !isMinimized)) {
+      document.body.classList.add('chatbot-open')
+    } else {
+      document.body.classList.remove('chatbot-open')
+    }
+    
+    return () => {
+      document.body.classList.remove('chatbot-open')
+    }
+  }, [isRevealed, isOpen, isMinimized])
 
   /**
    * Minimize chat window
@@ -393,10 +404,10 @@ function Chatbot() {
   const minimizeChat = () => {
     const willBeMinimized = !isMinimized
     setIsMinimized(willBeMinimized)
-    // On mobile, reset revealed state when minimized so reveal button appears again
-    if (isMobile && willBeMinimized) {
+    // Reset revealed state when minimized so reveal button appears again
+    if (willBeMinimized) {
       setIsRevealed(false)
-      setIsOpen(false) // Also close the chat on mobile when minimized
+      setIsOpen(false) // Also close the chat when minimized
     }
     // Clear unread count when maximizing
     if (isMinimized) {
@@ -405,20 +416,15 @@ function Chatbot() {
   }
 
   /**
-   * Reveal chatbot on mobile (iOS-like behavior)
-   * Opens chat immediately when reveal button is pressed
+   * Reveal chatbot (first tap - shows FAB)
    */
   const revealChatbot = () => {
     setIsRevealed(true)
-    // Open chat immediately
-    if (!isOpen) {
-      setIsOpen(true)
-    }
     // If chatbot is minimized, maximize it when revealed
     if (isMinimized) {
       setIsMinimized(false)
     }
-    // Clear unread count when opening
+    // Clear unread count when revealing
     setUnreadCount(0)
   }
 
@@ -444,8 +450,8 @@ function Chatbot() {
 
   return (
     <div className="chatbot-container">
-      {/* Mobile Reveal Button - Visible when chatbot is hidden or minimized on mobile */}
-      {isMobile && ((!isOpen && !isRevealed) || (isMinimized && !isRevealed)) && (
+      {/* Reveal Button - Shows when chatbot is not revealed (first tap) */}
+      {!isRevealed && (
         <button
           className="chatbot-reveal-btn"
           onClick={revealChatbot}
@@ -458,11 +464,11 @@ function Chatbot() {
         </button>
       )}
 
-      {/* Floating Action Button - Hidden on mobile until revealed */}
-      {!isOpen && (!isMobile || isRevealed) && (
+      {/* Floating Action Button - Shows when revealed but not open (second tap opens) */}
+      {isRevealed && !isOpen && (
         <button
           className={`chatbot-fab ${isMobile && isRevealed ? 'chatbot-fab-revealed' : ''}`}
-          onClick={handleFabClick}
+          onClick={toggleChat}
           aria-label={t('chatbot.open')}
         >
           <FiMessageCircle style={{ width: '24px', height: '24px' }} />

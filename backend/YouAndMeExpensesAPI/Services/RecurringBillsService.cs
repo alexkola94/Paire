@@ -131,6 +131,9 @@ namespace YouAndMeExpensesAPI.Services
             return bill;
         }
 
+        /// <summary>
+        /// Updates bill details only. Does not change NextDueDate — that advances only when the user marks the bill as paid.
+        /// </summary>
         public async Task<RecurringBill?> UpdateRecurringBillAsync(Guid userId, Guid billId, RecurringBill updates)
         {
             var allUserIds = await GetUserAndPartnerIdsAsync(userId);
@@ -143,6 +146,7 @@ namespace YouAndMeExpensesAPI.Services
                 return null;
             }
 
+            // Update only template/details; leave NextDueDate unchanged so the next occurrence stays the same.
             existingBill.Name = updates.Name;
             existingBill.Amount = updates.Amount;
             existingBill.Category = updates.Category;
@@ -154,17 +158,7 @@ namespace YouAndMeExpensesAPI.Services
             existingBill.Notes = updates.Notes;
             existingBill.UpdatedAt = DateTime.UtcNow;
 
-            existingBill.NextDueDate = CalculateNextDueDate(existingBill.Frequency, existingBill.DueDay, existingBill.NextDueDate);
-
-            if (existingBill.NextDueDate.Kind == DateTimeKind.Unspecified)
-            {
-                existingBill.NextDueDate = DateTime.SpecifyKind(existingBill.NextDueDate, DateTimeKind.Utc);
-            }
-            else if (existingBill.NextDueDate.Kind == DateTimeKind.Local)
-            {
-                existingBill.NextDueDate = existingBill.NextDueDate.ToUniversalTime();
-            }
-
+            // Do NOT recalculate NextDueDate on edit — only MarkBillPaid advances it.
             await _dbContext.SaveChangesAsync();
 
             return existingBill;

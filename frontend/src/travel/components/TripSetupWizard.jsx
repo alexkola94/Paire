@@ -223,7 +223,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
           return false
         }
         if (budgetMode === 'existing' && !selectedBudgetId) {
-          setError(t('wizard.selectBudget', 'Please select a budget'))
+          setError(t('travel.wizard.selectBudget', 'Please select a budget'))
           return false
         }
         break
@@ -411,13 +411,13 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                 className={`mode-btn ${budgetMode === 'new' ? 'active' : ''}`}
                 onClick={() => setBudgetMode('new')}
               >
-                <FiDollarSign /> <span>{t('wizard.newBudget', 'Create New')}</span>
+                <FiDollarSign /> <span>{t('travel.wizard.newBudget', 'Create New')}</span>
               </button>
               <button
                 className={`mode-btn ${budgetMode === 'existing' ? 'active' : ''}`}
                 onClick={() => setBudgetMode('existing')}
               >
-                <FiList /> <span>{t('wizard.existingBudget', 'Use Existing')}</span>
+                <FiList /> <span>{t('travel.wizard.existingBudget', 'Use Existing')}</span>
               </button>
             </div>
 
@@ -425,7 +425,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
               <div className="budget-form-section">
                 <div className="budget-row">
                   <div className="form-group budget-input-group">
-                    <label>{t('wizard.budgetAmount', 'Total Budget')}</label>
+                    <label>{t('travel.wizard.budgetAmount', 'Total Budget')}</label>
                     <div className="budget-input">
                       <input
                         type="number"
@@ -454,7 +454,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
                 </div>
 
                 <div className="form-group">
-                  <label>{t('wizard.createBudgetCategory', 'Budget Name')}</label>
+                  <label>{t('travel.wizard.createBudgetCategory', 'Budget Name')}</label>
                   <div className="input-with-icon">
                     <input
                       type="text"
@@ -468,17 +468,17 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
             ) : (
               <div className="budget-selection-section">
                 <div className="form-group">
-                  <label>{t('wizard.selectBudget', 'Select a Budget')}</label>
+                  <label>{t('travel.wizard.selectBudget', 'Select a Budget')}</label>
                   <div className="budget-list">
                     {availableBudgets.length === 0 ? (
-                      <div className="no-budgets-msg">{t('wizard.noBudgets', 'No existing budgets or saving goals found.')}</div>
+                      <div className="no-budgets-msg">{t('travel.wizard.noBudgets', 'No existing budgets or saving goals found.')}</div>
                     ) : (
                       <select
                         value={selectedBudgetId}
                         onChange={(e) => setSelectedBudgetId(e.target.value)}
                         className="budget-select"
                       >
-                        <option value="">-- {t('wizard.selectBudget', 'Select a Budget')} --</option>
+                        <option value="">-- {t('travel.wizard.selectBudget', 'Select a Budget')} --</option>
                         {availableBudgets.map(b => {
                           const displayName = b.type === 'savingGoal'
                             ? `${b.icon || '🎯'} ${b.category}`

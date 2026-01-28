@@ -16,7 +16,9 @@ import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import AddToCalculatorButton from '../components/AddToCalculatorButton'
 import './SavingsGoals.css'
+import '../styles/AddToCalculator.css'
 
 /**
  * Savings Goals Page Component
@@ -492,6 +494,10 @@ function SavingsGoals() {
                     <span className="label">{t('savingsGoals.target')}</span>
                     <span className={`value ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(goal.targetAmount)}</span>
                   </div>
+                </div>
+
+                <div className="add-to-calc-row" style={{ marginTop: '8px' }}>
+                  <AddToCalculatorButton value={goal.targetAmount} isPrivate={isPrivate} size={16} />
                 </div>
 
                 <div className="progress-container">

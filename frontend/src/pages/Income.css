@@ -65,19 +65,22 @@
 
 
 
-/* ================================
-   Income Grid
-   ================================ */
-
-.income-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--spacing-lg);
-}
+/* Grid: uses .data-cards-grid from DataCard.css (via Expenses.css) */
 
 /* ================================
    Income Card
+   Compact height: less data than RecurringBills
    ================================ */
+
+.income-page .income-card.data-card {
+  min-height: 240px;
+}
+
+@media (max-width: 767px) {
+  .income-page .income-card.data-card {
+    min-height: 220px;
+  }
+}
 
 .income-card {
   display: flex;
@@ -189,12 +192,17 @@
   filter: drop-shadow(0 1px 2px rgba(16, 185, 129, 0.2));
 }
 
-.income-description {
+/* Description in data-card-body: 2-line clamp so card height stays consistent */
+.data-card-body .income-description {
   color: var(--text-secondary);
-  margin-bottom: var(--spacing-md);
+  margin: 0;
   line-height: 1.6;
-  /* Fluid typography */
   font-size: clamp(0.9375rem, 2vw, 1rem);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .income-date {
@@ -248,22 +256,7 @@
    Responsive Design
    ================================ */
 
-/* Tablet and above */
-@media (min-width: 768px) {
-  .income-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Desktop */
-@media (min-width: 1024px) {
-  .income-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  /* Desktop: Centered modal dialog with backdrop */
-
-}
+/* Grid breakpoints defined in DataCard.css (.data-cards-grid) */
 
 /* Mobile optimization */
 @media (max-width: 767px) {

@@ -37,6 +37,7 @@ const getMapboxStaticUrl = (lat, lon, zoom = 10, style = MAPBOX_STYLE_DARK) => {
 
 // Static map fallback component
 const StaticMapFallback = memo(({ trip, showOverlay = true }) => {
+  const { t } = useTranslation()
   const { theme } = useTheme()
   const [mapLoaded, setMapLoaded] = useState(false)
   const mapStyle = theme === 'light' ? MAPBOX_STYLE_LIGHT : MAPBOX_STYLE_DARK
@@ -50,7 +51,7 @@ const StaticMapFallback = memo(({ trip, showOverlay = true }) => {
     <div className="static-map-fallback">
       <img
         src={mapUrl}
-        alt="Trip destination map"
+        alt={t('travel.map.alt', 'Trip destination map')}
         className={`map-bg-image ${mapLoaded ? 'loaded' : ''}`}
         onLoad={() => setMapLoaded(true)}
       />

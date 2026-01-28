@@ -9,6 +9,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { AccessibilityProvider } from './context/AccessibilityContext'
 import { PrivacyModeProvider } from './context/PrivacyModeContext'
 import { ModalProvider } from './context/ModalContext'
+import { CalculatorProvider } from './context/CalculatorContext'
 import { TravelModeProvider, useTravelMode } from './travel/context/TravelModeContext'
 import LogoLoader from './components/LogoLoader'
 import AirplaneTransition from './components/AirplaneTransition'
@@ -403,7 +404,9 @@ function App() {
           <ModalProvider>
             <TravelModeProvider>
               <ToastProvider>
-                <AppContent session={session} />
+                <CalculatorProvider>
+                  <AppContent session={session} />
+                </CalculatorProvider>
               </ToastProvider>
             </TravelModeProvider>
           </ModalProvider>

@@ -811,7 +811,23 @@
     "endDate": "End Date",
     "allCategories": "All Categories",
     "income": "Income",
-    "expense": "Expense"
+    "expense": "Expense",
+    "remove": "Remove",
+    "confirmDelete": "Confirm delete",
+    "deleting": "Deleting...",
+    "searching": "Searching..."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "settings": "Settings",
+    "noNotifications": "No notifications yet",
+    "markRead": "Mark as read",
+    "delete": "Delete",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
   },
   "validation": {
     "required": "{{field}} is required",
@@ -1146,6 +1162,24 @@
       "addApiKey": "Add API key for live tracking",
       "tracking": "Tracking"
     },
+    "flight": {
+      "unknown": "Unknown",
+      "scheduled": "Scheduled",
+      "departed": "Departed",
+      "arrived": "Arrived",
+      "cancelled": "Cancelled",
+      "delayed": "Delayed",
+      "gate": "Gate",
+      "terminal": "Terminal"
+    },
+    "distance": {
+      "from": "from",
+      "tripCenter": "trip center"
+    },
+    "stays": {
+      "perNight": "night",
+      "bookNow": "Book Now"
+    },
     "layout": {
       "title": "Customize Layout",
       "presets": {
@@ -1249,7 +1283,15 @@
       "tripApproachingDescription": "Get a reminder before your trip starts",
       "daysBeforeTrip": "Days before trip:",
       "checking": "Checking...",
-      "testNotifications": "Test Notifications"
+      "testNotifications": "Test Notifications",
+      "toast": {
+        "preferencesUpdated": "Notification preferences updated",
+        "failedToUpdatePreferences": "Failed to update preferences",
+        "pushEnabled": "Push notifications enabled",
+        "pushCouldNotEnable": "Could not enable push notifications",
+        "pushPermissionDenied": "Push notification permission denied",
+        "pushFailed": "Failed to enable push notifications"
+      }
     },
     "trip": {
       "createTrip": "Create Trip",
@@ -1351,7 +1393,10 @@
       "quickActionsItinerary": "Itinerary",
       "savedPlacesTitle": "Saved places",
       "savedPlacesCount": "{{count}} saved",
-      "savedPlacesEmpty": "Pin favourite spots from the map to keep them close."
+      "savedPlacesEmpty": "Pin favourite spots from the map to keep them close.",
+      "showLess": "Show Less",
+      "routeShort": "From",
+      "routeLabel": "Route"
     },
     "advisory": {
       "riskLevel": {
@@ -1666,13 +1711,15 @@
       "pinToTrip": "Hold to Pin",
       "pinHint": "Long press \"Hold to Pin\" to add this place to your trip",
       "searchPlaceholder": "Search places...",
+      "filters": "Filters",
       "categories": {
         "foodDrink": "Food & Drink",
         "attractions": "Attractions",
         "shopping": "Shopping",
         "transit": "Transit",
         "atm": "ATM",
-        "pharmacy": "Pharmacy"
+        "pharmacy": "Pharmacy",
+        "accommodation": "Stays"
       }
     },
     "wizard": {
@@ -1743,10 +1790,17 @@
     },
     "setup": {
       "step1": {
-        "namePlaceholder": "e.g., Summer Trip"
+        "title": "Where are you going?",
+        "description": "Search for your destination city or country",
+        "placeholder": "e.g., Paris, Tokyo, New York",
+        "namePlaceholder": "e.g., Summer Trip",
+        "tripName": "Trip Name (optional)"
       },
       "step2": {
-        "duration": "{{days}} days"
+        "title": "When are you going?",
+        "description": "Select your travel dates",
+        "duration": "{{days}} days",
+        "selectDates": "Select travel dates"
       },
       "step3": {
         "title": "Set your budget",
@@ -1754,6 +1808,9 @@
         "skipHint": "You can skip this step and set a budget later"
       },
       "errors": {
+        "destinationRequired": "Please enter a destination",
+        "datesRequired": "Please select travel dates",
+        "invalidDates": "End date must be after start date",
         "budgetCategoryRequired": "Please name your budget",
         "saveFailed": "Failed to save trip. Please try again."
       }
@@ -1763,6 +1820,7 @@
       "createTrip": "Create Multi-City Trip",
       "editTrip": "Edit Multi-City Trip",
       "deleteTrip": "Delete Trip",
+      "deleteError": "Failed to delete trip. Please try again.",
       "confirmDelete": "Delete this trip and all its cities? This cannot be undone.",
       "step1": {
         "title": "Select Cities",
@@ -1814,9 +1872,18 @@
     },
     "micrography": {
       "title": "Trip Route",
+      "subtitle": "See the flow of your journey at a glance",
       "expand": "Expand map",
       "expandedTitle": "Trip Route",
       "more": "more"
+    },
+    "datePicker": {
+      "selectDates": "Select dates",
+      "selectDepart": "Select departure date",
+      "selectReturn": "Select return date"
+    },
+    "map": {
+      "alt": "Trip destination map"
     }
   },
   "transport": {
@@ -1828,5 +1895,18 @@
       "ferry": "Ferry",
       "walking": "Walking"
     }
+  },
+  "calculator": {
+    "title": "Calculator",
+    "clear": "Clear",
+    "allClear": "All Clear",
+    "addToCalculator": "Add to calculator",
+    "addAs": "Add to calculator as",
+    "add": "Add",
+    "subtract": "Subtract",
+    "multiply": "Multiply",
+    "divide": "Divide",
+    "added": "Added to calculator",
+    "hint": "Tap expense amounts to add them here"
   }
 }

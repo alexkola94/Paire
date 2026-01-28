@@ -64,6 +64,7 @@ import BottomNavigation from './BottomNavigation'
 import AccessibilitySettings from './AccessibilitySettings'
 import BankStatementImport from './BankStatementImport'
 import CurrencyCalculatorPopover from './CurrencyCalculatorPopover'
+import GlobalCalculator from './GlobalCalculator'
 import './Layout.css'
 import packageJson from '../../package.json'
 
@@ -685,6 +686,9 @@ function Layout() {
       <Suspense fallback={null}>
         <Chatbot />
       </Suspense>
+
+      {/* Global Calculator - Available on all pages */}
+      <GlobalCalculator />
 
       {/* Mobile Bottom Navigation */}
       <BottomNavigation />

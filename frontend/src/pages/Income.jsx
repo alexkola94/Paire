@@ -16,7 +16,9 @@ import DatePicker from '../components/DatePicker'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import TransactionDetailModal from '../components/TransactionDetailModal'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import AddToCalculatorButton from '../components/AddToCalculatorButton'
 import './Income.css'
+import '../styles/AddToCalculator.css'
 
 /**
  * Income Page Component
@@ -381,7 +383,7 @@ function Income() {
         </div>
       ) : (
         <motion.div 
-          className="income-grid"
+          className="data-cards-grid"
           initial="hidden"
           animate="visible"
           variants={{
@@ -395,7 +397,7 @@ function Income() {
           {displayedIncomes.map((income) => (
             <motion.div 
               key={income.id} 
-              className="income-card card clickable"
+              className="income-card card clickable data-card"
               onClick={() => setDetailModal(income)}
               role="button"
               tabIndex={0}
@@ -413,22 +415,27 @@ function Income() {
                 }
               }}
             >
-              <div className="income-header">
+              <div className="income-header data-card-header">
                 <div className="income-category">
                   {t(`categories.${(income.category || '').toLowerCase()}`)}
                 </div>
-                <div className={`income-amount ${isPrivate ? 'masked-number' : ''}`}>
-                  +{formatCurrency(income.amount)}
+                <div className="income-amount-row add-to-calc-row">
+                  <span className={`income-amount ${isPrivate ? 'masked-number' : ''}`}>
+                    +{formatCurrency(income.amount)}
+                  </span>
+                  <AddToCalculatorButton value={income.amount} isPrivate={isPrivate} size={16} />
                 </div>
               </div>
 
-              {income.description && (
-                <p className="income-description">
-                  {income.description}
-                </p>
-              )}
+              <div className="data-card-body">
+                {income.description ? (
+                  <p className="income-description">
+                    {income.description}
+                  </p>
+                ) : null}
+              </div>
 
-              <div className="income-date">
+              <div className="income-date data-card-meta">
                 {format(new Date(income.date), 'MMMM dd, yyyy')}
                 {income.paidBy === 'Bank' || income.isBankSynced ? (
                   <span className="added-by">
@@ -451,7 +458,7 @@ function Income() {
                 )}
               </div>
 
-              <div className="income-actions" onClick={(e) => e.stopPropagation()}>
+              <div className="income-actions data-card-actions" onClick={(e) => e.stopPropagation()}>
                 {income.attachmentUrl && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setViewModal(income); }}

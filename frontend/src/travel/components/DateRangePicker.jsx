@@ -28,9 +28,10 @@ const DateRangePicker = ({
     onChange,
     minDate,
     disabled = false,
-    placeholder = 'Select dates'
+    placeholder
 }) => {
     const { t, i18n } = useTranslation()
+    const displayPlaceholder = placeholder ?? t('travel.datePicker.selectDates', 'Select dates')
     const { theme } = useTheme()
     const [isOpen, setIsOpen] = useState(false)
     const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -254,9 +255,9 @@ const DateRangePicker = ({
             return `${format(new Date(startDate), 'MMM d')} - ${format(new Date(endDate), 'MMM d')}`
         }
         if (startDate) {
-            return `${format(new Date(startDate), 'MMM d')} - Select return`
+            return `${format(new Date(startDate), 'MMM d')} - ${t('travel.datePicker.selectReturn', 'Select return date')}`
         }
-        return placeholder
+        return displayPlaceholder
     }
 
     // Track window width for mobile responsiveness

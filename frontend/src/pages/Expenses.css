@@ -1,6 +1,7 @@
 /* ================================
    Expenses Page Styles
    ================================ */
+@import '../styles/DataCard.css';
 
 .expenses-page {
   animation: fadeIn 0.5s ease-out;
@@ -45,18 +46,19 @@
 }
 
 /* ================================
-   Expenses Grid
+   Expense Card (uses .data-cards-grid from DataCard.css)
+   Compact height: less data than RecurringBills
    ================================ */
 
-.expenses-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--spacing-lg);
+.expenses-page .expense-card.data-card {
+  min-height: 240px;
 }
 
-/* ================================
-   Expense Card
-   ================================ */
+@media (max-width: 767px) {
+  .expenses-page .expense-card.data-card {
+    min-height: 220px;
+  }
+}
 
 .expense-card {
   display: flex;
@@ -156,12 +158,33 @@
   letter-spacing: -0.01em;
 }
 
-.expense-description {
+/* Amount row with "Add to calculator" button */
+.expense-amount-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Add to calculator button - visible affordance */
+/* Expense-specific add-to-calc button inherits icon-only styles from AddToCalculator.css */
+/* This class is applied via className prop but the shared .add-to-calc-btn styles take precedence */
+/* Label always hidden for icon-only design */
+.expense-add-to-calc-label {
+  display: none !important;
+}
+
+/* Description in data-card-body: 2-line clamp so card height stays consistent */
+.data-card-body .expense-description {
   color: var(--text-secondary);
-  margin-bottom: var(--spacing-md);
+  margin: 0;
   line-height: 1.6;
-  /* Fluid typography */
   font-size: clamp(0.9375rem, 2vw, 1rem);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .expense-date {
@@ -264,19 +287,7 @@
    Responsive Design
    ================================ */
 
-/* Tablet and above */
-@media (min-width: 768px) {
-  .expenses-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Desktop */
-@media (min-width: 1024px) {
-  .expenses-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
+/* Grid breakpoints defined in DataCard.css (.data-cards-grid) */
 
 
 

@@ -37,7 +37,13 @@ function Budgets() {
 
 
 
-  const categories = CATEGORIES.EXPENSE
+  // Standard expense categories plus any custom categories from existing budgets (e.g. travel-created)
+  const standardCategories = CATEGORIES.EXPENSE
+  const customFromBudgets = (budgets || [])
+    .map(b => b.category)
+    .filter(Boolean)
+    .filter(c => !standardCategories.includes(c))
+  const categories = [...standardCategories, ...[...new Set(customFromBudgets)].sort()]
 
   /**
    * Load budgets and expenses on mount
@@ -279,7 +285,7 @@ function Budgets() {
                 <option value="">{t('budgets.selectCategory')}</option>
                 {categories.map(cat => (
                   <option key={cat} value={cat}>
-                    {t(`categories.${cat}`)}
+                    {t(`categories.${(cat || '').toLowerCase()}`, { defaultValue: cat })}
                   </option>
                 ))}
               </select>
@@ -400,7 +406,7 @@ function Budgets() {
               >
                 <div className="budget-header">
                   <div className="budget-category">
-                    <h3>{t(`categories.${(budget.category || '').toLowerCase()}`)}</h3>
+                    <h3>{t(`categories.${(budget.category || '').toLowerCase()}`, { defaultValue: budget.category || '' })}</h3>
                     <span className="budget-period">{t(`budgets.${budget.period}`)}</span>
                   </div>
                   <div className="budget-actions">

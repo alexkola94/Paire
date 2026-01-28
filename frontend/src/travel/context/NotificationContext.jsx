@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   notificationService,
   isPushSupported,
@@ -17,6 +18,7 @@ const NotificationContext = createContext()
  * Manages travel notification state, preferences, push subscriptions, and unread counts
  */
 export const NotificationProvider = ({ children }) => {
+  const { t } = useTranslation()
   // Notifications state
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -100,16 +102,16 @@ export const NotificationProvider = ({ children }) => {
       setPreferencesLoading(true)
       const updated = await notificationService.updatePreferences(newPreferences)
       setPreferences(updated)
-      addToast('Notification preferences updated', 'success')
+      addToast(t('travel.notifications.toast.preferencesUpdated', 'Notification preferences updated'), 'success')
       return updated
     } catch (error) {
       console.error('Error updating preferences:', error)
-      addToast('Failed to update preferences', 'error')
+      addToast(t('travel.notifications.toast.failedToUpdatePreferences', 'Failed to update preferences'), 'error')
       throw error
     } finally {
       setPreferencesLoading(false)
     }
-  }, [addToast])
+  }, [addToast, t])
 
   /**
    * Mark notification as read
@@ -181,22 +183,22 @@ export const NotificationProvider = ({ children }) => {
         setPushSubscription(subscription)
 
         if (subscription) {
-          addToast('Push notifications enabled', 'success')
+          addToast(t('travel.notifications.toast.pushEnabled', 'Push notifications enabled'), 'success')
         } else {
-          addToast('Could not enable push notifications', 'warning')
+          addToast(t('travel.notifications.toast.pushCouldNotEnable', 'Could not enable push notifications'), 'warning')
         }
 
         return subscription
       } else {
-        addToast('Push notification permission denied', 'warning')
+        addToast(t('travel.notifications.toast.pushPermissionDenied', 'Push notification permission denied'), 'warning')
         return null
       }
     } catch (error) {
       console.error('Error enabling push notifications:', error)
-      addToast('Failed to enable push notifications', 'error')
+      addToast(t('travel.notifications.toast.pushFailed', 'Failed to enable push notifications'), 'error')
       return null
     }
-  }, [addToast])
+  }, [addToast, t])
 
   /**
    * Show local notification (browser notification)

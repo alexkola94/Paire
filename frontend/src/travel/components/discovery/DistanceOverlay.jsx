@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { FiMapPin } from 'react-icons/fi'
 import { useTravelMode } from '../../context/TravelModeContext'
@@ -10,6 +11,7 @@ import '../../styles/Discovery.css'
  * Shows distance from current map center to main trip event
  */
 const DistanceOverlay = memo(() => {
+  const { t } = useTranslation()
   const { activeTrip, mapViewState } = useTravelMode()
 
   // Calculate distance from trip center to current map center
@@ -61,7 +63,7 @@ const DistanceOverlay = memo(() => {
     >
       <FiMapPin size={14} className="distance-icon" />
       <span className="distance-text">
-        {formatDistance(distance)} from {activeTrip?.destination || 'trip center'}
+        {formatDistance(distance)} {t('travel.distance.from', 'from')} {activeTrip?.destination || t('travel.distance.tripCenter', 'trip center')}
       </span>
     </motion.div>
   )

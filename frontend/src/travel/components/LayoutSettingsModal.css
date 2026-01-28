@@ -4,8 +4,8 @@
    ======================================== */
 
 /* Local Theme Variables - Light Mode */
-/* Local Theme Variables - Light Mode (Warm/Orange Palette) */
-:root {
+/* Scoped to modal backdrop so they do not override main app theme when Travel unmounts */
+.layout-modal-backdrop {
     /* Spacing variables - required for layout */
     --spacing-xs: 4px;
     --spacing-sm: 8px;
@@ -56,8 +56,8 @@
     --glass-shadow: 0 8px 32px rgba(180, 120, 60, 0.08);
 }
 
-/* Dark Mode Overrides */
-[data-theme='dark'] {
+/* Dark Mode Overrides - scoped to modal only */
+.layout-modal-backdrop[data-theme='dark'] {
     --modal-item-bg: rgba(255, 255, 255, 0.03);
     --modal-item-border: rgba(255, 255, 255, 0.08);
     --modal-item-hover: rgba(255, 255, 255, 0.06);

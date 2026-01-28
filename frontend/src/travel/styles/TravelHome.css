@@ -542,6 +542,7 @@
 
 /* ================================
    Greeting Section
+   Map overlay visibility: high-contrast text over background map
    ================================ */
 
 .greeting-section {
@@ -557,12 +558,19 @@
   color: var(--text-secondary);
 }
 
+/* Dark theme: explicit light color + shadow for map overlay legibility */
+[data-theme='dark'] .travel-home .greeting-text {
+  color: #f1f5f9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 8px rgba(15, 23, 42, 0.6);
+}
+
 .greeting-actions {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
 }
 
+/* Map overlay visibility: stronger glass so buttons stay visible over map */
 .create-trip-btn,
 .edit-trip-btn,
 .delete-trip-btn {
@@ -581,6 +589,15 @@
   transition: all 0.3s ease-in-out;
 }
 
+/* Dark theme: stronger background + high-contrast icon over map */
+[data-theme='dark'] .travel-home .create-trip-btn,
+[data-theme='dark'] .travel-home .edit-trip-btn,
+[data-theme='dark'] .travel-home .delete-trip-btn {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(226, 232, 240, 0.15);
+  color: #e2e8f0;
+}
+
 .create-trip-btn:hover,
 .edit-trip-btn:hover,
 .delete-trip-btn:hover {
@@ -589,6 +606,12 @@
   border-color: rgba(99, 102, 241, 0.35);
   color: var(--primary);
   transform: scale(1.05);
+}
+
+[data-theme='dark'] .travel-home .create-trip-btn:hover,
+[data-theme='dark'] .travel-home .edit-trip-btn:hover,
+[data-theme='dark'] .travel-home .delete-trip-btn:hover {
+  color: var(--primary);
 }
 
 .create-trip-btn:active,
@@ -896,7 +919,7 @@
   opacity: 0.95;
 }
 
-/* Improve contrast when global theme is dark (glass over map) – force bright text */
+/* Map overlay visibility: force bright text + shadow when dark theme (glass over map) */
 [data-theme='dark'] .countdown-card.calm-card {
   color: #f9fafb;
 }
@@ -911,6 +934,22 @@
   color: #f9fafb;
   opacity: 0.98;
   text-shadow: 0 0 10px rgba(15, 23, 42, 0.8);
+}
+
+/* Map overlay visibility: other cards over map (saved places, route, timeline, today strip) */
+[data-theme='dark'] .travel-home .saved-places-title,
+[data-theme='dark'] .travel-home .saved-place-name,
+[data-theme='dark'] .travel-home .route-stat .stat-value,
+[data-theme='dark'] .travel-home .route-summary-strip .strip-value,
+[data-theme='dark'] .travel-home .timeline-title,
+[data-theme='dark'] .travel-home .city-timeline-name,
+[data-theme='dark'] .travel-home .today-strip-chip-label,
+[data-theme='dark'] .travel-home .today-strip-chip-value,
+[data-theme='dark'] .travel-home .city-route-summary .route-value,
+[data-theme='dark'] .travel-home .city-progress-indicator .progress-text {
+  color: #f9fafb;
+  opacity: 0.98;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 8px rgba(15, 23, 42, 0.6);
 }
 
 /* ================================
@@ -1059,6 +1098,7 @@
 
 /* ================================
    Encouragement Message
+   Map overlay visibility: high-contrast so text reads over map
    ================================ */
 
 .encouragement {
@@ -1070,6 +1110,13 @@
   margin: 0;
   opacity: 0.8;
   line-height: 1.6;
+}
+
+/* Dark theme: full opacity + light color + shadow for map overlay */
+[data-theme='dark'] .travel-home .encouragement {
+  color: #f1f5f9;
+  opacity: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 8px rgba(15, 23, 42, 0.6);
 }
 
 /* ================================

@@ -44,7 +44,23 @@ export const EMERGENCY_NUMBERS = {
     'Russia': { general: '112', police: '102', ambulance: '103', fire: '101' },
     'Egypt': { police: '122', ambulance: '123', fire: '180' },
     'UAE': { police: '999', ambulance: '998', fire: '997' },
-    'Dubai': { police: '999', ambulance: '998', fire: '997' }
+    'Dubai': { police: '999', ambulance: '998', fire: '997' },
+    // Asia and Persia
+    'Iran': { police: '110', ambulance: '115', fire: '125', general: '112' },
+    'Afghanistan': { general: '119', police: '119', ambulance: '119', fire: '119' },
+    'South Korea': { police: '112', ambulance: '119', fire: '119' },
+    'Vietnam': { police: '113', ambulance: '115', fire: '114' },
+    'Indonesia': { police: '110', ambulance: '118', fire: '113' },
+    // Caucasus and Cyrillic-region (Armenia, Azerbaijan, Georgia, Ukraine, Belarus, Central Asia)
+    'Armenia': { police: '102', ambulance: '103', fire: '101', general: '112' },
+    'Azerbaijan': { police: '102', ambulance: '103', fire: '101', general: '112' },
+    'Georgia': { police: '112', ambulance: '112', fire: '112' },
+    'Ukraine': { police: '102', ambulance: '103', fire: '101', general: '112' },
+    'Belarus': { police: '102', ambulance: '103', fire: '101', general: '112' },
+    'Kazakhstan': { police: '102', ambulance: '103', fire: '101', general: '112' },
+    'Uzbekistan': { police: '102', ambulance: '103', fire: '101', general: '112' },
+    'Kyrgyzstan': { police: '102', ambulance: '103', fire: '101', general: '112' },
+    'Tajikistan': { police: '102', ambulance: '103', fire: '101', general: '112' }
 }
 
 // Basic phrases for major languages
@@ -424,6 +440,250 @@ export const PHRASEBOOKS = {
         water: 'Voda',
         how_much: 'Skolko eto stoit?',
         bill: 'Schet, pozhaluysta'
+    },
+    // Persian (Farsi) – Iran, Afghanistan
+    'fa': {
+        language: 'Persian',
+        hello: 'Salam',
+        thank_you: 'Mamnūn',
+        yes: 'Bale',
+        no: 'Na',
+        please: 'Lotfan',
+        sorry: 'Bebakhshid',
+        help: 'Komak!',
+        where_is: 'Koja...?',
+        do_you_speak_english: 'Shoma Engelisi baladid?',
+        i_dont_understand: 'Nemifahmam',
+        bathroom: 'Dastshuyi',
+        water: 'Āb',
+        how_much: 'Chand?',
+        bill: 'Hesāb, lotfan'
+    },
+    // Korean
+    'ko': {
+        language: 'Korean',
+        hello: 'Annyeonghaseyo',
+        thank_you: 'Gamsahamnida',
+        yes: 'Ne',
+        no: 'Aniyo',
+        please: 'Juseyo',
+        sorry: 'Mianhamnida',
+        help: 'Dowa juseyo!',
+        where_is: 'Eodi isseoyo...?',
+        do_you_speak_english: 'Yeongeo haseyo?',
+        i_dont_understand: 'Moreugesseoyo',
+        bathroom: 'Hwajangsil',
+        water: 'Mul',
+        how_much: 'Eolmayeyo?',
+        bill: 'Gyesan juseyo'
+    },
+    // Thai
+    'th': {
+        language: 'Thai',
+        hello: 'Sawasdee',
+        thank_you: 'Khob khun',
+        yes: 'Chai',
+        no: 'Mai chai',
+        please: 'Karuna',
+        sorry: 'Khothot',
+        help: 'Chuay duay!',
+        where_is: 'Yu thi nai...?',
+        do_you_speak_english: 'Khun phut phasa angkrit dai mai?',
+        i_dont_understand: 'Mai khao jai',
+        bathroom: 'Hong nam',
+        water: 'Nam',
+        how_much: 'Tao rai?',
+        bill: 'Check bin khrap'
+    },
+    // Vietnamese
+    'vi': {
+        language: 'Vietnamese',
+        hello: 'Xin chào',
+        thank_you: 'Cảm ơn',
+        yes: 'Vâng',
+        no: 'Không',
+        please: 'Làm ơn',
+        sorry: 'Xin lỗi',
+        help: 'Cứu tôi!',
+        where_is: 'Ở đâu...?',
+        do_you_speak_english: 'Bạn nói tiếng Anh không?',
+        i_dont_understand: 'Tôi không hiểu',
+        bathroom: 'Nhà vệ sinh',
+        water: 'Nước',
+        how_much: 'Bao nhiêu tiền?',
+        bill: 'Thanh toán, làm ơn'
+    },
+    // Indonesian
+    'id': {
+        language: 'Indonesian',
+        hello: 'Halo',
+        thank_you: 'Terima kasih',
+        yes: 'Ya',
+        no: 'Tidak',
+        please: 'Tolong',
+        sorry: 'Maaf',
+        help: 'Tolong!',
+        where_is: 'Di mana...?',
+        do_you_speak_english: 'Apakah Anda bisa bahasa Inggris?',
+        i_dont_understand: 'Saya tidak mengerti',
+        bathroom: 'Kamar kecil',
+        water: 'Air',
+        how_much: 'Berapa harganya?',
+        bill: 'Bon, tolong'
+    },
+    // Caucasus and Cyrillic-region (Latin transliteration for display)
+    'hy': { // Armenian
+        language: 'Armenian',
+        hello: 'Barev',
+        thank_you: 'Shnorhakalutyun',
+        yes: 'Ayo',
+        no: 'Voch',
+        please: 'Khndrum em',
+        sorry: 'Neroghutyun',
+        help: 'Ogut!',
+        where_is: 'Ur es...?',
+        do_you_speak_english: 'Angleren gites?',
+        i_dont_understand: 'Chi hasnum',
+        bathroom: 'Zoraran',
+        water: 'Jur',
+        how_much: 'Qani?',
+        bill: 'Hesab, khndrum em'
+    },
+    'az': { // Azerbaijani
+        language: 'Azerbaijani',
+        hello: 'Salam',
+        thank_you: 'Təşəkkür',
+        yes: 'Bəli',
+        no: 'Yox',
+        please: 'Zəhmət olmasa',
+        sorry: 'Bağışlayın',
+        help: 'Kömək!',
+        where_is: 'Haradadır...?',
+        do_you_speak_english: 'İngiliscə danışırsınız?',
+        i_dont_understand: 'Başa düşmürəm',
+        bathroom: 'Tualet',
+        water: 'Su',
+        how_much: 'Neçəyə?',
+        bill: 'Hesab, zəhmət olmasa'
+    },
+    'ka': { // Georgian
+        language: 'Georgian',
+        hello: 'Gamarjoba',
+        thank_you: 'Madloba',
+        yes: 'Diakh',
+        no: 'Ara',
+        please: 'Tu sheidzleba',
+        sorry: 'Bodishi',
+        help: 'Dakhmarebit!',
+        where_is: 'Sad aris...?',
+        do_you_speak_english: 'Inglisu laparakobt?',
+        i_dont_understand: 'Ver gavige',
+        bathroom: 'Tualeti',
+        water: 'Tskali',
+        how_much: 'Ra ghirs?',
+        bill: 'Lekhashi, tu sheidzleba'
+    },
+    'uk': { // Ukrainian (Latin transliteration)
+        language: 'Ukrainian',
+        hello: 'Vitayu',
+        thank_you: 'Diakuyu',
+        yes: 'Tak',
+        no: 'Ni',
+        please: 'Bud laska',
+        sorry: 'Vybachte',
+        help: 'Dopomozhit!',
+        where_is: 'De...?',
+        do_you_speak_english: 'Vy hovorite angliyskoiu?',
+        i_dont_understand: 'Ya ne rozumiyu',
+        bathroom: 'Tualet',
+        water: 'Voda',
+        how_much: 'Skilky koshtuye?',
+        bill: 'Rakhunok, bud laska'
+    },
+    'be': { // Belarusian (Latin transliteration)
+        language: 'Belarusian',
+        hello: 'Vitaju',
+        thank_you: 'Dziakuj',
+        yes: 'Tak',
+        no: 'Nie',
+        please: 'Kali laska',
+        sorry: 'Vybachcie',
+        help: 'Dapamozhcie!',
+        where_is: 'Dze...?',
+        do_you_speak_english: 'Vy razmayec pa-angliysku?',
+        i_dont_understand: 'Ya ne razumeyu',
+        bathroom: 'Tualet',
+        water: 'Vada',
+        how_much: 'Kolki koshtuye?',
+        bill: 'Rakhunak, kali laska'
+    },
+    'kk': { // Kazakh (Latin transliteration)
+        language: 'Kazakh',
+        hello: 'Salem',
+        thank_you: 'Rakhmet',
+        yes: 'Ia',
+        no: 'Zhok',
+        please: 'Otinish',
+        sorry: 'Keshiringiz',
+        help: 'Komek!',
+        where_is: 'Qaida...?',
+        do_you_speak_english: 'Siz anglishen bilesiz be?',
+        i_dont_understand: 'Men tusinbeymyn',
+        bathroom: 'Daretkhana',
+        water: 'Su',
+        how_much: 'Qansha turady?',
+        bill: 'Shot, otinish'
+    },
+    'uz': { // Uzbek (Latin)
+        language: 'Uzbek',
+        hello: 'Salom',
+        thank_you: 'Rahmat',
+        yes: 'Ha',
+        no: "Yo'q",
+        please: 'Iltimos',
+        sorry: 'Kechirasiz',
+        help: 'Yordam!',
+        where_is: 'Qayerda...?',
+        do_you_speak_english: 'Siz inglizcha bilasizmi?',
+        i_dont_understand: 'Tushunmayapman',
+        bathroom: 'Hojatxona',
+        water: 'Suv',
+        how_much: 'Nechapul?',
+        bill: 'Hisob, iltimos'
+    },
+    'ky': { // Kyrgyz (Latin transliteration)
+        language: 'Kyrgyz',
+        hello: 'Salamatsyzby',
+        thank_you: 'Rakhmat',
+        yes: 'Ooba',
+        no: 'Jok',
+        please: 'Suranich',
+        sorry: 'Kechirip koyunguz',
+        help: 'Jardam!',
+        where_is: 'Kayda...?',
+        do_you_speak_english: 'Siz anglisce syleysizbi?',
+        i_dont_understand: 'Men tusunboydum',
+        bathroom: 'Daretkana',
+        water: 'Suu',
+        how_much: 'Kanchaga tuurat?',
+        bill: 'Esep, suranich'
+    },
+    'tg': { // Tajik (Latin transliteration; Persian-based, Cyrillic script)
+        language: 'Tajik',
+        hello: 'Salom',
+        thank_you: 'Rahmat',
+        yes: 'Ha',
+        no: 'Ne',
+        please: 'Lutfan',
+        sorry: 'Bebakhshed',
+        help: 'Kūmak!',
+        where_is: 'Kujo...?',
+        do_you_speak_english: 'Shumo anglisi medoned?',
+        i_dont_understand: 'Man namefahmam',
+        bathroom: 'Hojatxona',
+        water: 'Ob',
+        how_much: 'Chand?',
+        bill: 'Hisob, lutfan'
     }
 }
 
@@ -471,6 +731,24 @@ export const getDestinationInfo = (destination) => {
     else if (destLower.includes('india') || destLower.includes('delhi') || destLower.includes('mumbai')) langKey = 'hi'
     else if (destLower.includes('egypt') || destLower.includes('dubai') || destLower.includes('uae') || destLower.includes('saudi')) langKey = 'ar'
     else if (destLower.includes('russia') || destLower.includes('moscow') || destLower.includes('st petersburg') || destLower.includes('saint petersburg')) langKey = 'ru'
+    // Persia (Persian / Farsi)
+    else if (destLower.includes('iran') || destLower.includes('tehran') || destLower.includes('afghanistan') || destLower.includes('kabul') || destLower.includes('persia') || destLower.includes('isfahan') || destLower.includes('shiraz')) langKey = 'fa'
+    // Asia
+    else if (destLower.includes('south korea') || destLower.includes('korea') || destLower.includes('seoul') || destLower.includes('busan') || destLower.includes('jeju')) langKey = 'ko'
+    else if (destLower.includes('thailand') || destLower.includes('bangkok') || destLower.includes('chiang mai') || destLower.includes('phuket')) langKey = 'th'
+    else if (destLower.includes('vietnam') || destLower.includes('hanoi') || destLower.includes('ho chi minh') || destLower.includes('da nang')) langKey = 'vi'
+    else if (destLower.includes('indonesia') || destLower.includes('bali') || destLower.includes('jakarta') || destLower.includes('surabaya')) langKey = 'id'
+    // Caucasus (Armenia, Azerbaijan, Georgia)
+    else if (destLower.includes('armenia') || destLower.includes('yerevan')) langKey = 'hy'
+    else if (destLower.includes('azerbaijan') || destLower.includes('baku') || destLower.includes('ganja')) langKey = 'az'
+    else if (destLower.includes('georgia') || destLower.includes('tbilisi') || destLower.includes('batumi') || destLower.includes('kutaisi')) langKey = 'ka'
+    // Cyrillic-region (Ukraine, Belarus, Central Asia)
+    else if (destLower.includes('ukraine') || destLower.includes('kyiv') || destLower.includes('kiev') || destLower.includes('odessa') || destLower.includes('lviv')) langKey = 'uk'
+    else if (destLower.includes('belarus') || destLower.includes('minsk')) langKey = 'be'
+    else if (destLower.includes('kazakhstan') || destLower.includes('almaty') || destLower.includes('astana') || destLower.includes('nur-sultan')) langKey = 'kk'
+    else if (destLower.includes('uzbekistan') || destLower.includes('tashkent') || destLower.includes('samarkand') || destLower.includes('bukhara')) langKey = 'uz'
+    else if (destLower.includes('kyrgyzstan') || destLower.includes('bishkek') || destLower.includes('osh')) langKey = 'ky'
+    else if (destLower.includes('tajikistan') || destLower.includes('dushanbe')) langKey = 'tg'
 
     return {
         countryName: countryKey === 'default' ? 'Local' : countryKey,

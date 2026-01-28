@@ -106,9 +106,9 @@ const DatePicker = ({
 
         return (
             <div className="calendar-grid">
-                {/* Day Headers */}
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-                    <div key={d} className="calendar-day-name">{d}</div>
+                {/* Day Headers: use index as key since S/T repeat (Sun/Sat, Tue/Thu) */}
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                    <div key={`day-header-${i}`} className="calendar-day-name">{d}</div>
                 ))}
 
                 {/* Days */}

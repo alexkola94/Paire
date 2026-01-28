@@ -2,6 +2,7 @@
    Recurring Bills Page Styles
    Responsive, theme-aware with smooth transitions
    ================================ */
+@import '../styles/DataCard.css';
 
 .recurring-bills-page {
   animation: fadeIn 0.5s ease-out;
@@ -189,12 +190,7 @@
   color: var(--warning-dark);
 }
 
-.bills-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  /* Mobile first: 1 column */
-  gap: var(--spacing-lg);
-}
+/* Grid: uses .data-cards-grid from DataCard.css */
 
 /* ================================
    Bill Card
@@ -442,26 +438,54 @@
   }
 }
 
-/* Bill Notes */
-.bill-notes {
-  margin-bottom: var(--spacing-lg);
+/* Bill Notes (inside data-card-body: 2-line clamp for consistent card height) */
+.data-card-body .bill-notes {
+  margin: 0;
   padding: var(--spacing-md);
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
   border-left: 3px solid var(--primary);
 }
 
-.bill-notes p {
+.data-card-body .bill-notes p {
   margin: 0;
   font-size: 0.875rem;
   color: var(--text-secondary);
   line-height: 1.6;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
-/* Bill Footer */
+/* Bill Footer (inside data-card-actions: no duplicate border) */
 .bill-footer {
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--bg-tertiary);
+}
+
+.data-card-actions .bill-footer {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* Actions row: edit/delete + mark paid footer */
+.bill-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: var(--transition);
+}
+
+/* Header slot: reduce inner margin so data-card-header spacing controls gap */
+.data-card-header .bill-amount {
+  margin-bottom: 0;
+}
+
+.data-card-meta .bill-due-date {
+  margin-bottom: 0;
 }
 
 /* ================================

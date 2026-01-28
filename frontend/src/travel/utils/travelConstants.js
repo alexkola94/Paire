@@ -285,7 +285,7 @@ export const DISCOVERY_POI_CATEGORIES = [
   {
     id: 'restaurant',
     icon: 'FiCoffee',
-    label: 'discovery.categories.foodDrink',
+    label: 'travel.discovery.categories.foodDrink',
     fallbackLabel: 'Food & Drink',
     color: '#e67e22',
     gradient: 'linear-gradient(135deg, #e67e22 0%, #d35400 100%)',
@@ -294,7 +294,7 @@ export const DISCOVERY_POI_CATEGORIES = [
   {
     id: 'attraction',
     icon: 'FiCamera',
-    label: 'discovery.categories.attractions',
+    label: 'travel.discovery.categories.attractions',
     fallbackLabel: 'Attractions',
     color: '#f1c40f',
     gradient: 'linear-gradient(135deg, #f1c40f 0%, #f39c12 100%)',
@@ -303,7 +303,7 @@ export const DISCOVERY_POI_CATEGORIES = [
   {
     id: 'shopping',
     icon: 'FiShoppingBag',
-    label: 'discovery.categories.shopping',
+    label: 'travel.discovery.categories.shopping',
     fallbackLabel: 'Shopping',
     color: '#e74c3c',
     gradient: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
@@ -312,7 +312,7 @@ export const DISCOVERY_POI_CATEGORIES = [
   {
     id: 'transit',
     icon: 'FiBus',
-    label: 'discovery.categories.transit',
+    label: 'travel.discovery.categories.transit',
     fallbackLabel: 'Transit',
     color: '#3498db',
     gradient: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
@@ -321,7 +321,7 @@ export const DISCOVERY_POI_CATEGORIES = [
   {
     id: 'atm',
     icon: 'FiDollarSign',
-    label: 'discovery.categories.atm',
+    label: 'travel.discovery.categories.atm',
     fallbackLabel: 'ATM',
     color: '#2ecc71',
     gradient: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
@@ -330,7 +330,7 @@ export const DISCOVERY_POI_CATEGORIES = [
   {
     id: 'pharmacy',
     icon: 'FiHeart',
-    label: 'discovery.categories.pharmacy',
+    label: 'travel.discovery.categories.pharmacy',
     fallbackLabel: 'Pharmacy',
     color: '#e91e63',
     gradient: 'linear-gradient(135deg, #e91e63 0%, #c2185b 100%)',
@@ -339,7 +339,7 @@ export const DISCOVERY_POI_CATEGORIES = [
   {
     id: 'accommodation',
     icon: 'FiBed',
-    label: 'discovery.categories.accommodation',
+    label: 'travel.discovery.categories.accommodation',
     fallbackLabel: 'Stays',
     color: '#9b59b6',
     gradient: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',

@@ -527,7 +527,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
             return false
           }
           if (budgetMode === 'existing' && !selectedBudgetId) {
-            setError(t('wizard.selectBudget', 'Please select a budget'))
+            setError(t('travel.wizard.selectBudget', 'Please select a budget'))
             return false
           }
           break
@@ -564,7 +564,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
             return false
           }
           if (budgetMode === 'existing' && !selectedBudgetId) {
-            setError(t('wizard.selectBudget', 'Please select a budget'))
+            setError(t('travel.wizard.selectBudget', 'Please select a budget'))
             return false
           }
           break
