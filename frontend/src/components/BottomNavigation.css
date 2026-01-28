@@ -11,8 +11,8 @@
     /* Only visible on mobile */
     display: none;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-    /* Cap safe-area on PWA to avoid excessive padding on iPhone */
-    padding-bottom: max(6px, min(14px, env(safe-area-inset-bottom, 0px)));
+    /* Full safe area + small buffer so nav taps don't trigger Apple Intelligence / home indicator (iPhone 16 Pro) */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
     /* Animation properties */
     transform: translateY(100%);
     opacity: 0;

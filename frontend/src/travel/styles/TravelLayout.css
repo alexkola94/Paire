@@ -497,8 +497,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding-top: 80px;
-  /* Account for fixed header with extra spacing */
-  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  /* Clear fixed travel-nav: bar height + full safe area + 4px buffer */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 4px);
   /* Thin scrollbar styling */
   scrollbar-width: thin;
   scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
@@ -618,7 +618,8 @@
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: var(--glass-border);
   z-index: 200;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5px);
+  /* Full safe area + buffer so nav taps don't trigger Apple Intelligence / home indicator (iPhone 16 Pro) */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
   /* Smooth slide animation */
   transform: translateY(0);
   opacity: 1;
@@ -1135,11 +1136,10 @@
    Prevents accidental Siri/gesture triggers
    ================================ */
 
-/* Mobile devices - extra bottom padding */
+/* Mobile - full safe area so taps don't trigger Apple Intelligence / home indicator */
 @media (max-width: 768px) {
   .travel-nav {
-    /* Increase safe area padding for iOS home indicator + extra buffer */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
   }
 
   .travel-nav-container {
@@ -1149,21 +1149,19 @@
   }
 }
 
-/* iOS devices with home indicator - maximum safe spacing */
+/* iOS - full safe area respected */
 @supports (padding: max(0px)) {
   @media (max-width: 768px) {
     .travel-nav {
-      /* Use max() to ensure at least 20px from physical bottom on notched iPhones */
-      padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
     }
   }
 }
 
-/* Touch devices - ensure nav items are comfortably above gesture zone */
+/* Touch devices - full safe area so nav taps don't hit system gesture zone */
 @media (hover: none) and (pointer: coarse) {
   .travel-nav {
-    /* Extra padding for touch devices to avoid gesture conflicts */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
   }
 
   .travel-nav-item {
@@ -1178,10 +1176,10 @@
   }
 }
 
-/* Standalone PWA mode (installed to home screen) - even more space */
+/* Standalone PWA - full safe area so nav doesn't trigger Apple Intelligence */
 @media (display-mode: standalone) {
   .travel-nav {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
   }
 }
 

@@ -722,8 +722,8 @@
 
 @media (max-width: 767px) {
   .layout-main {
-    /* Match bottom nav height: 60px + capped safe-area (max 14px) */
-    padding-bottom: calc(60px + max(6px, min(14px, env(safe-area-inset-bottom, 0px))));
+    /* Clear bottom nav: 60px bar + full safe area + 4px buffer (avoids Apple Intelligence zone on iPhone 16 Pro) */
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 4px);
   }
 }
 
