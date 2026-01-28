@@ -1,6 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+// react-window: import via shim (Vite alias uses ESM build)
+import { FixedSizeList as List } from '../utils/reactWindow'
 import { motion } from 'framer-motion'
 import {
   FiTrendingUp,
@@ -22,7 +25,7 @@ import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import SuccessAnimation from '../components/SuccessAnimation'
 import SearchInput from '../components/SearchInput'
-import DatePicker from '../components/DatePicker'
+import DateRangePicker from '../components/DateRangePicker'
 import TransactionDetailModal from '../components/TransactionDetailModal'
 import TransactionTimeline from '../components/TransactionTimeline'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
@@ -35,13 +38,12 @@ import './AllTransactions.css'
  */
 function AllTransactions() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { isPrivate } = usePrivacyMode()
 
-  // Data State
-  const [loading, setLoading] = useState(true)
-  const [allTransactions, setAllTransactions] = useState([]) // Store all fetched transactions
-  const [displayedTransactions, setDisplayedTransactions] = useState([]) // Transactions for current page
+  // Data State (server-side pagination: only current page items)
+  const [displayedTransactions, setDisplayedTransactions] = useState([])
 
   // View Mode State
   const [viewMode, setViewMode] = useState('list') // 'list' or 'timeline'
@@ -65,114 +67,62 @@ function AllTransactions() {
   const [totalItems, setTotalItems] = useState(0)
   const PAGE_SIZE = 6
 
-  /**
-   * Fetch all transactions (both income and expenses)
-   * Fetches EVERYTHING once, then filters locally
-   */
-  const loadTransactions = useCallback(async (background = false) => {
-    try {
-      if (!background) setLoading(true)
-
-      // Fetch ALL transactions (no pagination params handled by backend implies all, or we request large size)
-      // Assuming existing API supports getting all if no page param, or we follow Expenses.jsx pattern
-      // Expenses.jsx source: transactionService.getAll({ type: 'expense' }) -> returns all
-
-      // We want BOTH types, so we pass empty object or specific flag if needed. 
-      // Based on original code: transactionService.getAll({ page, pageSize }) 
-      // We will now call it without page/pageSize to get all.
-
-      const data = await transactionService.getAll({})
-
-      // Handle response (array or paged object fallback)
-      const items = Array.isArray(data) ? data : (data.items || [])
-
-      setAllTransactions(items)
-      // Filter/Pagination will run via useEffect
-
-    } catch (error) {
-      console.error('❌ Error loading transactions:', error)
-    } finally {
-      if (!background) setLoading(false)
+  // React Query: transactions with server-side pagination and filters
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['transactions', 'all', page, searchQuery, startDate, endDate],
+    queryFn: async () => {
+      const res = await transactionService.getAll({
+        page,
+        pageSize: PAGE_SIZE,
+        search: searchQuery.trim() || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined
+      })
+      return res
     }
-  }, [])
+  })
 
-  /**
-   * Filter transactions (shared by both views)
-   * Memoized to avoid recalculation on every render
-   */
-  const filteredTransactions = useMemo(() => {
-    let result = allTransactions
-
-    // Text Search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(transaction =>
-        (transaction.description && transaction.description.toLowerCase().includes(query)) ||
-        (transaction.category && transaction.category.toLowerCase().includes(query)) ||
-        (transaction.amount && transaction.amount.toString().includes(query)) ||
-        (transaction.type && t(`common.${transaction.type}`).toLowerCase().includes(query))
-      )
-    }
-
-    // Date Filter
-    if (startDate) {
-      const start = new Date(startDate)
-      start.setHours(0, 0, 0, 0)
-      result = result.filter(transaction => new Date(transaction.date) >= start)
-    }
-
-    if (endDate) {
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
-      result = result.filter(transaction => new Date(transaction.date) <= end)
-    }
-
-    return result
-  }, [allTransactions, searchQuery, startDate, endDate, t])
-
-  /**
-   * Handle Search & Pagination Effect (for list view)
-   * Runs whenever filteredTransactions or page changes
-   */
+  // Derive displayed list and pagination from query result
   useEffect(() => {
-    setTotalItems(filteredTransactions.length)
-    setTotalPages(Math.ceil(filteredTransactions.length / PAGE_SIZE) || 1)
+    if (!data) return
+    const items = Array.isArray(data) ? data : (data.items || [])
+    const total = Array.isArray(data) ? data.length : (data.totalCount ?? items.length)
+    const pages = Array.isArray(data) ? 1 : (data.totalPages ?? 1)
+    setDisplayedTransactions(items)
+    setTotalItems(total)
+    setTotalPages(pages)
+  }, [data])
 
-    // Paginate for list view
-    const startIndex = (page - 1) * PAGE_SIZE
-    const paginated = filteredTransactions.slice(startIndex, startIndex + PAGE_SIZE)
-    setDisplayedTransactions(paginated)
-
-  }, [filteredTransactions, page])
+  // Mutations: invalidate transactions cache on update/delete
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }) => transactionService.update(id, updates),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id) => transactionService.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  })
 
   /**
-   * Handle search input
+   * Handle search input (resets to first page)
    */
   const handleSearch = (query) => {
     setSearchQuery(query)
-    setPage(1) // Reset to first page
+    setPage(1)
   }
 
   /**
-   * Load transactions on component mount
-   */
-  useEffect(() => {
-    loadTransactions()
-  }, [loadTransactions])
-
-  /**
-   * Handle updating transaction
+   * Handle updating transaction (React Query mutation invalidates cache)
    */
   const handleUpdate = async (transactionData) => {
     try {
       setFormLoading(true)
-      setShowForm(false) // Close immediately
+      setShowForm(false)
 
-      await transactionService.update(editingTransaction.id, transactionData)
+      await updateMutation.mutateAsync({ id: editingTransaction.id, updates: transactionData })
 
       setShowSuccessAnimation(true)
       setEditingTransaction(null)
-      await loadTransactions(true) // Background refresh
     } catch (error) {
       console.error('Error updating transaction:', error)
       alert(t('common.error'))
@@ -182,7 +132,7 @@ function AllTransactions() {
   }
 
   /**
-   * Handle deleting transaction
+   * Handle deleting transaction (React Query mutation invalidates cache)
    */
   const handleDelete = async () => {
     const { transactionId } = deleteModal
@@ -191,10 +141,7 @@ function AllTransactions() {
     try {
       setFormLoading(true)
 
-      // Delete attachment if exists (need to fetch details first if not in list, but usually ok)
-      await transactionService.delete(transactionId)
-
-      await loadTransactions(true)
+      await deleteMutation.mutateAsync(transactionId)
       setDeleteModal({ isOpen: false, transactionId: null })
     } catch (error) {
       console.error('Error deleting transaction:', error)
@@ -299,63 +246,39 @@ function AllTransactions() {
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="search-filter-container" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <div className="search-wrapper" style={{ flexGrow: 1 }}>
+      {/* Search and Filter Bar – mobile-first: stacked on small, row on tablet+ */}
+      <div className="search-filter-container">
+        <div className="search-wrapper">
           <SearchInput
             onSearch={handleSearch}
             placeholder={t('common.search', 'Search...')}
           />
         </div>
 
-        <div className="date-filters" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <DatePicker
-            selected={startDate}
-            onChange={(date) => {
-              setStartDate(date ? date.toISOString() : '')
+        <div className="date-filters">
+          <DateRangePicker
+            startDate={startDate || null}
+            endDate={endDate || null}
+            onChange={({ startDate: s, endDate: e }) => {
+              setStartDate(s || '')
+              setEndDate(e || '')
               setPage(1)
             }}
-            placeholder={t('common.startDate', 'Start Date')}
-            className="date-picker-custom"
+            placeholder={t('common.selectDateRange', 'Select date range')}
           />
-
-          <DatePicker
-            selected={endDate}
-            onChange={(date) => {
-              setEndDate(date ? date.toISOString() : '')
-              setPage(1)
-            }}
-            placeholder={t('common.endDate', 'End Date')}
-            className="date-picker-custom"
-          />
-
-          {(startDate || endDate) && (
-            <button
-              onClick={() => {
-                setStartDate('')
-                setEndDate('')
-                setPage(1)
-              }}
-              className="btn-icon-clear"
-              title={t('common.clearDates', 'Clear dates')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-            >
-              <FiTrash2 />
-            </button>
-          )}
         </div>
       </div>
 
       {/* Transactions Display */}
-      {allTransactions.length === 0 && !loading ? (
+      {totalItems === 0 && !loading ? (
         <div className="card empty-state">
           <p>{t('allTransactions.noTransactions')}</p>
         </div>
       ) : viewMode === 'timeline' ? (
-        /* Timeline View */
+        /* Timeline View (current page only with server-side pagination) */
         <div className="card timeline-view-container">
           <TransactionTimeline
-            transactions={filteredTransactions}
+            transactions={displayedTransactions}
             maxHeight="70vh"
             showRelativeDates={true}
           />
@@ -372,45 +295,46 @@ function AllTransactions() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
         >
-          <motion.div 
-            className="transactions-list"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: {
-                transition: {
-                  staggerChildren: 0.05
-                }
-              }
-            }}
-          >
-            {displayedTransactions.map((transaction) => (
-              <motion.div
-                key={transaction.id}
-                variants={{
-                  hidden: { opacity: 0, x: -10 },
-                  visible: { 
-                    opacity: 1, 
-                    x: 0,
-                    transition: {
-                      duration: 0.4,
-                      ease: [0.4, 0, 0.2, 1]
-                    }
-                  }
+          <div className="transactions-list" style={{ minHeight: Math.min(displayedTransactions.length * 88, 480) }}>
+            {List ? (
+              <List
+                height={Math.min(displayedTransactions.length * 88, 480)}
+                itemCount={displayedTransactions.length}
+                itemSize={88}
+                width="100%"
+                itemData={{
+                  transactions: displayedTransactions,
+                  formatCurrency,
+                  t,
+                  openEditForm,
+                  openDeleteModal,
+                  setDetailModal,
+                  isPrivate
                 }}
               >
-                <TransactionItem
-                  transaction={transaction}
-                  formatCurrency={formatCurrency}
-                  t={t}
-                  onEdit={() => openEditForm(transaction)}
-                  onDelete={() => openDeleteModal(transaction.id)}
-                  onClick={() => setDetailModal(transaction)}
-                  isPrivate={isPrivate}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
+                {TransactionRow}
+              </List>
+            ) : (
+              <div style={{ overflow: 'auto' }}>
+                {displayedTransactions.map((_, index) => (
+                  <TransactionRow
+                    key={displayedTransactions[index].id}
+                    index={index}
+                    style={{}}
+                    data={{
+                      transactions: displayedTransactions,
+                      formatCurrency,
+                      t,
+                      openEditForm,
+                      openDeleteModal,
+                      setDetailModal,
+                      isPrivate
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
@@ -486,6 +410,29 @@ function AllTransactions() {
   )
 }
 
+
+/**
+ * Row renderer for react-window virtualized list
+ */
+const TransactionRow = memo(({ index, style, data }) => {
+  const { transactions, formatCurrency, t, openEditForm, openDeleteModal, setDetailModal, isPrivate } = data
+  const transaction = transactions[index]
+  if (!transaction) return null
+  return (
+    <div style={style}>
+      <TransactionItem
+        transaction={transaction}
+        formatCurrency={formatCurrency}
+        t={t}
+        onEdit={() => openEditForm(transaction)}
+        onDelete={() => openDeleteModal(transaction.id)}
+        onClick={() => setDetailModal(transaction)}
+        isPrivate={isPrivate}
+      />
+    </div>
+  )
+})
+TransactionRow.displayName = 'TransactionRow'
 
 /**
  * Transaction Item Component

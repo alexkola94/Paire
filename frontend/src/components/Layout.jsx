@@ -57,10 +57,27 @@ EuroIcon.displayName = 'EuroIcon'
 
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
+import { preloadRoute } from '../utils/performance'
 import LogoLoader from './LogoLoader'
 // Lazy load Chatbot - it's not critical for initial render
 const Chatbot = lazy(() => import('./Chatbot'))
 import BottomNavigation from './BottomNavigation'
+
+// Prefetch high-value routes on hover/focus for faster navigation
+const ROUTE_PREFETCH_MAP = {
+  '/dashboard': () => import('../pages/Dashboard'),
+  '/expenses': () => import('../pages/Expenses'),
+  '/income': () => import('../pages/Income'),
+  '/budgets': () => import('../pages/Budgets'),
+  '/analytics': () => import('../pages/Analytics'),
+  '/profile': () => import('../pages/Profile'),
+  '/reminders': () => import('../pages/ReminderSettings')
+}
+const prefetchRoute = (path) => {
+  const fn = ROUTE_PREFETCH_MAP[path]
+  if (fn) preloadRoute(fn)
+}
+const prefetchTravelApp = () => preloadRoute(() => import('../travel/TravelApp'))
 import AccessibilitySettings from './AccessibilitySettings'
 import BankStatementImport from './BankStatementImport'
 import CurrencyCalculatorPopover from './CurrencyCalculatorPopover'
@@ -458,6 +475,8 @@ function Layout() {
                 }
                 onClick={closeMobileMenu}
                 title={item.label}
+                onMouseEnter={() => prefetchRoute(item.path)}
+                onFocus={() => prefetchRoute(item.path)}
               >
                 <item.icon style={{ width: '20px', height: '20px' }} className="nav-icon" />
                 <span className="nav-label">{item.label}</span>
@@ -511,6 +530,8 @@ function Layout() {
                 }
                 onClick={closeMobileMenu}
                 title={item.label}
+                onMouseEnter={() => prefetchRoute(item.path)}
+                onFocus={() => prefetchRoute(item.path)}
               >
                 <item.icon style={{ width: '20px', height: '20px' }} className="nav-icon" />
                 <span className="nav-label">{item.label}</span>
@@ -531,6 +552,8 @@ function Layout() {
                 enterTravelMode()
                 closeMobileMenu()
               }}
+              onMouseEnter={prefetchTravelApp}
+              onFocus={prefetchTravelApp}
             >
               <RiFlightTakeoffLine style={{ width: '20px', height: '20px' }} className="nav-icon" />
               <span className="nav-label">{t('travel.common.enterTravelMode', 'Travel Mode')}</span>
@@ -569,6 +592,8 @@ function Layout() {
                 `nav-link ${isActive ? 'active' : ''}`
               }
               onClick={closeMobileMenu}
+              onMouseEnter={() => prefetchRoute('/reminders')}
+              onFocus={() => prefetchRoute('/reminders')}
             >
               <FiBell style={{ width: '20px', height: '20px' }} className="nav-icon" />
               <span className="nav-label">{t('navigation.reminders')}</span>
@@ -619,6 +644,8 @@ function Layout() {
                 `nav-link ${isActive ? 'active' : ''}`
               }
               onClick={closeMobileMenu}
+              onMouseEnter={() => prefetchRoute('/profile')}
+              onFocus={() => prefetchRoute('/profile')}
             >
               {avatarUrl && !avatarError ? (
                 <img
@@ -733,8 +760,7 @@ function Layout() {
             </div>
             <div className="import-modal-content">
               <BankStatementImport
-                onImportSuccess={(result) => {
-                  console.log('Import completed', result)
+                onImportSuccess={() => {
                   // Optionally close modal after successful import
                   // setIsImportOpen(false)
                 }}

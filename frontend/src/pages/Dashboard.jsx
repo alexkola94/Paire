@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
   FiTrendingUp,
@@ -37,19 +38,13 @@ import './Dashboard.css'
  */
 function Dashboard() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
-  const [initialLoading, setInitialLoading] = useState(true) // First load - show skeleton
-  const [refreshing, setRefreshing] = useState(false) // Subsequent loads - show blur overlay
-  // Store raw transactions for the month to allow client-side filtering
-  const [monthTransactions, setMonthTransactions] = useState([])
-  const [recentTransactions, setRecentTransactions] = useState([])
+  const [refreshing, setRefreshing] = useState(false)
   const [filterMode, setFilterMode] = useState('solo') // 'solo', 'together', or specific partnerId
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 5
-  const [budgets, setBudgets] = useState([])
-  const [savingGoals, setSavingGoals] = useState([])
   const [partnersOptions, setPartnersOptions] = useState([])
-  const [dataLoaded, setDataLoaded] = useState(false) // Track if we have data
   const [detailModal, setDetailModal] = useState(null) // For viewing transaction details
 
   // Memoize date calculations to avoid recalculation on every render
@@ -59,69 +54,59 @@ function Dashboard() {
       startOfMonth: new Date(now.getFullYear(), now.getMonth(), 1),
       endOfMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0)
     }
-  }, []) // Only calculate once on mount
+  }, [])
+
+  // React Query: month transactions (for summary and client-side filter by partner)
+  const { data: monthData, isLoading: monthLoading } = useQuery({
+    queryKey: ['transactions', 'month', dateRange.startOfMonth.toISOString(), dateRange.endOfMonth.toISOString()],
+    queryFn: () => transactionService.getAll({
+      startDate: dateRange.startOfMonth.toISOString(),
+      endDate: dateRange.endOfMonth.toISOString()
+    })
+  })
+  const monthTransactions = useMemo(() => {
+    const raw = monthData
+    return Array.isArray(raw) ? raw : (raw?.items || [])
+  }, [monthData])
+
+  // React Query: recent transactions (server-side paginated, small window)
+  const { data: recentData, isLoading: recentLoading } = useQuery({
+    queryKey: ['transactions', 'recent', 1, 10],
+    queryFn: () => transactionService.getAll({ page: 1, pageSize: 10 })
+  })
+  const recentTransactions = useMemo(() => {
+    const raw = recentData
+    return Array.isArray(raw) ? raw : (raw?.items || [])
+  }, [recentData])
+
+  // React Query: budgets and saving goals
+  const { data: budgets = [] } = useQuery({
+    queryKey: ['budgets'],
+    queryFn: budgetService.getAll
+  })
+  const { data: savingGoals = [] } = useQuery({
+    queryKey: ['savingsGoals'],
+    queryFn: savingsGoalService.getAll
+  })
+
+  const initialLoading = monthLoading || recentLoading
+  const dataLoaded = !monthLoading && !recentLoading
 
   /**
-   * Fetch summary, recent transactions, and budgets
-   * Memoized with useCallback to prevent unnecessary re-renders
-   * @param {boolean} isRefresh - Whether this is a refresh (vs initial load)
+   * Pull-to-refresh: invalidate and refetch dashboard queries
    */
-  const loadDashboardData = useCallback(async (isRefresh = false) => {
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
     try {
-      // Use different loading states for initial vs refresh
-      if (isRefresh) {
-        setRefreshing(true)
-      } else {
-        setInitialLoading(true)
-      }
-
-      // Fetch ALL transactions for current month (raw data instead of summary)
-      // This allows us to filter by user/partner on the client side
-      const monthData = await transactionService.getAll({
-        startDate: dateRange.startOfMonth.toISOString(),
-        endDate: dateRange.endOfMonth.toISOString()
-      })
-      setMonthTransactions(monthData || [])
-
-      // Fetch recent transactions (fetch all, then slice locally for display)
-      const transactions = await transactionService.getAll()
-      // Ensure they are sorted by date desc
-      const sortedTransactions = transactions.sort((a, b) => new Date(b.date) - new Date(a.date))
-      setRecentTransactions(sortedTransactions)
-
-      // Fetch budgets
-      try {
-        const budgetData = await budgetService.getAll()
-        setBudgets(budgetData || [])
-      } catch (err) {
-        console.warn('Failed to load budgets', err)
-      }
-
-      // Fetch saving goals
-      try {
-        const goalsData = await savingsGoalService.getAll()
-        setSavingGoals(goalsData || [])
-      } catch (err) {
-        console.warn('Failed to load saving goals', err)
-      }
-
-      // Mark data as loaded
-      setDataLoaded(true)
-
-    } catch (error) {
-      console.error('❌ Error loading dashboard data:', error)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+        queryClient.invalidateQueries({ queryKey: ['budgets'] }),
+        queryClient.invalidateQueries({ queryKey: ['savingsGoals'] })
+      ])
     } finally {
-      setInitialLoading(false)
       setRefreshing(false)
     }
-  }, [dateRange.startOfMonth, dateRange.endOfMonth])
-
-  /**
-   * Load dashboard data on component mount
-   */
-  useEffect(() => {
-    loadDashboardData()
-  }, [loadDashboardData])
+  }, [queryClient])
 
   /**
    * Load partnerships for filter options
@@ -258,13 +243,6 @@ function Dashboard() {
   useEffect(() => {
     setPage(1)
   }, [filterMode])
-
-  /**
-   * Handle pull-to-refresh
-   */
-  const handleRefresh = async () => {
-    await loadDashboardData(true) // Pass true to indicate refresh
-  }
 
   /**
    * Skeleton Loading State - Initial Load
@@ -521,9 +499,7 @@ function Dashboard() {
             // which might be incomplete if we rely on it for calculation.
             // Ideally api should provide spent amount. 
             // Looking at Budgets.jsx logic, it fetches all expenses for the month to calculate.
-            // For dashboard performance, we can estimate from recentTransactions OR fetch month expenses.
-            // Let's assume we can rely on 'recentTransactions' if it contains all month's data,
-            // BUT loadDashboardData creates 'recentTransactions' from ALL transactions, so we can filter locally.
+            // Dashboard uses monthTransactions (React Query) for current month; spent is derived from filtered month data.
 
             const spent = monthTransactions
               .filter(filterItem)

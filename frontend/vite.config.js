@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   optimizeDeps: {
-    include: ['react-map-gl/mapbox', 'mapbox-gl']
+    include: ['react-map-gl/mapbox', 'mapbox-gl', 'react-window']
   },
   plugins: [
     react(),
@@ -65,14 +65,31 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    // Disable manual chunking to avoid circular dependency issues
-    // Let Vite handle automatic code splitting
     rollupOptions: {
       output: {
-        // Optimize chunk file names for better caching
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+        // Stable vendor chunks for better long-term cache reuse
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-dom') || id.includes('react/') || id.includes('react-router')) {
+              return 'vendor-react'
+            }
+            if (id.includes('mapbox-gl') || id.includes('react-map-gl')) {
+              return 'vendor-mapbox'
+            }
+            if (id.includes('chart.js') || id.includes('react-chartjs-2')) {
+              return 'vendor-charts'
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-motion'
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'vendor-query'
+            }
+          }
+        }
       }
     },
     // Enable minification (using esbuild - faster and built into Vite)

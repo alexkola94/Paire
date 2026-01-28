@@ -142,6 +142,10 @@ const apiRequest = async (url, options = {}) => {
 // ========================================
 
 export const transactionService = {
+  /**
+   * Get transactions. When page and pageSize are provided, backend returns
+   * { items, totalCount, totalPages, page, pageSize }; otherwise returns array.
+   */
   async getAll(filters = {}) {
     const params = new URLSearchParams()
     if (filters.type) params.append('type', filters.type)

@@ -124,7 +124,10 @@
     "totalCount_plural": "Total: {{count}} entries",
     "entry": "entry",
     "entries": "entries",
-    "searchPlaceholder": "Search income..."
+    "searchPlaceholder": "Search income...",
+    "createError": "Failed to create income",
+    "updateError": "Failed to update income",
+    "deleteError": "Failed to delete income"
   },
   "loans": {
     "title": "Loans",
@@ -809,6 +812,7 @@
     "download": "Download",
     "startDate": "Start Date",
     "endDate": "End Date",
+    "selectDateRange": "Select date range",
     "allCategories": "All Categories",
     "income": "Income",
     "expense": "Expense",
@@ -1228,7 +1232,8 @@
       "ascending": "Ascending",
       "descending": "Descending",
       "loadingTripView": "Loading your trip view...",
-      "refresh": "Refresh Data"
+      "refresh": "Refresh Data",
+      "saveFailed": "Could not save. Please try again."
     },
     "theme": {
       "lightMode": "Light Mode",
@@ -1437,7 +1442,9 @@
         "activities": "Activities",
         "shopping": "Shopping",
         "other": "Other"
-      }
+      },
+      "addError": "Failed to add expense",
+      "deleteError": "Failed to delete expense"
     },
     "itinerary": {
       "title": "Itinerary",
@@ -1484,7 +1491,10 @@
       "chooseSavedPlace": "Choose a saved place",
       "notes": "Notes",
       "notesPlaceholder": "Add details, reservation numbers, etc.",
-      "attachFile": "Attach File"
+      "attachFile": "Attach File",
+      "addError": "Failed to add event",
+      "updateError": "Failed to update event",
+      "deleteError": "Failed to delete event"
     },
     "packing": {
       "title": "Packing",
@@ -1602,7 +1612,10 @@
         "title": "Travel notes for your documents",
         "subtitle": "Use this space to jot down questions for embassies, airlines, or your future self.",
         "titlePlaceholder": "e.g., Visa questions for Japan"
-      }
+      },
+      "addError": "Failed to add document",
+      "updateError": "Failed to update document",
+      "deleteError": "Failed to delete document"
     },
     "explore": {
       "title": "Explore",

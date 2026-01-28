@@ -25,28 +25,45 @@
 
 /* Mobile: Stacked (Default 1fr) */
 
-/* Tablet (768px+): Search full width, filters below in 2 columns for symmetry */
+/* Tablet (768px+): Search full width, date range full width below */
 @media (min-width: 768px) {
   .income-filters-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .search-span-full {
-    grid-column: 1 / -1;
-  }
-}
-
-/* Desktop (1280px+): Single row, 3 columns */
-@media (min-width: 1280px) {
-  .income-filters-grid {
-    grid-template-columns: 2fr 1fr 1fr;
-    /* Search | Date | Date */
+    grid-template-columns: 1fr;
   }
 
   .search-span-full {
     grid-column: auto;
-    /* Reset to normal flow */
   }
+
+  .income-filters-grid .filter-item {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Desktop (1280px+): Single row, search + date range */
+@media (min-width: 1280px) {
+  .income-filters-grid {
+    grid-template-columns: 2fr 1fr;
+    /* Search | Date range */
+  }
+
+  .search-span-full {
+    grid-column: auto;
+  }
+
+  .income-filters-grid .filter-item {
+    grid-column: auto;
+  }
+}
+
+/* DateRangePicker in grid: full width on mobile, consistent height */
+.income-filters-grid .date-range-picker,
+.income-filters-grid .picker-trigger {
+  width: 100%;
+}
+.income-filters-grid .picker-trigger {
+  height: 48px;
+  min-height: 48px;
 }
 
 .income-page {

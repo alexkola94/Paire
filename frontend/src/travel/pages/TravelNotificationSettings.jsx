@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { FiBell, FiMail, FiSmartphone, FiCheck, FiAlertTriangle } from 'react-icons/fi'
@@ -477,4 +477,6 @@ function TravelNotificationSettings({ trip, onNavigate }) {
   )
 }
 
-export default TravelNotificationSettings
+TravelNotificationSettings.displayName = 'TravelNotificationSettings'
+
+export default memo(TravelNotificationSettings)

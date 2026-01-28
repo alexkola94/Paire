@@ -74,13 +74,14 @@ const fetchAdvisoryFromBackend = async (countryCode) => {
     })
 
     if (!response.ok) {
-      // Log more details for debugging
-      console.error('Travel advisory backend error:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        redirected: response.redirected
-      })
+      if (import.meta.env.DEV) {
+        console.error('Travel advisory backend error:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: url,
+          redirected: response.redirected
+        })
+      }
       return null
     }
 
@@ -102,8 +103,6 @@ const fetchAdvisoryFromBackend = async (countryCode) => {
     // Start from the backend DTO so any new fields added server‑side
     // automatically flow through to the frontend.
     const base = { ...data }
-
-    console.log('DEBUG: Raw Advisory Data from Backend:', data)
 
     // Helper to map nested info lists (e.g. from TuGoClimate.ClimateInfo)
     const mapInfoList = (infoList) => {

@@ -22,6 +22,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<IReadOnlyList<Trip>> GetTripsForUserAsync(string userId)
         {
             return await _dbContext.Trips
+                .AsNoTracking()
                 .Where(t => t.UserId == userId)
                 .OrderByDescending(t => t.StartDate)
                 .ToListAsync();
@@ -30,6 +31,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<Trip?> GetTripAsync(string userId, Guid tripId)
         {
             return await _dbContext.Trips
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
         }
 
@@ -49,12 +51,14 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<bool> TripExistsForUserAsync(Guid tripId, string userId)
         {
             return await _dbContext.Trips
+                .AsNoTracking()
                 .AnyAsync(t => t.Id == tripId && t.UserId == userId);
         }
 
         public async Task<IReadOnlyList<TripCity>> GetTripCitiesAsync(Guid tripId)
         {
             return await _dbContext.TripCities
+                .AsNoTracking()
                 .Where(c => c.TripId == tripId)
                 .OrderBy(c => c.OrderIndex)
                 .ToListAsync();
@@ -68,12 +72,14 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<TripCity?> GetTripCityAsync(Guid tripId, Guid cityId)
         {
             return await _dbContext.TripCities
+                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == cityId && c.TripId == tripId);
         }
 
         public async Task<IReadOnlyList<TripCity>> GetTripCitiesForReorderAsync(Guid tripId)
         {
             return await _dbContext.TripCities
+                .AsNoTracking()
                 .Where(c => c.TripId == tripId)
                 .ToListAsync();
         }
@@ -89,6 +95,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<IReadOnlyList<ItineraryEvent>> GetEventsAsync(Guid tripId)
         {
             return await _dbContext.ItineraryEvents
+                .AsNoTracking()
                 .Where(e => e.TripId == tripId)
                 .OrderBy(e => e.Date)
                 .ThenBy(e => e.StartTime)
@@ -103,6 +110,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<ItineraryEvent?> GetEventAsync(Guid tripId, Guid eventId)
         {
             return await _dbContext.ItineraryEvents
+                .AsNoTracking()
                 .FirstOrDefaultAsync(e => e.Id == eventId && e.TripId == tripId);
         }
 
@@ -117,6 +125,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<IReadOnlyList<PackingItem>> GetPackingItemsAsync(Guid tripId)
         {
             return await _dbContext.PackingItems
+                .AsNoTracking()
                 .Where(p => p.TripId == tripId)
                 .OrderBy(p => p.Category)
                 .ThenBy(p => p.Name)
@@ -131,6 +140,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<PackingItem?> GetPackingItemAsync(Guid tripId, Guid itemId)
         {
             return await _dbContext.PackingItems
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == itemId && p.TripId == tripId);
         }
 
@@ -145,6 +155,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<IReadOnlyList<TravelDocument>> GetDocumentsAsync(Guid tripId)
         {
             return await _dbContext.TravelDocuments
+                .AsNoTracking()
                 .Where(d => d.TripId == tripId)
                 .OrderBy(d => d.Type)
                 .ThenBy(d => d.Name)
@@ -159,6 +170,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<TravelDocument?> GetDocumentAsync(Guid tripId, Guid documentId)
         {
             return await _dbContext.TravelDocuments
+                .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.Id == documentId && d.TripId == tripId);
         }
 
@@ -173,6 +185,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<IReadOnlyList<TravelExpense>> GetExpensesAsync(Guid tripId)
         {
             return await _dbContext.TravelExpenses
+                .AsNoTracking()
                 .Where(e => e.TripId == tripId)
                 .OrderByDescending(e => e.Date)
                 .ToListAsync();
@@ -186,6 +199,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<TravelExpense?> GetExpenseAsync(Guid tripId, Guid expenseId)
         {
             return await _dbContext.TravelExpenses
+                .AsNoTracking()
                 .FirstOrDefaultAsync(e => e.Id == expenseId && e.TripId == tripId);
         }
 
@@ -200,6 +214,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<TripLayoutPreferences?> GetLayoutPreferencesAsync(Guid tripId)
         {
             return await _dbContext.TripLayoutPreferences
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.TripId == tripId);
         }
 
@@ -219,6 +234,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<IReadOnlyList<SavedPlace>> GetSavedPlacesAsync(Guid tripId)
         {
             return await _dbContext.SavedPlaces
+                .AsNoTracking()
                 .Where(p => p.TripId == tripId)
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
@@ -232,6 +248,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<SavedPlace?> GetSavedPlaceAsync(Guid tripId, Guid placeId)
         {
             return await _dbContext.SavedPlaces
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == placeId && p.TripId == tripId);
         }
 
@@ -246,6 +263,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<IReadOnlyList<TravelNote>> GetNotesAsync(Guid tripId)
         {
             return await _dbContext.TravelNotes
+                .AsNoTracking()
                 .Where(n => n.TripId == tripId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
@@ -259,6 +277,7 @@ namespace YouAndMeExpensesAPI.Repositories
         public async Task<TravelNote?> GetNoteAsync(Guid tripId, Guid noteId)
         {
             return await _dbContext.TravelNotes
+                .AsNoTracking()
                 .FirstOrDefaultAsync(n => n.Id == noteId && n.TripId == tripId);
         }
 

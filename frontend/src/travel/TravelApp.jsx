@@ -1,4 +1,4 @@
-import { useState, Suspense, lazy, useEffect } from 'react'
+import { useState, Suspense, lazy, useEffect, useCallback, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTravelMode } from './context/TravelModeContext'
 import { useTheme } from '../context/ThemeContext'
@@ -14,6 +14,17 @@ const PackingPage = lazy(() => import('./pages/PackingPage'))
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'))
 const ExplorePage = lazy(() => import('./pages/ExplorePage'))
 const TravelNotificationSettings = lazy(() => import('./pages/TravelNotificationSettings'))
+
+// Page ID to lazy component map (module-level to avoid recreating on every render)
+const PAGE_COMPONENTS = {
+  home: TravelHome,
+  budget: BudgetPage,
+  itinerary: ItineraryPage,
+  packing: PackingPage,
+  documents: DocumentsPage,
+  explore: ExplorePage,
+  notifications: TravelNotificationSettings
+}
 
 // Page transition variants
 const pageVariants = {
@@ -47,9 +58,11 @@ const TravelAppContent = () => {
   const { theme } = useTheme()
   const { setTripContext } = useNotifications()
 
-  // Dynamic loader accent class based on current theme
-  const loaderAccentClass =
-    theme === 'dark' ? 'logo-loader-accent--dark' : 'logo-loader-accent--light'
+  // Loader accent class from theme (memoized to keep stable when theme unchanged)
+  const loaderAccentClass = useMemo(
+    () => (theme === 'dark' ? 'logo-loader-accent--dark' : 'logo-loader-accent--light'),
+    [theme]
+  )
 
   // Sync notification context with active trip
   useEffect(() => {
@@ -58,19 +71,11 @@ const TravelAppContent = () => {
     }
   }, [activeTrip?.id, setTripContext])
 
-  // Map page IDs to components
-  const pageComponents = {
-    home: TravelHome,
-    budget: BudgetPage,
-    itinerary: ItineraryPage,
-    packing: PackingPage,
-    documents: DocumentsPage,
-    explore: ExplorePage,
-    notifications: TravelNotificationSettings
-  }
+  // Stable callback for navigation (enables memoized page components to skip re-renders)
+  const onNavigate = useCallback((page) => setActivePage(page), [])
 
-  // For non-home pages, resolve the active component (used only when activePage !== 'home')
-  const ActiveComponent = pageComponents[activePage] || TravelHome
+  // Resolve active component for non-home pages from module-level map
+  const ActiveComponent = PAGE_COMPONENTS[activePage] || TravelHome
 
   // Show loading while checking for active trip
   if (tripLoading) {
@@ -88,7 +93,7 @@ const TravelAppContent = () => {
   return (
     <TravelLayout
       activePage={activePage}
-      onNavigate={setActivePage}
+      onNavigate={onNavigate}
       shouldHideNav={isLayoutSettingsOpen}
     >
       <Suspense
@@ -101,24 +106,26 @@ const TravelAppContent = () => {
           </div>
         }
       >
-        {/* Option A: Keep TravelHome mounted and toggle visibility so it does not remount
-            when returning from Explore/Budget/etc. Avoids PWA mobile flicker. */}
-        {/* Persistent TravelHome – always mounted, visible only when activePage === 'home' */}
-        <div
-          className="travel-page-container travel-page-container--home"
-          style={{ display: activePage === 'home' ? 'block' : 'none' }}
-          aria-hidden={activePage !== 'home'}
-        >
-          <TravelHome
-            trip={activeTrip}
-            onNavigate={setActivePage}
-            isLayoutSettingsOpen={isLayoutSettingsOpen}
-            setIsLayoutSettingsOpen={setIsLayoutSettingsOpen}
-          />
-        </div>
-        {/* Other pages – only one visible at a time; animate when switching between them */}
-        {activePage !== 'home' && (
-          <AnimatePresence mode="wait">
+        {/* Option A: Only mount the active page. TravelHome unmounts when navigating away,
+            so its effects (geolocation, route distances, advisories) stop; remounts on return. */}
+        <AnimatePresence mode="wait">
+          {activePage === 'home' ? (
+            <motion.div
+              key="home"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="travel-page-container travel-page-container--home"
+            >
+              <TravelHome
+                trip={activeTrip}
+                onNavigate={onNavigate}
+                isLayoutSettingsOpen={isLayoutSettingsOpen}
+                setIsLayoutSettingsOpen={setIsLayoutSettingsOpen}
+              />
+            </motion.div>
+          ) : (
             <motion.div
               key={activePage}
               variants={pageVariants}
@@ -129,13 +136,13 @@ const TravelAppContent = () => {
             >
               <ActiveComponent
                 trip={activeTrip}
-                onNavigate={setActivePage}
+                onNavigate={onNavigate}
                 isLayoutSettingsOpen={isLayoutSettingsOpen}
                 setIsLayoutSettingsOpen={setIsLayoutSettingsOpen}
               />
             </motion.div>
-          </AnimatePresence>
-        )}
+          )}
+        </AnimatePresence>
       </Suspense>
     </TravelLayout>
   )

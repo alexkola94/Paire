@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import db from '../services/travelDb'
 import { tripService, processSyncQueue } from '../services/travelApi'
 import { sessionManager } from '../../services/sessionManager'
@@ -477,53 +477,88 @@ export const TravelModeProvider = ({ children }) => {
     })
   }, [])
 
-  const value = {
-    // Travel mode state
-    isTravelMode,
-    enterTravelMode,
-    exitTravelMode,
+  // Memoize context value to avoid unnecessary re-renders of all consumers
+  const value = useMemo(
+    () => ({
+      // Travel mode state
+      isTravelMode,
+      enterTravelMode,
+      exitTravelMode,
 
-    // Transition animation
-    isTransitioning,
-    transitionDirection,
-    completeTransition,
+      // Transition animation
+      isTransitioning,
+      transitionDirection,
+      completeTransition,
 
-    // Active trip
-    activeTrip,
-    tripLoading,
-    selectTrip,
-    clearActiveTrip,
-    refreshActiveTrip,
+      // Active trip
+      activeTrip,
+      tripLoading,
+      selectTrip,
+      clearActiveTrip,
+      refreshActiveTrip,
 
-    // Trips list
-    trips,
-    tripsLoading,
-    loadTrips,
+      // Trips list
+      trips,
+      tripsLoading,
+      loadTrips,
 
-    // Discovery mode
-    isDiscoveryMode,
-    enterDiscoveryMode,
-    exitDiscoveryMode,
-    selectedPOI,
-    selectPOI,
-    clearSelectedPOI,
-    mapViewState,
-    updateMapViewState,
-    activeTripCities,
-    backgroundMapCities,
-    setBackgroundMapCities,
+      // Discovery mode
+      isDiscoveryMode,
+      enterDiscoveryMode,
+      exitDiscoveryMode,
+      selectedPOI,
+      selectPOI,
+      clearSelectedPOI,
+      mapViewState,
+      updateMapViewState,
+      activeTripCities,
+      backgroundMapCities,
+      setBackgroundMapCities,
 
-    // Online status
-    isOnline,
+      // Online status
+      isOnline,
 
-    // Sync status
-    syncStatus,
-    setSyncStatus,
+      // Sync status
+      syncStatus,
+      setSyncStatus,
 
-    // Refresh control
-    refreshKey,
-    refreshTripData
-  }
+      // Refresh control
+      refreshKey,
+      refreshTripData
+    }),
+    [
+      isTravelMode,
+      enterTravelMode,
+      exitTravelMode,
+      isTransitioning,
+      transitionDirection,
+      completeTransition,
+      activeTrip,
+      tripLoading,
+      selectTrip,
+      clearActiveTrip,
+      refreshActiveTrip,
+      trips,
+      tripsLoading,
+      loadTrips,
+      isDiscoveryMode,
+      enterDiscoveryMode,
+      exitDiscoveryMode,
+      selectedPOI,
+      selectPOI,
+      clearSelectedPOI,
+      mapViewState,
+      updateMapViewState,
+      activeTripCities,
+      backgroundMapCities,
+      setBackgroundMapCities,
+      isOnline,
+      syncStatus,
+      setSyncStatus,
+      refreshKey,
+      refreshTripData
+    ]
+  )
 
   return (
     <TravelModeContext.Provider value={value}>

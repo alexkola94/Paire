@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+// react-window: import via shim (Vite alias uses ESM build)
+import { FixedSizeList as List } from '../utils/reactWindow'
 import { motion } from 'framer-motion'
 import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiZoomIn, FiDownload, FiX } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
@@ -9,7 +12,7 @@ import TransactionForm from '../components/TransactionForm'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import SearchInput from '../components/SearchInput'
-import DatePicker from '../components/DatePicker'
+import DateRangePicker from '../components/DateRangePicker'
 
 // import useSwipeGesture from '../hooks/useSwipeGesture'
 // import useFocusTrap from '../hooks/useFocusTrap'
@@ -26,17 +29,100 @@ import { usePrivacyMode } from '../context/PrivacyModeContext'
 import AddToCalculatorButton from '../components/AddToCalculatorButton'
 import './Expenses.css'
 
+/** Row renderer for react-window virtualized expense list */
+const ExpenseRow = memo(({ index, style, data }) => {
+  const { expenses, formatCurrency, t, setDetailModal, openEditForm, openDeleteModal, setViewModal, isPrivate } = data
+  const expense = expenses[index]
+  if (!expense) return null
+  return (
+    <div style={style}>
+      <div
+        className="expense-card card clickable data-card"
+        onClick={() => setDetailModal(expense)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setDetailModal(expense)}
+      >
+        <div className="expense-header data-card-header">
+          <div className="expense-category">
+            {t(`categories.${(expense.category || '').toLowerCase()}`)}
+          </div>
+          <div className="expense-amount-row">
+            <span className={`expense-amount ${isPrivate ? 'masked-number' : ''}`}>
+              {formatCurrency(expense.amount)}
+            </span>
+            <AddToCalculatorButton
+              value={expense.amount}
+              isPrivate={isPrivate}
+              size={18}
+              className="expense-add-to-calc-btn"
+            />
+          </div>
+        </div>
+        <div className="data-card-body">
+          {expense.description ? (
+            <p className="expense-description">{expense.description}</p>
+          ) : null}
+        </div>
+        <div className="expense-date data-card-meta">
+          {format(new Date(expense.date), 'MMMM dd, yyyy')}
+          {expense.paidBy === 'Bank' || expense.isBankSynced ? (
+            <span className="added-by">{' • ' + t('dashboard.bankConnection', 'Imported from Bank')}</span>
+          ) : expense.user_profiles && (
+            <span className="added-by" style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {' • '}
+              {(expense.user_profiles.avatar_url || expense.user_profiles.avatarUrl) && (
+                <img
+                  src={expense.user_profiles.avatar_url || expense.user_profiles.avatarUrl}
+                  alt={expense.user_profiles.display_name}
+                  className="tag-avatar"
+                  onError={(e) => e.target.style.display = 'none'}
+                />
+              )}
+              {t('dashboard.addedBy') + ' '}
+              {expense.user_profiles.display_name}
+            </span>
+          )}
+        </div>
+        <div className="expense-actions data-card-actions" onClick={(e) => e.stopPropagation()}>
+          {expense.attachmentUrl && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setViewModal(expense); }}
+              className="btn-icon"
+              aria-label={t('transaction.viewAttachment', 'View Receipt')}
+              title={t('transaction.viewAttachment', 'View Receipt')}
+            >
+              <FiFileText size={18} />
+            </button>
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); openEditForm(expense); }}
+            className="btn-icon"
+            aria-label="Edit"
+          >
+            <FiEdit size={18} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); openDeleteModal(expense); }}
+            className="btn-icon delete"
+            aria-label="Delete"
+          >
+            <FiTrash2 size={18} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+})
+ExpenseRow.displayName = 'ExpenseRow'
+
 function Expenses() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
-  // All expenses from API
-  const [allExpenses, setAllExpenses] = useState([])
-  // Expenses after search filter
-  const [filteredExpenses, setFilteredExpenses] = useState([])
-  // Expenses for current page
+  // Server-side pagination: only current page items
   const [displayedExpenses, setDisplayedExpenses] = useState([])
 
-  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
@@ -68,123 +154,82 @@ function Expenses() {
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
   const { performAction: performUndoableAction, undo, canUndo } = useUndo()
 
+  // React Query: expenses with server-side pagination and filters
+  const { data: expensesData, isLoading: expensesLoading } = useQuery({
+    queryKey: ['transactions', 'expense', page, searchQuery, startDate, endDate],
+    queryFn: () => transactionService.getAll({
+      type: 'expense',
+      page,
+      pageSize: PAGE_SIZE,
+      search: searchQuery.trim() || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
+    })
+  })
+
+  // Derive displayed list and pagination from query result
+  useEffect(() => {
+    if (expensesData === undefined) return
+    const items = Array.isArray(expensesData) ? expensesData : (expensesData.items || [])
+    const total = Array.isArray(expensesData) ? expensesData.length : (expensesData.totalCount ?? items.length)
+    const pages = Array.isArray(expensesData) ? 1 : (expensesData.totalPages ?? 1)
+    setDisplayedExpenses(items)
+    setTotalItems(total)
+    setTotalPages(pages)
+  }, [expensesData])
+
+  // Mutations: invalidate transactions cache on create/update/delete
+  const createMutation = useMutation({
+    mutationFn: (body) => transactionService.create(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }) => transactionService.update(id, updates),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id) => transactionService.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  })
+
+  // Loading state: query loading or form/mutation loading
+  const loading = expensesLoading || formLoading
+
   /**
-   * Load ALL expenses on mount
+   * Deep link: open add form when ?action=add
    */
   useEffect(() => {
-    loadExpenses()
-
-    // Check query params for actions
     if (searchParams.get('action') === 'add') {
       setShowForm(true)
-      // Clear param to prevent reopening on refresh
       setSearchParams(params => {
         params.delete('action')
         return params
       }, { replace: true })
     }
-  }, []) // Load once on mount
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
-   * Handle Search & Pagination Effect
-   * Runs whenever allExpenses, searchQuery, or page changes
-   */
-  useEffect(() => {
-    // 1. Filter
-    let result = allExpenses
-
-    // Text Search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(expense =>
-        (expense.description && expense.description.toLowerCase().includes(query)) ||
-        (expense.category && expense.category.toLowerCase().includes(query)) ||
-        (expense.notes && expense.notes.toLowerCase().includes(query)) ||
-        (expense.tags && expense.tags.some(tag => tag.toLowerCase().includes(query))) ||
-        (expense.amount && expense.amount.toString().includes(query))
-      )
-    }
-
-    // Date Filter
-    if (startDate) {
-      const start = new Date(startDate)
-      start.setHours(0, 0, 0, 0)
-      result = result.filter(expense => new Date(expense.date) >= start)
-    }
-
-    if (endDate) {
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
-      result = result.filter(expense => new Date(expense.date) <= end)
-    }
-
-    setTotalItems(result.length)
-    setTotalPages(Math.ceil(result.length / PAGE_SIZE))
-
-    // 2. Paginate
-    const startIndex = (page - 1) * PAGE_SIZE
-    const paginated = result.slice(startIndex, startIndex + PAGE_SIZE)
-    setDisplayedExpenses(paginated)
-
-  }, [allExpenses, searchQuery, page, startDate, endDate])
-
-  /**
-   * Handle search input
+   * Handle search input (resets to first page)
    */
   const handleSearch = (query) => {
     setSearchQuery(query)
-    setPage(1) // Reset to first page
+    setPage(1)
   }
 
   /**
-   * Fetch ALL expenses from API
-   */
-  const loadExpenses = async (background = false) => {
-    try {
-      if (!background) {
-        setLoading(true)
-      }
-      // Fetch ALL expenses (no pagination params)
-      const data = await transactionService.getAll({
-        type: 'expense'
-      })
-
-      // Handle response (array or paged object fallback)
-      const items = Array.isArray(data) ? data : (data.items || [])
-
-      setAllExpenses(items)
-      // Filter/Pagination will run via useEffect
-
-    } catch (error) {
-      console.error('Error loading expenses:', error)
-      showError(t('expenses.loadError', 'Failed to load expenses'))
-    } finally {
-      if (!background) {
-        setLoading(false)
-      }
-    }
-  }
-
-  /**
-   * Handle creating new expense
+   * Handle creating new expense (React Query mutation invalidates cache)
    */
   const handleCreate = async (expenseData) => {
     try {
       setFormLoading(true)
 
-      const createdExpense = await transactionService.create(expenseData)
-
-      // Local Update
-      setAllExpenses(prev => [createdExpense, ...prev])
+      await createMutation.mutateAsync(expenseData)
 
       setShowSuccessAnimation(true)
       showSuccess(t('expenses.createdSuccess'))
       announce(t('expenses.createdSuccess'))
 
       setShowForm(false)
-
-      // Refresh list in background
-      loadExpenses(true)
 
       // Phase 5: Undo functionality
       performUndoableAction(
@@ -227,34 +272,22 @@ function Expenses() {
       // Save old data for undo
       const oldExpenseData = { ...editingExpense }
 
-      await transactionService.update(editingExpense.id, expenseData)
-
-      // Local Update
-      setAllExpenses(prev => prev.map(e => e.id === editingExpense.id ? { ...e, ...expenseData } : e))
+      await updateMutation.mutateAsync({ id: editingExpense.id, updates: expenseData })
 
       setShowSuccessAnimation(true)
-
       setEditingExpense(null)
       setShowForm(false)
 
       showSuccess(t('expenses.updatedSuccess'))
       announce(t('expenses.updatedSuccess'))
 
-      // Refresh list in background
-      loadExpenses(true)
-
-      // Phase 5: Undo functionality
+      // Undo: restore old data then invalidate (refetch)
       performUndoableAction(
+        () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
         async () => {
-          loadExpenses(true)
-        },
-        async () => {
-          // Undo: restore old data
           try {
             await transactionService.update(editingExpense.id, oldExpenseData)
-            // Local Undo
-            setAllExpenses(prev => prev.map(e => e.id === editingExpense.id ? oldExpenseData : e))
-            loadExpenses(true)
+            queryClient.invalidateQueries({ queryKey: ['transactions'] })
             showSuccess(t('expenses.undoSuccess'))
             announce(t('expenses.undoSuccess'))
           } catch (error) {
@@ -262,7 +295,7 @@ function Expenses() {
             showError(t('expenses.undoError'))
           }
         },
-        5000 // 5 seconds to undo
+        5000
       )
     } catch (error) {
       console.error('Error updating expense:', error)
@@ -307,26 +340,17 @@ function Expenses() {
         await storageService.deleteFile(expense.attachmentPath)
       }
 
-      await transactionService.delete(expense.id)
-
-      // Local Update
-      setAllExpenses(prev => prev.filter(e => e.id !== expense.id))
-
-      // Refresh list in background
-      loadExpenses(true)
+      await deleteMutation.mutateAsync(expense.id)
 
       closeDeleteModal()
 
-      // Phase 5: Undo functionality
+      // Undo: restore deleted expense then invalidate (refetch)
       performUndoableAction(
         () => { },
         async () => {
-          // Undo: restore deleted expense
           try {
             await transactionService.create(expenseToDelete)
-            // Local Undo
-            setAllExpenses(prev => [expenseToDelete, ...prev])
-            loadExpenses(true)
+            queryClient.invalidateQueries({ queryKey: ['transactions'] })
             showSuccess(t('expenses.undoSuccess'))
             announce(t('expenses.undoSuccess'))
           } catch (error) {
@@ -334,7 +358,7 @@ function Expenses() {
             showError(t('expenses.undoError'))
           }
         },
-        5000 // 5 seconds to undo
+        5000
       )
     } catch (error) {
       console.error('Error deleting expense:', error)
@@ -447,26 +471,15 @@ function Expenses() {
         </div>
 
         <div className="filter-item">
-          <DatePicker
-            selected={startDate}
-            onChange={(date) => {
-              setStartDate(date ? date.toISOString() : '')
+          <DateRangePicker
+            startDate={startDate || null}
+            endDate={endDate || null}
+            onChange={({ startDate: s, endDate: e }) => {
+              setStartDate(s || '')
+              setEndDate(e || '')
               setPage(1)
             }}
-            placeholder={t('common.startDate')}
-            className="form-control w-full"
-          />
-        </div>
-
-        <div className="filter-item">
-          <DatePicker
-            selected={endDate}
-            onChange={(date) => {
-              setEndDate(date ? date.toISOString() : '')
-              setPage(1)
-            }}
-            placeholder={t('common.endDate')}
-            className="form-control w-full"
+            placeholder={t('common.selectDateRange', 'Select date range')}
           />
         </div>
       </div>
@@ -518,7 +531,7 @@ function Expenses() {
       )}
 
       {/* Expenses List */}
-      {allExpenses.length === 0 && !loading ? (
+      {totalItems === 0 && !loading ? (
         <div className="card empty-state">
           <p>{t('expenses.noExpenses')}</p>
           <button
@@ -533,118 +546,47 @@ function Expenses() {
         <div className="card empty-state">
           <p>{t('common.noResults', 'No expenses found matching your search.')}</p>
         </div>
+      ) : List ? (
+        <div className="data-cards-grid" style={{ minHeight: Math.min(displayedExpenses.length * 180, 540) }}>
+          <List
+            height={Math.min(displayedExpenses.length * 180, 540)}
+            itemCount={displayedExpenses.length}
+            itemSize={180}
+            width="100%"
+            itemData={{
+              expenses: displayedExpenses,
+              formatCurrency,
+              t,
+              setDetailModal,
+              openEditForm,
+              openDeleteModal,
+              setViewModal,
+              isPrivate
+            }}
+          >
+            {ExpenseRow}
+          </List>
+        </div>
       ) : (
-        <motion.div 
-          className="data-cards-grid"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            visible: {
-              transition: {
-                staggerChildren: 0.08
-              }
-            }
-          }}
-        >
-          {displayedExpenses.map((expense) => (
-            <motion.div 
-              key={expense.id} 
-              className="expense-card card clickable data-card"
-              onClick={() => setDetailModal(expense)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && setDetailModal(expense)}
-              variants={{
-                hidden: { opacity: 0, y: 20, scale: 0.95 },
-                visible: { 
-                  opacity: 1, 
-                  y: 0, 
-                  scale: 1,
-                  transition: {
-                    duration: 0.5,
-                    ease: [0.4, 0, 0.2, 1]
-                  }
-                }
+        <div className="data-cards-grid" style={{ minHeight: Math.min(displayedExpenses.length * 180, 540), overflow: 'auto' }}>
+          {displayedExpenses.map((expense, index) => (
+            <ExpenseRow
+              key={expense.id}
+              index={index}
+              style={{}}
+              data={{
+                expenses: displayedExpenses,
+                formatCurrency,
+                t,
+                setDetailModal,
+                openEditForm,
+                openDeleteModal,
+                setViewModal,
+                isPrivate
               }}
-            >
-              <div className="expense-header data-card-header">
-                <div className="expense-category">
-                  {t(`categories.${(expense.category || '').toLowerCase()}`)}
-                </div>
-                {/* Amount with visible "Add to calculator" button (opens operation picker: +, -, ×, ÷) */}
-                <div className="expense-amount-row">
-                  <span className={`expense-amount ${isPrivate ? 'masked-number' : ''}`}>
-                    {formatCurrency(expense.amount)}
-                  </span>
-                  <AddToCalculatorButton
-                    value={expense.amount}
-                    isPrivate={isPrivate}
-                    size={18}
-                    className="expense-add-to-calc-btn"
-                  />
-                </div>
-              </div>
-
-              <div className="data-card-body">
-                {expense.description ? (
-                  <p className="expense-description">
-                    {expense.description}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="expense-date data-card-meta">
-                {format(new Date(expense.date), 'MMMM dd, yyyy')}
-                {expense.paidBy === 'Bank' || expense.isBankSynced ? (
-                  <span className="added-by">
-                    {' • ' + t('dashboard.bankConnection', 'Imported from Bank')}
-                  </span>
-                ) : expense.user_profiles && (
-                  <span className="added-by" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                    {' • '}
-                    {(expense.user_profiles.avatar_url || expense.user_profiles.avatarUrl) && (
-                      <img
-                        src={expense.user_profiles.avatar_url || expense.user_profiles.avatarUrl}
-                        alt={expense.user_profiles.display_name}
-                        className="tag-avatar"
-                        onError={(e) => e.target.style.display = 'none'}
-                      />
-                    )}
-                    {t('dashboard.addedBy') + ' '}
-                    {expense.user_profiles.display_name}
-                  </span>
-                )}
-              </div>
-
-              <div className="expense-actions data-card-actions" onClick={(e) => e.stopPropagation()}>
-                {expense.attachmentUrl && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setViewModal(expense); }}
-                    className="btn-icon"
-                    aria-label={t('transaction.viewAttachment', 'View Receipt')}
-                    title={t('transaction.viewAttachment', 'View Receipt')}
-                  >
-                    <FiFileText size={18} />
-                  </button>
-                )}
-                <button
-                  onClick={(e) => { e.stopPropagation(); openEditForm(expense); }}
-                  className="btn-icon"
-                  aria-label="Edit"
-                >
-                  <FiEdit size={18} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); openDeleteModal(expense); }}
-                  className="btn-icon delete"
-                  aria-label="Delete"
-                >
-                  <FiTrash2 size={18} />
-                </button>
-              </div>
-            </motion.div>
+            />
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* Pagination Controls */}

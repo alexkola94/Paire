@@ -16,11 +16,23 @@ import {
     startOfDay,
     addDays
 } from 'date-fns'
-import { enUS } from 'date-fns/locale' // TODO: Add dynamic locale support based on i18n
+import { enUS, el, es, fr } from 'date-fns/locale'
 import { FiChevronLeft, FiChevronRight, FiCalendar, FiX } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../../context/ThemeContext'
 import '../styles/DateRangePicker.css'
+
+/** Map i18n language to date-fns locale for date formatting */
+const getDateFnsLocale = (language) => {
+  const lang = (language || '').split('-')[0]
+  switch (lang) {
+    case 'es': return es
+    case 'fr': return fr
+    case 'el': return el
+    case 'en':
+    default: return enUS
+  }
+}
 
 const DateRangePicker = ({
     startDate,
@@ -31,6 +43,7 @@ const DateRangePicker = ({
     placeholder
 }) => {
     const { t, i18n } = useTranslation()
+    const dateLocale = getDateFnsLocale(i18n.language)
     const displayPlaceholder = placeholder ?? t('travel.datePicker.selectDates', 'Select dates')
     const { theme } = useTheme()
     const [isOpen, setIsOpen] = useState(false)
@@ -81,7 +94,7 @@ const DateRangePicker = ({
 
         // Scenario 1: No dates selected or both selected -> Start fresh
         if ((!startDate && !endDate) || (startDate && endDate)) {
-            onChange({ startDate: format(clickedDate, 'yyyy-MM-dd'), endDate: null })
+            onChange({ startDate: format(clickedDate, 'yyyy-MM-dd', { locale: dateLocale }), endDate: null })
             return
         }
 
@@ -91,10 +104,10 @@ const DateRangePicker = ({
 
             if (isBefore(clickedDate, start)) {
                 // Clicked before start -> New start date
-                onChange({ startDate: format(clickedDate, 'yyyy-MM-dd'), endDate: null })
+                onChange({ startDate: format(clickedDate, 'yyyy-MM-dd', { locale: dateLocale }), endDate: null })
             } else {
                 // Clicked after start -> Set end date and close
-                onChange({ startDate, endDate: format(clickedDate, 'yyyy-MM-dd') })
+                onChange({ startDate, endDate: format(clickedDate, 'yyyy-MM-dd', { locale: dateLocale }) })
                 setIsOpen(false)
             }
         }
@@ -177,7 +190,7 @@ const DateRangePicker = ({
                 <div className="picker-month-header" style={{
                     color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
                 }}>
-                    {format(monthDate, 'MMMM yyyy')}
+                    {format(monthDate, 'MMMM yyyy', { locale: dateLocale })}
                 </div>
                 <div className="picker-grid-header">
                     {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
@@ -190,7 +203,7 @@ const DateRangePicker = ({
                     {allDays.map((day, idx) => {
                         if (!day) return <div key={`pad-${idx}`} className="picker-day empty" />
 
-                        const dateStr = format(day, 'yyyy-MM-dd')
+                        const dateStr = format(day, 'yyyy-MM-dd', { locale: dateLocale })
                         const isSelectedStart = startDate === dateStr
                         const isSelectedEnd = endDate === dateStr
                         const min = minDate ? startOfDay(new Date(minDate)) : null
@@ -240,7 +253,7 @@ const DateRangePicker = ({
                                 type="button"
                                 disabled={isDisabled}
                             >
-                                {format(day, 'd')}
+                                {format(day, 'd', { locale: dateLocale })}
                             </button>
                         )
                     })}
@@ -252,10 +265,10 @@ const DateRangePicker = ({
     // Derived display text
     const getDisplayText = () => {
         if (startDate && endDate) {
-            return `${format(new Date(startDate), 'MMM d')} - ${format(new Date(endDate), 'MMM d')}`
+            return `${format(new Date(startDate), 'MMM d', { locale: dateLocale })} - ${format(new Date(endDate), 'MMM d', { locale: dateLocale })}`
         }
         if (startDate) {
-            return `${format(new Date(startDate), 'MMM d')} - ${t('travel.datePicker.selectReturn', 'Select return date')}`
+            return `${format(new Date(startDate), 'MMM d', { locale: dateLocale })} - ${t('travel.datePicker.selectReturn', 'Select return date')}`
         }
         return displayPlaceholder
     }

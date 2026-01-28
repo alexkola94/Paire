@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiX, FiDownload } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
@@ -12,10 +13,11 @@ import LogoLoader from '../components/LogoLoader'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import SearchInput from '../components/SearchInput'
-import DatePicker from '../components/DatePicker'
+import DateRangePicker from '../components/DateRangePicker'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import TransactionDetailModal from '../components/TransactionDetailModal'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import useToast from '../hooks/useToast'
 import AddToCalculatorButton from '../components/AddToCalculatorButton'
 import './Income.css'
 import '../styles/AddToCalculator.css'
@@ -26,227 +28,137 @@ import '../styles/AddToCalculator.css'
  */
 function Income() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const { error: showError } = useToast()
   const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
-  // All incomes from API
-  const [allIncomes, setAllIncomes] = useState([])
-  // Incomes for current page (after filtering and pagination)
   const [displayedIncomes, setDisplayedIncomes] = useState([])
-  
-  const [loading, setLoading] = useState(true)
+
   const [showForm, setShowForm] = useState(false)
   const [editingIncome, setEditingIncome] = useState(null)
   const [formLoading, setFormLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, income: null })
-  const [viewModal, setViewModal] = useState(null) // For viewing full receipt
-  const [detailModal, setDetailModal] = useState(null) // For viewing transaction details
+  const [viewModal, setViewModal] = useState(null)
+  const [detailModal, setDetailModal] = useState(null)
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
 
-  // Filters
   const [searchQuery, setSearchQuery] = useState('')
-
-  // Date Filters
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
-  // Pagination
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const PAGE_SIZE = 6
 
-  // Deep linking
   const [searchParams, setSearchParams] = useSearchParams()
 
-  /**
-   * Load incomes on mount
-   */
-  useEffect(() => {
-    loadIncomes()
+  // React Query: incomes with server-side pagination and filters
+  const { data: incomesData, isLoading: incomesLoading } = useQuery({
+    queryKey: ['transactions', 'income', page, searchQuery, startDate, endDate],
+    queryFn: () => transactionService.getAll({
+      type: 'income',
+      page,
+      pageSize: PAGE_SIZE,
+      search: searchQuery.trim() || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
+    })
+  })
 
-    // Check query params for actions
+  useEffect(() => {
+    if (incomesData === undefined) return
+    const items = Array.isArray(incomesData) ? incomesData : (incomesData.items || [])
+    const total = Array.isArray(incomesData) ? incomesData.length : (incomesData.totalCount ?? items.length)
+    const pages = Array.isArray(incomesData) ? 1 : (incomesData.totalPages ?? 1)
+    setDisplayedIncomes(items)
+    setTotalItems(total)
+    setTotalPages(pages)
+  }, [incomesData])
+
+  const createMutation = useMutation({
+    mutationFn: (body) => transactionService.create(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }) => transactionService.update(id, updates),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id) => transactionService.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  })
+
+  const loading = incomesLoading || formLoading
+
+  useEffect(() => {
     if (searchParams.get('action') === 'add') {
       setShowForm(true)
-      // Clear param to prevent reopening on refresh
       setSearchParams(params => {
         params.delete('action')
         return params
       }, { replace: true })
     }
-  }, []) // Load once
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /**
-   * Fetch all incomes from API
-   */
-  const loadIncomes = async (background = false) => {
-    try {
-      if (!background) {
-        setLoading(true)
-      }
-      // Fetch all incomes (large page size or specific 'all' endpoint if exists)
-      // Using generic getAll with large limit to simulate "all"
-      const data = await transactionService.getAll({
-        type: 'income',
-        page: 1,
-        pageSize: 10000 // Fetch all for local search
-      })
-
-      if (data.items) {
-        setAllIncomes(data.items)
-      } else {
-        setAllIncomes(data)
-      }
-    } catch (error) {
-      console.error('Error loading incomes:', error)
-    } finally {
-      if (!background) {
-        setLoading(false)
-      }
-    }
-  }
-
-  /**
-   * Handle Search & Pagination Effect
-   * Runs whenever allIncomes, searchQuery, dates, or page changes
-   */
-  useEffect(() => {
-    // 1. Filter
-    let result = allIncomes
-
-    // Text Search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(income =>
-        (income.description && income.description.toLowerCase().includes(query)) ||
-        (income.category && income.category.toLowerCase().includes(query)) ||
-        (income.notes && income.notes.toLowerCase().includes(query)) ||
-        (income.amount && income.amount.toString().includes(query))
-      )
-    }
-
-    // Date Filter
-    if (startDate) {
-      const start = new Date(startDate)
-      start.setHours(0, 0, 0, 0)
-      result = result.filter(income => new Date(income.date) >= start)
-    }
-
-    if (endDate) {
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
-      result = result.filter(income => new Date(income.date) <= end)
-    }
-
-    setTotalItems(result.length)
-    setTotalPages(Math.ceil(result.length / PAGE_SIZE))
-
-    // 2. Paginate
-    const startIndex = (page - 1) * PAGE_SIZE
-    const paginated = result.slice(startIndex, startIndex + PAGE_SIZE)
-    setDisplayedIncomes(paginated)
-
-  }, [allIncomes, searchQuery, page, startDate, endDate])
-
-  /**
-   * Handle search input
-   */
   const handleSearch = (query) => {
     setSearchQuery(query)
-    setPage(1) // Reset to first page
+    setPage(1)
   }
 
-  /**
-   * Handle creating new income
-   */
   const handleCreate = async (incomeData) => {
     try {
       setFormLoading(true)
-
-      const created = await transactionService.create(incomeData)
-
-      // Local Update
-      setAllIncomes(prev => [created, ...prev])
-
+      await createMutation.mutateAsync(incomeData)
       setShowSuccessAnimation(true)
       setShowForm(false)
-
-      // Refresh list in background
-      loadIncomes(true)
     } catch (error) {
       console.error('Error creating income:', error)
+      showError(t('income.createError', 'Failed to create income'))
       throw error
     } finally {
       setFormLoading(false)
     }
   }
 
-  /**
-   * Handle updating income
-   */
   const handleUpdate = async (incomeData) => {
     try {
       setFormLoading(true)
-
-      await transactionService.update(editingIncome.id, incomeData)
-
-      // Local Update
-      setAllIncomes(prev => prev.map(item => item.id === editingIncome.id ? { ...item, ...incomeData } : item))
-
+      await updateMutation.mutateAsync({ id: editingIncome.id, updates: incomeData })
       setShowSuccessAnimation(true)
       setEditingIncome(null)
       setShowForm(false)
-
-      // Refresh list in background
-      loadIncomes(true)
     } catch (error) {
       console.error('Error updating income:', error)
+      showError(t('income.updateError', 'Failed to update income'))
       throw error
     } finally {
       setFormLoading(false)
     }
   }
 
-  /**
-   * Open delete confirmation modal
-   */
   const openDeleteModal = (income) => {
     setDeleteModal({ isOpen: true, income })
   }
 
-  /**
-   * Close delete confirmation modal
-   */
   const closeDeleteModal = () => {
     setDeleteModal({ isOpen: false, income: null })
   }
 
-  /**
-   * Handle deleting income
-   */
   const handleDelete = async () => {
     const { income } = deleteModal
     if (!income) return
 
     try {
       setFormLoading(true)
-
-      // Delete attachment if exists
       if (income.attachmentPath) {
         await storageService.deleteFile(income.attachmentPath)
       }
-
-      await transactionService.delete(income.id)
-
-      // Local Update
-      setAllIncomes(prev => prev.filter(i => i.id !== income.id))
-
-      // Refresh list in background
-      loadIncomes(true)
-
+      await deleteMutation.mutateAsync(income.id)
       closeDeleteModal()
-
     } catch (error) {
       console.error('Error deleting income:', error)
+      showError(t('income.deleteError', 'Failed to delete income'))
     } finally {
       setFormLoading(false)
     }
@@ -312,26 +224,15 @@ function Income() {
         </div>
 
         <div className="filter-item">
-          <DatePicker
-            selected={startDate}
-            onChange={(date) => {
-              setStartDate(date ? date.toISOString() : '')
+          <DateRangePicker
+            startDate={startDate || null}
+            endDate={endDate || null}
+            onChange={({ startDate: s, endDate: e }) => {
+              setStartDate(s || '')
+              setEndDate(e || '')
               setPage(1)
             }}
-            placeholder={t('common.startDate')}
-            className="form-control w-full"
-          />
-        </div>
-
-        <div className="filter-item">
-          <DatePicker
-            selected={endDate}
-            onChange={(date) => {
-              setEndDate(date ? date.toISOString() : '')
-              setPage(1)
-            }}
-            placeholder={t('common.endDate')}
-            className="form-control w-full"
+            placeholder={t('common.selectDateRange', 'Select date range')}
           />
         </div>
       </div>
@@ -366,7 +267,7 @@ function Income() {
       )}
 
       {/* Income List */}
-      {allIncomes.length === 0 && !loading ? (
+      {totalItems === 0 && !loading ? (
         <div className="card empty-state">
           <p>{t('income.noIncome')}</p>
           <button

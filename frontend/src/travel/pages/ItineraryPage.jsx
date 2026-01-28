@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
 import { useTravelMode } from '../context/TravelModeContext'
+import useToast from '../../hooks/useToast'
 import {
   FiPlus,
   FiCalendar,
@@ -40,9 +41,11 @@ const eventIcons = {
 /**
  * Itinerary Page Component
  * Timeline view of trip events organized by day
+ * Memoized to re-render only when trip changes.
  */
-const ItineraryPage = ({ trip }) => {
+const ItineraryPage = memo(({ trip }) => {
   const { t } = useTranslation()
+  const { addToast } = useToast()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -164,9 +167,8 @@ const ItineraryPage = ({ trip }) => {
       window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
       console.error('Error adding event:', error)
-      // Remove optimistic event on error
       setEvents(prev => prev.filter(e => e.id !== tempId))
-      // TODO: Show error message to user (toast or inline)
+      addToast(t('travel.common.saveFailed', 'Could not save. Please try again.'), 'error')
     } finally {
       setSaving(false)
     }
@@ -184,6 +186,7 @@ const ItineraryPage = ({ trip }) => {
       window.dispatchEvent(new CustomEvent('travel:item-updated', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
       console.error('Error updating event:', error)
+      addToast(t('travel.common.saveFailed', 'Could not save. Please try again.'), 'error')
     }
   }
 
@@ -197,6 +200,7 @@ const ItineraryPage = ({ trip }) => {
       window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'event', tripId: trip.id } }))
     } catch (error) {
       console.error('Error deleting event:', error)
+      addToast(t('travel.common.saveFailed', 'Could not save. Please try again.'), 'error')
     }
   }
 
@@ -350,7 +354,7 @@ const ItineraryPage = ({ trip }) => {
       </AnimatePresence>
     </div>
   )
-}
+})
 
 // Event Card Component
 const EventCard = ({ event, onEdit, onDelete }) => {
@@ -454,6 +458,7 @@ const EventCard = ({ event, onEdit, onDelete }) => {
     </motion.div>
   )
 }
+EventCard.displayName = 'EventCard'
 
 // Event Form Modal Component
 const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
@@ -873,5 +878,8 @@ const EventFormModal = ({ trip, event, defaultDate, onClose, onSave }) => {
     document.body
   )
 }
+EventFormModal.displayName = 'EventFormModal'
+
+ItineraryPage.displayName = 'ItineraryPage'
 
 export default ItineraryPage

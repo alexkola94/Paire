@@ -7,7 +7,7 @@ import { ALL_CATEGORIES } from '../constants/categories'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
 import SearchInput from '../components/SearchInput'
-import DatePicker from '../components/DatePicker'
+import DateRangePicker from '../components/DateRangePicker'
 import Skeleton from '../components/Skeleton'
 import useToast from '../hooks/useToast'
 import ToastContainer from '../components/ToastContainer'
@@ -20,8 +20,8 @@ function Receipts() {
     const [loading, setLoading] = useState(true)
     const [selectedCategory, setSelectedCategory] = useState('All')
     const [searchQuery, setSearchQuery] = useState('')
-    const [startDate, setStartDate] = useState(null)
-    const [endDate, setEndDate] = useState(null)
+    const [startDate, setStartDate] = useState('')
+    const [endDate, setEndDate] = useState('')
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, receipt: null })
     const [viewModal, setViewModal] = useState(null) // For viewing full image
 
@@ -111,11 +111,11 @@ function Receipts() {
                 }
             }
 
-            // Date Range filter
+            // Date Range filter (startDate/endDate are yyyy-MM-dd strings)
             if (startDate || endDate) {
                 const receiptDate = new Date(receipt.date)
-                if (startDate && receiptDate < startOfDay(startDate)) return false
-                if (endDate && receiptDate > endOfDay(endDate)) return false
+                if (startDate && receiptDate < startOfDay(new Date(startDate))) return false
+                if (endDate && receiptDate > endOfDay(new Date(endDate))) return false
             }
 
             return true
@@ -184,20 +184,14 @@ function Receipts() {
                 </div>
 
                 <div className="filter-item">
-                    <DatePicker
-                        selected={startDate}
-                        onChange={setStartDate}
-                        placeholder={t('common.startDate')}
-                        className="form-control w-full"
-                    />
-                </div>
-
-                <div className="filter-item">
-                    <DatePicker
-                        selected={endDate}
-                        onChange={setEndDate}
-                        placeholder={t('common.endDate')}
-                        className="form-control w-full"
+                    <DateRangePicker
+                        startDate={startDate || null}
+                        endDate={endDate || null}
+                        onChange={({ startDate: s, endDate: e }) => {
+                            setStartDate(s || '')
+                            setEndDate(e || '')
+                        }}
+                        placeholder={t('common.selectDateRange', 'Select date range')}
                     />
                 </div>
             </div>

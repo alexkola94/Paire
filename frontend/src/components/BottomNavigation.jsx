@@ -14,6 +14,7 @@ import { useModal } from '../context/ModalContext'
 
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
+import { preloadRoute } from '../utils/performance'
 
 const BottomNavigation = () => {
     const { t } = useTranslation()
@@ -46,14 +47,24 @@ const BottomNavigation = () => {
             className={`bottom-nav ${hasOpenModals ? 'hidden' : ''}`}
         >
             <div className="bottom-nav-container">
-                <NavLink to="/dashboard" className="nav-item">
+                <NavLink
+                    to="/dashboard"
+                    className="nav-item"
+                    onMouseEnter={() => preloadRoute(() => import('../pages/Dashboard'))}
+                    onFocus={() => preloadRoute(() => import('../pages/Dashboard'))}
+                >
                     <div className="icon-container">
                         <FiHome size={24} />
                     </div>
                     <span className="nav-label">{t('navigation.dashboard')}</span>
                 </NavLink>
 
-                <NavLink to="/expenses" className="nav-item">
+                <NavLink
+                    to="/expenses"
+                    className="nav-item"
+                    onMouseEnter={() => preloadRoute(() => import('../pages/Expenses'))}
+                    onFocus={() => preloadRoute(() => import('../pages/Expenses'))}
+                >
                     <div className="icon-container">
                         <FiTrendingDown size={24} />
                     </div>
@@ -69,6 +80,8 @@ const BottomNavigation = () => {
                                 to="/income?action=add"
                                 className="fab-menu-item income"
                                 onClick={(e) => e.stopPropagation()}
+                                onMouseEnter={() => preloadRoute(() => import('../pages/Income'))}
+                                onFocus={() => preloadRoute(() => import('../pages/Income'))}
                             >
                                 <FiTrendingUp size={20} />
                                 <span>{t('income.addIncome')}</span>
@@ -77,6 +90,8 @@ const BottomNavigation = () => {
                                 to="/expenses?action=add"
                                 className="fab-menu-item expense"
                                 onClick={(e) => e.stopPropagation()}
+                                onMouseEnter={() => preloadRoute(() => import('../pages/Expenses'))}
+                                onFocus={() => preloadRoute(() => import('../pages/Expenses'))}
                             >
                                 <FiTrendingDown size={20} />
                                 <span>{t('expenses.addExpense')}</span>

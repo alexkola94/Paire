@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -56,8 +56,9 @@ const fadeIn = {
 /**
  * Explore Page - Calm, on-demand information
  * Shows weather when ready, POIs only when user asks
+ * Memoized to re-render only when trip changes.
  */
-const ExplorePage = ({ trip }) => {
+const ExplorePage = memo(({ trip }) => {
   const { t } = useTranslation()
   const [weather, setWeather] = useState(null)
   const [pois, setPois] = useState([])
@@ -633,6 +634,8 @@ const ExplorePage = ({ trip }) => {
       </section>
     </motion.div >
   )
-}
+})
+
+ExplorePage.displayName = 'ExplorePage'
 
 export default ExplorePage

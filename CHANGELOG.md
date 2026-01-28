@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 
+## [2.1.1] - 2026-01-28
+### Fixed
+- **react-window**: Added `src/utils/reactWindow.js` shim so `FixedSizeList` works in both Vite dev (pre-bundle) and production build (UMD dist). Expenses and AllTransactions now import from the shim; namespace import handles named vs default export shape.
+- **PackingPage**: Corrected `AddItemModal` closing from `})` to `}` so the build parses correctly.
+
+### Changed
+- Expenses and AllTransactions pages import `FixedSizeList` via `../utils/reactWindow` instead of directly from `react-window`.
+- `optimizeDeps.include` in Vite config includes `react-window` for consistent pre-bundling.
+
 ## [2.1.0] - 2025-12-30
 ### Added
 - New Landing Page with modern glassmorphism design.

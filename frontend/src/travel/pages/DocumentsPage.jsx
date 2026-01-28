@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, memo } from 'react'
 import { createPortal } from 'react-dom'
 import { useTheme } from '../../context/ThemeContext'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
+import { useToast } from '../../hooks/useToast'
 import { useTravelMode } from '../context/TravelModeContext'
 
 import {
@@ -217,9 +218,11 @@ const buildTravelDocsPrompt = ({
 /**
  * Documents Page Component
  * Document vault for storing travel document info
+ * Memoized to re-render only when trip changes.
  */
-const DocumentsPage = ({ trip }) => {
+const DocumentsPage = memo(({ trip }) => {
   const { t, i18n } = useTranslation()
+  const { addToast } = useToast()
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -576,9 +579,8 @@ const DocumentsPage = ({ trip }) => {
       window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'document', tripId: trip.id } }))
     } catch (error) {
       console.error('Error adding document:', error)
-      // Remove optimistic document on error
       setDocuments(prev => prev.filter(d => d.id !== tempId))
-      // TODO: Show error message to user (toast or inline)
+      addToast(t('travel.documents.addError', 'Failed to add document.'), 'error')
     } finally {
       setSaving(false)
     }
@@ -596,6 +598,7 @@ const DocumentsPage = ({ trip }) => {
       window.dispatchEvent(new CustomEvent('travel:item-updated', { detail: { type: 'document', tripId: trip.id } }))
     } catch (error) {
       console.error('Error updating document:', error)
+      addToast(t('travel.documents.updateError', 'Failed to update document.'), 'error')
     }
   }
 
@@ -609,6 +612,7 @@ const DocumentsPage = ({ trip }) => {
       window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'document', tripId: trip.id } }))
     } catch (error) {
       console.error('Error deleting document:', error)
+      addToast(t('travel.documents.deleteError', 'Failed to delete document.'), 'error')
     }
   }
 
@@ -865,7 +869,7 @@ const DocumentsPage = ({ trip }) => {
       </AnimatePresence>
     </div>
   )
-}
+})
 
 // Document Card Component
 const DocumentCard = ({ document, typeConfig, getExpiryStatus, onEdit, onDelete }) => {
@@ -950,6 +954,7 @@ const DocumentCard = ({ document, typeConfig, getExpiryStatus, onEdit, onDelete 
     </motion.div>
   )
 }
+DocumentCard.displayName = 'DocumentCard'
 
 // Document Form Modal Component
 const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
@@ -1232,6 +1237,7 @@ const DocumentFormModal = ({ tripId, document, onClose, onSave }) => {
     window.document.body
   )
 }
+DocumentFormModal.displayName = 'DocumentFormModal'
 
 /**
  * TravelDocsAiDialog
@@ -1693,5 +1699,8 @@ const TravelDocsAiDialog = ({ trip, inferredDestination, inferredDestinations, i
     document.body
   )
 }
+TravelDocsAiDialog.displayName = 'TravelDocsAiDialog'
+
+DocumentsPage.displayName = 'DocumentsPage'
 
 export default DocumentsPage

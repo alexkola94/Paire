@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
@@ -24,8 +24,9 @@ import db from '../services/travelDb'
 /**
  * Packing Page Component
  * Smart packing checklist with categories
+ * Memoized to re-render only when trip changes.
  */
-const PackingPage = ({ trip }) => {
+const PackingPage = memo(({ trip }) => {
   const { t } = useTranslation()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -487,7 +488,7 @@ const PackingPage = ({ trip }) => {
       </AnimatePresence>
     </div>
   )
-}
+})
 
 // Add Item Modal
 const AddItemModal = ({ onClose, onSave }) => {
@@ -595,5 +596,8 @@ const AddItemModal = ({ onClose, onSave }) => {
     </motion.div>
   )
 }
+AddItemModal.displayName = 'AddItemModal'
+
+PackingPage.displayName = 'PackingPage'
 
 export default PackingPage

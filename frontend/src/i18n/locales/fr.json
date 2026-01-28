@@ -177,7 +177,10 @@
     "close": "Fermer",
     "processing": "Traitement...",
     "optional": "Optionnel",
-    "undo": "Annuler"
+    "undo": "Annuler",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "selectDateRange": "Sélectionner une plage de dates"
   },
   "allTransactions": {
     "title": "Toutes les Transactions",
@@ -316,7 +319,8 @@
       "saving": "Enregistrement...",
       "ascending": "Croissant",
       "descending": "Décroissant",
-      "loadingTripView": "Chargement de la vue de votre voyage..."
+      "loadingTripView": "Chargement de la vue de votre voyage...",
+      "saveFailed": "Impossible d'enregistrer. Veuillez réessayer."
     },
     "home": {
       "welcome": "Bienvenue en mode voyage",

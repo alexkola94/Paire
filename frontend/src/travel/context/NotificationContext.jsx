@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   notificationService,
@@ -257,31 +257,56 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [currentTripId, loadNotifications, loadUnreadCount])
 
-  const value = {
-    // State
-    notifications,
-    unreadCount,
-    loading,
-    preferences,
-    preferencesLoading,
-    pushSupported,
-    pushPermission,
-    pushSubscription,
-    currentTripId,
+  // Memoize context value to avoid unnecessary re-renders of all consumers
+  const value = useMemo(
+    () => ({
+      // State
+      notifications,
+      unreadCount,
+      loading,
+      preferences,
+      preferencesLoading,
+      pushSupported,
+      pushPermission,
+      pushSubscription,
+      currentTripId,
 
-    // Actions
-    loadNotifications,
-    loadUnreadCount,
-    loadPreferences,
-    updatePreferences,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    enablePushNotifications,
-    showNotification,
-    checkNotifications,
-    setTripContext
-  }
+      // Actions
+      loadNotifications,
+      loadUnreadCount,
+      loadPreferences,
+      updatePreferences,
+      markAsRead,
+      markAllAsRead,
+      deleteNotification,
+      enablePushNotifications,
+      showNotification,
+      checkNotifications,
+      setTripContext
+    }),
+    [
+      notifications,
+      unreadCount,
+      loading,
+      preferences,
+      preferencesLoading,
+      pushSupported,
+      pushPermission,
+      pushSubscription,
+      currentTripId,
+      loadNotifications,
+      loadUnreadCount,
+      loadPreferences,
+      updatePreferences,
+      markAsRead,
+      markAllAsRead,
+      deleteNotification,
+      enablePushNotifications,
+      showNotification,
+      checkNotifications,
+      setTripContext
+    ]
+  )
 
   return (
     <NotificationContext.Provider value={value}>

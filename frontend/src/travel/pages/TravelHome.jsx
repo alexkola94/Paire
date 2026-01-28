@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -62,6 +62,7 @@ const cardVariants = {
 /**
  * Travel Home Page - Calm, minimal dashboard
  * Shows just what travelers need: countdown, simple status, and easy navigation
+ * Memoized so it only re-renders when trip or layout props change.
  */
 const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSettingsOpen }) => {
   const { t, i18n } = useTranslation()
@@ -438,7 +439,7 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
           })
         }
 
-        // B. Advisories
+        // B. Advisories – fetch in background; do not block home load
         const fetchAdvisoriesPromise = (async () => {
           if (currentIsMulti && currentCities.length > 0) {
             const countries = Array.from(new Set(currentCities.map(c => c.country && String(c.country).trim()).filter(Boolean)))
@@ -452,10 +453,9 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
         // C. Saved Places
         const fetchPlacesPromise = savedPlaceService.getByTrip(tripId).catch(() => [])
 
-        // Wait for all
-        const [summaryResult, advisoriesResult, placesResult] = await Promise.all([
+        // Wait only for summary + places so home shows without waiting for advisory
+        const [summaryResult, placesResult] = await Promise.all([
           summaryPromise,
-          fetchAdvisoriesPromise,
           fetchPlacesPromise
         ])
 
@@ -467,13 +467,24 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
             setUpcomingCount(summaryResult.upcomingCount)
           }
 
-          // Advisories
-          setAdvisories(advisoriesResult || [])
-          setAdvisory((advisoriesResult && advisoriesResult.length > 0) ? advisoriesResult[0] : null)
-
           // Places
           setSavedPlaces(placesResult || [])
         }
+
+        // Apply advisories when they complete (success → show card; fail/empty → don't render)
+        fetchAdvisoriesPromise
+          .then((advisoriesResult) => {
+            if (!cancelled) {
+              setAdvisories(advisoriesResult || [])
+              setAdvisory((advisoriesResult && advisoriesResult.length > 0) ? advisoriesResult[0] : null)
+            }
+          })
+          .catch(() => {
+            if (!cancelled) {
+              setAdvisories([])
+              setAdvisory(null)
+            }
+          })
       } catch (err) {
         console.error('Error loading consolidated trip data:', err)
       } finally {
@@ -2078,4 +2089,6 @@ const TravelHome = ({ trip, onNavigate, isLayoutSettingsOpen, setIsLayoutSetting
   )
 }
 
-export default TravelHome
+TravelHome.displayName = 'TravelHome'
+
+export default memo(TravelHome)

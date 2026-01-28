@@ -133,6 +133,60 @@
 }
 
 /* ================================
+   Search and Filter Bar – Mobile-first
+   ================================ */
+
+.search-filter-container {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.search-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.date-filters {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+}
+
+.date-filters .date-range-picker,
+.date-filters .picker-trigger {
+  width: 100%;
+  min-width: 0;
+}
+
+.date-filters .picker-trigger {
+  height: 48px;
+  min-height: 48px;
+  transition: all 0.3s ease;
+}
+
+/* Tablet+: single row */
+@media (min-width: 640px) {
+  .search-filter-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .date-filters {
+    width: auto;
+    min-width: 200px;
+  }
+
+  .date-filters .date-range-picker {
+    width: auto;
+    min-width: 220px;
+  }
+}
+
+/* ================================
    Transactions Container
    ================================ */
 

@@ -1,0 +1,402 @@
+/* ================================
+   DateRangePicker – Mobile-first
+   Touch targets ≥44px, smooth transitions
+   ================================ */
+
+.date-range-picker {
+    position: relative;
+    width: 100%;
+    /* Prevent layout shift when dropdown opens */
+}
+
+/* Trigger: mobile-first, 44px min touch target */
+.picker-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    min-height: 44px;
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.picker-trigger:hover:not(.disabled) {
+    border-color: var(--primary, #8B5CF6);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+}
+
+.picker-trigger.active {
+    border-color: var(--primary, #8B5CF6);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.picker-trigger.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--bg-secondary, #f8fafc);
+}
+
+.picker-icon {
+    color: var(--text-tertiary, #94a3b8);
+    font-size: 1.1rem;
+}
+
+/* 16px base avoids iOS zoom on focus */
+.picker-text {
+    flex: 1;
+    font-size: 1rem;
+    color: var(--text-primary, #1e293b);
+    font-weight: 500;
+    min-width: 0;
+}
+
+.picker-text.placeholder {
+    color: var(--text-tertiary, #94a3b8);
+    font-weight: 400;
+}
+
+/* Clear button: ≥44px touch target on mobile */
+.picker-clear {
+    background: none;
+    border: none;
+    color: var(--text-tertiary, #94a3b8);
+    cursor: pointer;
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -6px -6px -6px 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.picker-clear:hover {
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-secondary, #64748b);
+}
+
+/* Dropdown */
+.picker-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    width: 320px;
+    background: var(--bg-card, #ffffff);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+/* Controls */
+.picker-controls {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    pointer-events: none;
+}
+
+/* Nav buttons: 44px touch target on mobile */
+.picker-nav-btn {
+    pointer-events: auto;
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary, #64748b);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.picker-nav-btn:hover {
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-primary, #1e293b);
+}
+
+/* Calendar Month */
+.picker-month {
+    text-align: center;
+}
+
+.picker-month-header {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary, #1e293b);
+}
+
+/* Grid */
+.picker-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 0.5rem;
+}
+
+.picker-weekday {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary, #94a3b8);
+    text-align: center;
+}
+
+.picker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    /* Mobile: ensure day cells are at least 44px for touch */
+    min-width: 0;
+}
+
+.picker-day {
+    aspect-ratio: 1;
+    min-height: 36px;
+    border: none;
+    background: none;
+    font-size: 0.875rem;
+    color: var(--text-primary, #1e293b);
+    cursor: pointer;
+    border-radius: 8px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.picker-day.empty {
+    cursor: default;
+}
+
+.picker-day:hover:not(.disabled):not(.selected-start):not(.selected-end) {
+    background: var(--bg-hover, #f1f5f9);
+}
+
+.picker-day.disabled {
+    color: var(--text-disabled, #cbd5e1);
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.picker-day.today {
+    font-weight: 700;
+    color: var(--primary, #8B5CF6);
+}
+
+.picker-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Selection Styles */
+.picker-day.selected-start,
+.picker-day.selected-end {
+    background: var(--primary, #8B5CF6);
+    color: white;
+    z-index: 2;
+}
+
+.picker-day.in-range {
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--text-primary, #1e293b);
+    border-radius: 0;
+}
+
+.picker-day.selected-start {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.picker-day.selected-start.selected-end {
+    border-radius: 8px;
+}
+
+.picker-day.selected-end {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Footer */
+.picker-footer {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color, #e2e8f0);
+    text-align: center;
+}
+
+.picker-hint {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #64748b);
+    font-style: italic;
+}
+
+/* Mobile dropdown: safe area for notched devices */
+.picker-dropdown[data-mobile="true"] {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+    max-height: min(85vh, 480px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Tablet: larger day cells and trigger spacing */
+@media (min-width: 640px) {
+    .picker-trigger {
+        gap: 0.75rem;
+        padding: 0.8rem 1rem;
+        min-height: 50px;
+    }
+
+    .picker-text {
+        font-size: 0.95rem;
+    }
+
+    .picker-clear {
+        padding: 4px;
+        min-width: 32px;
+        min-height: 32px;
+        margin: 0;
+    }
+
+    .picker-day {
+        min-height: 40px;
+        font-size: 0.9rem;
+    }
+
+    .picker-nav-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+        border-radius: 8px;
+    }
+}
+
+/* Dark Mode Theme Overrides */
+[data-theme="dark"] .picker-trigger {
+    background: var(--bg-card, #1e293b);
+    border-color: var(--border-color, #334155);
+}
+
+[data-theme="dark"] .picker-trigger:hover:not(.disabled) {
+    border-color: var(--primary, #a78bfa);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+[data-theme="dark"] .picker-trigger.active {
+    border-color: var(--primary, #a78bfa);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+[data-theme="dark"] .picker-trigger.disabled {
+    background: var(--bg-secondary, #0f172a);
+}
+
+[data-theme="dark"] .picker-icon {
+    color: var(--text-tertiary, #64748b);
+}
+
+[data-theme="dark"] .picker-text {
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-text.placeholder {
+    color: var(--text-tertiary, #64748b);
+}
+
+[data-theme="dark"] .picker-clear {
+    color: var(--text-tertiary, #64748b);
+}
+
+[data-theme="dark"] .picker-clear:hover {
+    background: var(--bg-hover, #334155);
+    color: var(--text-secondary, #94a3b8);
+}
+
+[data-theme="dark"] .picker-dropdown {
+    background: var(--bg-card, #1e293b);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .picker-nav-btn {
+    background: var(--bg-secondary, #0f172a);
+    border-color: var(--border-color, #334155);
+    color: var(--text-secondary, #94a3b8);
+}
+
+[data-theme="dark"] .picker-nav-btn:hover {
+    background: var(--bg-hover, #334155);
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-month-header {
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-weekday {
+    color: var(--text-tertiary, #64748b);
+}
+
+[data-theme="dark"] .picker-day {
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-day:hover:not(.disabled):not(.selected-start):not(.selected-end) {
+    background: var(--bg-hover, #334155);
+}
+
+[data-theme="dark"] .picker-day.disabled {
+    color: var(--text-disabled, #475569);
+}
+
+[data-theme="dark"] .picker-day.today {
+    color: var(--primary, #a78bfa);
+}
+
+[data-theme="dark"] .picker-day.selected-start,
+[data-theme="dark"] .picker-day.selected-end {
+    background: var(--primary, #8B5CF6);
+    color: white;
+}
+
+[data-theme="dark"] .picker-day.in-range {
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-footer {
+    border-top-color: var(--border-color, #334155);
+}
+
+[data-theme="dark"] .picker-hint {
+    color: var(--text-secondary, #94a3b8);
+}

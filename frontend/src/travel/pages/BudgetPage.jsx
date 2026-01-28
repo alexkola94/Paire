@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
+import { useTheme } from '../../context/ThemeContext'
+import { useToast } from '../../hooks/useToast'
 import { useTravelMode } from '../context/TravelModeContext'
 
 import {
@@ -33,11 +36,178 @@ const categoryIcons = {
 }
 
 /**
+ * Add Expense Modal Component
+ * Renders in a portal; responsive (bottom sheet on mobile, centered on desktop).
+ */
+const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
+  const { t } = useTranslation()
+  const { theme } = useTheme()
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useModalRegistration(true)
+
+  const [formData, setFormData] = useState({
+    category: 'food',
+    amount: '',
+    currency: trip?.budgetCurrency || 'EUR',
+    description: '',
+    date: new Date().toISOString().split('T')[0]
+  })
+  const [saving, setSaving] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!formData.amount || !formData.description) return
+
+    setSaving(true)
+    onClose()
+    await onSave({
+      ...formData,
+      amount: parseFloat(formData.amount),
+      amountInBaseCurrency: parseFloat(formData.amount)
+    })
+    setSaving(false)
+  }
+
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 }
+  }
+
+  const modalVariants = isMobile ? {
+    hidden: { y: '100%' },
+    visible: { y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+    exit: { y: '100%' }
+  } : {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 50 }
+  }
+
+  return createPortal(
+    <motion.div
+      className="modal-overlay"
+      data-theme={theme}
+      variants={overlayVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      onClick={onClose}
+    >
+      <motion.div
+        className="add-expense-modal"
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <h3>{t('travel.budget.addExpense', 'Add Expense')}</h3>
+          <button className="modal-close" onClick={onClose}>
+            <FiX size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>{t('travel.budget.category', 'Category')}</label>
+            <div className="category-selector">
+              {Object.entries(BUDGET_CATEGORIES).map(([key, cat]) => {
+                const Icon = categoryIcons[key] || FiMoreHorizontal
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`category-option ${formData.category === key ? 'selected' : ''}`}
+                    onClick={() => setFormData(prev => ({ ...prev, category: key }))}
+                  >
+                    <Icon size={18} style={{ color: cat.color }} />
+                    <span>{t(cat.label)}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group amount-group">
+              <label>{t('travel.budget.amount', 'Amount')}</label>
+              <input
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                required
+                autoFocus={!isMobile}
+              />
+            </div>
+            <div className="form-group currency-group">
+              <label>{t('travel.budget.currency', 'Currency')}</label>
+              <select
+                value={formData.currency}
+                onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
+              >
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>{t('travel.budget.description', 'Description')}</label>
+            <input
+              type="text"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder={t('travel.budget.descriptionPlaceholder', 'What was this for?')}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <DatePicker
+              label={t('travel.budget.date', 'Date')}
+              value={formData.date}
+              onChange={(value) => setFormData(prev => ({ ...prev, date: value }))}
+              placeholder={t('travel.budget.selectDate', 'Select date')}
+            />
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="cancel-btn" onClick={onClose}>
+              {t('common.cancel', 'Cancel')}
+            </button>
+            <button type="submit" className="travel-btn" disabled={saving}>
+              {saving ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>,
+    document.body
+  )
+}
+AddExpenseModal.displayName = 'AddExpenseModal'
+
+/**
  * Budget Page Component
  * Expense tracking with category breakdown
+ * Memoized to re-render only when trip changes.
  */
-const BudgetPage = ({ trip }) => {
+const BudgetPage = memo(({ trip }) => {
   const { t } = useTranslation()
+  const { addToast } = useToast()
   const [expenses, setExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -142,9 +312,8 @@ const BudgetPage = ({ trip }) => {
       window.dispatchEvent(new CustomEvent('travel:item-added', { detail: { type: 'expense', tripId: trip.id } }))
     } catch (error) {
       console.error('Error adding expense:', error)
-      // Remove optimistic expense on error
       setExpenses(prev => prev.filter(e => e.id !== tempId))
-      // TODO: Show error message to user (toast or inline)
+      addToast(t('travel.common.saveFailed', 'Could not save. Please try again.'), 'error')
     } finally {
       setSaving(false)
     }
@@ -160,6 +329,7 @@ const BudgetPage = ({ trip }) => {
       window.dispatchEvent(new CustomEvent('travel:item-deleted', { detail: { type: 'expense', tripId: trip.id } }))
     } catch (error) {
       console.error('Error deleting expense:', error)
+      addToast(t('travel.common.saveFailed', 'Could not save. Please try again.'), 'error')
     }
   }
 
@@ -359,177 +529,8 @@ const BudgetPage = ({ trip }) => {
       </AnimatePresence>
     </div>
   )
-}
+})
 
-import { useTheme } from '../../context/ThemeContext'
-import { createPortal } from 'react-dom'
-
-// ... existing imports ...
-
-// Add Expense Modal Component
-const AddExpenseModal = ({ trip, onClose, onSave, formatCurrency }) => {
-  const { t } = useTranslation()
-  const { theme } = useTheme()
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-
-  // Listen for resize to update mobile state
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  // Register modal to hide bottom navigation
-  useModalRegistration(true)
-
-  const [formData, setFormData] = useState({
-    category: 'food',
-    amount: '',
-    currency: trip?.budgetCurrency || 'EUR',
-    description: '',
-    date: new Date().toISOString().split('T')[0]
-  })
-  const [saving, setSaving] = useState(false)
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!formData.amount || !formData.description) return
-
-    setSaving(true)
-    // Close modal immediately for optimistic UX
-    onClose()
-    // Call onSave which will handle optimistic update
-    await onSave({
-      ...formData,
-      amount: parseFloat(formData.amount),
-      amountInBaseCurrency: parseFloat(formData.amount) // TODO: Add currency conversion
-    })
-    setSaving(false)
-  }
-
-  // Animation variants based on device type
-  const overlayVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-    exit: { opacity: 0 }
-  }
-
-  const modalVariants = isMobile ? {
-    hidden: { y: '100%' },
-    visible: { y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
-    exit: { y: '100%' }
-  } : {
-    hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: 50 }
-  }
-
-  return createPortal(
-    <motion.div
-      className="modal-overlay"
-      data-theme={theme} // Apply theme to portal root
-      variants={overlayVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      onClick={onClose}
-    >
-      <motion.div
-        className="add-expense-modal"
-        variants={modalVariants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <h3>{t('travel.budget.addExpense', 'Add Expense')}</h3>
-          <button className="modal-close" onClick={onClose}>
-            <FiX size={24} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>{t('travel.budget.category', 'Category')}</label>
-            <div className="category-selector">
-              {Object.entries(BUDGET_CATEGORIES).map(([key, cat]) => {
-                const Icon = categoryIcons[key] || FiMoreHorizontal
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`category-option ${formData.category === key ? 'selected' : ''}`}
-                    onClick={() => setFormData(prev => ({ ...prev, category: key }))}
-                  >
-                    <Icon size={18} style={{ color: cat.color }} />
-                    <span>{t(cat.label)}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group amount-group">
-              <label>{t('travel.budget.amount', 'Amount')}</label>
-              <input
-                type="number"
-                value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                required
-                autoFocus={!isMobile} // Disable auto-focus on mobile
-              />
-            </div>
-            <div className="form-group currency-group">
-              <label>{t('travel.budget.currency', 'Currency')}</label>
-              <select
-                value={formData.currency}
-                onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-              >
-                <option value="EUR">EUR</option>
-                <option value="USD">USD</option>
-                <option value="GBP">GBP</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>{t('travel.budget.description', 'Description')}</label>
-            <input
-              type="text"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder={t('travel.budget.descriptionPlaceholder', 'What was this for?')}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <DatePicker
-              label={t('travel.budget.date', 'Date')}
-              value={formData.date}
-              onChange={(value) => setFormData(prev => ({ ...prev, date: value }))}
-              placeholder={t('travel.budget.selectDate', 'Select date')}
-            />
-          </div>
-
-          <div className="modal-footer">
-            <button type="button" className="cancel-btn" onClick={onClose}>
-              {t('common.cancel', 'Cancel')}
-            </button>
-            <button type="submit" className="travel-btn" disabled={saving}>
-              {saving ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </motion.div>,
-    document.body
-  )
-}
+BudgetPage.displayName = 'BudgetPage'
 
 export default BudgetPage

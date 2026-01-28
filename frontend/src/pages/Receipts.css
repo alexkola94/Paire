@@ -33,17 +33,26 @@
     }
 }
 
-/* Desktop (1280px+): Single row, 4 columns */
+/* Desktop (1280px+): Single row, search + category + date range */
 @media (min-width: 1280px) {
     .receipts-filters-grid {
-        grid-template-columns: 2fr 1fr 1fr 1fr;
-        /* Search | Category | Date | Date */
+        grid-template-columns: 2fr 1fr 1fr;
+        /* Search | Category | Date range */
     }
 
     .search-span-full {
         grid-column: auto;
-        /* Reset to normal flow */
     }
+}
+
+/* DateRangePicker in grid: full width on mobile, consistent height */
+.receipts-filters-grid .date-range-picker,
+.receipts-filters-grid .picker-trigger {
+    width: 100%;
+}
+.receipts-filters-grid .picker-trigger {
+    height: 48px;
+    min-height: 48px;
 }
 
 .receipts-grid {

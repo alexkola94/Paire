@@ -177,7 +177,10 @@
     "close": "Cerrar",
     "processing": "Procesando...",
     "optional": "Opcional",
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de fin",
+    "selectDateRange": "Seleccionar rango de fechas"
   },
   "allTransactions": {
     "title": "Todas las Transacciones",
@@ -316,7 +319,8 @@
       "saving": "Guardando...",
       "ascending": "Ascendente",
       "descending": "Descendente",
-      "loadingTripView": "Cargando la vista de tu viaje..."
+      "loadingTripView": "Cargando la vista de tu viaje...",
+      "saveFailed": "No se pudo guardar. Inténtalo de nuevo."
     },
     "home": {
       "welcome": "Bienvenido al Modo Viaje",
