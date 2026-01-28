@@ -722,7 +722,7 @@
 
 @media (max-width: 767px) {
   .layout-main {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    padding-bottom: calc(62px + env(safe-area-inset-bottom));
   }
 }
 

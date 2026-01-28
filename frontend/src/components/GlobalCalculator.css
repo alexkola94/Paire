@@ -406,9 +406,11 @@
         -webkit-font-smoothing: antialiased;
     }
     /* Use dynamic viewport on iOS when supported so 70vh is accurate */
+    /* Reserve space above safe area so result is visible in PWA/standalone */
     .calculator-panel {
         max-height: 70dvh;
         max-height: calc(70vh - env(safe-area-inset-bottom, 0px));
+        padding-bottom: env(safe-area-inset-bottom);
     }
 }
 
