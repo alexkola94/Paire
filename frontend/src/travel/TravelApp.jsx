@@ -69,6 +69,7 @@ const TravelAppContent = () => {
     notifications: TravelNotificationSettings
   }
 
+  // For non-home pages, resolve the active component (used only when activePage !== 'home')
   const ActiveComponent = pageComponents[activePage] || TravelHome
 
   // Show loading while checking for active trip
@@ -100,23 +101,41 @@ const TravelAppContent = () => {
           </div>
         }
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activePage}
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="travel-page-container"
-          >
-            <ActiveComponent
-              trip={activeTrip}
-              onNavigate={setActivePage}
-              isLayoutSettingsOpen={isLayoutSettingsOpen}
-              setIsLayoutSettingsOpen={setIsLayoutSettingsOpen}
-            />
-          </motion.div>
-        </AnimatePresence>
+        {/* Option A: Keep TravelHome mounted and toggle visibility so it does not remount
+            when returning from Explore/Budget/etc. Avoids PWA mobile flicker. */}
+        {/* Persistent TravelHome – always mounted, visible only when activePage === 'home' */}
+        <div
+          className="travel-page-container travel-page-container--home"
+          style={{ display: activePage === 'home' ? 'block' : 'none' }}
+          aria-hidden={activePage !== 'home'}
+        >
+          <TravelHome
+            trip={activeTrip}
+            onNavigate={setActivePage}
+            isLayoutSettingsOpen={isLayoutSettingsOpen}
+            setIsLayoutSettingsOpen={setIsLayoutSettingsOpen}
+          />
+        </div>
+        {/* Other pages – only one visible at a time; animate when switching between them */}
+        {activePage !== 'home' && (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activePage}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="travel-page-container"
+            >
+              <ActiveComponent
+                trip={activeTrip}
+                onNavigate={setActivePage}
+                isLayoutSettingsOpen={isLayoutSettingsOpen}
+                setIsLayoutSettingsOpen={setIsLayoutSettingsOpen}
+              />
+            </motion.div>
+          </AnimatePresence>
+        )}
       </Suspense>
     </TravelLayout>
   )

@@ -11,7 +11,7 @@
   backdrop-filter: blur(4px);
 }
 
-/* Sheet Container */
+/* Sheet Container – Paire dark mode background with glassmorphism */
 .poi-sheet {
   position: fixed;
   bottom: 0;
@@ -19,14 +19,18 @@
   right: 0;
   z-index: 260;
   max-height: 70vh;
-  background: linear-gradient(180deg,
-      rgba(30, 25, 45, 0.98) 0%,
-      rgba(20, 18, 35, 0.99) 100%);
+  background: rgba(15, 7, 26, 0.95);
+  /* Paire dark mode neutral structure #0F071A */
+  backdrop-filter: blur(20px);
   border-radius: 24px 24px 0 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* Soft outer glow instead of heavy border */
   border-bottom: none;
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  /* Subtle inner glow */
   overflow: hidden;
+  transition: all 0.3s ease-in-out;
 }
 
 /* Drag Handle */
@@ -45,11 +49,13 @@
 .handle-bar {
   width: 40px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.3);
+  /* More visible handle */
   border-radius: 2px;
+  transition: background 0.3s ease-in-out;
 }
 
-/* Close Button */
+/* Close Button – glassmorphism */
 .poi-sheet-close {
   position: absolute;
   top: 12px;
@@ -60,17 +66,20 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.1);
-  border: none;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease-in-out;
   z-index: 10;
 }
 
 .poi-sheet-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
   color: white;
+  transform: scale(1.05);
 }
 
 /* Content */
@@ -91,15 +100,19 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--badge-color, rgba(255, 255, 255, 0.2));
+  background: rgba(139, 92, 246, 0.15);
+  /* Royal Amethyst tint */
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  /* Royal Amethyst border */
   border-radius: 50px;
-  color: var(--badge-color, rgba(255, 255, 255, 0.8));
+  color: #8B5CF6;
+  /* Royal Amethyst text */
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 12px;
+  transition: all 0.3s ease-in-out;
 }
 
 .poi-sheet-name {
@@ -132,13 +145,17 @@
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+  /* Subtle glassmorphism */
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  /* Soft UI radii */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.875rem;
   line-height: 1.5;
   text-decoration: none;
-  transition: background 0.2s ease;
+  transition: all 0.3s ease-in-out;
 }
 
 .poi-detail-row svg {
@@ -152,7 +169,10 @@
 }
 
 .poi-detail-row.clickable:hover {
-  background: rgba(168, 85, 247, 0.1);
+  background: rgba(139, 92, 246, 0.15);
+  /* Royal Amethyst tint on hover */
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-1px);
 }
 
 .poi-detail-row .external-icon {
@@ -195,37 +215,51 @@
 }
 
 .poi-action-btn.primary {
-  background: var(--primary-gradient, linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%));
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  /* Royal Amethyst gradient */
   color: white;
-  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+  transition: all 0.3s ease-in-out;
 }
 
 .poi-action-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.45);
+  background: linear-gradient(135deg, #9B6DF7 0%, #8B5CF6 100%);
+  /* Slightly lighter on hover */
 }
 
 .poi-action-btn.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  /* Glassmorphism background */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* Soft border */
+  color: rgba(255, 255, 255, 0.95);
+  transition: all 0.3s ease-in-out;
 }
 
 .poi-action-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-1px);
 }
 
 .poi-action-btn.secondary.pinned {
-  background: rgba(46, 204, 113, 0.15);
-  border-color: rgba(46, 204, 113, 0.4);
-  color: #2ecc71;
+  background: rgba(16, 185, 129, 0.15);
+  /* Vitality Green tint */
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10B981;
+  /* Vitality Green */
 }
 
 .poi-action-btn.secondary.pinning {
-  background: rgba(46, 204, 113, 0.2);
-  border-color: rgba(46, 204, 113, 0.5);
-  color: #2ecc71;
+  background: rgba(16, 185, 129, 0.2);
+  /* Vitality Green tint */
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #10B981;
+  /* Vitality Green */
 }
 
 .poi-action-btn:disabled {
@@ -350,15 +384,19 @@
 }
 
 .travel-layout:not([data-theme='dark']) .poi-action-btn.secondary.pinned {
-  background: rgba(46, 204, 113, 0.15);
-  border-color: rgba(46, 204, 113, 0.4);
-  color: #27ae60;
+  background: rgba(16, 185, 129, 0.15);
+  /* Vitality Green tint */
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10B981;
+  /* Vitality Green */
 }
 
 .travel-layout:not([data-theme='dark']) .poi-action-btn.secondary.pinning {
-  background: rgba(46, 204, 113, 0.2);
-  border-color: rgba(46, 204, 113, 0.5);
-  color: #27ae60;
+  background: rgba(16, 185, 129, 0.2);
+  /* Vitality Green tint */
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #10B981;
+  /* Vitality Green */
 }
 
 .travel-layout:not([data-theme='dark']) .poi-pin-hint {

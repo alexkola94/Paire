@@ -454,13 +454,13 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
  * @param {number} lat2 - Destination latitude
  * @param {number} lon2 - Destination longitude
  * @param {'driving'|'walking'|'cycling'} profile - Mapbox routing profile
- * @returns {Promise<{ geometry: GeoJSON.LineString | null, distanceKm: number | null, usedFallback: boolean }>}
+ * @returns {Promise<{ geometry: GeoJSON.LineString | null, distanceKm: number | null, usedFallback: boolean, includesFerry: boolean }>}
  */
 export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driving') => {
   // If Mapbox is not configured, gracefully fall back to Haversine distance.
   if (!MAPBOX_TOKEN) {
     const fallback = calculateDistance(lat1, lon1, lat2, lon2)
-    return { geometry: null, distanceKm: fallback, usedFallback: true }
+    return { geometry: null, distanceKm: fallback, usedFallback: true, includesFerry: false }
   }
 
   // Basic validation
@@ -470,7 +470,7 @@ export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driv
     lat2 == null ||
     lon2 == null
   ) {
-    return { geometry: null, distanceKm: null, usedFallback: true }
+    return { geometry: null, distanceKm: null, usedFallback: true, includesFerry: false }
   }
 
   try {
@@ -490,7 +490,8 @@ export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driv
       return cached
     }
 
-    const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${lon1},${lat1};${lon2},${lat2}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`
+    // Request steps to detect ferry segments in the route
+    const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${lon1},${lat1};${lon2},${lat2}?geometries=geojson&overview=full&steps=true&access_token=${MAPBOX_TOKEN}`
     const response = await fetch(url)
 
     if (!response.ok) {
@@ -503,14 +504,32 @@ export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driv
     if (!route) {
       // No route found – still provide straight-line distance so UI can show something.
       const fallback = calculateDistance(lat1, lon1, lat2, lon2)
-      const result = { geometry: null, distanceKm: fallback, usedFallback: true }
+      const result = { geometry: null, distanceKm: fallback, usedFallback: true, includesFerry: false }
       return result
+    }
+
+    // Check if route includes ferry segments by examining step modes
+    let includesFerry = false
+    if (route.legs) {
+      for (const leg of route.legs) {
+        if (leg.steps) {
+          for (const step of leg.steps) {
+            // Mapbox uses 'ferry' mode for ferry segments
+            if (step.mode === 'ferry' || step.maneuver?.type === 'ferry') {
+              includesFerry = true
+              break
+            }
+          }
+        }
+        if (includesFerry) break
+      }
     }
 
     const result = {
       geometry: route.geometry || null,
       distanceKm: route.distance != null ? route.distance / 1000 : null,
-      usedFallback: false
+      usedFallback: false,
+      includesFerry
     }
 
     // Cache for several days – routes rarely change.
@@ -520,7 +539,7 @@ export const getRouteDirections = async (lat1, lon1, lat2, lon2, profile = 'driv
   } catch (error) {
     console.error('Error fetching route directions from Mapbox:', error)
     const fallback = calculateDistance(lat1, lon1, lat2, lon2)
-    return { geometry: null, distanceKm: fallback, usedFallback: true }
+    return { geometry: null, distanceKm: fallback, usedFallback: true, includesFerry: false }
   }
 }
 

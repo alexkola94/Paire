@@ -23,7 +23,7 @@ import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import CitySelectionMap from './CitySelectionMap'
 import MultiCityDistanceSummary from './MultiCityDistanceSummary'
 import { getRouteDirections, calculateDistance } from '../services/discoveryService'
-import { getTransportSuggestions, TRANSPORT_MODES } from '../utils/transportSuggestion'
+import { getTransportSuggestions, getBestTransportModes, TRANSPORT_MODES } from '../utils/transportSuggestion'
 import DatePicker from './DatePicker'
 import DateRangePicker from './DateRangePicker'
 import '../styles/TripSetupWizard.css'
@@ -156,43 +156,61 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     loadCities()
   }, [trip?.id])
 
-  // Handle city addition
+  // Handle city addition with smart transport mode detection
+  // Uses Mapbox Directions API to detect water crossings and suggest appropriate transport
   const handleCityAdd = async (city) => {
-    // Determine the "from" location for this new leg
+    // Determine the "from" location for this new leg (previous city or home)
     const prevLocation = cities.length > 0 ? cities[cities.length - 1] : homeLocation
 
-    // Default mode is null (which usually implies 'driving'), but we can infer smart default.
+    // Default mode: use provided transportMode or detect smart default
     let initialMode = city.transportMode || null
 
-    if (!initialMode && prevLocation && prevLocation.latitude && prevLocation.longitude) {
-      // Inference check
-      const dist = getDistanceKm(prevLocation, city)
-      if (dist != null) {
-        // Smart Transport Logic: Check for islands/water
-        const suggestions = getTransportSuggestions({
-          distanceKm: dist,
+    // Smart Transport Detection: Use async API to check for water crossings
+    if (!initialMode && prevLocation && prevLocation.latitude && prevLocation.longitude &&
+        city.latitude && city.longitude) {
+      try {
+        // Use getBestTransportModes which checks Mapbox for route availability
+        // This detects water crossings (no land route) and suggests ferry/flight accordingly
+        const suggestions = await getBestTransportModes({
           fromCity: prevLocation,
-          toCity: city
+          toCity: city,
+          distanceKm: getDistanceKm(prevLocation, city)
         })
-        // Use the top suggestion (e.g., flight for long distance, train for regional)
-        if (suggestions.length > 0) {
+
+        // Use the top suggestion based on distance + water crossing detection
+        // e.g., flight for >500km, ferry for water crossings <300km, train for regional
+        if (suggestions && suggestions.length > 0) {
           initialMode = suggestions[0]
+        }
+      } catch (err) {
+        // Fallback to synchronous heuristic if async detection fails
+        console.warn('Smart transport detection failed, using fallback:', err.message)
+        const dist = getDistanceKm(prevLocation, city)
+        if (dist != null) {
+          const fallbackSuggestions = getTransportSuggestions({
+            distanceKm: dist,
+            fromCity: prevLocation,
+            toCity: city,
+            routeAvailable: undefined // Unknown, use keyword detection only
+          })
+          if (fallbackSuggestions.length > 0) {
+            initialMode = fallbackSuggestions[0]
+          }
         }
       }
     }
 
-
-
+    // Create new city with detected transport mode
     const newCity = {
       ...city,
       id: `temp-${Date.now()}`,
       order: cities.length,
-      // Keep transport explicit on the incoming leg for this city.
+      // Keep transport explicit on the incoming leg for this city
       transportMode: initialMode
     }
     setCities([...cities, newCity])
 
-    // Fetch and show advisory if country is available
+    // Fetch and show travel advisory if country is available
     if (newCity.country) {
       try {
         const advisory = await getAdvisory(newCity.country)
@@ -320,18 +338,34 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     })
   }, [])
 
-  // Load advisories whenever the ordered list of city countries changes.
+  // Create a stable country signature that only changes when the set of countries changes
+  // This prevents unnecessary advisory fetches when only dates or transport modes change
+  const countrySignature = useMemo(() => {
+    if (!cities || cities.length === 0) {
+      return ''
+    }
+
+    // Extract unique countries, sort for stability, and join into a signature string
+    const uniqueCountries = [...new Set(
+      cities
+        .map(city => city.country)
+        .filter(Boolean)
+    )].sort().join(',')
+
+    return uniqueCountries
+  }, [cities])
+
+  // Load advisories only when the set of countries actually changes (not on date/transport changes)
   useEffect(() => {
     const loadAdvisories = async () => {
-      if (!cities || cities.length === 0) {
+      // Early return if no countries
+      if (!countrySignature || countrySignature.length === 0) {
         setCityAdvisories({})
         return
       }
 
-      // Collect country names/codes from cities, keeping it simple.
-      const countryCodes = cities
-        .map(city => city.country)
-        .filter(Boolean)
+      // Extract country codes from the signature (split the sorted, unique list)
+      const countryCodes = countrySignature.split(',').filter(Boolean)
 
       if (countryCodes.length === 0) {
         setCityAdvisories({})
@@ -354,8 +388,10 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     }
 
     loadAdvisories()
-    // We deliberately only depend on cities so the effect runs when user edits route.
-  }, [cities])
+    // Only run when countrySignature changes (i.e., when countries are added/removed/changed)
+    // This prevents unnecessary API calls when only dates or transport modes are updated
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countrySignature])
 
   // Calculate home-to-first and last-to-home distances when homeLocation or cities change
   useEffect(() => {

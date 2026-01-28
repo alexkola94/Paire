@@ -408,28 +408,38 @@
    Discovery Mode - Light Mode
    ================================ */
 
-.travel-layout:not([data-theme='dark']) .discovery-search-input-wrapper {
-    background: rgba(255, 253, 250, 0.95);
-    border: 1px solid rgba(232, 145, 58, 0.15);
-    box-shadow: 0 4px 20px rgba(180, 120, 60, 0.1);
-}
-
+/* Discovery search – no around styling; input-only styling for light theme */
 .travel-layout:not([data-theme='dark']) .discovery-search-input-wrapper.focused {
-    border-color: #e8913a;
-    box-shadow: 0 4px 20px rgba(180, 120, 60, 0.1),
-        0 0 0 3px rgba(232, 145, 58, 0.15);
+    /* No wrapper box; focus ring lives on input */
 }
 
 .travel-layout:not([data-theme='dark']) .discovery-search-input {
-    color: #3d3530;
+    color: #0F071A;
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(148, 163, 184, 0.4);
 }
 
 .travel-layout:not([data-theme='dark']) .discovery-search-input::placeholder {
-    color: #9a9088;
+    color: #64748b;
+}
+
+.travel-layout:not([data-theme='dark']) .discovery-search-input:focus {
+    background: #fff;
+    border-color: #8B5CF6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
 }
 
 .travel-layout:not([data-theme='dark']) .discovery-search-input-wrapper .search-icon {
-    color: #9a9088;
+    color: #64748b;
+}
+
+.travel-layout:not([data-theme='dark']) .search-clear-btn {
+    color: #64748b;
+}
+
+.travel-layout:not([data-theme='dark']) .search-clear-btn:hover {
+    color: #0F071A;
+    background: rgba(15, 7, 26, 0.06);
 }
 
 .travel-layout:not([data-theme='dark']) .discovery-category-chip {

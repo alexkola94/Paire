@@ -21,21 +21,92 @@
   /* Let clicks pass through container */
 }
 
-/* Search Input Wrapper */
+/* Search Input Wrapper – minimal container, no outer pill/around styling */
 .discovery-search-input-wrapper {
   position: relative;
   width: 100%;
   display: flex;
   align-items: center;
-  background: rgba(15, 7, 26, 0.9);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 28px;
-  padding: 0 16px;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  transition: all 0.3s ease-in-out;
   pointer-events: auto;
-  /* Re-enable clicks */
+  box-shadow: none;
+}
+
+/* Search icon – visible, theme-aware */
+.discovery-search-input-wrapper .search-icon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.3s ease-in-out;
+}
+
+/* Search input – styling lives on the input only (no wrapper “around” box) */
+.discovery-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.discovery-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.discovery-search-input:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+}
+
+/* Clear button and loading – keep aligned in minimal wrapper */
+.search-clear-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.3s ease-in-out;
+}
+
+.search-clear-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.search-loading {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--primary, #8B5CF6);
+  border-radius: 50%;
+  animation: discovery-search-spin 0.8s linear infinite;
+}
+
+@keyframes discovery-search-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Compact advisory hint under the search bar – surfaces country-level smart data */
@@ -75,17 +146,16 @@
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
 }
 
-/* Light theme: clean input pill over map */
+/* Light theme: wrapper stays minimal (no around styling) */
 .travel-layout:not([data-theme='dark']) .discovery-search-input-wrapper {
-  background: #ffffff;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 /* ... existing styles ... */
 
-/* Category Chips */
+/* Category Chips – centered to match search bar */
 .discovery-category-chips {
   display: flex;
   flex-wrap: wrap;
@@ -95,10 +165,10 @@
   gap: 8px;
   pointer-events: auto;
   /* Re-enable clicks */
-  margin-left: -4px;
-  /* Offset padding */
-  width: calc(100% + 8px);
-  /* Account for padding */
+  justify-content: center;
+  /* Center chips horizontally to align with search bar */
+  width: 100%;
+  /* Match search bar width */
 }
 
 .discovery-category-chip {
@@ -173,13 +243,10 @@
     max-width: 450px;
   }
 
-  .discovery-search-input-wrapper {
-    border-radius: 32px;
-  }
-
   .discovery-search-input {
-    height: 52px;
+    height: 48px;
     font-size: 1rem;
+    padding: 0 16px;
   }
 
   .discovery-category-chip {
@@ -275,8 +342,8 @@
     display: none;
     flex-wrap: wrap;
     flex-direction: row;
-    justify-content: flex-start;
-    /* Removed background/border as requested */
+    justify-content: center;
+    /* Center chips to match search bar alignment */
     background: transparent;
     padding: 0;
     margin-top: 0.5rem;
