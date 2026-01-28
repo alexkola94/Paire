@@ -722,7 +722,8 @@
 
 @media (max-width: 767px) {
   .layout-main {
-    padding-bottom: calc(62px + env(safe-area-inset-bottom));
+    /* Match bottom nav height: 60px + capped safe-area (max 14px) */
+    padding-bottom: calc(60px + max(6px, min(14px, env(safe-area-inset-bottom, 0px))));
   }
 }
 

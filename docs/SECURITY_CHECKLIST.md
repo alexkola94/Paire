@@ -213,6 +213,7 @@ The site uses a strict CSP set in `vercel.json` (and `frontend/vercel.json`):
 - **style-src:** `'self' 'unsafe-inline'` — kept because the app uses React inline styles (`style={{}}`). Removing it would require moving styles to classes or using nonces.
 - **base-uri 'self'; form-action 'self'; object-src 'none'** — added to limit where content and forms can target and to disable plugins.
 - **frame-src 'self' https: blob:** — allows receipt/PDF viewers (Income, Expenses, Receipts) to load attachment URLs in iframes when they are https (e.g. Supabase storage) or blob URLs.
+- **worker-src 'self' blob:** — allows Mapbox GL JS to create Web Workers from blob URLs (required for Travel maps).
 
 If you add third-party scripts (e.g. analytics) that inject inline script, either:
 - Host the script on your domain and allow it via `script-src 'self'`, or
@@ -238,6 +239,9 @@ To remove `'unsafe-inline'` from **style-src** later: use only external styleshe
 - **Backend Permissions-Policy:** `SecureHeadersMiddleware.cs` uses `geolocation=(self)` so it matches the frontend; Travel app geolocation works when the API is involved.
 - **Travel app – SerpApi hotels:** `frontend/src/travel/services/discoveryService.js` uses `getBackendUrl()` for the SerpApi hotels proxy (no hardcoded `localhost:5038`), so hotel search works in production.
 - **CSP frame-src:** `frame-src 'self' https: blob:;` is set in `vercel.json` / `frontend/vercel.json` so receipt and PDF iframes (Income, Expenses, Receipts) can load https or blob attachment URLs.
+- **Permissions-Policy geolocation:** Explicit origins `(self "https://thepaire.org" "https://www.thepaire.org")` so geolocation works on both bare and www in production.
+- **CSP worker-src:** `worker-src 'self' blob:;` so Mapbox GL can create workers from blob URLs (fixes "Creating a worker from 'blob:...' violates CSP" in Travel maps).
+- **401 in production (Travel / trips API):** If `/api/travel/trips` returns 401, the backend is rejecting the token (expired or invalid). User should log in again. Ensure backend `JwtSettings:Issuer` and `JwtSettings:Audience` (e.g. in Render env) match what the auth provider issues; token must be sent as `Authorization: Bearer <token>` and CORS must allow the frontend origin with credentials.
 - **Optional:** Backend CSP in `SecureHeadersMiddleware` still allows `'unsafe-inline'` / `'unsafe-eval'` for rare cases; the SPA’s CSP comes from Vercel. If Mapbox 404s persist for other styles (`satellite-streets-v12`, `outdoors-v12`), consider switching to Mapbox’s current alternatives in `frontend/src/travel/utils/travelConstants.js`.
 
 ---

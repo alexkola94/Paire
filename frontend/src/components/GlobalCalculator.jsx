@@ -361,13 +361,17 @@ function GlobalCalculator() {
                                 </button>
                             </div>
                             
-                            {/* Display */}
+                            {/* Display: expression + result row (always visible on mobile PWA) */}
                             <div className="calculator-display">
                                 <div className="calculator-expression">
                                     {formatDisplay(displayValue)}
                                 </div>
-                                <div className="calculator-result">
-                                    {formatResult(result)}
+                                <div
+                                    className="calculator-result"
+                                    data-has-result={result != null}
+                                    aria-live="polite"
+                                >
+                                    {formatResult(result) || '\u00A0'}
                                 </div>
                             </div>
                             

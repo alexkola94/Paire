@@ -260,17 +260,32 @@
     font-size: 1rem;
     font-weight: 600;
     color: var(--primary);
-    margin-top: var(--spacing-xs, 4px);
+    margin-top: var(--spacing-sm, 8px);
+    padding-top: var(--spacing-xs, 4px);
     min-height: 1.75rem;
     line-height: 1.5;
     opacity: 1;
     visibility: visible;
-    /* Prevent collapse when empty so layout is stable */
     display: block;
+    /* Explicit fallback for iOS PWA where CSS vars can misbehave */
+    border-top: 1px solid rgba(139, 92, 246, 0.25);
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* When result exists, ensure high contrast */
+.calculator-result[data-has-result="true"] {
+    color: var(--primary);
+    color: #8B5CF6;
 }
 
 [data-theme='dark'] .calculator-result {
     color: var(--primary-light);
+    border-top-color: rgba(167, 139, 250, 0.3);
+}
+
+[data-theme='dark'] .calculator-result[data-has-result="true"] {
+    color: #A78BFA;
 }
 
 /* ===== Keypad ===== */
@@ -399,18 +414,21 @@
 @media (max-width: 639px) {
     .calculator-display {
         min-height: 5.5rem;
+        -webkit-flex-shrink: 0;
+        flex-shrink: 0;
     }
     .calculator-result {
-        font-size: 1.125rem;
+        font-size: 1.25rem;
         min-height: 2rem;
         -webkit-font-smoothing: antialiased;
+        color: #8B5CF6 !important;
     }
-    /* Use dynamic viewport on iOS when supported so 70vh is accurate */
-    /* Reserve space above safe area so result is visible in PWA/standalone */
+    [data-theme='dark'] .calculator-result {
+        color: #A78BFA !important;
+    }
     .calculator-panel {
         max-height: 70dvh;
         max-height: calc(70vh - env(safe-area-inset-bottom, 0px));
-        padding-bottom: env(safe-area-inset-bottom);
     }
 }
 
