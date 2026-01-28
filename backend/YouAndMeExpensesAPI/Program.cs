@@ -150,16 +150,13 @@ builder.Services.AddCors(options =>
         }
         else
         {
-            // In production, only allow configured origins
-            if (corsOrigins.Length > 0)
+            // In production: never use AllowAnyOrigin() (sends * = very lax, only for public CDNs).
+            // Use explicit origins only; if CORS_ORIGINS is missing, fall back to app domains.
+            if (corsOrigins.Length == 0)
             {
-                policy.WithOrigins(corsOrigins);
+                corsOrigins = new[] { "https://thepaire.org", "https://www.thepaire.org" };
             }
-            else
-            {
-                // If no origins configured, allow all (not recommended for production, but better than blocking everything)
-                policy.AllowAnyOrigin();
-            }
+            policy.WithOrigins(corsOrigins);
         }
 
         policy.AllowAnyMethod()

@@ -205,6 +205,33 @@ Supabase:
 
 ---
 
+## 📋 Content-Security-Policy (CSP) & Headers
+
+The site uses a strict CSP set in `vercel.json` (and `frontend/vercel.json`):
+
+- **script-src:** `'self'` only — no `'unsafe-inline'` to reduce XSS risk. Vite builds external scripts only.
+- **style-src:** `'self' 'unsafe-inline'` — kept because the app uses React inline styles (`style={{}}`). Removing it would require moving styles to classes or using nonces.
+- **base-uri 'self'; form-action 'self'; object-src 'none'** — added to limit where content and forms can target and to disable plugins.
+
+If you add third-party scripts (e.g. analytics) that inject inline script, either:
+- Host the script on your domain and allow it via `script-src 'self'`, or
+- Add the provider’s domain explicitly (e.g. `script-src 'self' https://www.googletagmanager.com`) and avoid inline snippets where possible.
+
+To remove `'unsafe-inline'` from **style-src** later: use only external stylesheets and/or CSS modules, or implement nonce-based inline styles (requires server-side nonce generation).
+
+---
+
+## 🌐 CORS (Access-Control-Allow-Origin)
+
+**“Very lax CORS policy” / `Access-Control-Allow-Origin: *`**
+
+- **Cause:** The API was using `AllowAnyOrigin()` in production when `CORS_ORIGINS` was empty, which sends `Access-Control-Allow-Origin: *` and is only appropriate for public CDNs, not for an API with auth/sensitive data.
+- **Fix (backend):** Production **never** uses `AllowAnyOrigin()`. If `CORS_ORIGINS` is not set, the API falls back to `https://thepaire.org` and `https://www.thepaire.org` only.
+- **Action:** Set `CORS_ORIGINS` in your API host (e.g. Render) to your real frontend origins, e.g. `https://thepaire.org,https://www.thepaire.org`, so CORS is explicit and credentials work. Redeploy the API after changing it.
+- If the scanner was run against the **frontend** (thepaire.org) and it still reports lax CORS, the header may be coming from the host (e.g. Vercel). In that case, restrict CORS in the host config to your domain(s) only, not `*`.
+
+---
+
 ## 🚨 Incident Response Plan
 
 ### If Your Database is Compromised:
