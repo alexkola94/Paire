@@ -348,12 +348,15 @@ export const DISCOVERY_POI_CATEGORIES = [
 ]
 
 // Mapbox map style options
+// streets-v12 = default Mapbox Streets (native full color); light-v11 = muted light
 export const MAP_STYLES = {
   muted: 'mapbox://styles/mapbox/dark-v11',
-  detailed: 'mapbox://styles/mapbox/streets-v12',
+  detailed: 'mapbox://styles/mapbox/light-v11',
+  /** Native Mapbox Streets – full-color default style for light theme */
+  streets: 'mapbox://styles/mapbox/streets-v12',
   satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
   outdoors: 'mapbox://styles/mapbox/outdoors-v12',
-  midnight: 'mapbox://styles/mapbox/navigation-night-v1',
+  midnight: 'mapbox://styles/mapbox/navigation-guidance-night-v4',
   twilight: 'mapbox://styles/mapbox/dark-v11'
 }
 

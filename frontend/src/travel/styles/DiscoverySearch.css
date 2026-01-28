@@ -193,26 +193,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Light theme chips */
-.travel-layout:not([data-theme='dark']) .discovery-category-chip {
-  background: #f8fafc;
-  border-color: rgba(148, 163, 184, 0.6);
-  color: #0f172a;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
-}
-
-.travel-layout:not([data-theme='dark']) .discovery-category-chip:hover {
-  background: rgba(99, 102, 241, 0.06);
-  border-color: #6366f1;
-  color: #111827;
-}
-
-.travel-layout:not([data-theme='dark']) .discovery-category-chip.active {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  border-color: transparent;
-  color: #ffffff;
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.35);
-}
+/* Light theme chips – overridden by TravelLightTheme.css for warm palette consistency */
 
 .discovery-category-chip:hover {
   background: rgba(var(--chip-color), 0.15);
@@ -268,7 +249,8 @@
 
   .search-loading-spinner {
     animation: none;
-    border-color: var(--primary, #a855f7);
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: var(--primary, #8B5CF6);
   }
 }
 

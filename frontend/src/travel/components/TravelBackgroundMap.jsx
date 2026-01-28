@@ -94,13 +94,8 @@ const TravelBackgroundMap = ({ trip, availableCities = [] }) => {
     // Only render map if token exists
     if (!MAPBOX_TOKEN || !mounted) return null
 
-    // Styles based on theme
-    // Dark: Midnight (Navigation Night)
-    // Light: Detailed (Streets) or Outdoors
-    // Styles based on theme
-    // Dark: Midnight (Navigation Night)
-    // Light: Detailed (Streets) or Outdoors
-    const mapStyle = theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.detailed
+    // Theme-based map style: dark = night style; light = native Mapbox Streets (full color)
+    const mapStyle = theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.streets
 
     const mapContent = (
         <div
@@ -124,14 +119,14 @@ const TravelBackgroundMap = ({ trip, availableCities = [] }) => {
                 interactive={false} // Static background
                 reuseMaps
             />
-            {/* Gradient overlay: subdued map so overlay text stays readable (light/dark) */}
+            {/* Overlay: dark theme = tint for readability; light theme = transparent so map shows native colors */}
             <div
                 style={{
                     position: 'absolute',
                     inset: 0,
                     background: theme === 'dark'
                         ? 'linear-gradient(to bottom, rgba(15, 23, 42, 0.28), rgba(15, 23, 42, 0.55))'
-                        : 'linear-gradient(to bottom, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.38))',
+                        : 'transparent',
                     pointerEvents: 'none'
                 }}
             />

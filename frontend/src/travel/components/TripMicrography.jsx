@@ -237,7 +237,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
               key={trip?.id}
               ref={mapRef}
               mapboxAccessToken={MAPBOX_TOKEN}
-              mapStyle={theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.detailed}
+              mapStyle={theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.streets}
               style={{ width: '100%', height: '100%' }}
               minZoom={DISCOVERY_MAP_CONFIG.minZoom}
               maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}
@@ -263,7 +263,7 @@ const TripMicrography = ({ trip, onNavigate }) => {
                     id="route-line"
                     type="line"
                     paint={{
-                      'line-color': theme === 'dark' ? '#A78BFA' : '#8B5CF6', // Brighter purple (Violet-400) for dark mode contrast
+                      'line-color': theme === 'dark' ? '#A78BFA' : '#e8913a', // Dark: purple; Light: travel warm orange
                       'line-width': 3,
                       'line-opacity': 0.8
                     }}

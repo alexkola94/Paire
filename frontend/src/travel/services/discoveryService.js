@@ -1,3 +1,4 @@
+import { getBackendUrl } from '../../utils/getBackendUrl'
 import { getCached, setCached } from './travelDb'
 import { DISCOVERY_POI_CATEGORIES, CACHE_TTL, DISCOVERY_MAP_CONFIG } from '../utils/travelConstants'
 
@@ -755,8 +756,8 @@ const fetchHotelsFromSerpApi = async (lat, lon, limit = 20) => {
       check_out_date: checkOut
     })
 
-    // Use local backend proxy
-    const response = await fetch(`http://localhost:5038/api/SerpApi/hotels?${params}`)
+    // Use backend proxy (same origin as other travel API calls; works in dev and production)
+    const response = await fetch(`${getBackendUrl()}/api/SerpApi/hotels?${params}`)
 
     if (!response.ok) {
       throw new Error(`SerpApi error: ${response.status}`)

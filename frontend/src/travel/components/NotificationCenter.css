@@ -357,11 +357,15 @@
     z-index: 9999 !important;
     background: rgba(30, 30, 40, 0.98);
     overflow: hidden;
+    /* Smooth transitions for theme changes */
+    transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   }
 
   .notification-mobile-backdrop {
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    /* Smooth transition for backdrop */
+    transition: background 0.3s ease;
   }
 
   /* Ensure content is scrollable on mobile */
@@ -375,20 +379,173 @@
   .notification-center.mobile-portal .action-btn {
     width: 40px;
     height: 40px;
+    transition: all 0.2s ease;
   }
 
   .notification-center.mobile-portal .item-action-btn {
     width: 36px;
     height: 36px;
+    transition: all 0.2s ease;
   }
 
   /* Always show notification actions on mobile (no hover) */
   .notification-center.mobile-portal .notification-actions {
     opacity: 1;
   }
+  
+  /* Mobile header with drag handle visual */
+  .notification-center.mobile-portal .notification-center-header {
+    padding-top: 1.25rem;
+    position: relative;
+  }
+  
+  .notification-center.mobile-portal .notification-center-header::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    transition: background 0.3s ease;
+  }
 }
 
-/* Light mode for mobile portal */
-.travel-layout:not([data-theme='dark']) .notification-center.mobile-portal {
-  background: rgba(255, 253, 250, 0.98);
+/* ================================
+   Light Mode - Mobile Portal (via data-theme attribute)
+   Portal is rendered outside .travel-layout, so we use
+   the data-theme attribute on the portal root wrapper
+   ================================ */
+
+/* Portal root base styles */
+.notification-portal-root {
+  position: relative;
+  z-index: 9998;
+}
+
+/* Mobile backdrop - Base dark mode */
+.notification-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: background 0.3s ease;
+}
+
+/* Light mode styles for mobile portal */
+.notification-portal-root[data-theme="light"] .notification-center.mobile-portal {
+  background: rgba(255, 253, 250, 0.98) !important;
+  border: 1px solid rgba(232, 145, 58, 0.15);
+  border-bottom: none;
+  box-shadow: 0 -10px 40px rgba(180, 120, 60, 0.15) !important;
+}
+
+.notification-portal-root[data-theme="light"] .notification-center-header {
+  background: rgba(255, 253, 250, 0.95);
+  border-bottom-color: rgba(232, 145, 58, 0.1);
+}
+
+.notification-portal-root[data-theme="light"] .header-title h3 {
+  color: #3d3530;
+}
+
+.notification-portal-root[data-theme="light"] .header-title svg {
+  color: #e8913a;
+}
+
+.notification-portal-root[data-theme="light"] .action-btn {
+  color: #9a9088;
+}
+
+.notification-portal-root[data-theme="light"] .action-btn:hover {
+  background: rgba(232, 145, 58, 0.1);
+  color: #6b6058;
+}
+
+.notification-portal-root[data-theme="light"] .close-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.notification-portal-root[data-theme="light"] .loading-state,
+.notification-portal-root[data-theme="light"] .empty-state {
+  color: #9a9088;
+}
+
+.notification-portal-root[data-theme="light"] .empty-icon {
+  color: #e8913a;
+}
+
+.notification-portal-root[data-theme="light"] .empty-state p {
+  color: #6b6058;
+}
+
+.notification-portal-root[data-theme="light"] .loading-spinner-small {
+  border-color: rgba(232, 145, 58, 0.2);
+  border-top-color: #e8913a;
+}
+
+.notification-portal-root[data-theme="light"] .notification-item {
+  border-left-color: transparent;
+}
+
+.notification-portal-root[data-theme="light"] .notification-item:hover {
+  background: rgba(232, 145, 58, 0.05);
+}
+
+.notification-portal-root[data-theme="light"] .notification-item.unread {
+  background: rgba(232, 145, 58, 0.08);
+  border-left-color: #e8913a;
+}
+
+.notification-portal-root[data-theme="light"] .notification-item.unread:hover {
+  background: rgba(232, 145, 58, 0.12);
+}
+
+.notification-portal-root[data-theme="light"] .notification-title {
+  color: #3d3530;
+}
+
+.notification-portal-root[data-theme="light"] .notification-body {
+  color: #6b6058;
+}
+
+.notification-portal-root[data-theme="light"] .notification-time {
+  color: #9a9088;
+}
+
+.notification-portal-root[data-theme="light"] .unread-dot {
+  background: #e8913a;
+}
+
+.notification-portal-root[data-theme="light"] .unread-badge {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+}
+
+.notification-portal-root[data-theme="light"] .item-action-btn {
+  color: #9a9088;
+}
+
+.notification-portal-root[data-theme="light"] .item-action-btn:hover {
+  background: rgba(232, 145, 58, 0.1);
+  color: #6b6058;
+}
+
+.notification-portal-root[data-theme="light"] .item-action-btn.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+/* Light mode backdrop for mobile */
+.notification-portal-root[data-theme="light"] .notification-mobile-backdrop {
+  background: rgba(45, 41, 38, 0.4);
+}
+
+/* Light mode drag handle */
+.notification-portal-root[data-theme="light"] .notification-center-header::before {
+  background: rgba(232, 145, 58, 0.3);
 }

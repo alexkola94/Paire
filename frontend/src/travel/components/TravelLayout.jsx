@@ -8,7 +8,6 @@ import TravelHeader from './TravelHeader'
 import TravelNavigation from './TravelNavigation'
 import OfflineIndicator from './common/OfflineIndicator'
 import usePOIData from '../hooks/usePOIData'
-import useDebounce from '../hooks/useDebounce'
 import { fetchStays, getZoomBasedSettings } from '../services/discoveryService'
 import { FiEye, FiMap, FiX } from 'react-icons/fi'
 import '../styles/TravelLayout.css'
@@ -154,12 +153,8 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
     setMapLoaded(false)
   }, [activeTrip?.id])
 
-  // Debounce map view state to prevent excessive API calls (700ms delay)
-  // This protects the SerpApi limit (250 req/month) while dragging/zooming
-  const debouncedMapViewState = useDebounce(mapViewState, 700)
-
-  // Fetch stays only when accommodation category is selected
-  // Uses debounced map center to save API calls
+  // Fetch stays only when accommodation category is selected (chip activated).
+  // Does NOT refetch on map move — user must turn off Stays, move map, then turn Stays on again to see stays in a new area. Saves API usage (e.g. SerpApi limits).
   // Applies zoom-based filtering: zoomed out = fewer best results, zoomed in = more results
   useEffect(() => {
     const isAccommodationActive = activeCategories.includes('accommodation')
@@ -170,10 +165,10 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
       return
     }
 
-    // Use debounced map view center if available, otherwise fall back to trip location
-    const lat = debouncedMapViewState?.latitude || activeTrip?.latitude
-    const lon = debouncedMapViewState?.longitude || activeTrip?.longitude
-    const zoom = debouncedMapViewState?.zoom || 14
+    // Use current map center at effect run time (when chip is toggled on), fallback to trip location
+    const lat = mapViewState?.latitude ?? activeTrip?.latitude
+    const lon = mapViewState?.longitude ?? activeTrip?.longitude
+    const zoom = mapViewState?.zoom ?? 14
 
     // Get zoom-based settings for limit and min rating
     const { limit, minRating } = getZoomBasedSettings(zoom)
@@ -195,7 +190,7 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
       }
     }
     loadStays()
-  }, [isDiscoveryMode, debouncedMapViewState, activeTrip?.latitude, activeTrip?.longitude, activeCategories])
+  }, [isDiscoveryMode, activeTrip?.latitude, activeTrip?.longitude, activeCategories])
 
   /**
    * Handle stay marker click

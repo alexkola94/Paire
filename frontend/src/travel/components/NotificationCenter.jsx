@@ -4,12 +4,14 @@ import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiBell, FiCheck, FiCheckCircle, FiTrash2, FiSettings, FiX } from 'react-icons/fi'
 import { useNotifications } from '../context/NotificationContext'
+import { useTheme } from '../../context/ThemeContext'
 import { getNotificationIcon, getNotificationPriorityColor } from '../services/notificationService'
 import useIsMobile from '../hooks/useIsMobile'
 import './NotificationCenter.css'
 
 function NotificationCenter({ isOpen, onClose, onOpenSettings }) {
     const { t } = useTranslation()
+    const { theme } = useTheme()
     const isMobile = useIsMobile()
 
     const {
@@ -92,9 +94,8 @@ function NotificationCenter({ isOpen, onClose, onOpenSettings }) {
                 borderRadius: '20px 20px 0 0',
                 margin: 0,
                 zIndex: 9999,
-                background: 'var(--modal-bg, #1e1e28)',
-                boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.3)',
                 overflow: 'hidden'
+                // Background and shadow controlled via CSS for theme support
             } : {}}
         >
             {/* ... header ... */}
@@ -205,30 +206,30 @@ function NotificationCenter({ isOpen, onClose, onOpenSettings }) {
     )
 
     // For mobile, render portal with AnimatePresence inside
+    // Wrap with data-theme for proper theme styling in portal
     if (isMobile) {
         return createPortal(
-            <AnimatePresence>
-                {isOpen && (
-                    <>
-                        <motion.div
-                            key="notification-backdrop"
-                            className="notification-mobile-backdrop"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={onClose}
-                            style={{
-                                position: 'fixed',
-                                inset: 0,
-                                background: 'rgba(0,0,0,0.5)',
-                                zIndex: 9998,
-                                backdropFilter: 'blur(4px)'
-                            }}
-                        />
-                        {panelContent}
-                    </>
-                )}
-            </AnimatePresence>,
+            <div 
+                className="notification-portal-root" 
+                data-theme={theme}
+                style={{ isolation: 'isolate' }}
+            >
+                <AnimatePresence>
+                    {isOpen && (
+                        <>
+                            <motion.div
+                                key="notification-backdrop"
+                                className="notification-mobile-backdrop"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={onClose}
+                            />
+                            {panelContent}
+                        </>
+                    )}
+                </AnimatePresence>
+            </div>,
             document.body
         )
     }

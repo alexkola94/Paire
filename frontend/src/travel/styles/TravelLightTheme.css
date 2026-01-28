@@ -90,14 +90,11 @@
 
 /* ================================
    Map Overlay - Light Mode
+   Native Mapbox colors: no tint so background/static map shows full color
    ================================ */
 
 .travel-layout:not([data-theme='dark']) .map-bg-overlay {
-    background: linear-gradient(180deg,
-            rgba(250, 248, 245, 0.85) 0%,
-            rgba(250, 248, 245, 0.3) 30%,
-            rgba(250, 248, 245, 0.2) 70%,
-            rgba(250, 248, 245, 0.7) 100%);
+    background: transparent;
 }
 
 /* ================================
@@ -429,23 +426,37 @@
     box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
 }
 
+/* Search icon – warm neutral to match light theme (avoid cold or error-like tones) */
 .travel-layout:not([data-theme='dark']) .discovery-search-input-wrapper .search-icon {
-    color: #64748b;
+    color: #6b6058;
+    transition: color 0.3s ease-in-out;
 }
 
 .travel-layout:not([data-theme='dark']) .search-clear-btn {
-    color: #64748b;
+    color: #6b6058;
+    transition: color 0.3s ease-in-out;
 }
 
 .travel-layout:not([data-theme='dark']) .search-clear-btn:hover {
-    color: #0F071A;
+    color: #3d3530;
     background: rgba(15, 7, 26, 0.06);
+    transition: all 0.3s ease-in-out;
 }
 
+/* Search loading spinner – light theme warm accent (no purple/cold) */
+.travel-layout:not([data-theme='dark']) .search-loading-spinner {
+    border-color: rgba(15, 7, 26, 0.12);
+    border-top-color: #e8913a;
+    transition: border-color 0.3s ease-in-out;
+}
+
+/* Discovery chips – warm off-white and soft tints to match light theme */
 .travel-layout:not([data-theme='dark']) .discovery-category-chip {
-    background: rgba(255, 253, 250, 0.9);
-    border: 1px solid rgba(232, 145, 58, 0.15);
+    background: rgba(255, 253, 250, 0.95);
+    border: 1px solid rgba(232, 145, 58, 0.2);
     color: #6b6058;
+    box-shadow: 0 2px 12px rgba(180, 120, 60, 0.06);
+    transition: all 0.3s ease-in-out;
 }
 
 .travel-layout:not([data-theme='dark']) .discovery-category-chip:hover {

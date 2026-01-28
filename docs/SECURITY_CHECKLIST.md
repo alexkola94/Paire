@@ -212,6 +212,7 @@ The site uses a strict CSP set in `vercel.json` (and `frontend/vercel.json`):
 - **script-src:** `'self'` only — no `'unsafe-inline'` to reduce XSS risk. Vite builds external scripts only.
 - **style-src:** `'self' 'unsafe-inline'` — kept because the app uses React inline styles (`style={{}}`). Removing it would require moving styles to classes or using nonces.
 - **base-uri 'self'; form-action 'self'; object-src 'none'** — added to limit where content and forms can target and to disable plugins.
+- **frame-src 'self' https: blob:** — allows receipt/PDF viewers (Income, Expenses, Receipts) to load attachment URLs in iframes when they are https (e.g. Supabase storage) or blob URLs.
 
 If you add third-party scripts (e.g. analytics) that inject inline script, either:
 - Host the script on your domain and allow it via `script-src 'self'`, or
@@ -229,6 +230,15 @@ To remove `'unsafe-inline'` from **style-src** later: use only external styleshe
 - **Fix (backend):** Production **never** uses `AllowAnyOrigin()`. If `CORS_ORIGINS` is not set, the API falls back to `https://thepaire.org` and `https://www.thepaire.org` only.
 - **Action:** Set `CORS_ORIGINS` in your API host (e.g. Render) to your real frontend origins, e.g. `https://thepaire.org,https://www.thepaire.org`, so CORS is explicit and credentials work. Redeploy the API after changing it.
 - If the scanner was run against the **frontend** (thepaire.org) and it still reports lax CORS, the header may be coming from the host (e.g. Vercel). In that case, restrict CORS in the host config to your domain(s) only, not `*`.
+
+---
+
+## Main and Travel app tending (applied)
+
+- **Backend Permissions-Policy:** `SecureHeadersMiddleware.cs` uses `geolocation=(self)` so it matches the frontend; Travel app geolocation works when the API is involved.
+- **Travel app – SerpApi hotels:** `frontend/src/travel/services/discoveryService.js` uses `getBackendUrl()` for the SerpApi hotels proxy (no hardcoded `localhost:5038`), so hotel search works in production.
+- **CSP frame-src:** `frame-src 'self' https: blob:;` is set in `vercel.json` / `frontend/vercel.json` so receipt and PDF iframes (Income, Expenses, Receipts) can load https or blob attachment URLs.
+- **Optional:** Backend CSP in `SecureHeadersMiddleware` still allows `'unsafe-inline'` / `'unsafe-eval'` for rare cases; the SPA’s CSP comes from Vercel. If Mapbox 404s persist for other styles (`satellite-streets-v12`, `outdoors-v12`), consider switching to Mapbox’s current alternatives in `frontend/src/travel/utils/travelConstants.js`.
 
 ---
 

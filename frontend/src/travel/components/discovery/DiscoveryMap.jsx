@@ -2,7 +2,6 @@ import { memo, useCallback, useRef, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiHome } from 'react-icons/fi'
 import { useTravelMode } from '../../context/TravelModeContext'
-import { useTheme } from '../../../context/ThemeContext'
 import POIMarker from './POIMarker'
 import { MAP_STYLES, DISCOVERY_MAP_CONFIG } from '../../utils/travelConstants'
 import { reverseGeocode } from '../../services/discoveryService'
@@ -387,7 +386,7 @@ const DiscoveryMap = memo(({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         mapboxAccessToken={MAPBOX_TOKEN}
-        mapStyle={MAP_STYLES.detailed}
+        mapStyle={MAP_STYLES.streets}
         style={{ width: '100%', height: '100%' }}
         minZoom={DISCOVERY_MAP_CONFIG.minZoom}
         maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}

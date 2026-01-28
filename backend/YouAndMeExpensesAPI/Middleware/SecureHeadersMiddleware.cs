@@ -40,9 +40,9 @@ namespace YouAndMeExpensesAPI.Middleware
                     "max-age=31536000; includeSubDomains; preload";
             }
 
-            // Permissions Policy (formerly Feature-Policy)
+            // Permissions Policy (formerly Feature-Policy). Align with frontend: allow geolocation for same origin (Travel app).
             context.Response.Headers["Permissions-Policy"] = 
-                "geolocation=(), microphone=(), camera=()";
+                "geolocation=(self), microphone=(), camera=()";
 
             await _next(context);
         }
