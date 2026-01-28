@@ -153,9 +153,8 @@ export const CalculatorProvider = ({ children }) => {
         setJustAdded(true)
         setTimeout(() => setJustAdded(false), 600)
 
-        // Reveal and open calculator to show the added value
+        // Reveal calculator FAB so it shows active state (badge/pulse); do not auto-open panel
         setIsRevealed(true)
-        setIsOpen(true)
     }, [])
     
     /**

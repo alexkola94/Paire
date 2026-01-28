@@ -165,6 +165,7 @@
     left: 0;
     right: 0;
     max-height: 70vh;
+    max-height: calc(70vh - env(safe-area-inset-bottom, 0px));
     background: var(--bg-secondary);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -227,10 +228,17 @@
 }
 
 /* ===== Display ===== */
+/* Prevent display from shrinking on mobile so expression + result are always visible */
 .calculator-display {
+    flex-shrink: 0;
+    min-height: 5rem;
     padding: var(--spacing-lg, 20px);
     background: var(--bg-tertiary, #f5f5f5);
     text-align: right;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: visible;
 }
 
 [data-theme='dark'] .calculator-display {
@@ -247,13 +255,18 @@
     letter-spacing: -0.02em;
 }
 
+/* Result row: always visible on mobile (iPhone PWA fix) */
 .calculator-result {
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--primary);
     margin-top: var(--spacing-xs, 4px);
-    min-height: 1.5rem;
-    opacity: 0.9;
+    min-height: 1.75rem;
+    line-height: 1.5;
+    opacity: 1;
+    visibility: visible;
+    /* Prevent collapse when empty so layout is stable */
+    display: block;
 }
 
 [data-theme='dark'] .calculator-result {
@@ -379,6 +392,24 @@
 
 [data-theme='dark'] .calculator-hint {
     border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+/* ===== Mobile / PWA (iPhone etc.) ===== */
+/* Ensure calculator result is always visible on small viewports */
+@media (max-width: 639px) {
+    .calculator-display {
+        min-height: 5.5rem;
+    }
+    .calculator-result {
+        font-size: 1.125rem;
+        min-height: 2rem;
+        -webkit-font-smoothing: antialiased;
+    }
+    /* Use dynamic viewport on iOS when supported so 70vh is accurate */
+    .calculator-panel {
+        max-height: 70dvh;
+        max-height: calc(70vh - env(safe-area-inset-bottom, 0px));
+    }
 }
 
 /* ===== Desktop Styles ===== */
