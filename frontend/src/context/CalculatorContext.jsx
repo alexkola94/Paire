@@ -153,7 +153,7 @@ export const CalculatorProvider = ({ children }) => {
         setJustAdded(true)
         setTimeout(() => setJustAdded(false), 600)
 
-        // Reveal calculator FAB so it shows active state (badge/pulse); do not auto-open panel
+        // Reveal calculator FAB so it shows active state (badge/pulse); do not auto-open panel (same on desktop and mobile)
         setIsRevealed(true)
     }, [])
     
