@@ -19,8 +19,8 @@
   right: 0;
   bottom: 0;
   min-height: 100vh;
-  background: rgba(255, 255, 255, 0.95);
-  /* High opacity white for clean look */
+  background: var(--bg-primary, #fdfbfd);
+  /* Uses theme background variable with light mode fallback */
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 9999;

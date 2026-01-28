@@ -1387,3 +1387,79 @@
   font-size: 1rem;
   transition: all 0.3s ease;
 }
+
+/* Dark Mode - Save Note Button */
+[data-theme='dark'] .documents-notes-footer .travel-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+  color: #ffffff;
+}
+
+[data-theme='dark'] .documents-notes-footer .travel-btn:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5);
+}
+
+/* Dark Mode - AI Helper Modal */
+[data-theme='dark'] .ai-helper-modal {
+  background: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+[data-theme='dark'] .ai-helper-modal .modal-header {
+  border-bottom-color: rgba(148, 163, 184, 0.25);
+}
+
+[data-theme='dark'] .ai-helper-modal label {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .ai-helper-modal input,
+[data-theme='dark'] .ai-helper-modal textarea {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .ai-helper-modal input:focus,
+[data-theme='dark'] .ai-helper-modal textarea:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+[data-theme='dark'] .ai-helper-modal .modal-footer {
+  border-top-color: rgba(148, 163, 184, 0.25);
+}
+
+[data-theme='dark'] .ai-helper-modal .travel-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+  color: #ffffff;
+}
+
+[data-theme='dark'] .ai-helper-modal .travel-btn:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5);
+}
+
+[data-theme='dark'] .ai-helper-prompt-preview {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .destination-country-chip {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .add-country-btn {
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .add-country-btn:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}

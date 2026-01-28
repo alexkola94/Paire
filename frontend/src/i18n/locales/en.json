@@ -1800,7 +1800,17 @@
         "title": "Trip Saved Successfully!",
         "message": "Your multi-city trip has been saved.",
         "editMore": "Edit More"
-      }
+      },
+      "budget": {
+        "totalBudget": "Total Budget",
+        "currency": "Currency",
+        "budgetName": "Budget Name",
+        "createNew": "Create New",
+        "useExisting": "Use Existing",
+        "selectBudget": "Select a Budget",
+        "noBudgets": "No existing budgets or saving goals found."
+      },
+      "confirmCityDelete": "Are you sure you want to remove {{city}} from your trip?"
     },
     "micrography": {
       "title": "Trip Route",

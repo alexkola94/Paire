@@ -242,3 +242,103 @@
         /* Override framer motion x if needed, usually managed by layout */
     }
 }
+
+/* Dark Mode Theme Overrides */
+[data-theme="dark"] .picker-trigger {
+    background: var(--bg-card, #1e293b);
+    border-color: var(--border-color, #334155);
+}
+
+[data-theme="dark"] .picker-trigger:hover:not(.disabled) {
+    border-color: var(--primary, #a78bfa);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+[data-theme="dark"] .picker-trigger.active {
+    border-color: var(--primary, #a78bfa);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+[data-theme="dark"] .picker-trigger.disabled {
+    background: var(--bg-secondary, #0f172a);
+}
+
+[data-theme="dark"] .picker-icon {
+    color: var(--text-tertiary, #64748b);
+}
+
+[data-theme="dark"] .picker-text {
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-text.placeholder {
+    color: var(--text-tertiary, #64748b);
+}
+
+[data-theme="dark"] .picker-clear {
+    color: var(--text-tertiary, #64748b);
+}
+
+[data-theme="dark"] .picker-clear:hover {
+    background: var(--bg-hover, #334155);
+    color: var(--text-secondary, #94a3b8);
+}
+
+[data-theme="dark"] .picker-dropdown {
+    background: var(--bg-card, #1e293b);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .picker-nav-btn {
+    background: var(--bg-secondary, #0f172a);
+    border-color: var(--border-color, #334155);
+    color: var(--text-secondary, #94a3b8);
+}
+
+[data-theme="dark"] .picker-nav-btn:hover {
+    background: var(--bg-hover, #334155);
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-month-header {
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-weekday {
+    color: var(--text-tertiary, #64748b);
+}
+
+[data-theme="dark"] .picker-day {
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-day:hover:not(.disabled):not(.selected-start):not(.selected-end) {
+    background: var(--bg-hover, #334155);
+}
+
+[data-theme="dark"] .picker-day.disabled {
+    color: var(--text-disabled, #475569);
+}
+
+[data-theme="dark"] .picker-day.today {
+    color: var(--primary, #a78bfa);
+}
+
+[data-theme="dark"] .picker-day.selected-start,
+[data-theme="dark"] .picker-day.selected-end {
+    background: var(--primary, #8B5CF6);
+    color: white;
+}
+
+[data-theme="dark"] .picker-day.in-range {
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="dark"] .picker-footer {
+    border-top-color: var(--border-color, #334155);
+}
+
+[data-theme="dark"] .picker-hint {
+    color: var(--text-secondary, #94a3b8);
+}

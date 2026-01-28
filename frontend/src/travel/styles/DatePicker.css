@@ -145,6 +145,12 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+[data-theme='dark'] .date-picker-icon {
+  color: #a78bfa;
+  /* Light violet for dark mode */
+  opacity: 0.9;
+}
+
 [data-theme='dark'] .date-picker-container:hover:not(.disabled) {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(139, 92, 246, 0.4);

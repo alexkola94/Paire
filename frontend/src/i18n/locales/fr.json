@@ -613,7 +613,17 @@
         "title": "Voyage Enregistré avec Succès !",
         "message": "Votre voyage multi-villes a été enregistré.",
         "editMore": "Modifier Plus"
-      }
+      },
+      "budget": {
+        "totalBudget": "Budget Total",
+        "currency": "Devise",
+        "budgetName": "Nom du Budget",
+        "createNew": "Créer Nouveau",
+        "useExisting": "Utiliser Existant",
+        "selectBudget": "Sélectionner un Budget",
+        "noBudgets": "Aucun budget ou objectif d'épargne existant trouvé."
+      },
+      "confirmCityDelete": "Êtes-vous sûr de vouloir supprimer {{city}} de votre voyage ?"
     },
     "micrography": {
       "title": "Itinéraire du Voyage",

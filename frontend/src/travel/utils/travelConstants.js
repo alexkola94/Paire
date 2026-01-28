@@ -353,7 +353,7 @@ export const MAP_STYLES = {
   detailed: 'mapbox://styles/mapbox/streets-v12',
   satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
   outdoors: 'mapbox://styles/mapbox/outdoors-v12',
-  midnight: 'mapbox://styles/mapbox/dark-v11',
+  midnight: 'mapbox://styles/mapbox/navigation-night-v1',
   twilight: 'mapbox://styles/mapbox/dark-v11'
 }
 

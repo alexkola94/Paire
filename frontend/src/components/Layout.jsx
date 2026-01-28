@@ -63,6 +63,7 @@ const Chatbot = lazy(() => import('./Chatbot'))
 import BottomNavigation from './BottomNavigation'
 import AccessibilitySettings from './AccessibilitySettings'
 import BankStatementImport from './BankStatementImport'
+import CurrencyCalculatorPopover from './CurrencyCalculatorPopover'
 import './Layout.css'
 import packageJson from '../../package.json'
 
@@ -85,6 +86,7 @@ function Layout() {
 
   const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false)
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [isCurrencyPopoverOpen, setIsCurrencyPopoverOpen] = useState(false)
   const moreMenuRef = useRef(null)
   const userMenuRef = useRef(null)
   const importModalRef = useRef(null)
@@ -308,16 +310,9 @@ function Layout() {
               <FiUpload size={22} />
             </span>
 
-            {/* Currency Calculator - desktop only (Quick Tools) - New Icon */}
-            <span
-              className="header-icon-btn desktop-only"
-              onClick={() => handleNavigation('/currency-calculator')}
-              aria-label={t('navigation.currencyCalculator')}
-              title={t('navigation.currencyCalculator')}
-              role="button"
-              tabIndex={0}
-            >
-              <FiCpu size={22} />
+            {/* Currency Calculator Popover - desktop only (Quick Tools) */}
+            <span className="desktop-only" style={{ display: 'flex' }}>
+              <CurrencyCalculatorPopover />
             </span>
 
             {/* Notifications bell - desktop only */}
@@ -543,16 +538,16 @@ function Layout() {
 
           {/* Mobile-only account items */}
           <li className="mobile-only">
-            <NavLink
-              to="/currency-calculator"
-              className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }
-              onClick={closeMobileMenu}
+            <button
+              className="nav-link"
+              onClick={() => {
+                setIsCurrencyPopoverOpen(true)
+                closeMobileMenu()
+              }}
             >
               <FiCpu style={{ width: '20px', height: '20px' }} className="nav-icon" />
               <span className="nav-label">{t('navigation.currencyCalculator')}</span>
-            </NavLink>
+            </button>
           </li>
           <li className="mobile-only">
             <button
@@ -698,6 +693,13 @@ function Layout() {
       <AccessibilitySettings
         isOpen={isAccessibilityOpen}
         onClose={() => setIsAccessibilityOpen(false)}
+      />
+
+      {/* Currency Calculator Popover (Mobile) */}
+      <CurrencyCalculatorPopover
+        isOpen={isCurrencyPopoverOpen}
+        onClose={() => setIsCurrencyPopoverOpen(false)}
+        showTrigger={false}
       />
 
       {/* Import Bank Statements Modal */}

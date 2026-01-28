@@ -613,7 +613,17 @@
         "title": "¡Viaje Guardado Exitosamente!",
         "message": "Tu viaje multi-ciudad ha sido guardado.",
         "editMore": "Editar Más"
-      }
+      },
+      "budget": {
+        "totalBudget": "Presupuesto Total",
+        "currency": "Moneda",
+        "budgetName": "Nombre del Presupuesto",
+        "createNew": "Crear Nuevo",
+        "useExisting": "Usar Existente",
+        "selectBudget": "Seleccionar Presupuesto",
+        "noBudgets": "No se encontraron presupuestos o metas de ahorro existentes."
+      },
+      "confirmCityDelete": "¿Estás seguro de que quieres eliminar {{city}} de tu viaje?"
     },
     "micrography": {
       "title": "Ruta del Viaje",

@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import ReactDOM from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useModalRegistration } from '../../context/ModalContext'
+import { useTheme } from '../../context/ThemeContext'
 import {
   FiX,
   FiMapPin,
@@ -9,7 +11,6 @@ import {
   FiCheck,
   FiChevronRight,
   FiChevronLeft,
-  FiCreditCard,
   FiList,
   FiTrash2
 } from 'react-icons/fi'
@@ -42,6 +43,7 @@ const getDistanceKm = (loc1, loc2) => {
  */
 const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   const { t } = useTranslation()
+  const { theme } = useTheme()
 
   // Register modal to hide bottom navigation and explore button
   useModalRegistration(true)
@@ -209,15 +211,34 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   }
 
   // Handle city removal
+  const [cityToDelete, setCityToDelete] = useState(null)
+
+  // Trip deletion confirmation modal state
+  const [showDeleteTripModal, setShowDeleteTripModal] = useState(false)
+
   const handleCityRemove = (cityId) => {
+    const city = cities.find(c => c.id === cityId)
+    if (city) {
+      setCityToDelete(city)
+    }
+  }
+
+  const confirmCityDelete = () => {
+    if (!cityToDelete) return
+
     setCities(
       cities
-        .filter(c => c.id !== cityId)
+        .filter(c => c.id !== cityToDelete.id)
         .map((c, idx) => ({
           ...c,
           order: idx
         }))
     )
+    setCityToDelete(null)
+  }
+
+  const cancelCityDelete = () => {
+    setCityToDelete(null)
   }
 
   // Handle city reorder (drag and drop would go here, simplified for now)
@@ -371,27 +392,34 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     setError(null)
   }
 
-  // Handle trip deletion
-  const handleDeleteTrip = async () => {
+  // Handle trip deletion - show confirmation modal
+  const handleDeleteTrip = () => {
     if (!trip?.id) return
+    setShowDeleteTripModal(true)
+  }
 
-    // Confirm deletion
-    const confirmDelete = window.confirm(
-      t('travel.multiCity.confirmDelete', 'Are you sure you want to delete this trip? This action cannot be undone.')
-    )
-    if (!confirmDelete) return
+  // Confirm trip deletion
+  const confirmTripDelete = async () => {
+    if (!trip?.id) return
 
     setSaving(true)
     setError(null)
 
     try {
       await tripService.delete(trip.id)
+      setShowDeleteTripModal(false)
       onClose() // Close the wizard after successful deletion
     } catch (err) {
       console.error('Failed to delete trip:', err)
       setError(t('travel.multiCity.deleteError', 'Failed to delete trip. Please try again.'))
       setSaving(false)
+      setShowDeleteTripModal(false)
     }
+  }
+
+  // Cancel trip deletion
+  const cancelTripDelete = () => {
+    setShowDeleteTripModal(false)
   }
 
   // Helper: always work with cities in a stable route order
@@ -936,13 +964,13 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               className={`mode-btn ${budgetMode === 'new' ? 'active' : ''}`}
               onClick={() => setBudgetMode('new')}
             >
-              <FiDollarSign /> <span>{t('wizard.newBudget', 'Create New')}</span>
+              <FiDollarSign /> <span>{t('travel.multiCity.budget.createNew', 'Create New')}</span>
             </button>
             <button
               className={`mode-btn ${budgetMode === 'existing' ? 'active' : ''}`}
               onClick={() => setBudgetMode('existing')}
             >
-              <FiList /> <span>{t('wizard.existingBudget', 'Use Existing')}</span>
+              <FiList /> <span>{t('travel.multiCity.budget.useExisting', 'Use Existing')}</span>
             </button>
           </div>
 
@@ -950,22 +978,19 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
             <div className="budget-form-section">
               <div className="budget-row">
                 <div className="form-group budget-input-group">
-                  <label>{t('wizard.budgetAmount', 'Total Budget')}</label>
-                  <div className="budget-input">
-                    <FiDollarSign />
-                    <input
-                      type="number"
-                      value={formData.budget}
-                      onChange={(e) => handleChange('budget', e.target.value)}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
+                  <label>{t('travel.multiCity.budget.totalBudget', 'Total Budget')}</label>
+                  <input
+                    type="number"
+                    value={formData.budget}
+                    onChange={(e) => handleChange('budget', e.target.value)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
                 </div>
 
                 <div className="form-group currency-group">
-                  <label>{t('travel.trip.currency', 'Currency')}</label>
+                  <label>{t('travel.multiCity.budget.currency', 'Currency')}</label>
                   <select
                     value={formData.budgetCurrency}
                     onChange={(e) => handleChange('budgetCurrency', e.target.value)}
@@ -980,32 +1005,29 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               </div>
 
               <div className="form-group">
-                <label>{t('wizard.createBudgetCategory', 'Budget Name')}</label>
-                <div className="input-with-icon">
-                  <FiCreditCard className="input-icon" />
-                  <input
-                    type="text"
-                    value={formData.budgetCategory}
-                    onChange={(e) => handleChange('budgetCategory', e.target.value)}
-                    placeholder={t('travel.setup.step1.namePlaceholder', 'e.g., Summer Trip')}
-                  />
-                </div>
+                <label>{t('travel.multiCity.budget.budgetName', 'Budget Name')}</label>
+                <input
+                  type="text"
+                  value={formData.budgetCategory}
+                  onChange={(e) => handleChange('budgetCategory', e.target.value)}
+                  placeholder={t('travel.setup.step1.namePlaceholder', 'e.g., Summer Trip')}
+                />
               </div>
             </div>
           ) : (
             <div className="budget-selection-section">
               <div className="form-group">
-                <label>{t('wizard.selectBudget', 'Select a Budget')}</label>
+                <label>{t('travel.multiCity.budget.selectBudget', 'Select a Budget')}</label>
                 <div className="budget-list">
                   {availableBudgets.length === 0 ? (
-                    <div className="no-budgets-msg">{t('wizard.noBudgets', 'No existing budgets or saving goals found.')}</div>
+                    <div className="no-budgets-msg">{t('travel.multiCity.budget.noBudgets', 'No existing budgets or saving goals found.')}</div>
                   ) : (
                     <select
                       value={selectedBudgetId}
                       onChange={(e) => setSelectedBudgetId(e.target.value)}
                       className="budget-select"
                     >
-                      <option value="">-- {t('wizard.selectBudget', 'Select a Budget')} --</option>
+                      <option value="">-- {t('travel.multiCity.budget.selectBudget', 'Select a Budget')} --</option>
                       {availableBudgets.map(b => {
                         const displayName = b.type === 'savingGoal'
                           ? `${b.icon || '🎯'} ${b.category}`
@@ -1035,7 +1057,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   }
 
   return (
-    <div className="wizard-overlay">
+    <div className="wizard-overlay" data-theme={theme}>
       <motion.div
         className="wizard-modal multi-city-wizard"
         onClick={(e) => e.stopPropagation()}
@@ -1181,7 +1203,254 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           )
         }
       </motion.div >
-    </div >
+      {/* Delete Confirmation Modal - Portalled */}
+      {cityToDelete && ReactDOM.createPortal(
+        <div data-theme={theme} style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: theme === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.5)',
+          zIndex: 2147483647,
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }} onClick={cancelCityDelete}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: theme === 'dark' ? '#1e293b' : '#ffffff',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              width: '100%',
+              maxWidth: '350px',
+              boxShadow: theme === 'dark'
+                ? '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                : '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'center' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                background: theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2',
+                color: theme === 'dark' ? '#f87171' : '#ef4444',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
+                fontSize: '1.5rem'
+              }}>
+                <FiTrash2 />
+              </div>
+
+              <div>
+                <h3 style={{
+                  margin: '0 0 0.5rem 0',
+                  fontSize: '1.125rem',
+                  fontWeight: 600,
+                  color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
+                }}>
+                  {t('common.confirmDelete', 'Remove City?')}
+                </h3>
+                <p style={{
+                  margin: 0,
+                  color: theme === 'dark' ? '#94a3b8' : '#64748b',
+                  fontSize: '0.9rem'
+                }}>
+                  {t('travel.multiCity.confirmCityDelete', 'Are you sure you want to remove {{city}} from your trip?', { city: cityToDelete.name })}
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  onClick={cancelCityDelete}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    borderRadius: '8px',
+                    border: theme === 'dark' ? '1px solid #475569' : '1px solid #e2e8f0',
+                    background: theme === 'dark' ? '#0f172a' : 'transparent',
+                    color: theme === 'dark' ? '#cbd5e1' : '#64748b',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = theme === 'dark' ? '#1e293b' : '#f1f5f9'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = theme === 'dark' ? '#0f172a' : 'transparent'
+                  }}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  onClick={confirmCityDelete}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: theme === 'dark' ? '#dc2626' : '#ef4444',
+                    color: 'white',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = theme === 'dark' ? '#b91c1c' : '#dc2626'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = theme === 'dark' ? '#dc2626' : '#ef4444'
+                  }}
+                >
+                  {t('common.remove', 'Remove')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Trip Delete Confirmation Modal - Portalled */}
+      {showDeleteTripModal && ReactDOM.createPortal(
+        <div data-theme={theme} style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: theme === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.5)',
+          zIndex: 2147483647,
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }} onClick={cancelTripDelete}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: theme === 'dark' ? '#1e293b' : '#ffffff',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              width: '100%',
+              maxWidth: '380px',
+              boxShadow: theme === 'dark'
+                ? '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                : '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'center' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                background: theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2',
+                color: theme === 'dark' ? '#f87171' : '#ef4444',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
+                fontSize: '1.75rem'
+              }}>
+                <FiTrash2 />
+              </div>
+
+              <div>
+                <h3 style={{
+                  margin: '0 0 0.5rem 0',
+                  fontSize: '1.25rem',
+                  fontWeight: 600,
+                  color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
+                }}>
+                  {t('travel.multiCity.deleteTrip', 'Delete Trip?')}
+                </h3>
+                <p style={{
+                  margin: 0,
+                  color: theme === 'dark' ? '#94a3b8' : '#64748b',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.5
+                }}>
+                  {t('travel.multiCity.confirmDelete', 'Are you sure you want to delete this trip? This action cannot be undone.')}
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  onClick={cancelTripDelete}
+                  disabled={saving}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    border: theme === 'dark' ? '1px solid #475569' : '1px solid #e2e8f0',
+                    background: theme === 'dark' ? '#0f172a' : 'transparent',
+                    color: theme === 'dark' ? '#cbd5e1' : '#64748b',
+                    fontWeight: 500,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    fontSize: '0.95rem',
+                    opacity: saving ? 0.6 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!saving) e.currentTarget.style.background = theme === 'dark' ? '#1e293b' : '#f1f5f9'
+                  }}
+                  onMouseOut={(e) => {
+                    if (!saving) e.currentTarget.style.background = theme === 'dark' ? '#0f172a' : 'transparent'
+                  }}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  onClick={confirmTripDelete}
+                  disabled={saving}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: theme === 'dark' ? '#dc2626' : '#ef4444',
+                    color: 'white',
+                    fontWeight: 500,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    fontSize: '0.95rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    opacity: saving ? 0.7 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!saving) e.currentTarget.style.background = theme === 'dark' ? '#b91c1c' : '#dc2626'
+                  }}
+                  onMouseOut={(e) => {
+                    if (!saving) e.currentTarget.style.background = theme === 'dark' ? '#dc2626' : '#ef4444'
+                  }}
+                >
+                  {saving ? (
+                    <>
+                      <span className="spinner" style={{ width: 16, height: 16 }} />
+                      <span>{t('common.deleting', 'Deleting...')}</span>
+                    </>
+                  ) : (
+                    t('common.delete', 'Delete')
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
   )
 }
 

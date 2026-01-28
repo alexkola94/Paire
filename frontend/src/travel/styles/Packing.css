@@ -121,6 +121,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -137,7 +138,8 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-height: 44px; /* Touch-friendly */
+  min-height: 44px;
+  /* Touch-friendly */
   flex: 1;
 }
 
@@ -190,7 +192,8 @@
   cursor: pointer;
   gap: var(--spacing-md);
   transition: all 0.3s ease;
-  min-height: 44px; /* Touch-friendly */
+  min-height: 44px;
+  /* Touch-friendly */
 }
 
 .category-header:active {
@@ -287,7 +290,8 @@
   background: rgba(255, 252, 247, 0.96);
   border-radius: var(--radius-md);
   transition: all 0.3s ease;
-  min-height: 48px; /* Touch-friendly */
+  min-height: 48px;
+  /* Touch-friendly */
 }
 
 @media (max-width: 480px) {
@@ -319,7 +323,8 @@
   color: white;
   flex-shrink: 0;
   transition: all 0.3s ease;
-  min-width: 44px; /* Touch-friendly area */
+  min-width: 44px;
+  /* Touch-friendly area */
   min-height: 44px;
   padding: 8px;
 }
@@ -385,7 +390,8 @@
   padding: var(--spacing-xs);
   opacity: 0;
   transition: opacity 0.3s ease, color 0.3s ease;
-  min-width: 44px; /* Touch-friendly */
+  min-width: 44px;
+  /* Touch-friendly */
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -399,7 +405,8 @@
 
 @media (max-width: 480px) {
   .delete-btn {
-    opacity: 1; /* Always visible on mobile */
+    opacity: 1;
+    /* Always visible on mobile */
   }
 }
 
@@ -593,8 +600,10 @@
   .add-item-modal input[type="text"],
   .add-item-modal input[type="number"],
   .add-item-modal select {
-    font-size: 16px; /* Prevents zoom on iOS */
-    min-height: 44px; /* Touch-friendly */
+    font-size: 16px;
+    /* Prevents zoom on iOS */
+    min-height: 44px;
+    /* Touch-friendly */
     padding: var(--spacing-md);
   }
 
@@ -616,7 +625,8 @@
 
   .add-item-modal .cancel-btn,
   .add-item-modal .travel-btn {
-    min-height: 44px; /* Touch-friendly */
+    min-height: 44px;
+    /* Touch-friendly */
     font-size: 1rem;
   }
 
@@ -659,7 +669,8 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 44px; /* Touch-friendly */
+  min-width: 44px;
+  /* Touch-friendly */
   min-height: 44px;
 }
 
@@ -700,7 +711,8 @@
   box-sizing: border-box;
   -webkit-appearance: none;
   appearance: none;
-  min-height: 44px; /* Touch-friendly minimum height */
+  min-height: 44px;
+  /* Touch-friendly minimum height */
   transition: all 0.3s ease;
 }
 
@@ -755,7 +767,8 @@
   }
 
   .checkbox-group label {
-    min-height: 44px; /* Touch-friendly */
+    min-height: 44px;
+    /* Touch-friendly */
     padding: var(--spacing-xs) 0;
   }
 }
@@ -783,7 +796,8 @@
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   cursor: pointer;
-  min-height: 44px; /* Touch-friendly */
+  min-height: 44px;
+  /* Touch-friendly */
   font-size: 1rem;
   transition: all 0.3s ease;
 }
@@ -795,7 +809,8 @@
 
 .add-item-modal .travel-btn {
   flex: 1;
-  min-height: 44px; /* Touch-friendly */
+  min-height: 44px;
+  /* Touch-friendly */
   font-size: 1rem;
   transition: all 0.3s ease;
 }
@@ -959,4 +974,120 @@
 [data-theme='dark'] .packing-empty svg,
 [data-theme='dark'] .packing-page.empty-state svg {
   opacity: 0.4;
+}
+
+/* Dark Mode Weather Suggestion Card */
+[data-theme='dark'] .weather-suggestion-card {
+  background: rgba(15, 7, 26, 0.88);
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: 0 14px 40px rgba(15, 7, 26, 0.7);
+}
+
+[data-theme='dark'] .suggestion-icon {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.5);
+}
+
+[data-theme='dark'] .suggestion-content h4 {
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .suggestion-content p {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .add-suggestion-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.45);
+}
+
+[data-theme='dark'] .add-suggestion-btn:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+  box-shadow: 0 10px 26px rgba(139, 92, 246, 0.55);
+}
+
+/* Dark Mode Add Item Modal */
+[data-theme='dark'] .add-item-modal {
+  background: rgba(15, 7, 26, 0.95);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(15, 23, 42, 0.6) inset;
+}
+
+[data-theme='dark'] .add-item-modal .modal-header {
+  background: rgba(15, 7, 26, 0.95);
+  border-bottom-color: rgba(139, 92, 246, 0.15);
+}
+
+[data-theme='dark'] .add-item-modal .modal-header h3 {
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .add-item-modal .modal-close {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .add-item-modal .modal-close:hover {
+  background: rgba(139, 92, 246, 0.15);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .add-item-modal input[type="text"],
+[data-theme='dark'] .add-item-modal input[type="number"],
+[data-theme='dark'] .add-item-modal select {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .add-item-modal input:focus,
+[data-theme='dark'] .add-item-modal select:focus {
+  border-color: #8b5cf6;
+  background: rgba(30, 41, 59, 0.8);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+[data-theme='dark'] .add-item-modal .modal-footer {
+  border-top-color: rgba(139, 92, 246, 0.15);
+}
+
+[data-theme='dark'] .add-item-modal .cancel-btn {
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .add-item-modal .cancel-btn:hover {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.5);
+  color: #f1f5f9;
+}
+
+/* Dark Mode Travel Button in Add Item Modal */
+[data-theme='dark'] .add-item-modal .travel-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+  color: #ffffff;
+}
+
+[data-theme='dark'] .add-item-modal .travel-btn:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .add-item-modal .travel-btn:active {
+  transform: translateY(0);
+}
+
+[data-theme='dark'] .add-item-modal label {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .add-item-modal .checkbox-group label {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .add-item-modal .checkbox-group input[type="checkbox"] {
+  accent-color: #8b5cf6;
 }

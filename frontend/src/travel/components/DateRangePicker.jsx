@@ -19,6 +19,7 @@ import {
 import { enUS } from 'date-fns/locale' // TODO: Add dynamic locale support based on i18n
 import { FiChevronLeft, FiChevronRight, FiCalendar, FiX } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTheme } from '../../context/ThemeContext'
 import '../styles/DateRangePicker.css'
 
 const DateRangePicker = ({
@@ -30,6 +31,7 @@ const DateRangePicker = ({
     placeholder = 'Select dates'
 }) => {
     const { t, i18n } = useTranslation()
+    const { theme } = useTheme()
     const [isOpen, setIsOpen] = useState(false)
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [hoverDate, setHoverDate] = useState(null)
@@ -126,14 +128,61 @@ const DateRangePicker = ({
 
         const allDays = [...startPadding, ...daysInMonth]
 
+        // Theme-aware color helpers
+        const getDayStyle = (isSelectedStart, isSelectedEnd, isInRange, isDisabled, isToday) => {
+            const baseStyle = {
+                color: theme === 'dark' ? '#f1f5f9' : '#1e293b',
+                background: 'transparent'
+            }
+
+            if (isDisabled) {
+                return {
+                    ...baseStyle,
+                    color: theme === 'dark' ? '#475569' : '#cbd5e1',
+                    textDecoration: 'line-through'
+                }
+            }
+
+            if (isSelectedStart || isSelectedEnd) {
+                return {
+                    ...baseStyle,
+                    background: '#8B5CF6',
+                    color: 'white'
+                }
+            }
+
+            if (isInRange) {
+                return {
+                    ...baseStyle,
+                    background: theme === 'dark' ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.1)',
+                    color: theme === 'dark' ? '#f1f5f9' : '#1e293b',
+                    borderRadius: 0
+                }
+            }
+
+            if (isToday) {
+                return {
+                    ...baseStyle,
+                    color: theme === 'dark' ? '#a78bfa' : '#8B5CF6',
+                    fontWeight: 700
+                }
+            }
+
+            return baseStyle
+        }
+
         return (
             <div className="picker-month">
-                <div className="picker-month-header">
+                <div className="picker-month-header" style={{
+                    color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
+                }}>
                     {format(monthDate, 'MMMM yyyy')}
                 </div>
                 <div className="picker-grid-header">
                     {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                        <div key={d} className="picker-weekday">{d}</div>
+                        <div key={d} className="picker-weekday" style={{
+                            color: theme === 'dark' ? '#64748b' : '#94a3b8'
+                        }}>{d}</div>
                     ))}
                 </div>
                 <div className="picker-grid">
@@ -145,6 +194,7 @@ const DateRangePicker = ({
                         const isSelectedEnd = endDate === dateStr
                         const min = minDate ? startOfDay(new Date(minDate)) : null
                         const isDisabled = min && isBefore(day, min)
+                        const isToday = isSameDay(day, new Date())
 
                         // Range logic
                         let isInRange = false
@@ -161,18 +211,31 @@ const DateRangePicker = ({
                             }
                         }
 
+                        const dayStyle = getDayStyle(isSelectedStart, isSelectedEnd, isInRange, isDisabled, isToday)
+
                         return (
                             <button
                                 key={dateStr}
-                                className={`picker-day 
-                  ${isSelectedStart ? 'selected-start' : ''} 
-                  ${isSelectedEnd ? 'selected-end' : ''} 
+                                className={`picker-day
+                  ${isSelectedStart ? 'selected-start' : ''}
+                  ${isSelectedEnd ? 'selected-end' : ''}
                   ${isInRange ? 'in-range' : ''}
                   ${isDisabled ? 'disabled' : ''}
-                  ${isSameDay(day, new Date()) ? 'today' : ''}
+                  ${isToday ? 'today' : ''}
                 `}
+                                style={dayStyle}
                                 onClick={() => !isDisabled && handleDateClick(day)}
                                 onMouseEnter={() => !isDisabled && handleMouseEnter(day)}
+                                onMouseOver={(e) => {
+                                    if (!isDisabled && !isSelectedStart && !isSelectedEnd && !isInRange) {
+                                        e.currentTarget.style.background = theme === 'dark' ? '#334155' : '#f1f5f9'
+                                    }
+                                }}
+                                onMouseOut={(e) => {
+                                    if (!isDisabled && !isSelectedStart && !isSelectedEnd && !isInRange) {
+                                        e.currentTarget.style.background = 'transparent'
+                                    }
+                                }}
                                 type="button"
                                 disabled={isDisabled}
                             >
@@ -226,7 +289,7 @@ const DateRangePicker = ({
     }, [isOpen, isMobile])
 
     return (
-        <div className="date-range-picker" ref={containerRef}>
+        <div className="date-range-picker" ref={containerRef} data-theme={theme}>
             {/* Input Trigger */}
             <div
                 className={`picker-trigger ${isOpen ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
@@ -255,7 +318,7 @@ const DateRangePicker = ({
             {isOpen && (
                 // Portal the dropdown to document.body
                 ReactDOM.createPortal(
-                    <>
+                    <div data-theme={theme} style={{ isolation: 'isolate', zIndex: 2147483647, position: 'relative' }}>
                         {/* Mobile Backdrop */}
                         {isMobile && (
                             <div
@@ -265,7 +328,7 @@ const DateRangePicker = ({
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
-                                    background: 'rgba(0,0,0,0.4)',
+                                    background: theme === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)',
                                     zIndex: 2147483640,
                                     backdropFilter: 'blur(2px)'
                                 }}
@@ -284,12 +347,15 @@ const DateRangePicker = ({
                                 maxWidth: '320px',
                                 zIndex: 2147483647,
                                 margin: 0,
-                                boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-                                background: 'var(--bg-card, #ffffff)',
-                                border: '1px solid var(--border-color, #e2e8f0)',
+                                boxShadow: theme === 'dark'
+                                    ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)'
+                                    : '0 20px 50px rgba(0,0,0,0.3)',
+                                background: theme === 'dark' ? '#1e293b' : '#ffffff',
+                                border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0',
                                 borderRadius: '20px',
                                 padding: '1.25rem',
-                                pointerEvents: 'auto'
+                                pointerEvents: 'auto',
+                                color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
                             } : {
                                 position: 'fixed',
                                 top: position.top,
@@ -297,29 +363,62 @@ const DateRangePicker = ({
                                 width: '320px',
                                 zIndex: 2147483647,
                                 margin: 0,
-                                boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-                                background: 'var(--bg-card, #ffffff)',
-                                border: '1px solid var(--border-color, #e2e8f0)',
+                                boxShadow: theme === 'dark'
+                                    ? '0 10px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)'
+                                    : '0 10px 40px rgba(0,0,0,0.3)',
+                                background: theme === 'dark' ? '#1e293b' : '#ffffff',
+                                border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0',
                                 borderRadius: '16px',
                                 padding: '1rem',
-                                pointerEvents: 'auto'
+                                pointerEvents: 'auto',
+                                color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
                             }}
                         >
                             <div className="picker-controls">
-                                <button onClick={prevMonth} className="picker-nav-btn"><FiChevronLeft /></button>
-                                <button onClick={nextMonth} className="picker-nav-btn"><FiChevronRight /></button>
+                                <button
+                                    onClick={prevMonth}
+                                    className="picker-nav-btn"
+                                    style={{
+                                        background: theme === 'dark' ? '#0f172a' : '#f8fafc',
+                                        border: theme === 'dark' ? '1px solid #475569' : '1px solid #e2e8f0',
+                                        color: theme === 'dark' ? '#94a3b8' : '#64748b'
+                                    }}
+                                >
+                                    <FiChevronLeft />
+                                </button>
+                                <button
+                                    onClick={nextMonth}
+                                    className="picker-nav-btn"
+                                    style={{
+                                        background: theme === 'dark' ? '#0f172a' : '#f8fafc',
+                                        border: theme === 'dark' ? '1px solid #475569' : '1px solid #e2e8f0',
+                                        color: theme === 'dark' ? '#94a3b8' : '#64748b'
+                                    }}
+                                >
+                                    <FiChevronRight />
+                                </button>
                             </div>
 
                             <div className="picker-calendars">
                                 {renderCalendarMonth(currentMonth)}
                             </div>
 
-                            <div className="picker-footer">
-                                {!startDate && <div className="picker-hint">{t('travel.datePicker.selectDepart', 'Select departure date')}</div>}
-                                {startDate && !endDate && <div className="picker-hint">{t('travel.datePicker.selectReturn', 'Select return date')}</div>}
+                            <div className="picker-footer" style={{
+                                borderTopColor: theme === 'dark' ? '#334155' : '#e2e8f0'
+                            }}>
+                                {!startDate && (
+                                    <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>
+                                        {t('travel.datePicker.selectDepart', 'Select departure date')}
+                                    </div>
+                                )}
+                                {startDate && !endDate && (
+                                    <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>
+                                        {t('travel.datePicker.selectReturn', 'Select return date')}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </>,
+                    </div>,
                     document.body
                 )
             )}
