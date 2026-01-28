@@ -11,30 +11,59 @@ const CalculatorContext = createContext()
 const STORAGE_KEY = 'calculator_expression'
 
 /**
- * Safe expression evaluator - avoids eval() security issues
- * Supports basic arithmetic: +, -, *, /
- * Exported so UI can derive result during render (avoids useEffect timing issues on iOS PWA).
+ * Safe expression evaluator - no eval() or new Function() (blocked on iOS PWA).
+ * Pure JS parser: supports +, -, *, / with correct precedence.
  * @param {string} expression - Mathematical expression to evaluate
  * @returns {number|null} - Result or null if invalid
  */
 export const safeEvaluate = (expression) => {
     try {
-        // Remove any characters that aren't numbers, operators, or decimal points
-        const sanitized = expression.replace(/[^0-9+\-*/().]/g, '')
-        
-        if (!sanitized || sanitized.length === 0) return null
-        
-        // Check for valid expression pattern
+        const sanitized = String(expression).replace(/[^0-9+\-*/.]/g, '').trim()
+        if (!sanitized) return null
+
         const validPattern = /^[\d.]+([+\-*/][\d.]+)*$/
         if (!validPattern.test(sanitized)) return null
-        
-        // Use Function constructor as safer alternative to eval
-        // eslint-disable-next-line no-new-func
-        const result = new Function(`return ${sanitized}`)()
-        
-        // Check for valid number result
-        if (typeof result !== 'number' || !isFinite(result)) return null
-        
+
+        // Tokenize: split by operators, keep numbers and ops
+        const tokens = sanitized.split(/([+\-*/])/).filter(Boolean)
+        if (tokens.length < 2) return null
+
+        const nums = []
+        const ops = []
+        for (let i = 0; i < tokens.length; i++) {
+            if (i % 2 === 0) {
+                const n = parseFloat(tokens[i])
+                if (Number.isNaN(n) || !Number.isFinite(n)) return null
+                nums.push(n)
+            } else {
+                ops.push(tokens[i])
+            }
+        }
+        if (nums.length !== ops.length + 1) return null
+
+        // First pass: * and / (left to right)
+        const nums2 = [nums[0]]
+        const ops2 = []
+        for (let i = 0; i < ops.length; i++) {
+            if (ops[i] === '*' || ops[i] === '/') {
+                const a = nums2.pop()
+                const b = nums[i + 1]
+                const res = ops[i] === '*' ? a * b : a / b
+                if (!Number.isFinite(res)) return null
+                nums2.push(res)
+            } else {
+                ops2.push(ops[i])
+                nums2.push(nums[i + 1])
+            }
+        }
+
+        // Second pass: + and - (left to right)
+        let result = nums2[0]
+        for (let i = 0; i < ops2.length; i++) {
+            if (ops2[i] === '+') result += nums2[i + 1]
+            else result -= nums2[i + 1]
+            if (!Number.isFinite(result)) return null
+        }
         return result
     } catch {
         return null
