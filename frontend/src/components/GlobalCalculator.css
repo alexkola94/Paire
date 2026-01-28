@@ -228,16 +228,13 @@
 }
 
 /* ===== Display ===== */
-/* Prevent display from shrinking on mobile so expression + result are always visible */
+/* Single block: expression + result in one flow so result cannot be clipped (iOS PWA fix) */
 .calculator-display {
     flex-shrink: 0;
     min-height: 5rem;
     padding: var(--spacing-lg, 20px);
     background: var(--bg-tertiary, #f5f5f5);
     text-align: right;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
     overflow: visible;
 }
 
@@ -245,46 +242,34 @@
     background: rgba(0, 0, 0, 0.2);
 }
 
+.calculator-display-inner {
+    display: block;
+    min-height: 3rem;
+    line-height: 1.4;
+}
+
 .calculator-expression {
+    display: block;
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--text-primary);
     word-break: break-all;
-    line-height: 1.3;
     min-height: 2rem;
     letter-spacing: -0.02em;
 }
 
-/* Result row: always visible on mobile (iPhone PWA fix) */
-.calculator-result {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--primary);
-    margin-top: var(--spacing-sm, 8px);
-    padding-top: var(--spacing-xs, 4px);
-    min-height: 1.75rem;
-    line-height: 1.5;
-    opacity: 1;
-    visibility: visible;
+/* Result on next line, same block – always visible when computed */
+.calculator-result-line {
     display: block;
-    /* Explicit fallback for iOS PWA where CSS vars can misbehave */
-    border-top: 1px solid rgba(139, 92, 246, 0.25);
-    -webkit-user-select: text;
-    user-select: text;
-}
-
-/* When result exists, ensure high contrast */
-.calculator-result[data-has-result="true"] {
-    color: var(--primary);
+    font-size: 1.25rem;
+    font-weight: 600;
     color: #8B5CF6;
+    margin-top: 0.35rem;
+    min-height: 1.75rem;
+    -webkit-font-smoothing: antialiased;
 }
 
-[data-theme='dark'] .calculator-result {
-    color: var(--primary-light);
-    border-top-color: rgba(167, 139, 250, 0.3);
-}
-
-[data-theme='dark'] .calculator-result[data-has-result="true"] {
+[data-theme='dark'] .calculator-result-line {
     color: #A78BFA;
 }
 
@@ -417,13 +402,11 @@
         -webkit-flex-shrink: 0;
         flex-shrink: 0;
     }
-    .calculator-result {
-        font-size: 1.25rem;
-        min-height: 2rem;
-        -webkit-font-smoothing: antialiased;
+    .calculator-result-line {
+        font-size: 1.35rem;
         color: #8B5CF6 !important;
     }
-    [data-theme='dark'] .calculator-result {
+    [data-theme='dark'] .calculator-result-line {
         color: #A78BFA !important;
     }
     .calculator-panel {

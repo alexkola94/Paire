@@ -13,10 +13,11 @@ const STORAGE_KEY = 'calculator_expression'
 /**
  * Safe expression evaluator - avoids eval() security issues
  * Supports basic arithmetic: +, -, *, /
+ * Exported so UI can derive result during render (avoids useEffect timing issues on iOS PWA).
  * @param {string} expression - Mathematical expression to evaluate
  * @returns {number|null} - Result or null if invalid
  */
-const safeEvaluate = (expression) => {
+export const safeEvaluate = (expression) => {
     try {
         // Remove any characters that aren't numbers, operators, or decimal points
         const sanitized = expression.replace(/[^0-9+\-*/().]/g, '')
@@ -218,17 +219,18 @@ export const CalculatorProvider = ({ children }) => {
     
     /**
      * Calculate and display the result
-     * Replaces expression with the result
+     * Replaces expression with the result. Uses expression directly so "=" works even if result state lags (e.g. iOS PWA).
      */
     const calculate = useCallback(() => {
-        if (result !== null) {
-            // Format result nicely
-            const formattedResult = result % 1 === 0 
-                ? result.toString() 
-                : result.toFixed(2)
+        if (!expression) return
+        const value = safeEvaluate(expression)
+        if (value != null && Number.isFinite(value)) {
+            const formattedResult = value % 1 === 0 
+                ? String(value) 
+                : value.toFixed(2)
             setExpression(formattedResult)
         }
-    }, [result])
+    }, [expression])
     
     /**
      * Toggle sign of current number (positive/negative)
@@ -253,6 +255,9 @@ export const CalculatorProvider = ({ children }) => {
         })
     }, [])
     
+    // Derived during render so display never lags (fixes result not showing on iOS PWA)
+    const computedResult = expression ? safeEvaluate(expression) : null
+
     const value = {
         // State
         isOpen,
@@ -260,6 +265,7 @@ export const CalculatorProvider = ({ children }) => {
         expression,
         displayValue,
         result,
+        computedResult,
         justAdded,
         hasExpression: expression.length > 0,
         

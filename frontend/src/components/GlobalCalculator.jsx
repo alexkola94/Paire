@@ -81,6 +81,7 @@ function GlobalCalculator() {
         expression,
         displayValue,
         result,
+        computedResult,
         justAdded,
         hasExpression,
         toggleCalculator,
@@ -208,13 +209,12 @@ function GlobalCalculator() {
         })
     }, [])
     
-    // Format result
-    const formatResult = useCallback((value) => {
-        if (value === null) return ''
-        const formatted = value.toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-        })
+    // Format result (simple format for reliability on iOS PWA; avoid toLocaleString if needed)
+    const formatResultForDisplay = useCallback((value) => {
+        if (value === null || value === undefined) return null
+        const num = Number(value)
+        if (!Number.isFinite(num)) return null
+        const formatted = num % 1 === 0 ? String(num) : num.toFixed(2)
         return `= ${formatted}`
     }, [])
     
@@ -361,17 +361,17 @@ function GlobalCalculator() {
                                 </button>
                             </div>
                             
-                            {/* Display: expression + result row (always visible on mobile PWA) */}
-                            <div className="calculator-display">
-                                <div className="calculator-expression">
-                                    {formatDisplay(displayValue)}
-                                </div>
-                                <div
-                                    className="calculator-result"
-                                    data-has-result={result != null}
-                                    aria-live="polite"
-                                >
-                                    {formatResult(result) || '\u00A0'}
+                            {/* Display: single block so result cannot be clipped (iOS PWA fix) */}
+                            <div className="calculator-display" role="region" aria-label="Calculator display">
+                                <div className="calculator-display-inner">
+                                    <span className="calculator-expression">
+                                        {formatDisplay(displayValue)}
+                                    </span>
+                                    {computedResult != null && (
+                                        <span className="calculator-result-line">
+                                            {formatResultForDisplay(computedResult)}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             

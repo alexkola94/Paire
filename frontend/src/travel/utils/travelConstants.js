@@ -348,11 +348,12 @@ export const DISCOVERY_POI_CATEGORIES = [
 ]
 
 // Mapbox map style options
-// streets-v12 = default Mapbox Streets (native full color); light-v11 = muted light
+// streets-v12 = default Mapbox Streets (native full color, theme-independent)
+// Use MAP_STYLES.streets when the map should look the same in dark/light app theme
 export const MAP_STYLES = {
   muted: 'mapbox://styles/mapbox/dark-v11',
   detailed: 'mapbox://styles/mapbox/light-v11',
-  /** Native Mapbox Streets – full-color default style for light theme */
+  /** Native Mapbox Streets – full-color style; use for maps that ignore app theme */
   streets: 'mapbox://styles/mapbox/streets-v12',
   satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
   outdoors: 'mapbox://styles/mapbox/outdoors-v12',
