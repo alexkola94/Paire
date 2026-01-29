@@ -2336,7 +2336,7 @@ namespace YouAndMeExpensesAPI.Services
         /// Handle report generation request from user
         /// Detects report type from context and provides download options
         /// </summary>
-        private async Task<ChatbotResponse> HandleReportGenerationRequestAsync(
+        private Task<ChatbotResponse> HandleReportGenerationRequestAsync(
             string userId, string query, List<ChatMessage>? history, string language = "en")
         {
             // Determine report type from query or context
@@ -2398,7 +2398,7 @@ namespace YouAndMeExpensesAPI.Services
                     "Show other reports"
                 };
 
-            return new ChatbotResponse
+            return Task.FromResult(new ChatbotResponse
             {
                 Message = message,
                 Type = "report_ready",
@@ -2414,7 +2414,7 @@ namespace YouAndMeExpensesAPI.Services
                     GroupBy = reportType.Contains("monthly") ? "month" : "category",
                     Language = language
                 }
-            };
+            });
         }
 
         /// <summary>

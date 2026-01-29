@@ -301,7 +301,7 @@ namespace YouAndMeExpensesAPI.Services
             };
         }
 
-        public async Task<object> TriggerReminderJobAsync()
+        public Task<object> TriggerReminderJobAsync()
         {
             _logger.LogInformation("Manual trigger of ReminderService via AdminService");
             _jobMonitor.ReportStart("ReminderService");
@@ -312,12 +312,12 @@ namespace YouAndMeExpensesAPI.Services
                 // here we just delegate via JobMonitor – to keep API contract, we return a generic success.
                 _jobMonitor.ReportSuccess("ReminderService", "Manual Run executed.");
 
-                return new { success = true, message = "Job 'ReminderService' executed successfully." };
+                return Task.FromResult<object>(new { success = true, message = "Job 'ReminderService' executed successfully." });
             }
             catch (Exception ex)
             {
                 _jobMonitor.ReportFailure("ReminderService", ex);
-                return new { success = false, error = "JobFailed", message = $"Job failed: {ex.Message}" };
+                return Task.FromResult<object>(new { success = false, error = "JobFailed", message = $"Job failed: {ex.Message}" });
             }
         }
 
