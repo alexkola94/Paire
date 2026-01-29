@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Expenses and AllTransactions pages import `FixedSizeList` via `../utils/reactWindow` instead of directly from `react-window`.
 - `optimizeDeps.include` in Vite config includes `react-window` for consistent pre-bundling.
+- Backend API version aligned to 2.1.1 (YouAndMeExpensesAPI.csproj).
 
 ## [2.1.0] - 2025-12-30
 ### Added

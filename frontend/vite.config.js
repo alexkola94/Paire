@@ -70,13 +70,21 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
-        // Stable vendor chunks for better long-term cache reuse
+        // Stable vendor chunks for better long-term cache reuse.
+        // react-map-gl must stay with React (vendor-react) – it uses createContext and
+        // breaks with "Cannot read properties of undefined (reading 'createContext')"
+        // if bundled in a chunk that loads without React.
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('react/') || id.includes('react-router')) {
+            if (
+              id.includes('react-dom') ||
+              id.includes('react/') ||
+              id.includes('react-router') ||
+              id.includes('react-map-gl')
+            ) {
               return 'vendor-react'
             }
-            if (id.includes('mapbox-gl') || id.includes('react-map-gl')) {
+            if (id.includes('mapbox-gl')) {
               return 'vendor-mapbox'
             }
             if (id.includes('chart.js') || id.includes('react-chartjs-2')) {
