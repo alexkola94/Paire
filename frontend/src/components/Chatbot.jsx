@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { 
@@ -24,9 +24,10 @@ import { chatbotService, aiGatewayService } from '../services/api'
 import './Chatbot.css'
 
 /**
- * Typewriter effect component
+ * Typewriter effect component.
+ * Calls onUpdate as text grows so the parent can auto-scroll to bottom.
  */
-const TypewriterText = ({ text = '', onComplete }) => {
+const TypewriterText = ({ text = '', onComplete, onUpdate }) => {
   const [displayedText, setDisplayedText] = useState('')
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -41,6 +42,13 @@ const TypewriterText = ({ text = '', onComplete }) => {
       if (onComplete) onComplete()
     }
   }, [currentIndex, text, onComplete])
+
+  // Notify parent when displayed text changes so chat can auto-scroll as response streams in
+  useEffect(() => {
+    if (onUpdate && displayedText.length > 0) {
+      onUpdate()
+    }
+  }, [displayedText, onUpdate])
 
   return (
     <div className="chatbot-markdown">
@@ -72,6 +80,8 @@ function Chatbot() {
   const [abortController, setAbortController] = useState(null) // AbortController for cancelling AI requests
   const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen mode for desktop
   const messagesEndRef = useRef(null)
+  const lastScrollAt = useRef(0)
+  const scrollThrottleMs = 80 // Throttle auto-scroll during typewriter to avoid jank
 
   /**
    * Detect mobile viewport
@@ -137,9 +147,19 @@ function Chatbot() {
     }
   }, [isMinimized]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const scrollToBottom = () => {
+  // Stable callback for auto-scroll when new messages arrive
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  }, [])
+
+  // Throttled scroll used during typewriter so the list follows as response streams in
+  const scrollToBottomIfNeeded = useCallback(() => {
+    const now = Date.now()
+    if (now - lastScrollAt.current >= scrollThrottleMs) {
+      lastScrollAt.current = now
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [])
 
   /**
    * Load suggested questions
@@ -704,6 +724,7 @@ function Chatbot() {
                           <TypewriterText
                             text={msg.message}
                             onComplete={() => handleTypingComplete(msg.id)}
+                            onUpdate={scrollToBottomIfNeeded}
                           />
                         ) : (
                           <div className="chatbot-markdown">
