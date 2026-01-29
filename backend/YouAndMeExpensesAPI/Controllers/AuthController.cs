@@ -159,8 +159,8 @@ namespace YouAndMeExpensesAPI.Controllers
                             var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
                             if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
 
-                            var verifyLink = $"{frontendUrl}/verify-email?token={System.Net.WebUtility.UrlEncode(token)}&userId={System.Net.WebUtility.UrlEncode(userId)}";
-                            
+                            // Link must match frontend route: /confirm-email (EmailConfirmation page)
+                            var verifyLink = $"{frontendUrl}/confirm-email?token={System.Net.WebUtility.UrlEncode(token)}&userId={System.Net.WebUtility.UrlEncode(userId)}";
                             var emailBody = EmailService.CreateVerificationEmailTemplate(verifyLink);
                             var emailMessage = new EmailMessage
                             {
@@ -248,7 +248,8 @@ namespace YouAndMeExpensesAPI.Controllers
             => HandleProxyResponse(await _shieldAuthService.ResetPasswordAsync(new { request.Email, request.Token, request.NewPassword }));
 
         [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromBody] ConfirmEmailRequest request) // Mapping existing model
+        [HttpPost("confirm-email")] // Alias so frontend can call /api/auth/confirm-email
+        public async Task<IActionResult> VerifyEmail([FromBody] ConfirmEmailRequest request)
             => HandleProxyResponse(await _shieldAuthService.VerifyEmailAsync(new { request.UserId, request.Token }));
 
         [HttpPost("resend-verification-email")] // Legacy: resend-confirmation
@@ -273,8 +274,8 @@ namespace YouAndMeExpensesAPI.Controllers
                             var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
                             if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
 
-                            var verifyLink = $"{frontendUrl}/verify-email?token={System.Net.WebUtility.UrlEncode(token)}&userId={System.Net.WebUtility.UrlEncode(userId)}";
-                            
+                            // Link must match frontend route: /confirm-email (EmailConfirmation page)
+                            var verifyLink = $"{frontendUrl}/confirm-email?token={System.Net.WebUtility.UrlEncode(token)}&userId={System.Net.WebUtility.UrlEncode(userId)}";
                             var emailBody = EmailService.CreateVerificationEmailTemplate(verifyLink);
                             var emailMessage = new EmailMessage
                             {
