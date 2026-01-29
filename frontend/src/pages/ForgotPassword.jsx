@@ -148,7 +148,6 @@ function ForgotPassword() {
           >
             <div className="form-group">
               <label htmlFor="email">
-                <FiMail size={18} />
                 {t('auth.email')}
               </label>
               <input

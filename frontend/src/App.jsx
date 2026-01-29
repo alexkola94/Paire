@@ -45,6 +45,7 @@ const BankCallback = lazyWithRetry(() => import('./pages/BankCallback'))
 const Achievements = lazyWithRetry(() => import('./pages/Achievements'))
 const CurrencyCalculator = lazyWithRetry(() => import('./pages/CurrencyCalculator'))
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
+const TermsOfService = lazyWithRetry(() => import('./pages/TermsOfService'))
 const Landing = lazyWithRetry(() => import('./pages/Landing'))
 
 // Layout - Keep synchronous as it's always needed
@@ -190,6 +191,10 @@ function MainAppRouter({ session }) {
           <Route
             path="/privacy"
             element={<PrivacyPolicy />}
+          />
+          <Route
+            path="/terms"
+            element={<TermsOfService />}
           />
           {/* Landing page - shown to non-authenticated users */}
           <Route

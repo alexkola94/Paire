@@ -550,8 +550,9 @@
   flex-wrap: wrap;
 }
 
-/* Quick Access Section Buttons */
-.quick-access-btn {
+/* Quick Access Section Buttons (links and buttons, e.g. currency popover) */
+.quick-access-btn,
+button.quick-access-btn {
   flex: 1;
   display: flex;
   align-items: center;
@@ -575,6 +576,12 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+}
+
+/* Reset native button styles when used for quick-access (e.g. currency popover) */
+button.quick-access-btn {
+  cursor: pointer;
+  font: inherit;
 }
 
 .quick-access-btn:hover {

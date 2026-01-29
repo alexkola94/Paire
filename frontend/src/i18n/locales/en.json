@@ -35,6 +35,7 @@
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 6 characters",
     "accountCreated": "Account created successfully! Please check your email to verify.",
+    "registrationSuccess": "Account created successfully!",
     "newPasswordPlaceholder": "Enter new password",
     "confirmPasswordPlaceholder": "Confirm new password",
     "currentPasswordPlaceholder": "Enter current password",
@@ -47,7 +48,9 @@
     "emailSentTo": "Email sent to",
     "backToLogin": "Back to Login",
     "invalidEmail": "Please enter a valid email address",
-    "enableEmailNotifications": "I want to receive email notifications"
+    "enableEmailNotifications": "I want to receive email notifications",
+    "agreeToTerms": "I agree to the",
+    "termsRequired": "You must accept the Terms of Service to register."
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -1048,6 +1051,22 @@
   },
   "legal": {
     "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "termsLastUpdated": "Last Updated: December 15, 2025",
+    "terms": {
+      "introTitle": "Acceptance of Terms",
+      "introBody": "By creating an account and using Paire, you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree, please do not use the service.",
+      "serviceTitle": "Description of Service",
+      "serviceBody": "Paire is a financial management application for couples and individuals. It allows you to track expenses, income, budgets, loans, savings goals, and related financial data. The service is provided \"as is\" and we reserve the right to modify or discontinue features at any time.",
+      "accountTitle": "Account and Security",
+      "accountBody": "You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. You must notify us immediately of any unauthorized use. We are not liable for any loss or damage arising from your failure to protect your account.",
+      "conductTitle": "Acceptable Use",
+      "conductBody": "You agree to use Paire only for lawful purposes and in accordance with these terms. You must not use the service to violate any laws, infringe others' rights, or transmit harmful or offensive content. We may suspend or terminate accounts that violate these terms.",
+      "dataTitle": "Data and Privacy",
+      "dataBody": "Your use of Paire is also governed by our Privacy Policy. By agreeing to these terms, you consent to the collection and use of your data as described in the Privacy Policy. Financial data you enter remains yours; we use it only to provide and improve the service.",
+      "contactTitle": "Contact",
+      "contactBody": "If you have questions about these Terms of Service, please contact us at: support@paire.app"
+    },
     "cookieConsent": {
       "message": "We use cookies to enhance your experience. By continuing to visit this site you agree to our use of cookies.",
       "accept": "Accept",

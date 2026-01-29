@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiGlobe, FiArrowRight, FiRefreshCw } from 'react-icons/fi'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import { useCurrencyPopover } from '../context/CurrencyPopoverContext'
 import './SummaryWidget.css'
 
 /**
  * CurrencyCalculatorWidget - Quick currency conversion
+ * Opens the global CurrencyCalculatorPopover instead of navigating to the old page
  */
 export default function CurrencyCalculatorWidget() {
     const { t } = useTranslation()
     const formatCurrency = useCurrencyFormatter()
+    const { openCurrencyPopover } = useCurrencyPopover()
     const [amount] = useState(100)
 
     // Placeholder rates (would normally come from API)
@@ -44,10 +46,15 @@ export default function CurrencyCalculatorWidget() {
                 </div>
             </div>
 
-            <Link to="/currency-calculator" className="summary-link">
+            <button
+                type="button"
+                className="summary-link"
+                onClick={openCurrencyPopover}
+                aria-label={t('currency.convert', 'Convert Currency')}
+            >
                 {t('currency.convert', 'Convert Currency')}
                 <FiArrowRight size={16} />
-            </Link>
+            </button>
         </div>
     )
 }

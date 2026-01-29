@@ -399,11 +399,28 @@
   transform: translateY(-50%) scale(0.95);
 }
 
-/* Forgot Password Link */
+/* Remember Me - own row so label never overlaps Forgot Password */
+.remember-me-row {
+  margin-top: calc(var(--spacing-sm) * -1);
+  margin-bottom: var(--spacing-xs);
+}
+
+.remember-me-label {
+  /* Keep label only as wide as checkbox + text so it never overlaps the link */
+  width: fit-content;
+}
+
+/* Forgot Password - separate row so it's always clickable (no label overlap) */
+.forgot-password-row {
+  margin-top: 0;
+  margin-bottom: var(--spacing-sm);
+}
+
 .forgot-password-link {
   text-align: right;
-  margin-top: calc(var(--spacing-sm) * -1);
-  margin-bottom: var(--spacing-sm);
+  /* Ensure link is on top and receives clicks */
+  position: relative;
+  z-index: 1;
 }
 
 .forgot-password-link a {
@@ -412,6 +429,9 @@
   font-weight: 600;
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  display: inline-block;
+  padding: var(--spacing-xs) 0;
 }
 
 .forgot-password-link a:hover {
@@ -428,15 +448,6 @@
 [data-theme='dark'] .forgot-password-link a:hover {
   color: #C4B5FD;
   text-shadow: 0 1px 3px rgba(167, 139, 250, 0.4);
-}
-
-/* Remember Me Checkbox */
-.remember-me-container {
-  flex-direction: row !important;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: calc(var(--spacing-sm) * -1);
-  margin-bottom: var(--spacing-sm);
 }
 
 .checkbox-label {
@@ -692,10 +703,39 @@
   }
 }
 
-/* Privacy Policy Link */
+/* Terms link inside checkbox label (sign-up) */
+.terms-link {
+  color: #8B5CF6;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.terms-link:hover {
+  color: #7C3AED;
+  text-shadow: 0 1px 3px rgba(139, 92, 246, 0.3);
+}
+
+[data-theme='dark'] .terms-link {
+  color: #A78BFA;
+}
+
+[data-theme='dark'] .terms-link:hover {
+  color: #C4B5FD;
+}
+
+.terms-checkbox-group {
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Privacy & Terms footer links */
 .login-footer-links {
   margin-top: 2rem;
   text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1.25rem;
 }
 
 .login-footer-links a {

@@ -29,6 +29,7 @@ import { FiTarget, FiPieChart } from 'react-icons/fi'
 import TransactionDetailModal from '../components/TransactionDetailModal'
 import PrivacyToggle from '../components/PrivacyToggle'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import { useCurrencyPopover } from '../context/CurrencyPopoverContext'
 import './Dashboard.css'
 
 /**
@@ -40,6 +41,7 @@ function Dashboard() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
+  const { openCurrencyPopover } = useCurrencyPopover() // Open currency calculator popover (no navigation)
   const [refreshing, setRefreshing] = useState(false)
   const [filterMode, setFilterMode] = useState('solo') // 'solo', 'together', or specific partnerId
   const [page, setPage] = useState(1)
@@ -592,15 +594,17 @@ function Dashboard() {
             }
           }}
         >
-          <Link
-            to="/currency-calculator"
+          <button
+            type="button"
             className="quick-access-btn"
+            onClick={openCurrencyPopover}
+            aria-label={t('navigation.currencyCalculator')}
           >
             <div className="quick-access-icon">
               €
             </div>
             <span>{t('navigation.currencyCalculator')}</span>
-          </Link>
+          </button>
         </motion.div>
 
         <motion.div

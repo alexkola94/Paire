@@ -1,5 +1,5 @@
 import { useNavigate, Outlet, NavLink } from 'react-router-dom'
-import { useState, useRef, useEffect, useCallback, lazy, Suspense, memo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useTheme } from '../context/ThemeContext'
@@ -81,6 +81,7 @@ const prefetchTravelApp = () => preloadRoute(() => import('../travel/TravelApp')
 import AccessibilitySettings from './AccessibilitySettings'
 import BankStatementImport from './BankStatementImport'
 import CurrencyCalculatorPopover from './CurrencyCalculatorPopover'
+import CurrencyPopoverContext from '../context/CurrencyPopoverContext'
 import GlobalCalculator from './GlobalCalculator'
 import './Layout.css'
 import packageJson from '../../package.json'
@@ -269,7 +270,14 @@ function Layout() {
     setUserMenuOpen(false)
   }, [navigate, closeMobileMenu])
 
+  // Currency popover: open from header (desktop), mobile nav, Dashboard, or widgets
+  const currencyPopoverValue = useMemo(() => ({
+    openCurrencyPopover: () => setIsCurrencyPopoverOpen(true),
+    closeCurrencyPopover: () => setIsCurrencyPopoverOpen(false)
+  }), [])
+
   return (
+    <CurrencyPopoverContext.Provider value={currencyPopoverValue}>
     <div className="layout">
       {/* Header */}
       <header className="layout-header">
@@ -328,9 +336,23 @@ function Layout() {
               <FiUpload size={22} />
             </span>
 
-            {/* Currency Calculator Popover - desktop only (Quick Tools) */}
-            <span className="desktop-only" style={{ display: 'flex' }}>
-              <CurrencyCalculatorPopover />
+            {/* Currency Calculator trigger - desktop only (opens shared popover below) */}
+            <span
+              className={`header-icon-btn currency-popover-trigger desktop-only ${isCurrencyPopoverOpen ? 'active' : ''}`}
+              onClick={() => setIsCurrencyPopoverOpen(true)}
+              aria-label={t('navigation.currencyCalculator')}
+              title={t('navigation.currencyCalculator')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  setIsCurrencyPopoverOpen(true)
+                }
+              }}
+              style={{ display: 'flex' }}
+            >
+              <FiCpu size={22} />
             </span>
 
             {/* Notifications bell - desktop only */}
@@ -726,7 +748,7 @@ function Layout() {
         onClose={() => setIsAccessibilityOpen(false)}
       />
 
-      {/* Currency Calculator Popover (Mobile) */}
+      {/* Currency Calculator Popover - shared (opened from header, mobile nav, Dashboard, or widgets) */}
       <CurrencyCalculatorPopover
         isOpen={isCurrencyPopoverOpen}
         onClose={() => setIsCurrencyPopoverOpen(false)}
@@ -769,7 +791,8 @@ function Layout() {
           </div>
         </div>
       )}
-    </div >
+    </div>
+    </CurrencyPopoverContext.Provider>
   )
 }
 

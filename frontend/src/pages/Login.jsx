@@ -35,7 +35,8 @@ function Login() {
     email: '',
     password: '',
     confirmPassword: '',
-    emailNotificationsEnabled: false
+    emailNotificationsEnabled: false,
+    acceptedTerms: false
   })
 
   // Remember Me state
@@ -101,6 +102,11 @@ function Login() {
       return false
     }
 
+    if (isSignUp && !formData.acceptedTerms) {
+      setError(t('auth.termsRequired'))
+      return false
+    }
+
     if (isSignUp && formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
       return false
@@ -135,15 +141,18 @@ function Login() {
           '', // displayName
           formData.emailNotificationsEnabled
         )
-        // setSuccess('Account created successfully! Please check your email to verify.')
-        setSuccess('Account created successfully!')
+        setSuccess(t('auth.registrationSuccess'))
 
-        // After signup, check if there's a redirect URL (e.g., from invitation)
+        // After signup: redirect to invitation URL if present, otherwise to login after a short delay
         if (redirectUrl) {
-          // Wait a moment for the user to see the success message
           setTimeout(() => {
             navigate(redirectUrl)
           }, 2000)
+        } else {
+          // Let user see the success message, then redirect to login so they can sign in
+          setTimeout(() => {
+            navigate('/login', { replace: true })
+          }, 2500)
         }
       } else {
         // Handle "Remember Email" persistence
@@ -305,7 +314,7 @@ function Login() {
     setIsSignUp(!isSignUp)
     setError('')
     setSuccess('')
-    setFormData({ email: '', password: '', confirmPassword: '', emailNotificationsEnabled: false })
+    setFormData({ email: '', password: '', confirmPassword: '', emailNotificationsEnabled: false, acceptedTerms: false })
     setIsConfirmPasswordTouched(false)
   }
 
@@ -573,6 +582,44 @@ function Login() {
                     )}
                   </motion.div>
 
+                  {/* Terms and Agreement (required for sign-up) */}
+                  <motion.div
+                    className="form-group checkbox-group terms-checkbox-group"
+                    variants={{
+                      hidden: { opacity: 0, x: -20 },
+                      visible: {
+                        opacity: 1,
+                        x: 0,
+                        transition: {
+                          duration: 0.4,
+                          ease: [0.4, 0, 0.2, 1]
+                        }
+                      }
+                    }}
+                  >
+                    <label className="checkbox-label" htmlFor="acceptedTerms">
+                      <input
+                        type="checkbox"
+                        id="acceptedTerms"
+                        name="acceptedTerms"
+                        checked={formData.acceptedTerms}
+                        onChange={(e) => {
+                          setFormData({ ...formData, acceptedTerms: e.target.checked })
+                          setError('')
+                        }}
+                        required={isSignUp}
+                        aria-required={isSignUp}
+                      />
+                      <span className="checkbox-custom"></span>
+                      <span className="checkbox-text">
+                        {t('auth.agreeToTerms')}{' '}
+                        <Link to="/terms" target="_blank" rel="noopener noreferrer" className="terms-link">
+                          {t('legal.termsOfService')}
+                        </Link>
+                      </span>
+                    </label>
+                  </motion.div>
+
                   <motion.div
                     className="form-group checkbox-group"
                     variants={{
@@ -604,39 +651,55 @@ function Login() {
                 </>
               )}
 
-              {/* Remember Me Checkbox */}
+              {/* Remember Me and Forgot Password - separate rows so link is always clickable */}
               {!isSignUp && (
-                <motion.div
-                  className="form-group remember-me-container"
-                  variants={{
-                    hidden: { opacity: 0, x: -20 },
-                    visible: {
-                      opacity: 1,
-                      x: 0,
-                      transition: {
-                        duration: 0.4,
-                        ease: [0.4, 0, 0.2, 1]
+                <>
+                  <motion.div
+                    className="form-group remember-me-row"
+                    variants={{
+                      hidden: { opacity: 0, x: -20 },
+                      visible: {
+                        opacity: 1,
+                        x: 0,
+                        transition: {
+                          duration: 0.4,
+                          ease: [0.4, 0, 0.2, 1]
+                        }
                       }
-                    }
-                  }}
-                >
-                  <label className="checkbox-label" htmlFor="rememberMe">
-                    <input
-                      type="checkbox"
-                      id="rememberMe"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                    />
-                    <span className="checkbox-custom"></span>
-                    <span className="checkbox-text">{t('auth.rememberMe') || 'Remember me'}</span>
-                  </label>
-
-                  <div className="forgot-password-link">
-                    <Link to="/forgot-password">
-                      {t('auth.forgotPassword')}
-                    </Link>
-                  </div>
-                </motion.div>
+                    }}
+                  >
+                    <label className="checkbox-label remember-me-label" htmlFor="rememberMe">
+                      <input
+                        type="checkbox"
+                        id="rememberMe"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                      />
+                      <span className="checkbox-custom"></span>
+                      <span className="checkbox-text">{t('auth.rememberMe') || 'Remember me'}</span>
+                    </label>
+                  </motion.div>
+                  <motion.div
+                    className="form-group forgot-password-row"
+                    variants={{
+                      hidden: { opacity: 0, x: -20 },
+                      visible: {
+                        opacity: 1,
+                        x: 0,
+                        transition: {
+                          duration: 0.4,
+                          ease: [0.4, 0, 0.2, 1]
+                        }
+                      }
+                    }}
+                  >
+                    <div className="forgot-password-link">
+                      <Link to="/forgot-password">
+                        {t('auth.forgotPassword')}
+                      </Link>
+                    </div>
+                  </motion.div>
+                </>
               )}
 
               {/* Submit Button */}
@@ -690,6 +753,7 @@ function Login() {
             </motion.div>
 
             <div className="login-footer-links">
+              <Link to="/terms">{t('legal.termsOfService')}</Link>
               <Link to="/privacy">
                 {t('legal.privacyPolicy')}
               </Link>

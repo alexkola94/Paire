@@ -153,8 +153,9 @@
     margin-top: 0.125rem;
 }
 
-/* Link to page */
-.summary-link {
+/* Link to page (also used as button for currency popover) */
+.summary-link,
+button.summary-link {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -168,6 +169,14 @@
     font-size: 0.85rem;
     font-weight: 500;
     transition: all 0.2s;
+}
+
+/* Reset button styles when summary-link is used on a button */
+button.summary-link {
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    width: 100%;
 }
 
 .summary-link:hover {

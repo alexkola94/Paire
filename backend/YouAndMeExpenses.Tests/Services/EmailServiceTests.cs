@@ -34,37 +34,35 @@ namespace YouAndMeExpenses.Tests.Services
         }
 
         [Fact]
-        public void CreateReminderEmailTemplate_Should_Return_Valid_Html()
+        public void CreateReminderEmailTemplate_Should_Return_Valid_Html_When_ActionUrl_Provided()
         {
-            // Arrange
+            // When actionUrl is provided (e.g. reset/verification), no footer "Open App" CTA is added
             var title = "Test Title";
             var message = "Test Message";
             var actionUrl = "https://test.com";
 
-            // Act
-            var result = EmailService.CreateReminderEmailTemplate(title, message, actionUrl);
+            var result = EmailService.CreateReminderEmailTemplate(title, message, "", actionUrl);
 
-            // Assert
             result.Should().Contain(title);
             result.Should().Contain(message);
-            result.Should().Contain(actionUrl);
             result.Should().Contain("<!DOCTYPE html>");
+            result.Should().Contain("Paire");
+            result.Should().NotContain("Open App");
         }
 
         [Fact]
-        public void CreateReminderEmailTemplate_Should_Handle_Empty_ActionUrl()
+        public void CreateReminderEmailTemplate_Should_Show_Open_App_Cta_When_ActionUrl_Empty()
         {
-            // Arrange
+            // When actionUrl is empty, footer shows "Open App" button linking to login
             var title = "Test Title";
             var message = "Test Message";
 
-            // Act
             var result = EmailService.CreateReminderEmailTemplate(title, message, "");
 
-            // Assert
             result.Should().Contain(title);
             result.Should().Contain(message);
-            result.Should().NotContain("href=");
+            result.Should().Contain("Open App");
+            result.Should().Contain("href=");
         }
 
         [Theory]

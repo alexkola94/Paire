@@ -20,6 +20,7 @@
     "passwordMismatch": "Les mots de passe ne correspondent pas",
     "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
     "accountCreated": "Compte créé avec succès! Veuillez vérifier votre email pour confirmer.",
+    "registrationSuccess": "Compte créé avec succès!",
     "newPasswordPlaceholder": "Entrez le nouveau mot de passe",
     "confirmPasswordPlaceholder": "Confirmez le nouveau mot de passe",
     "currentPasswordPlaceholder": "Entrez le mot de passe actuel",
@@ -31,11 +32,19 @@
     "forgotPasswordSuccessMessage": "Si un compte avec cet email existe, nous vous avons envoyé un lien de réinitialisation de mot de passe.",
     "emailSentTo": "Email envoyé à",
     "backToLogin": "Retour à la connexion",
-    "invalidEmail": "Veuillez entrer une adresse email valide"
+    "invalidEmail": "Veuillez entrer une adresse email valide",
+    "enableEmailNotifications": "Je souhaite recevoir des notifications par email",
+    "agreeToTerms": "J'accepte les",
+    "termsRequired": "Vous devez accepter les Conditions d'utilisation pour vous inscrire."
   },
   "messages": {
     "operationFailed": "L'opération a échoué. Veuillez réessayer.",
     "fillRequired": "Veuillez remplir tous les champs requis"
+  },
+  "legal": {
+    "privacyPolicy": "Politique de Confidentialité",
+    "termsOfService": "Conditions d'utilisation",
+    "termsLastUpdated": "Dernière mise à jour : 15 décembre 2025"
   },
   "shoppingLists": {
     "title": "Listes de Courses",

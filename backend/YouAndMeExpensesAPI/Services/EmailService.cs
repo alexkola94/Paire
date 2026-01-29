@@ -142,14 +142,23 @@ namespace YouAndMeExpensesAPI.Services
             return CreateReminderEmailTemplate("✅ API Email Working!", message, frontendUrl);
         }
 
+        /// <summary>
+        /// Creates the shared HTML email template with Paire branding.
+        /// When actionUrl is provided (e.g. reset/verification), the message already contains the CTA so we do not add a duplicate "Open App" block.
+        /// When actionUrl is empty, shows a single "Open App" button linking to login.
+        /// </summary>
         public static string CreateReminderEmailTemplate(string title, string message, string frontendUrl = "", string actionUrl = "")
         {
-             // Use same template logic as before
             if (string.IsNullOrEmpty(frontendUrl)) frontendUrl = "http://localhost:3000";
             if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
-            
+
             var loginUrl = $"{frontendUrl}/login";
-            
+            // Only show footer CTA when no action URL was provided (reminder/test emails); reset/verification emails already have their button in the message body
+            var showOpenAppCta = string.IsNullOrEmpty(actionUrl);
+            var ctaBlock = showOpenAppCta
+                ? $@"<div style=""text-align: center; margin-top: 30px;""><a href=""{loginUrl}"" class=""button"">Open App</a></div>"
+                : "";
+
             return $@"
 <!DOCTYPE html>
 <html lang=""en"">
@@ -158,23 +167,26 @@ namespace YouAndMeExpensesAPI.Services
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: sans-serif; line-height: 1.6; color: #333; background-color: #f7fafc; padding: 20px; }}
-        .email-wrapper {{ max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; }}
-        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }}
-        .content {{ padding: 30px; }}
-        .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background-color: #F9FAFB; padding: 20px; }}
+        .email-wrapper {{ max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
+        .header {{ background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: white; padding: 32px 24px; text-align: center; }}
+        .header .brand {{ font-size: 14px; font-weight: 600; letter-spacing: 0.05em; opacity: 0.95; margin-bottom: 8px; }}
+        .header h1 {{ font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }}
+        .content {{ padding: 32px 24px; }}
+        .content p {{ margin-bottom: 12px; }}
+        .button {{ display: inline-block; background: #8B5CF6; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 12px; font-weight: 600; transition: opacity 0.2s; }}
+        .button:hover {{ opacity: 0.9; }}
     </style>
 </head>
 <body>
     <div class=""email-wrapper"">
         <div class=""header"">
+            <div class=""brand"">Paire</div>
             <h1>{title}</h1>
         </div>
         <div class=""content"">
             {message}
-            <div style=""text-align: center; margin-top: 30px;"">
-                <a href='{loginUrl}' class='button'>Open App</a>
-            </div>
+            {ctaBlock}
         </div>
     </div>
 </body>

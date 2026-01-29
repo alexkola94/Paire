@@ -20,6 +20,7 @@
     "passwordMismatch": "Las contraseñas no coinciden",
     "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
     "accountCreated": "¡Cuenta creada exitosamente! Por favor verifica tu email para confirmar.",
+    "registrationSuccess": "¡Cuenta creada exitosamente!",
     "newPasswordPlaceholder": "Ingresa nueva contraseña",
     "confirmPasswordPlaceholder": "Confirma nueva contraseña",
     "currentPasswordPlaceholder": "Ingresa contraseña actual",
@@ -31,11 +32,19 @@
     "forgotPasswordSuccessMessage": "Si existe una cuenta con ese email, te hemos enviado un enlace para restablecer tu contraseña.",
     "emailSentTo": "Email enviado a",
     "backToLogin": "Volver a Iniciar Sesión",
-    "invalidEmail": "Por favor ingresa una dirección de email válida"
+    "invalidEmail": "Por favor ingresa una dirección de email válida",
+    "enableEmailNotifications": "Quiero recibir notificaciones por email",
+    "agreeToTerms": "Acepto los",
+    "termsRequired": "Debes aceptar los Términos de Servicio para registrarte."
   },
   "messages": {
     "operationFailed": "La operación falló. Por favor intenta de nuevo.",
     "fillRequired": "Por favor completa todos los campos requeridos"
+  },
+  "legal": {
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio",
+    "termsLastUpdated": "Última actualización: 15 de diciembre de 2025"
   },
   "shoppingLists": {
     "title": "Listas de Compras",
