@@ -104,12 +104,16 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // Configure CORS
+// Production frontend origins - always allowed in production so AI chatbot and API work from thepaire.org
+var productionFrontendOrigins = new[] { "https://www.thepaire.org", "https://thepaire.org" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        // Get CORS origins from environment variable or use defaults
-        var corsOriginsString = builder.Configuration["CORS_ORIGINS"];
+        // Get CORS origins from CORS_ORIGINS env/config, or AppSettings:FrontendUrl, or defaults
+        var corsOriginsString = builder.Configuration["CORS_ORIGINS"]
+            ?? builder.Configuration["AppSettings:FrontendUrl"];
         var corsOrigins = string.IsNullOrEmpty(corsOriginsString)
             ? new[]
             {
@@ -123,7 +127,16 @@ builder.Services.AddCors(options =>
             }
             : corsOriginsString.Split(',', StringSplitOptions.RemoveEmptyEntries)
                                .Select(o => o.Trim())
+                               .Where(o => !string.IsNullOrEmpty(o))
                                .ToArray();
+
+        // In production: always include known frontend origins so CORS never blocks thepaire.org
+        if (!builder.Environment.IsDevelopment())
+        {
+            corsOrigins = corsOrigins.Union(productionFrontendOrigins).Distinct().ToArray();
+            if (corsOrigins.Length == 0)
+                corsOrigins = productionFrontendOrigins;
+        }
 
         // In development, allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
         if (builder.Environment.IsDevelopment())
@@ -149,7 +162,7 @@ builder.Services.AddCors(options =>
                     return true;
 
                 // Allow localhost with any port
-                if (origin.StartsWith("http://localhost:") || origin.StartsWith("https://localhost:"))
+                if (origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) || origin.StartsWith("https://localhost:", StringComparison.OrdinalIgnoreCase))
                     return true;
 
                 // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) with common ports
@@ -179,12 +192,7 @@ builder.Services.AddCors(options =>
         }
         else
         {
-            // In production: never use AllowAnyOrigin() (sends * = very lax, only for public CDNs).
-            // Use explicit origins only; if CORS_ORIGINS is missing, fall back to app domains.
-            if (corsOrigins.Length == 0)
-            {
-                corsOrigins = new[] { "https://thepaire.org", "https://www.thepaire.org" };
-            }
+            // In production: explicit origins only (productionFrontendOrigins already merged above)
             policy.WithOrigins(corsOrigins);
         }
 

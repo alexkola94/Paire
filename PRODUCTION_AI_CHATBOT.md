@@ -72,17 +72,23 @@ No extra code is required for stop/fullscreen/message types; they work once the 
 
 ## 4. CORS (Backend)
 
-**Where:** `AppSettings:FrontendUrl` in production (e.g. `appsettings.Production.json` or env `AppSettings__FrontendUrl`).
+**Where:** `CORS_ORIGINS` (env or `appsettings.Production.json`) or `AppSettings:FrontendUrl`.
 
-**What to do:** Set to your production frontend origin(s), comma-separated, e.g.:
+**What to do:** In production, `https://www.thepaire.org` and `https://thepaire.org` are **always** merged into allowed origins so the AI chatbot and API work from thepaire.org. To add more origins, set:
+
+- **Environment variable (e.g. Render):** `CORS_ORIGINS=https://www.thepaire.org,https://thepaire.org`
+- **Or in appsettings.Production.json:**
 
 ```json
+"CORS_ORIGINS": "https://www.thepaire.org,https://thepaire.org",
 "AppSettings": {
   "FrontendUrl": "https://www.thepaire.org,https://thepaire.org"
 }
 ```
 
-So the browser allows requests from your production frontend to the API.
+If you see *"No 'Access-Control-Allow-Origin' header"* when calling `https://paire-api.onrender.com/api/ai-gateway/chat` from `https://www.thepaire.org`, ensure:
+1. The backend is redeployed after CORS changes.
+2. On Render, do **not** set `CORS_ORIGINS` to a value that omits `https://www.thepaire.org` (or leave it unset; production origins are always added).
 
 ---
 
@@ -93,6 +99,6 @@ So the browser allows requests from your production frontend to the API.
 | 1 | Backend production config | Set `AiGateway:BaseUrl`, `TenantId`, `GatewaySecret`, `Enabled: true` (file or env). |
 | 2 | AI Gateway deployment | Deploy Gateway; allow tenant `thepaire`; use same `GatewaySecret`. |
 | 3 | Frontend build | Set `VITE_BACKEND_API_URL` to production API URL if not using thepaire.org. |
-| 4 | Backend CORS | Set `AppSettings:FrontendUrl` to production frontend URL(s). |
+| 4 | Backend CORS | Set `CORS_ORIGINS` or leave unset (production always allows https://www.thepaire.org and https://thepaire.org). |
 
 Stop button, fullscreen, and message-type styling require no further code changes; they depend on the above configuration and the existing cancellation support in the backend.

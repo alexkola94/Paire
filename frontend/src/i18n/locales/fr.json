@@ -35,11 +35,22 @@
     "invalidEmail": "Veuillez entrer une adresse email valide",
     "enableEmailNotifications": "Je souhaite recevoir des notifications par email",
     "agreeToTerms": "J'accepte les",
-    "termsRequired": "Vous devez accepter les Conditions d'utilisation pour vous inscrire."
+    "termsRequired": "Vous devez accepter les Conditions d'utilisation pour vous inscrire.",
+    "errors": {
+      "networkError": "Vérifiez votre connexion et réessayez.",
+      "invalidCredentials": "Email ou mot de passe incorrect. Veuillez réessayer.",
+      "emailNotConfirmed": "Veuillez vérifier votre email avant de vous connecter.",
+      "accountLocked": "Compte temporairement verrouillé. Réessayez plus tard ou réinitialisez le mot de passe.",
+      "emailAlreadyRegistered": "Un compte existe déjà avec cet email. Essayez de vous connecter.",
+      "authServiceUnavailable": "Le service de connexion est temporairement indisponible. Veuillez réessayer plus tard.",
+      "twoFactorCompleteFailed": "Nous n'avons pas pu terminer la connexion. Veuillez réessayer.",
+      "generic": "Une erreur s'est produite. Veuillez réessayer."
+    }
   },
   "messages": {
     "operationFailed": "L'opération a échoué. Veuillez réessayer.",
-    "fillRequired": "Veuillez remplir tous les champs requis"
+    "fillRequired": "Veuillez remplir tous les champs requis",
+    "networkError": "Vérifiez votre connexion et réessayez."
   },
   "legal": {
     "privacyPolicy": "Politique de Confidentialité",

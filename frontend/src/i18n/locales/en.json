@@ -50,7 +50,17 @@
     "invalidEmail": "Please enter a valid email address",
     "enableEmailNotifications": "I want to receive email notifications",
     "agreeToTerms": "I agree to the",
-    "termsRequired": "You must accept the Terms of Service to register."
+    "termsRequired": "You must accept the Terms of Service to register.",
+    "errors": {
+      "networkError": "Check your connection and try again.",
+      "invalidCredentials": "Incorrect email or password. Please try again.",
+      "emailNotConfirmed": "Please verify your email before signing in.",
+      "accountLocked": "Account temporarily locked. Try again later or reset password.",
+      "emailAlreadyRegistered": "An account with this email already exists. Try signing in.",
+      "authServiceUnavailable": "Sign-in service is temporarily unavailable. Please try again later.",
+      "twoFactorCompleteFailed": "We couldn't complete sign-in. Please try again.",
+      "generic": "Something went wrong. Please try again."
+    }
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -486,7 +496,8 @@
     "deleteItemTitle": "Delete Shopping List Item",
     "operationSuccess": "Operation completed successfully",
     "operationFailed": "Operation failed. Please try again.",
-    "fillRequired": "Please fill in all required fields"
+    "fillRequired": "Please fill in all required fields",
+    "networkError": "Check your connection and try again."
   },
   "chatbot": {
     "title": "Financial Assistant",

@@ -9,6 +9,28 @@ import TwoFactorVerification from '../components/TwoFactorVerification'
 import './Login.css'
 
 /**
+ * Maps API/network error causes to humanized, translated messages.
+ * @param {Error} err - Caught error from signIn/signUp
+ * @param {boolean} isSignUp - Whether the action was sign-up (affects duplicate-email mapping)
+ * @param {Function} t - i18n translate function
+ * @returns {string} Humanized error message
+ */
+function humanizeLoginError(err, isSignUp, t) {
+  const msg = (err?.message || '').toLowerCase()
+  const isNetwork = err?.name === 'TypeError' || msg.includes('failed to fetch') || msg.includes('cannot connect to api')
+  if (isNetwork) return t('auth.errors.networkError')
+  if (msg.includes('auth service unavailable') || msg.includes('503') || msg.includes('service unavailable')) return t('auth.errors.authServiceUnavailable')
+  if (msg.includes('invalid') || msg.includes('unauthorized') || msg.includes('401') || msg.includes('incorrect') || msg.includes('wrong password') || msg.includes('invalid login') || msg.includes('session expired')) return t('auth.errors.invalidCredentials')
+  if (msg.includes('confirm your email') || msg.includes('verify your email') || msg.includes('email not confirmed')) return t('auth.errors.emailNotConfirmed')
+  if (msg.includes('locked') || msg.includes('lockout')) return t('auth.errors.accountLocked')
+  if (isSignUp && (msg.includes('already taken') || msg.includes('already registered') || msg.includes('duplicate') || msg.includes('already exists'))) return t('auth.errors.emailAlreadyRegistered')
+  // Generic: use server message if short and readable, else fallback
+  const raw = err?.message || ''
+  if (raw.length > 0 && raw.length < 120 && !raw.includes(' at ') && !raw.startsWith('http')) return raw
+  return t('auth.errors.generic')
+}
+
+/**
  * Login Page Component
  * Handles user authentication (sign in and sign up)
  */
@@ -108,12 +130,12 @@ function Login() {
     }
 
     if (isSignUp && formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      setError(t('auth.passwordMismatch'))
       return false
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError(t('auth.passwordTooShort'))
       return false
     }
 
@@ -216,8 +238,7 @@ function Login() {
         }
       }
     } catch (err) {
-      const errorMessage = err.message || t('messages.operationFailed')
-      setError(errorMessage)
+      setError(humanizeLoginError(err, isSignUp, t))
     } finally {
       setLoading(false)
     }
@@ -292,7 +313,7 @@ function Login() {
     } catch (error) {
       console.error('Error handling 2FA success:', error)
       handle2FASuccessRef.current = false; // Reset on error so user can retry
-      setError('Failed to complete login. Please try again.')
+      setError(t('auth.errors.twoFactorCompleteFailed'))
     }
   }
 
