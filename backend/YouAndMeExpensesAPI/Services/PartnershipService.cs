@@ -124,17 +124,27 @@ namespace YouAndMeExpensesAPI.Services
             return partnership;
         }
 
+        /// <summary>
+        /// Sends a partnership invitation.
+        /// SECURITY: Returns silently for all error conditions to prevent user enumeration.
+        /// The controller always returns a generic success message.
+        /// </summary>
         public async Task SendInvitationAsync(Guid userId, SendInvitationRequest request)
         {
-            // Validate email format is handled by controller; here we assume it's well-formed.
+            // SECURITY FIX: Check if invitee user exists, but don't reveal this to the caller
             var inviteeUser = await _userManager.FindByEmailAsync(request.Email.ToLower());
             if (inviteeUser == null)
             {
-                throw new InvalidOperationException("The user with this email address must sign up first before you can invite them");
+                // Log for security monitoring but don't throw - prevents user enumeration
+                _logger.LogInformation(
+                    "Partnership invite attempted for non-existent email: {Email} by user {UserId}", 
+                    request.Email, userId);
+                return; // Silent return - controller will show generic message
             }
 
             var inviteeId = Guid.Parse(inviteeUser.Id);
 
+            // SECURITY FIX: Check for existing partnership, return silently if exists
             var existingPartnership = await _dbContext.Partnerships
                 .FirstOrDefaultAsync(p =>
                     (p.User1Id == userId && p.User2Id == inviteeId) ||
@@ -142,9 +152,14 @@ namespace YouAndMeExpensesAPI.Services
 
             if (existingPartnership != null)
             {
-                throw new InvalidOperationException("You are already partners with this user");
+                // Log for tracking but don't throw - prevents revealing partnership status
+                _logger.LogInformation(
+                    "Partnership invite attempted for existing partner: {Email} by user {UserId}", 
+                    request.Email, userId);
+                return; // Silent return
             }
 
+            // SECURITY FIX: Check for pending invitation, return silently if exists
             var existingInvitation = await _dbContext.PartnershipInvitations
                 .FirstOrDefaultAsync(i =>
                     i.InviterId == userId &&
@@ -154,9 +169,14 @@ namespace YouAndMeExpensesAPI.Services
 
             if (existingInvitation != null)
             {
-                throw new InvalidOperationException("An invitation has already been sent to this email");
+                // Log but don't throw - prevents revealing invitation status
+                _logger.LogInformation(
+                    "Partnership invite attempted with pending invitation: {Email} by user {UserId}", 
+                    request.Email, userId);
+                return; // Silent return
             }
 
+            // This is the only error we still throw - it's about the requester, not the invitee
             var inviterProfile = await _dbContext.UserProfiles
                 .FirstOrDefaultAsync(p => p.Id == userId);
 
@@ -165,6 +185,7 @@ namespace YouAndMeExpensesAPI.Services
                 throw new InvalidOperationException("Please complete your profile first");
             }
 
+            // Proceed with actual invitation creation
             var token = GenerateInvitationToken();
             var expiresAt = DateTime.UtcNow.AddDays(7);
 

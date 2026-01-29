@@ -78,7 +78,8 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
-        /// Sends a partnership invitation via email
+        /// Sends a partnership invitation via email.
+        /// SECURITY: Always returns a generic success message to prevent user enumeration.
         /// </summary>
         [HttpPost("invite")]
         public async Task<IActionResult> SendInvitation([FromBody] SendInvitationRequest request)
@@ -88,6 +89,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
+                // Basic email format validation - this is safe to report
                 if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
                 {
                     return BadRequest(new { message = "Invalid email address" });
@@ -99,15 +101,24 @@ namespace YouAndMeExpensesAPI.Controllers
                 }
                 catch (InvalidOperationException ex)
                 {
-                    return BadRequest(new { message = ex.Message });
+                    // Only propagate errors about the requester's own profile
+                    if (ex.Message.Contains("complete your profile"))
+                    {
+                        return BadRequest(new { message = ex.Message });
+                    }
+                    // Log but don't reveal other errors to client
+                    _logger.LogWarning(ex, "Invitation error for user {UserId}", userId);
                 }
 
-                return Ok(new { message = "Invitation sent successfully" });
+                // SECURITY: Always return generic success message
+                // Never reveal if email exists, if partnership exists, or if invitation was already sent
+                return Ok(new { message = "If this email is registered, an invitation will be sent." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error sending invitation for user {UserId}", userId);
-                return StatusCode(500, new { message = "Error sending invitation", error = ex.Message });
+                // SECURITY: Still return generic success to prevent information disclosure
+                return Ok(new { message = "If this email is registered, an invitation will be sent." });
             }
         }
 

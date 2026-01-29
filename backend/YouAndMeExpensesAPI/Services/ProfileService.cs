@@ -37,7 +37,43 @@ namespace YouAndMeExpensesAPI.Services
                 .FirstOrDefaultAsync(p => p.Id == userId);
         }
 
+        /// <summary>
+        /// Gets a profile summary with IDOR protection.
+        /// SECURITY: Only allows access if user is viewing their own profile
+        /// or if they are in an active partnership with the target user.
+        /// </summary>
         public async Task<object?> GetProfileSummaryAsync(Guid requesterId, Guid profileId)
+        {
+            // SECURITY FIX: Allow users to view their own profile
+            if (requesterId == profileId)
+            {
+                return await GetBasicProfileAsync(profileId);
+            }
+
+            // SECURITY FIX: Check if users are partners before allowing access
+            var isPartner = await _dbContext.Partnerships
+                .AnyAsync(p => 
+                    p.Status == PartnershipStatus.Active &&
+                    ((p.User1Id == requesterId && p.User2Id == profileId) ||
+                     (p.User1Id == profileId && p.User2Id == requesterId)));
+
+            if (!isPartner)
+            {
+                // Return null (404) - don't reveal if profile exists to unauthorized users
+                _logger.LogWarning(
+                    "IDOR attempt blocked: User {RequesterId} tried to access profile {ProfileId} without authorization",
+                    requesterId, profileId);
+                return null;
+            }
+
+            return await GetBasicProfileAsync(profileId);
+        }
+
+        /// <summary>
+        /// Helper method to retrieve basic profile information.
+        /// Should only be called after authorization checks pass.
+        /// </summary>
+        private async Task<object?> GetBasicProfileAsync(Guid profileId)
         {
             var profile = await _dbContext.UserProfiles
                 .AsNoTracking()

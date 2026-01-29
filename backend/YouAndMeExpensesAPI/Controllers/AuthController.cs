@@ -192,55 +192,73 @@ namespace YouAndMeExpensesAPI.Controllers
         public async Task<IActionResult> Revoke()
             => HandleProxyResponse(await _shieldAuthService.RevokeAsync(GetToken()));
 
+        /// <summary>
+        /// Request a password reset email.
+        /// SECURITY: Always returns a generic response to prevent user enumeration.
+        /// The reset token is NEVER exposed to the client - only sent via email.
+        /// </summary>
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            var response = await _shieldAuthService.ForgotPasswordAsync(request);
-
-            if (response.IsSuccess)
+            // SECURITY FIX: Always return same response regardless of user existence
+            // This prevents user enumeration attacks
+            try
             {
-                try
+                var response = await _shieldAuthService.ForgotPasswordAsync(request);
+
+                if (response.IsSuccess)
                 {
-                    // Parse response to see if we have a token
-                    using var doc = JsonDocument.Parse(response.Content);
-                    if (doc.RootElement.TryGetProperty("passwordResetToken", out var tokenProp))
+                    try
                     {
-                        var token = tokenProp.GetString();
-                        if (!string.IsNullOrEmpty(token))
+                        // Parse response to get the token (for email only, never returned to client)
+                        using var doc = JsonDocument.Parse(response.Content);
+                        if (doc.RootElement.TryGetProperty("passwordResetToken", out var tokenProp))
                         {
-                            // Get Frontend URL
-                            var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
-                            if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
-
-                            var resetLink = $"{frontendUrl}/reset-password?token={System.Net.WebUtility.UrlEncode(token)}&email={System.Net.WebUtility.UrlEncode(request.Email)}";
-                            
-                            var emailBody = EmailService.CreateResetPasswordEmailTemplate(resetLink);
-                            var emailMessage = new EmailMessage
+                            var token = tokenProp.GetString();
+                            if (!string.IsNullOrEmpty(token))
                             {
-                                ToEmail = request.Email,
-                                Subject = "Reset Your Password - Paire",
-                                Body = emailBody,
-                                IsHtml = true
-                            };
+                                // Get Frontend URL
+                                var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:3000";
+                                if (frontendUrl.Contains(';')) frontendUrl = frontendUrl.Split(';')[0].Trim();
 
-                            // Fire and forget email? or await? API usually awaits.
-                            await _emailService.SendEmailAsync(emailMessage);
-                            
-                            // We can return the original response, Shield might have returned the token
-                            // Ideally we shouldn't expose the token to the client if we email it, but
-                            // the user said "Return token so Main API can send email with proper frontend link" 
-                            // and "returns here to ... and never sends the email".
-                            // So we are sending the email now. 
+                                var resetLink = $"{frontendUrl}/reset-password?token={System.Net.WebUtility.UrlEncode(token)}&email={System.Net.WebUtility.UrlEncode(request.Email)}";
+                                
+                                var emailBody = EmailService.CreateResetPasswordEmailTemplate(resetLink);
+                                var emailMessage = new EmailMessage
+                                {
+                                    ToEmail = request.Email,
+                                    Subject = "Reset Your Password - Paire",
+                                    Body = emailBody,
+                                    IsHtml = true
+                                };
+
+                                await _emailService.SendEmailAsync(emailMessage);
+                                _logger.LogInformation("Password reset email sent to {Email}", request.Email);
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error sending forgot password email for {Email}", request.Email);
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    _logger.LogError(ex, "Error sending forgot password email");
+                    // Log failed attempt but don't reveal to client
+                    _logger.LogWarning("Forgot password request failed for {Email}: Shield returned non-success", request.Email);
                 }
             }
+            catch (Exception ex)
+            {
+                // Log but don't expose error details to client
+                _logger.LogWarning(ex, "Forgot password request error for {Email}", request.Email);
+            }
 
-            return HandleProxyResponse(response);
+            // SECURITY: Always return generic success response - never reveal if email exists or token value
+            return Ok(new { 
+                status = "Success", 
+                message = "If this email is registered, a password reset link has been sent." 
+            });
         }
 
         [HttpPost("reset-password")]
