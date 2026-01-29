@@ -72,14 +72,6 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
     }, 30000);
 
     try {
-      // Log for debugging (remove in production)
-      console.log('🔐 [2FA] Verifying code:', {
-        email,
-        codeLength: normalizedCode.length,
-        codeFormat: normalizedCode.match(/^\d{6}$/) ? 'Valid' : 'Invalid',
-        hasTempToken: !!tempToken
-      });
-
       const response = await fetch(`${getBackendUrl()}/api/auth/2fa/verify`, {
         method: 'POST',
         headers: {
@@ -103,12 +95,6 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
       }
 
       if (!response.ok) {
-        // Log error details for debugging
-        console.error('❌ [2FA] Verification failed:', {
-          status: response.status,
-          error: data.error || data.message,
-          codeSent: normalizedCode
-        });
         // Mark that an error occurred and store the failed code
         hasErrorOccurred.current = true;
         lastFailedCode.current = normalizedCode;
@@ -380,8 +366,6 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
                     // Extract only digits and limit to 6
                     const digits = pastedData.replace(/\D/g, '').slice(0, 6);
 
-                    console.log('📋 [2FA] Paste detected:', { pastedData, digits, length: digits.length });
-
                     if (digits.length === 6) {
                       setVerificationCode(digits);
                       setError('');
@@ -389,20 +373,9 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
                       hasErrorOccurred.current = false; // Reset error state for new code
                       lastFailedCode.current = ''; // Clear failed code tracking
 
-                      console.log('✅ [2FA] Code pasted, will verify in 600ms');
-
                       // Wait a moment for UI to update, then verify
                       setTimeout(() => {
-                        console.log('🔍 [2FA] Attempting auto-verify after paste:', {
-                          codeLength: digits.length,
-                          loading,
-                          isVerifying: isVerifyingRef.current,
-                          hasSucceeded: hasCalledOnSuccess.current,
-                          hasError: hasErrorOccurred.current
-                        });
-
                         if (digits.length === 6 && !loading && !isVerifyingRef.current && !hasCalledOnSuccess.current && !hasErrorOccurred.current) {
-                          console.log('🚀 [2FA] Triggering verification from paste handler');
                           handleVerifyCode(digits);
                         } else {
                           console.warn('⚠️ [2FA] Auto-verify blocked:', {

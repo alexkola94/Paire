@@ -51,10 +51,8 @@ function AcceptInvitation() {
             await acceptInvitation()
             return
           }
-        } catch (error) {
-          // If invitation is invalid/expired, just redirect to partnership page
-          // User can see any valid pending invitations there
-          console.log('Invitation check failed, redirecting to partnership page')
+        } catch {
+          // If invitation is invalid/expired, redirect to partnership page
         }
 
         // Redirect to partnership page where user can see pending invitations

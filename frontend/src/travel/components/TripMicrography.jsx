@@ -113,12 +113,6 @@ const TripMicrography = ({ trip, onNavigate }) => {
         }))
         setCities(parsedCities)
 
-        // Debug log
-        console.log(
-          '[TripMicrography] loadCities - parsed cities:',
-          parsedCities.map(c => ({ id: c.id, lat: c.latitude, lng: c.longitude }))
-        )
-
         // Calculate initial view state to fit all cities + optional home location
         if (parsedCities && parsedCities.length > 0) {
           const validCities = parsedCities.filter(c => !isNaN(c.latitude) && !isNaN(c.longitude))

@@ -1,11 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { FiMessageCircle, FiX, FiSend, FiMinus, FiDownload } from 'react-icons/fi'
+import { 
+  FiMessageCircle, 
+  FiX, 
+  FiSend, 
+  FiMinus, 
+  FiDownload, 
+  FiCpu, 
+  FiSquare,
+  FiMaximize2,
+  FiMinimize2,
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiInfo,
+  FiCheckCircle,
+  FiFileText
+} from 'react-icons/fi'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
-import { chatbotService } from '../services/api'
+import { chatbotService, aiGatewayService } from '../services/api'
 import './Chatbot.css'
 
 /**
@@ -53,6 +68,9 @@ function Chatbot() {
   const [isRevealed, setIsRevealed] = useState(false) // For mobile reveal state
   const [isMobile, setIsMobile] = useState(false)
   const [downloadingReport, setDownloadingReport] = useState(null) // Track which report is downloading
+  const [isAiMode, setIsAiMode] = useState(false) // Toggle between rule-based and AI mode
+  const [abortController, setAbortController] = useState(null) // AbortController for cancelling AI requests
+  const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen mode for desktop
   const messagesEndRef = useRef(null)
 
   /**
@@ -70,17 +88,27 @@ function Chatbot() {
 
 
   /**
+   * Get the appropriate welcome message based on mode and language
+   */
+  const getWelcomeMessage = (aiMode) => {
+    const language = localStorage.getItem('language') || 'en'
+    if (aiMode) {
+      return language === 'el'
+        ? "Γεια σας! 🤖 Είμαι ο AI οικονομικός σας βοηθός. Μπορώ να βοηθήσω με πιο σύνθετες ερωτήσεις και να έχω φυσικές συνομιλίες!"
+        : "Hi! 🤖 I'm your AI-powered financial assistant. I can help with more complex questions and have natural conversations!"
+    }
+    return language === 'el'
+      ? "Γεια σας! 👋 Είμαι ο οικονομικός σας βοηθός. Ρωτήστε με οτιδήποτε για τα έξοδα, τα έσοδα ή τις οικονομικές σας αναλύσεις!"
+      : "Hi! 👋 I'm your financial assistant. Ask me anything about your expenses, income, or financial insights!"
+  }
+
+  /**
    * Load initial suggestions on mount
    */
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       loadSuggestions()
-      // Get language from localStorage for welcome message
-      const language = localStorage.getItem('language') || 'en'
-      const welcomeMessage = language === 'el'
-        ? "Γεια σας! 👋 Είμαι ο οικονομικός σας βοηθός. Ρωτήστε με οτιδήποτε για τα έξοδα, τα έσοδα ή τις οικονομικές σας αναλύσεις!"
-        : "Hi! 👋 I'm your financial assistant. Ask me anything about your expenses, income, or financial insights!"
-      addBotMessage(welcomeMessage)
+      addBotMessage(getWelcomeMessage(isAiMode))
     }
     // Scroll to bottom when opening chat
     if (isOpen) {
@@ -186,7 +214,7 @@ function Chatbot() {
   }
 
   /**
-   * Send user query to chatbot
+   * Send user query to chatbot (rule-based or AI mode)
    */
   const sendMessage = async (text = input) => {
     if (!text.trim()) return
@@ -196,46 +224,96 @@ function Chatbot() {
     setInput('')
     setLoading(true)
 
+    // Create AbortController for AI mode to allow cancellation
+    let controller = null
+    if (isAiMode) {
+      controller = new AbortController()
+      setAbortController(controller)
+    }
+
     try {
+      // Build conversation history
       const history = messages.map(m => ({
         role: m.role,
         message: m.message,
         timestamp: m.timestamp
       }))
 
-      const response = await chatbotService.sendQuery(userMessage, history)
+      if (isAiMode) {
+        // AI Gateway mode - send to LLM with abort signal
+        // Include the new user message in the history for context
+        const aiHistory = [...history, { role: 'user', message: userMessage }]
+        const response = await aiGatewayService.chat(aiHistory, { signal: controller?.signal })
+        
+        // AI Gateway returns { message: { role, content }, ... }
+        addBotMessage(response.message.content, 'text')
+      } else {
+        // Rule-based mode - existing chatbot service
+        const response = await chatbotService.sendQuery(userMessage, history)
 
-      addBotMessage(
-        response.message,
-        response.type,
-        response.data,
-        response.quickActions,
-        response.actionLink,
-        response.canGenerateReport,
-        response.reportType,
-        response.reportParams
-      )
+        addBotMessage(
+          response.message,
+          response.type,
+          response.data,
+          response.quickActions,
+          response.actionLink,
+          response.canGenerateReport,
+          response.reportType,
+          response.reportParams
+        )
+      }
     } catch (error) {
       // Get language from localStorage for error message
       const language = localStorage.getItem('language') || 'en'
-      const errorMessage = language === 'el'
-        ? 'Λυπάμαι, αντιμετώπισα ένα σφάλμα. Παρακαλώ δοκιμάστε ξανά.'
-        : 'Sorry, I encountered an error. Please try again.'
-      addBotMessage(errorMessage, 'error')
+      
+      // Handle aborted requests (user clicked stop)
+      if (error.name === 'AbortError') {
+        const stoppedMessage = language === 'el'
+          ? '⏹️ Η απάντηση διακόπηκε.'
+          : '⏹️ Response stopped.'
+        addBotMessage(stoppedMessage, 'info')
+        return // Don't show error for intentional abort
+      }
+      
+      // Handle AI Gateway specific errors
+      if (isAiMode && (error.message?.includes('503') || error.message?.includes('not configured'))) {
+        const errorMessage = language === 'el'
+          ? '🤖 Η υπηρεσία AI δεν είναι διαθέσιμη αυτή τη στιγμή. Δοκιμάστε τη λειτουργία κανόνων.'
+          : '🤖 AI service is not available right now. Try switching to rule-based mode.'
+        addBotMessage(errorMessage, 'warning')
+      } else {
+        const errorMessage = language === 'el'
+          ? 'Λυπάμαι, αντιμετώπισα ένα σφάλμα. Παρακαλώ δοκιμάστε ξανά.'
+          : 'Sorry, I encountered an error. Please try again.'
+        addBotMessage(errorMessage, 'error')
+      }
       console.error('Chatbot error:', error)
     } finally {
+      setLoading(false)
+      setAbortController(null) // Clear abort controller when done
+    }
+  }
+
+  /**
+   * Stop the current AI response
+   */
+  const stopResponse = () => {
+    if (abortController) {
+      abortController.abort()
+      setAbortController(null)
       setLoading(false)
     }
   }
 
   /**
-   * Handle Enter key press
+   * Handle key down in input: Enter submits, Shift+Enter inserts new line
    */
-  const handleKeyPress = (e) => {
+  const handleInputKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       sendMessage()
     }
+    // Shift+Enter: allow default (insert newline in textarea)
   }
 
   /**
@@ -444,8 +522,63 @@ function Chatbot() {
    */
   const clearChat = () => {
     setMessages([])
-    addBotMessage("Chat cleared! How can I help you?")
+    const language = localStorage.getItem('language') || 'en'
+    const clearMessage = language === 'el'
+      ? 'Η συνομιλία καθαρίστηκε! Πώς μπορώ να βοηθήσω;'
+      : 'Chat cleared! How can I help you?'
+    addBotMessage(clearMessage)
     loadSuggestions()
+  }
+
+  /**
+   * Toggle AI mode on/off.
+   * First press: activate AI mode (button shows active state, messages go to AI Gateway).
+   * Second press: deactivate and return to rule-based chatbot (button inactive).
+   */
+  const toggleAiMode = () => {
+    const activating = !isAiMode
+    setIsAiMode(activating)
+
+    // Notify user of mode change
+    const language = localStorage.getItem('language') || 'en'
+    const modeMessage = activating
+      ? (language === 'el'
+          ? '🤖 Λειτουργία AI ενεργοποιήθηκε! Τώρα χρησιμοποιώ τεχνητή νοημοσύνη για πιο φυσικές συνομιλίες.'
+          : '🤖 AI mode enabled! I\'m now using artificial intelligence for more natural conversations.')
+      : (language === 'el'
+          ? '📋 Λειτουργία κανόνων ενεργοποιήθηκε! Χρησιμοποιώ προκαθορισμένες απαντήσεις για γρήγορη βοήθεια.'
+          : '📋 Rule-based mode enabled! I\'m using predefined responses for quick assistance.')
+
+    addBotMessage(modeMessage, 'info')
+  }
+
+  /**
+   * Toggle fullscreen mode for desktop chat view
+   */
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen)
+  }
+
+  /**
+   * Get the icon for a message type
+   * @param {string} type - Message type (text, insight, warning, error, info, report_ready)
+   * @returns {JSX.Element|null} Icon component or null
+   */
+  const getMessageTypeIcon = (type) => {
+    switch (type) {
+      case 'insight':
+        return <FiCheckCircle className="chatbot-message-type-icon insight" size={16} />
+      case 'warning':
+        return <FiAlertTriangle className="chatbot-message-type-icon warning" size={16} />
+      case 'error':
+        return <FiAlertCircle className="chatbot-message-type-icon error" size={16} />
+      case 'info':
+        return <FiInfo className="chatbot-message-type-icon info" size={16} />
+      case 'report_ready':
+        return <FiFileText className="chatbot-message-type-icon report" size={16} />
+      default:
+        return null
+    }
   }
 
   return (
@@ -480,7 +613,7 @@ function Chatbot() {
 
       {/* Chat Window - On mobile, only show if revealed */}
       {isOpen && (!isMobile || isRevealed) && (
-        <div className={`chatbot-window ${isMinimized ? 'minimized' : ''} ${isMobile ? 'chatbot-mobile' : ''} ${isMobile && isRevealed ? 'chatbot-revealed' : ''}`}>
+        <div className={`chatbot-window ${isMinimized ? 'minimized' : ''} ${isMobile ? 'chatbot-mobile' : ''} ${isMobile && isRevealed ? 'chatbot-revealed' : ''} ${isFullscreen && !isMobile ? 'fullscreen' : ''}`}>
           {/* Header */}
           <div className="chatbot-header">
             <div className="chatbot-header-info">
@@ -493,12 +626,39 @@ function Chatbot() {
               <div>
                 <h3>{t('chatbot.title', 'Financial Assistant')}</h3>
                 <p className="chatbot-status">
-                  <span className="chatbot-status-dot"></span>
-                  {t('chatbot.online', 'Online')}
+                  <span className={`chatbot-status-dot ${isAiMode ? 'ai-mode' : ''}`}></span>
+                  {isAiMode 
+                    ? t('chatbot.aiModeActive', 'AI Mode') 
+                    : t('chatbot.online', 'Online')}
                 </p>
               </div>
             </div>
             <div className="chatbot-header-actions">
+              {/* AI Mode Toggle: active when isAiMode, inactive = rule-based */}
+              <button
+                type="button"
+                onClick={toggleAiMode}
+                className={`chatbot-ai-toggle ${isAiMode ? 'active' : ''}`}
+                aria-pressed={isAiMode}
+                aria-label={isAiMode ? t('chatbot.ruleMode', 'Switch to Rule Mode') : t('chatbot.aiMode', 'Switch to AI Mode')}
+                title={isAiMode ? t('chatbot.ruleMode', 'Switch to Rule Mode') : t('chatbot.aiMode', 'Switch to AI Mode')}
+              >
+                <FiCpu size={14} />
+                <span className="chatbot-ai-toggle-label">AI</span>
+              </button>
+              {/* Fullscreen toggle - only show on desktop */}
+              {!isMobile && (
+                <span
+                  onClick={toggleFullscreen}
+                  className="chatbot-header-btn"
+                  aria-label={isFullscreen ? t('chatbot.exitFullscreen', 'Exit fullscreen') : t('chatbot.fullscreen', 'Fullscreen')}
+                  title={isFullscreen ? t('chatbot.exitFullscreen', 'Exit fullscreen') : t('chatbot.fullscreen', 'Fullscreen')}
+                  role="button"
+                  tabIndex={0}
+                >
+                  {isFullscreen ? <FiMinimize2 size={18} /> : <FiMaximize2 size={18} />}
+                </span>
+              )}
               <span
                 onClick={minimizeChat}
                 className="chatbot-header-btn"
@@ -533,6 +693,12 @@ function Chatbot() {
                       <div className="chatbot-message-avatar">💰</div>
                     )}
                     <div className="chatbot-message-content">
+                      {/* Message type indicator icon */}
+                      {msg.role === 'bot' && msg.type && msg.type !== 'text' && (
+                        <div className="chatbot-message-type-indicator">
+                          {getMessageTypeIcon(msg.type)}
+                        </div>
+                      )}
                       <div className="chatbot-message-text">
                         {msg.typing && msg.role === 'bot' ? (
                           <TypewriterText
@@ -629,30 +795,45 @@ function Chatbot() {
                 </div>
               )}
 
-              {/* Input */}
+              {/* Input: Enter = send, Shift+Enter = new line */}
               <div className="chatbot-input-container">
-                <input
-                  type="text"
-                  className="chatbot-input"
+                <textarea
+                  className="chatbot-input chatbot-input-textarea"
                   placeholder={t('chatbot.placeholder', 'Ask me anything...')}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleInputKeyDown}
                   disabled={loading}
+                  rows={1}
+                  aria-label={t('chatbot.placeholder', 'Ask me anything...')}
                 />
-                <span
-                  className="chatbot-send-btn"
-                  onClick={() => !loading && input.trim() && sendMessage()}
-                  aria-label={t('chatbot.send')}
-                  role="button"
-                  tabIndex={0}
-                  style={{
-                    opacity: loading || !input.trim() ? 0.5 : 1,
-                    cursor: loading || !input.trim() ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <FiSend size={20} />
-                </span>
+                {/* Stop button - shows when AI is loading */}
+                {loading && isAiMode && abortController && (
+                  <button
+                    className="chatbot-stop-btn"
+                    onClick={stopResponse}
+                    aria-label={t('chatbot.stopResponse', 'Stop')}
+                    title={t('chatbot.stopResponse', 'Stop')}
+                  >
+                    <FiSquare size={16} />
+                  </button>
+                )}
+                {/* Send button - hidden when stop button is shown */}
+                {!(loading && isAiMode && abortController) && (
+                  <span
+                    className="chatbot-send-btn"
+                    onClick={() => !loading && input.trim() && sendMessage()}
+                    aria-label={t('chatbot.send')}
+                    role="button"
+                    tabIndex={0}
+                    style={{
+                      opacity: loading || !input.trim() ? 0.5 : 1,
+                      cursor: loading || !input.trim() ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <FiSend size={20} />
+                  </span>
+                )}
               </div>
 
               {/* Footer */}

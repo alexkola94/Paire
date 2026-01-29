@@ -734,7 +734,6 @@ const fetchHotelsFromSerpApi = async (lat, lon, limit = 20) => {
     const cacheKey = `serpapi-hotels-${cityName.toLowerCase().replace(/\s+/g, '-')}`
     const cached = await getCached(cacheKey)
     if (cached) {
-      console.log(`Using cached hotels for ${cityName}`)
       return cached.slice(0, limit)
     }
 
@@ -888,8 +887,6 @@ export const fetchStays = async (lat, lon, radius = DISCOVERY_MAP_CONFIG.poiRadi
   }
 
   // Fallback to placeholder data if API unavailable
-  console.log('Using placeholder stays data (SerpApi unavailable or no results)')
-
   // Scatter placeholder stays around the search location
   const stays = PLACEHOLDER_STAYS.map((stay, index) => {
     // Create positions in a circle around the center

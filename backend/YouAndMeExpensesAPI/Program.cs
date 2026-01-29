@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Text;
 using System.Threading.RateLimiting;
+using YouAndMeExpensesAPI.Configuration;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
@@ -409,6 +410,10 @@ builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 
 // Register Shield Auth Proxy Service
 builder.Services.AddHttpClient<IShieldAuthService, ShieldAuthService>();
+
+// AI Gateway (optional plug-and-play AI Microservice)
+builder.Services.Configure<AiGatewayOptions>(builder.Configuration.GetSection(AiGatewayOptions.SectionName));
+builder.Services.AddHttpClient<IAiGatewayClient, AiGatewayClient>(client => client.Timeout = TimeSpan.FromSeconds(120));
 builder.Services.AddScoped<IUserSyncService, UserSyncService>();
 
 // Register Achievement Service
@@ -550,19 +555,16 @@ app.UseRateLimiter();
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-    var origin = context.Request.Headers["Origin"].ToString();
     var method = context.Request.Method;
     var path = context.Request.Path;
-    
-    logger.LogInformation($"[{method}] {path} | Origin: {origin} | User-Agent: {context.Request.Headers["User-Agent"]}");
-    
+
     try
     {
         await next();
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, $"Error processing request: {method} {path}");
+        logger.LogError(ex, "Error processing request: {Method} {Path}", method, path);
         throw;
     }
 });

@@ -508,7 +508,19 @@
     "downloadPDF": "Download PDF",
     "downloading": "Downloading...",
     "downloadSuccess": "Report downloaded successfully!",
-    "downloadError": "Error generating report. Please try again."
+    "downloadError": "Error generating report. Please try again.",
+    "aiMode": "Switch to AI Mode",
+    "ruleMode": "Switch to Rule Mode",
+    "aiModeActive": "AI Mode",
+    "aiModeEnabled": "AI mode enabled! I'm now using artificial intelligence for more natural conversations.",
+    "aiModeDisabled": "Rule-based mode enabled! I'm using predefined responses for quick assistance.",
+    "aiWelcome": "Hi! 🤖 I'm your AI-powered financial assistant. I can help with more complex questions and have natural conversations!",
+    "aiUnavailable": "AI service is not available right now. Try switching to rule-based mode.",
+    "stopResponse": "Stop",
+    "stopping": "Stopping...",
+    "responseStopped": "Response stopped",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen"
   },
   "reminders": {
     "title": "Reminder Settings",

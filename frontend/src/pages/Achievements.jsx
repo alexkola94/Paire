@@ -80,11 +80,10 @@ function Achievements() {
    * Show notification for newly unlocked achievements
    */
   const showAchievementNotification = (newAchievements) => {
-    // This will be enhanced with a toast/notification component
+    // To be enhanced with a toast/notification component
     if (newAchievements && newAchievements.length > 0) {
-      const achievement = newAchievements[0]
-      // You can integrate with a toast notification library here
-      console.log('New achievement unlocked:', achievement)
+      // const achievement = newAchievements[0]
+      // Integrate with a toast notification library here
     }
   }
 

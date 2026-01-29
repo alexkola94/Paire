@@ -119,13 +119,11 @@ export const sessionManager = {
         // CHECK: Are we using sessionStorage (isolated)?
         // If so, we should not be affected by logouts in other tabs
         if (sessionStorage.getItem(SESSION_TOKEN_KEY)) {
-          console.log('🛡️ [SessionManager] Ignoring logout from another tab because we are using isolated sessionStorage')
           return
         }
 
         // If logout message has a userId, check if it matches ours
         if (data.userId && data.userId !== currentUserId) {
-          console.log('Ignoring logout from different user:', data.userId)
           return
         }
 
@@ -152,11 +150,8 @@ export const sessionManager = {
         // If we are using sessionStorage, we are independent of the shared localStorage
         // used for "Remember Me" or cross-tab sync. We can ignore this change.
         if (sessionStorage.getItem(SESSION_TOKEN_KEY)) {
-          console.log('🛡️ [SessionManager] Ignoring cross-tab user change because we are using isolated sessionStorage')
           return
         }
-
-        console.log('🔄 [SessionManager] Different user detected, clearing local session only')
         // Different user logged in - clear this session WITHOUT broadcasting and WITHOUT clearing shared keys
         // because those keys now belong to the new user
         this.clearSession(false, true)

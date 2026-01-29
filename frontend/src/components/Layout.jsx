@@ -241,9 +241,8 @@ function Layout() {
             setBackendVersion(data.version)
           }
         }
-      } catch (err) {
+      } catch {
         // Silent fail for version check
-        console.debug('Failed to fetch backend version', err)
       }
     }
     fetchVersion()

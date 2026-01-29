@@ -180,7 +180,6 @@ const usePOIData = () => {
       // Sort by distance from map center
       resultsWithDistance.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
 
-      console.log(`Search for "${query}" returned ${resultsWithDistance.length} results`)
       setSearchResults(resultsWithDistance)
     } catch (err) {
       console.error('Error searching POIs:', err)

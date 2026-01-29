@@ -245,7 +245,6 @@ export const subscribeToPush = async () => {
 
     const permission = await requestPushPermission()
     if (permission !== 'granted') {
-      console.log('Push permission not granted')
       return null
     }
 

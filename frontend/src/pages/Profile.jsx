@@ -105,11 +105,6 @@ function Profile() {
       }
 
       // Update profile - use endpoint without ID (uses authenticated user from JWT)
-      console.log('Updating profile with data:', {
-        display_name: profileData.display_name,
-        avatar_url: avatarUrl
-      })
-
       await profileService.updateMyProfile({
         display_name: profileData.display_name,
         avatar_url: avatarUrl

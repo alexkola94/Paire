@@ -1056,3 +1056,71 @@ export const publicStatsService = {
     return await publicApiRequest('/api/public/stats')
   }
 }
+
+// ========================================
+// AI Gateway Service
+// ========================================
+
+export const aiGatewayService = {
+  /**
+   * Send a chat message to the AI Gateway for LLM-powered responses
+   * @param {Array} messages - Array of message objects with role and message properties
+   * @param {Object} options - Optional configuration (model, temperature, maxTokens, signal)
+   * @param {AbortSignal} options.signal - Optional AbortSignal to cancel the request
+   * @returns {Promise<Object>} ChatResponse with message content
+   */
+  async chat(messages, options = {}) {
+    // Convert chatbot history format to AI Gateway format
+    // Chatbot uses: { role: 'user'|'bot', message: string }
+    // AI Gateway expects: { role: 'user'|'assistant', content: string }
+    const formattedMessages = messages.map(m => ({
+      role: m.role === 'bot' ? 'assistant' : 'user',
+      content: m.message
+    }))
+
+    // Build fetch options with optional AbortSignal for cancellation
+    const fetchOptions = {
+      method: 'POST',
+      body: JSON.stringify({
+        messages: formattedMessages,
+        model: options.model || null,
+        temperature: options.temperature || 0.7,
+        maxTokens: options.maxTokens || 1024,
+        stream: false,
+        skipPolishing: false
+      })
+    }
+
+    // Add signal if provided for request cancellation
+    if (options.signal) {
+      fetchOptions.signal = options.signal
+    }
+
+    return await apiRequest('/api/ai-gateway/chat', fetchOptions)
+  },
+
+  /**
+   * Check if AI Gateway is available/configured
+   * @returns {Promise<boolean>} True if AI Gateway is available
+   */
+  async isAvailable() {
+    try {
+      // Send a minimal test request to check availability
+      await apiRequest('/api/ai-gateway/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'test' }],
+          maxTokens: 1
+        })
+      })
+      return true
+    } catch (error) {
+      // 503 means AI Gateway is disabled/not configured
+      // Other errors might be auth issues which still mean it's "available"
+      if (error.message?.includes('503') || error.message?.includes('not configured')) {
+        return false
+      }
+      return true
+    }
+  }
+}
