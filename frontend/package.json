@@ -32,6 +32,7 @@
     "framer-motion": "^12.26.2",
     "i18next": "^23.7.16",
     "mapbox-gl": "^3.18.0",
+    "pdfjs-dist": "^5.4.530",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.3.1",

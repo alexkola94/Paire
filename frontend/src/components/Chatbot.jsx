@@ -15,13 +15,18 @@ import {
   FiAlertTriangle,
   FiInfo,
   FiCheckCircle,
-  FiFileText
+  FiFileText,
+  FiChevronDown,
+  FiCopy,
+  FiPaperclip,
+  FiImage
 } from 'react-icons/fi'
 import { TbBrain } from 'react-icons/tb' // Brain icon for thinking mode toggle
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import { chatbotService, aiGatewayService } from '../services/api'
+import { buildAttachmentsPayload } from '../utils/chatAttachments'
 import './Chatbot.css'
 
 /**
@@ -81,11 +86,19 @@ function Chatbot() {
   const [aiSubMode, setAiSubMode] = useState('normal') // When AI mode: 'thinking' = RAG enhanced, 'normal' = normal chat
   const [abortController, setAbortController] = useState(null) // AbortController for cancelling AI requests
   const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen mode for desktop
+  const [attachments, setAttachments] = useState([]) // { file, preview?, type: 'image'|'document' }
+  const fileInputRef = useRef(null)
+  const MAX_ATTACHMENT_SIZE_MB = 5
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null) // Ref for scrollable messages area
   const inputContainerRef = useRef(null) // Ref for input container to handle keyboard
   const chatWindowRef = useRef(null) // Ref for chat window
   const lastScrollAt = useRef(0)
   const scrollThrottleMs = 80 // Throttle auto-scroll during typewriter to avoid jank
+  // When user scrolls up during a response, we stop auto-scrolling and show "scroll to end" button
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const isAtBottomRef = useRef(true) // Ref so callbacks (e.g. typewriter onUpdate) see current value
+  const SCROLL_THRESHOLD_PX = 80 // Pixels from bottom to consider "at bottom"
 
   /**
    * Detect mobile viewport
@@ -119,7 +132,7 @@ function Chatbot() {
           chatWindowRef.current.style.setProperty('--keyboard-height', `${keyboardHeight}px`)
           chatWindowRef.current.style.height = `${viewportHeight}px`
           // Scroll to bottom to keep input visible
-          setTimeout(() => scrollToBottom(), 100)
+          setTimeout(() => scrollToBottom(true), 100)
         } else {
           // Keyboard is closed
           chatWindowRef.current.style.removeProperty('--keyboard-height')
@@ -154,7 +167,7 @@ function Chatbot() {
           block: 'end' 
         })
         // Also scroll messages to bottom
-        scrollToBottom()
+        scrollToBottom(true)
       }, 300)
     }
   }, [isMobile]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -183,16 +196,16 @@ function Chatbot() {
       loadSuggestions()
       addBotMessage(getWelcomeMessage(isAiMode))
     }
-    // Scroll to bottom when opening chat
+    // Scroll to bottom when opening chat and resume auto-following
     if (isOpen) {
-      setTimeout(() => {
-        scrollToBottom()
-      }, 100)
+      setIsAtBottom(true)
+      isAtBottomRef.current = true
+      setTimeout(() => scrollToBottom(true), 100)
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
-   * Auto-scroll to bottom when new messages arrive
+   * Auto-scroll to bottom when new messages arrive only if user is at bottom
    */
   useEffect(() => {
     scrollToBottom()
@@ -203,25 +216,64 @@ function Chatbot() {
    */
   useEffect(() => {
     if (!isMinimized && isOpen) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        scrollToBottom()
-      }, 100)
+      setIsAtBottom(true)
+      isAtBottomRef.current = true
+      setTimeout(() => scrollToBottom(true), 100)
     }
   }, [isMinimized]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Stable callback for auto-scroll when new messages arrive
-  const scrollToBottom = useCallback(() => {
+  // Keep ref in sync so callbacks (e.g. typewriter onUpdate) see current value
+  useEffect(() => {
+    isAtBottomRef.current = isAtBottom
+  }, [isAtBottom])
+
+  /**
+   * Detect when user scrolls; if they scroll up, stop auto-scrolling and show "scroll to end" button.
+   */
+  const handleMessagesScroll = useCallback(() => {
+    const el = messagesContainerRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    const atBottom = distanceFromBottom <= SCROLL_THRESHOLD_PX
+    setIsAtBottom(atBottom)
+    isAtBottomRef.current = atBottom
+  }, [])
+
+  /**
+   * Scroll to bottom only if user is already at bottom (so we don't override manual scroll-up).
+   * Pass force=true when we explicitly want to scroll (e.g. open chat, user sent message).
+   */
+  const scrollToBottom = useCallback((force = false) => {
+    if (!force && !isAtBottomRef.current) return
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
-  // Throttled scroll used during typewriter so the list follows as response streams in
+  /**
+   * Throttled scroll during typewriter; only scrolls when user is at bottom.
+   * Also checks actual scroll position so we never override if user has scrolled up
+   * (e.g. while response is still generating).
+   */
   const scrollToBottomIfNeeded = useCallback(() => {
+    if (!isAtBottomRef.current) return
+    const el = messagesContainerRef.current
+    if (el) {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      if (distanceFromBottom > SCROLL_THRESHOLD_PX) return // User scrolled up, don't override
+    }
     const now = Date.now()
     if (now - lastScrollAt.current >= scrollThrottleMs) {
       lastScrollAt.current = now
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
+  }, [])
+
+  /**
+   * User clicked "scroll to end": scroll to bottom and resume auto-following.
+   */
+  const handleScrollToEnd = useCallback(() => {
+    setIsAtBottom(true)
+    isAtBottomRef.current = true
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
   /**
@@ -282,29 +334,84 @@ function Chatbot() {
   }
 
   /**
-   * Add a user message to chat
+   * Add a user message to chat (optionally with attachments for display).
    */
-  const addUserMessage = (message) => {
+  const addUserMessage = (message, attachmentDisplay = null) => {
     setMessages(prev => [
       ...prev,
       {
         id: Date.now(),
         role: 'user',
         message,
+        attachments: attachmentDisplay || undefined,
         timestamp: new Date()
       }
     ])
   }
 
   /**
-   * Send user query to chatbot (rule-based or AI mode)
+   * Handle file selection for attachments (images + PDF, max 5MB).
+   */
+  const handleAttachmentSelect = (e) => {
+    const files = e.target.files
+    if (!files?.length) return
+    const next = []
+    const maxBytes = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024
+    const allowedImage = (f) => f.type.startsWith('image/')
+    const allowedDoc = (f) => f.name.toLowerCase().endsWith('.pdf') || f.name.toLowerCase().endsWith('.txt')
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.size > maxBytes) continue
+      if (!allowedImage(file) && !allowedDoc(file)) continue
+      const type = allowedImage(file) ? 'image' : 'document'
+      const preview = type === 'image' ? URL.createObjectURL(file) : null
+      next.push({ file, preview, type, name: file.name })
+    }
+    setAttachments(prev => [...prev, ...next].slice(-5))
+    e.target.value = ''
+  }
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => {
+      const next = prev.slice()
+      const item = next[index]
+      if (item?.preview) URL.revokeObjectURL(item.preview)
+      next.splice(index, 1)
+      return next
+    })
+  }
+
+  /**
+   * Send user query to chatbot (rule-based or AI mode).
+   * Attachments are shown in the user message; fallback text is appended so AI sees them until backend supports attachments.
    */
   const sendMessage = async (text = input) => {
-    if (!text.trim()) return
+    const trimmed = (text || input).trim()
+    if (!trimmed && !attachments.length) return
 
-    const userMessage = text.trim()
-    addUserMessage(userMessage)
+    const attachmentDisplay = attachments.map(a => ({
+      type: a.type,
+      name: a.name,
+      urlOrData: a.preview || null
+    }))
+    const fallbackText = attachments.length
+      ? attachments.map(a => `[${a.name}]`).join(', ')
+      : ''
+    const userMessage = trimmed
+      ? (fallbackText ? `${trimmed}\n\n${t('chatbot.attachedFiles', 'Attached')}: ${fallbackText}` : trimmed)
+      : (t('chatbot.attachedFiles', 'Attached') + ': ' + fallbackText)
+    addUserMessage(userMessage, attachmentDisplay.length ? attachmentDisplay : null)
     setInput('')
+    setAttachments([])
+    // Do not revoke preview URLs here; they are used in the displayed user message
+
+    // Build API attachment payload (images as base64, PDF/txt as extracted text)
+    const attachmentsPayload = await buildAttachmentsPayload(attachments)
+
+    // Stick to bottom so incoming response auto-scrolls; user can scroll up to read
+    setIsAtBottom(true)
+    isAtBottomRef.current = true
+    setTimeout(() => scrollToBottom(true), 50)
 
     // Create AbortController for AI mode BEFORE setting loading
     // This ensures the stop button renders immediately when loading starts
@@ -329,7 +436,8 @@ function Chatbot() {
           // Pass conversation history to enable follow-up questions and pronoun resolution
           const response = await aiGatewayService.ragQuery(userMessage, { 
             signal: controller?.signal,
-            history: history  // Include conversation history for context
+            history: history,
+            attachments: attachmentsPayload
           })
           const answer = response?.answer ?? response?.message?.content ?? ''
           const sources = response?.sources
@@ -343,7 +451,7 @@ function Chatbot() {
         } else {
           // Normal chat: standard LLM conversation
           const aiHistory = [...history, { role: 'user', message: userMessage }]
-          const response = await aiGatewayService.chat(aiHistory, { signal: controller?.signal })
+          const response = await aiGatewayService.chat(aiHistory, { signal: controller?.signal, attachments: attachmentsPayload })
           addBotMessage(response.message.content, 'text')
         }
       } else {
@@ -659,6 +767,118 @@ function Chatbot() {
   }
 
   /**
+   * Strip markdown to plain text for copy/export (basic: remove **, *, headers, links).
+   */
+  const stripMarkdownToPlainText = (text) => {
+    if (!text || typeof text !== 'string') return ''
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+      .replace(/`(.+?)`/g, '$1')
+      .trim()
+  }
+
+  /**
+   * Parse markdown table from message text and return CSV string.
+   * Returns null if no table found.
+   */
+  const parseMarkdownTableToCsv = (text) => {
+    if (!text || typeof text !== 'string') return null
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+    const tableStart = lines.findIndex(l => l.startsWith('|') && l.endsWith('|'))
+    if (tableStart === -1) return null
+    const tableLines = []
+    for (let i = tableStart; i < lines.length; i++) {
+      if (!lines[i].startsWith('|')) break
+      tableLines.push(lines[i])
+    }
+    if (tableLines.length < 2) return null
+    const rows = tableLines.map(line =>
+      line
+        .slice(1, -1)
+        .split('|')
+        .map(cell => cell.trim().replace(/"/g, '""'))
+    )
+    const hasSeparator = rows.length > 1 && rows[1].every(c => /^[-:]+$/.test(c))
+    const dataRows = hasSeparator ? [rows[0], ...rows.slice(2)] : rows
+    const header = dataRows[0]
+    const data = dataRows.slice(1)
+    const csvLines = [header.map(c => `"${c}"`).join(',')]
+    data.forEach(row => {
+      csvLines.push(row.map(c => `"${c}"`).join(','))
+    })
+    return csvLines.join('\n')
+  }
+
+  /**
+   * Copy bot message content to clipboard (plain text).
+   */
+  const copyMessageToClipboard = async (msg) => {
+    const plain = stripMarkdownToPlainText(msg.message)
+    try {
+      await navigator.clipboard.writeText(plain)
+    } catch (err) {
+      console.error('Copy failed:', err)
+    }
+  }
+
+  /**
+   * Export a single bot message as file (.txt or .md).
+   */
+  const exportMessageAsFile = (msg, format = 'md') => {
+    const content = format === 'txt' ? stripMarkdownToPlainText(msg.message) : msg.message
+    const ext = format === 'txt' ? 'txt' : 'md'
+    const name = `chat-message-${new Date(msg.timestamp).toISOString().slice(0, 19).replace(/:/g, '-')}.${ext}`
+    const blob = new Blob([content], { type: format === 'txt' ? 'text/plain' : 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Export bot message as CSV if it contains a markdown table.
+   */
+  const exportMessageAsCsv = (msg) => {
+    const csv = parseMarkdownTableToCsv(msg.message)
+    if (!csv) return
+    const name = `chat-message-${new Date(msg.timestamp).toISOString().slice(0, 19).replace(/:/g, '-')}.csv`
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Export full conversation as .md or .txt.
+   */
+  const exportConversation = (format = 'md') => {
+    const lines = messages.map(m => {
+      const role = m.role === 'user' ? 'User' : 'Assistant'
+      const time = new Date(m.timestamp).toLocaleString()
+      const content = format === 'txt' ? stripMarkdownToPlainText(m.message) : m.message
+      return `### ${role} (${time})\n\n${content}`
+    })
+    const content = lines.join('\n\n---\n\n')
+    const ext = format === 'txt' ? 'txt' : 'md'
+    const name = `chat-export-${new Date().toISOString().slice(0, 10)}.${ext}`
+    const blob = new Blob([content], { type: format === 'txt' ? 'text/plain' : 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  /**
    * Get the icon for a message type
    * @param {string} type - Message type (text, insight, warning, error, info, report_ready)
    * @returns {JSX.Element|null} Icon component or null
@@ -786,8 +1006,13 @@ function Chatbot() {
           {/* Messages */}
           {!isMinimized && (
             <>
-              <div className="chatbot-messages">
-                {messages.map((msg) => (
+              <div className="chatbot-messages-wrapper">
+                <div
+                  ref={messagesContainerRef}
+                  className="chatbot-messages"
+                  onScroll={handleMessagesScroll}
+                >
+                  {messages.map((msg) => (
                   <div
                     key={msg.id}
                     className={`chatbot-message ${msg.role === 'user' ? 'user' : 'bot'} ${msg.type || 'text'}`}
@@ -817,6 +1042,22 @@ function Chatbot() {
                           </div>
                         )}
                       </div>
+                      {/* User message attachments (images + document names) */}
+                      {msg.role === 'user' && msg.attachments?.length > 0 && (
+                        <div className="chatbot-message-attachments">
+                          {msg.attachments.map((att, i) => (
+                            <span key={i} className="chatbot-message-attachment">
+                              {att.type === 'image' && att.urlOrData ? (
+                                <img src={att.urlOrData} alt={att.name} className="chatbot-message-attachment-img" />
+                              ) : (
+                                <span className="chatbot-message-attachment-doc">
+                                  <FiFileText size={14} /> {att.name}
+                                </span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Quick Actions - Only show after typing is done */}
                       {!msg.typing && msg.quickActions && msg.quickActions.length > 0 && (
@@ -854,6 +1095,41 @@ function Chatbot() {
                         </Link>
                       )}
 
+                      {/* Export actions - only for bot messages, after typing done */}
+                      {msg.role === 'bot' && !msg.typing && (
+                        <div className="chatbot-message-export-actions">
+                          <button
+                            type="button"
+                            className="chatbot-export-btn"
+                            onClick={() => copyMessageToClipboard(msg)}
+                            aria-label={t('chatbot.copy', 'Copy')}
+                            title={t('chatbot.copy', 'Copy')}
+                          >
+                            <FiCopy size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="chatbot-export-btn"
+                            onClick={() => exportMessageAsFile(msg, 'md')}
+                            aria-label={t('chatbot.exportAsMd', 'Export as Markdown')}
+                            title={t('chatbot.exportAsMd', 'Export as Markdown')}
+                          >
+                            <FiDownload size={14} />
+                          </button>
+                          {parseMarkdownTableToCsv(msg.message) && (
+                            <button
+                              type="button"
+                              className="chatbot-export-btn"
+                              onClick={() => exportMessageAsCsv(msg)}
+                              aria-label={t('chatbot.exportAsCsv', 'Export as CSV')}
+                              title={t('chatbot.exportAsCsv', 'Export as CSV')}
+                            >
+                              <FiFileText size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       <span className="chatbot-message-time">
                         {new Date(msg.timestamp).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -876,7 +1152,21 @@ function Chatbot() {
                   </div>
                 )}
 
-                <div ref={messagesEndRef} />
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Scroll to end: show when user has scrolled up (e.g. while bot is responding) */}
+                {!isAtBottom && messages.length > 0 && (
+                  <button
+                    type="button"
+                    className="chatbot-scroll-to-end"
+                    onClick={handleScrollToEnd}
+                    aria-label={t('chatbot.scrollToEnd', 'Scroll to end')}
+                    title={t('chatbot.scrollToEnd', 'Scroll to end')}
+                  >
+                    <FiChevronDown size={20} />
+                  </button>
+                )}
               </div>
 
               {/* Suggested Questions */}
@@ -901,6 +1191,38 @@ function Chatbot() {
 
               {/* Input: Enter = send, Shift+Enter = new line */}
               <div className="chatbot-input-container" ref={inputContainerRef}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf,.txt"
+                  multiple
+                  className="chatbot-file-input-hidden"
+                  aria-label={t('chatbot.attachFile', 'Attach file')}
+                  onChange={handleAttachmentSelect}
+                />
+                {attachments.length > 0 && (
+                  <div className="chatbot-attachments-preview">
+                    {attachments.map((att, i) => (
+                      <span key={i} className="chatbot-attachment-preview-item">
+                        {att.type === 'image' && att.preview ? (
+                          <img src={att.preview} alt={att.name} className="chatbot-attachment-preview-img" />
+                        ) : (
+                          <span className="chatbot-attachment-preview-doc">
+                            <FiFileText size={14} /> {att.name}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="chatbot-attachment-remove"
+                          onClick={() => removeAttachment(i)}
+                          aria-label={t('chatbot.removeAttachment', 'Remove attachment')}
+                        >
+                          <FiX size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <textarea
                   className="chatbot-input chatbot-input-textarea"
                   placeholder={t('chatbot.placeholder', 'Ask me anything...')}
@@ -912,7 +1234,16 @@ function Chatbot() {
                   rows={1}
                   aria-label={t('chatbot.placeholder', 'Ask me anything...')}
                 />
-                
+                <button
+                  type="button"
+                  className="chatbot-attach-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                  aria-label={t('chatbot.attachFile', 'Attach file')}
+                  title={t('chatbot.attachFile', 'Attach file')}
+                >
+                  <FiPaperclip size={18} />
+                </button>
                 {/* Thinking Mode Toggle - only visible when AI mode is on */}
                 {isAiMode && (
                   <button
@@ -946,13 +1277,13 @@ function Chatbot() {
                 {!(loading && isAiMode && abortController) && (
                   <span
                     className="chatbot-send-btn"
-                    onClick={() => !loading && input.trim() && sendMessage()}
+                    onClick={() => !loading && (input.trim() || attachments.length) && sendMessage()}
                     aria-label={t('chatbot.send')}
                     role="button"
                     tabIndex={0}
                     style={{
-                      opacity: loading || !input.trim() ? 0.5 : 1,
-                      cursor: loading || !input.trim() ? 'not-allowed' : 'pointer'
+                      opacity: loading || (!input.trim() && !attachments.length) ? 0.5 : 1,
+                      cursor: loading || (!input.trim() && !attachments.length) ? 'not-allowed' : 'pointer'
                     }}
                   >
                     <FiSend size={20} />
@@ -967,6 +1298,14 @@ function Chatbot() {
                   className="chatbot-footer-btn"
                 >
                   {t('chatbot.clearChat', 'Clear chat')}
+                </button>
+                <button
+                  onClick={() => exportConversation('md')}
+                  className="chatbot-footer-btn chatbot-footer-export"
+                  disabled={messages.length === 0}
+                >
+                  <FiDownload size={14} style={{ marginRight: '6px' }} />
+                  {t('chatbot.exportConversation', 'Export chat')}
                 </button>
               </div>
             </>

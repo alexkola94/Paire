@@ -497,8 +497,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding-top: 80px;
-  /* Clear fixed travel-nav: bar height + full safe area + 4px buffer */
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 4px);
+  /* Clear fixed travel-nav: bar height + safe area */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   /* Thin scrollbar styling */
   scrollbar-width: thin;
   scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
@@ -618,8 +618,8 @@
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: var(--glass-border);
   z-index: 200;
-  /* Full safe area + buffer so nav taps don't trigger Apple Intelligence / home indicator (iPhone 16 Pro) */
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  /* Safe area for home indicator - minimal padding to avoid triggering Apple Intelligence */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   /* Smooth slide animation */
   transform: translateY(0);
   opacity: 1;
@@ -1136,10 +1136,10 @@
    Prevents accidental Siri/gesture triggers
    ================================ */
 
-/* Mobile - full safe area so taps don't trigger Apple Intelligence / home indicator */
+/* Mobile - safe area for home indicator */
 @media (max-width: 768px) {
   .travel-nav {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .travel-nav-container {
@@ -1149,19 +1149,19 @@
   }
 }
 
-/* iOS - full safe area respected */
+/* iOS - safe area respected */
 @supports (padding: max(0px)) {
   @media (max-width: 768px) {
     .travel-nav {
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
   }
 }
 
-/* Touch devices - full safe area so nav taps don't hit system gesture zone */
+/* Touch devices - safe area for system gesture zone */
 @media (hover: none) and (pointer: coarse) {
   .travel-nav {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .travel-nav-item {
@@ -1176,10 +1176,10 @@
   }
 }
 
-/* Standalone PWA - full safe area so nav doesn't trigger Apple Intelligence */
+/* Standalone PWA - safe area for home indicator */
 @media (display-mode: standalone) {
   .travel-nav {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 

@@ -535,7 +535,19 @@
     "exitFullscreen": "Exit fullscreen",
     "thinkingModeLabel": "Thinking mode",
     "normalChatLabel": "Normal",
-    "sources": "Sources"
+    "sources": "Sources",
+    "copy": "Copy",
+    "copySuccess": "Copied to clipboard",
+    "exportAsTxt": "Export as TXT",
+    "exportAsMd": "Export as Markdown",
+    "exportAsCsv": "Export as CSV",
+    "exportConversation": "Export chat",
+    "exportConversationSuccess": "Chat exported",
+    "attachFile": "Attach file",
+    "removeAttachment": "Remove attachment",
+    "attachedFiles": "Attached",
+    "fileTooLarge": "File too large (max {{max}}MB)",
+    "invalidFileType": "Invalid file type. Use images, PDF or TXT."
   },
   "reminders": {
     "title": "Reminder Settings",
@@ -1314,10 +1326,18 @@
       "stopResponse": "Stop",
       "fullscreen": "Fullscreen",
       "exitFullscreen": "Exit fullscreen",
-      "thinkingModeLabel": "Thinking mode",
-      "normalChatLabel": "Normal",
-      "sources": "Sources"
-    },
+    "thinkingModeLabel": "Thinking mode",
+    "normalChatLabel": "Normal",
+    "sources": "Sources",
+    "scrollToEnd": "Scroll to end",
+    "copy": "Copy",
+    "exportAsMd": "Export as Markdown",
+    "exportAsCsv": "Export as CSV",
+    "exportConversation": "Export chat",
+    "attachFile": "Attach file",
+    "removeAttachment": "Remove attachment",
+    "attachedFiles": "Attached"
+  },
     "notifications": {
       "title": "Notification Settings",
       "subtitle": "Configure how you receive travel alerts and reminders",

@@ -13,13 +13,19 @@ import {
   FiAlertCircle,
   FiAlertTriangle,
   FiInfo,
-  FiCheckCircle
+  FiCheckCircle,
+  FiCopy,
+  FiDownload,
+  FiFileText,
+  FiPaperclip,
+  FiChevronDown
 } from 'react-icons/fi'
 import { TbBrain } from 'react-icons/tb'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import { travelChatbotService, aiGatewayService } from '../../services/api'
+import { buildAttachmentsPayload } from '../../utils/chatAttachments'
 import { getStaticTravelSuggestions } from '../utils/travelChatbotSuggestions'
 import '../styles/TravelChatbot.css'
 
@@ -81,11 +87,18 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
   const [aiSubMode, setAiSubMode] = useState('normal')
   const [abortController, setAbortController] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [attachments, setAttachments] = useState([])
+  const fileInputRef = useRef(null)
+  const MAX_ATTACHMENT_SIZE_MB = 5
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
   const inputContainerRef = useRef(null)
   const chatWindowRef = useRef(null)
   const lastScrollAt = useRef(0)
   const scrollThrottleMs = 80
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const isAtBottomRef = useRef(true)
+  const SCROLL_THRESHOLD_PX = 80
 
   const language = localStorage.getItem('language') || 'en'
 
@@ -150,7 +163,11 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
       loadSuggestions()
       addBotMessage(getWelcomeMessage(isAiMode))
     }
-    if (isOpen) setTimeout(() => scrollToBottom(), 100)
+    if (isOpen) {
+      setIsAtBottom(true)
+      isAtBottomRef.current = true
+      setTimeout(() => scrollToBottom(true), 100)
+    }
   }, [isOpen])
 
   useEffect(() => {
@@ -158,19 +175,48 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
   }, [messages])
 
   useEffect(() => {
-    if (!isMinimized && isOpen) setTimeout(() => scrollToBottom(), 100)
+    if (!isMinimized && isOpen) {
+      setIsAtBottom(true)
+      isAtBottomRef.current = true
+      setTimeout(() => scrollToBottom(true), 100)
+    }
   }, [isMinimized])
 
-  const scrollToBottom = useCallback(() => {
+  useEffect(() => {
+    isAtBottomRef.current = isAtBottom
+  }, [isAtBottom])
+
+  /** Detect when user scrolls; if they scroll up, show "scroll to end" button. */
+  const handleMessagesScroll = useCallback(() => {
+    const el = messagesContainerRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    const atBottom = distanceFromBottom <= SCROLL_THRESHOLD_PX
+    setIsAtBottom(atBottom)
+    isAtBottomRef.current = atBottom
+  }, [])
+
+  /** Scroll to bottom only when user is at bottom (or force=true). */
+  const scrollToBottom = useCallback((force = false) => {
+    if (!force && !isAtBottomRef.current) return
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
+  /** Throttled scroll during typewriter; only scrolls when user is at bottom. */
   const scrollToBottomIfNeeded = useCallback(() => {
+    if (!isAtBottomRef.current) return
     const now = Date.now()
     if (now - lastScrollAt.current >= scrollThrottleMs) {
       lastScrollAt.current = now
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
+  }, [])
+
+  /** User clicked "scroll to end": scroll to bottom and resume auto-following. */
+  const handleScrollToEnd = useCallback(() => {
+    setIsAtBottom(true)
+    isAtBottomRef.current = true
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
   // Load suggestions: try API first, fallback to static list when backend unavailable
@@ -206,18 +252,68 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
     setMessages(prev => prev.map(msg => (msg.id === id ? { ...msg, typing: false } : msg)))
   }
 
-  const addUserMessage = (message) => {
+  const addUserMessage = (message, attachmentDisplay = null) => {
     setMessages(prev => [
       ...prev,
-      { id: Date.now(), role: 'user', message, timestamp: new Date() }
+      {
+        id: Date.now(),
+        role: 'user',
+        message,
+        attachments: attachmentDisplay || undefined,
+        timestamp: new Date()
+      }
     ])
   }
 
+  const handleAttachmentSelect = (e) => {
+    const files = e.target.files
+    if (!files?.length) return
+    const next = []
+    const maxBytes = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024
+    const allowedImage = (f) => f.type.startsWith('image/')
+    const allowedDoc = (f) => f.name.toLowerCase().endsWith('.pdf') || f.name.toLowerCase().endsWith('.txt')
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.size > maxBytes) continue
+      if (!allowedImage(file) && !allowedDoc(file)) continue
+      const type = allowedImage(file) ? 'image' : 'document'
+      const preview = type === 'image' ? URL.createObjectURL(file) : null
+      next.push({ file, preview, type, name: file.name })
+    }
+    setAttachments(prev => [...prev, ...next].slice(-5))
+    e.target.value = ''
+  }
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => {
+      const next = prev.slice()
+      const item = next[index]
+      if (item?.preview) URL.revokeObjectURL(item.preview)
+      next.splice(index, 1)
+      return next
+    })
+  }
+
   const sendMessage = async (text = input) => {
-    if (!text.trim()) return
-    const userMessage = text.trim()
-    addUserMessage(userMessage)
+    const trimmed = (text || input).trim()
+    if (!trimmed && !attachments.length) return
+    const attachmentDisplay = attachments.map(a => ({
+      type: a.type,
+      name: a.name,
+      urlOrData: a.preview || null
+    }))
+    const fallbackText = attachments.length ? attachments.map(a => `[${a.name}]`).join(', ') : ''
+    const userMessage = trimmed
+      ? (fallbackText ? `${trimmed}\n\n${t('travel.chatbot.attachedFiles', 'Attached')}: ${fallbackText}` : trimmed)
+      : (t('travel.chatbot.attachedFiles', 'Attached') + ': ' + fallbackText)
+    addUserMessage(userMessage, attachmentDisplay.length ? attachmentDisplay : null)
+    // Build API attachment payload (base64 images, extracted PDF/text) before clearing
+    const attachmentsPayload = await buildAttachmentsPayload(attachments)
     setInput('')
+    setAttachments([])
+    setIsAtBottom(true)
+    isAtBottomRef.current = true
+    setTimeout(() => scrollToBottom(true), 50)
     let controller = null
     if (isAiMode) {
       controller = new AbortController()
@@ -230,7 +326,8 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
         if (aiSubMode === 'thinking') {
           const response = await aiGatewayService.ragQuery(userMessage, {
             signal: controller?.signal,
-            history
+            history,
+            attachments: attachmentsPayload?.length ? attachmentsPayload : undefined
           })
           const answer = response?.answer ?? response?.message?.content ?? ''
           const sources = response?.sources
@@ -243,7 +340,10 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
           addBotMessage(displayMessage, 'text')
         } else {
           const aiHistory = [...history, { role: 'user', message: userMessage }]
-          const response = await aiGatewayService.chat(aiHistory, { signal: controller?.signal })
+          const response = await aiGatewayService.chat(aiHistory, {
+            signal: controller?.signal,
+            attachments: attachmentsPayload?.length ? attachmentsPayload : undefined
+          })
           addBotMessage(response.message.content, 'text')
         }
       } else {
@@ -398,6 +498,92 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
     }
   }
 
+  /** Strip markdown to plain text for copy/export */
+  const stripMarkdownToPlainText = (text) => {
+    if (!text || typeof text !== 'string') return ''
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+      .replace(/`(.+?)`/g, '$1')
+      .trim()
+  }
+
+  /** Parse markdown table to CSV string; returns null if no table */
+  const parseMarkdownTableToCsv = (text) => {
+    if (!text || typeof text !== 'string') return null
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+    const tableStart = lines.findIndex(l => l.startsWith('|') && l.endsWith('|'))
+    if (tableStart === -1) return null
+    const tableLines = []
+    for (let i = tableStart; i < lines.length; i++) {
+      if (!lines[i].startsWith('|')) break
+      tableLines.push(lines[i])
+    }
+    if (tableLines.length < 2) return null
+    const rows = tableLines.map(line =>
+      line.slice(1, -1).split('|').map(cell => cell.trim().replace(/"/g, '""'))
+    )
+    const hasSeparator = rows.length > 1 && rows[1].every(c => /^[-:]+$/.test(c))
+    const dataRows = hasSeparator ? [rows[0], ...rows.slice(2)] : rows
+    const header = dataRows[0]
+    const data = dataRows.slice(1)
+    const csvLines = [header.map(c => `"${c}"`).join(',')]
+    data.forEach(row => { csvLines.push(row.map(c => `"${c}"`).join(',')) })
+    return csvLines.join('\n')
+  }
+
+  const copyMessageToClipboard = async (msg) => {
+    const plain = stripMarkdownToPlainText(msg.message)
+    try { await navigator.clipboard.writeText(plain) } catch (err) { console.error('Copy failed:', err) }
+  }
+
+  const exportMessageAsFile = (msg, format = 'md') => {
+    const content = format === 'txt' ? stripMarkdownToPlainText(msg.message) : msg.message
+    const ext = format === 'txt' ? 'txt' : 'md'
+    const name = `chat-message-${new Date(msg.timestamp).toISOString().slice(0, 19).replace(/:/g, '-')}.${ext}`
+    const blob = new Blob([content], { type: format === 'txt' ? 'text/plain' : 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const exportMessageAsCsv = (msg) => {
+    const csv = parseMarkdownTableToCsv(msg.message)
+    if (!csv) return
+    const name = `chat-message-${new Date(msg.timestamp).toISOString().slice(0, 19).replace(/:/g, '-')}.csv`
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const exportConversation = (format = 'md') => {
+    const lines = messages.map(m => {
+      const role = m.role === 'user' ? 'User' : 'Assistant'
+      const time = new Date(m.timestamp).toLocaleString()
+      const content = format === 'txt' ? stripMarkdownToPlainText(m.message) : m.message
+      return `### ${role} (${time})\n\n${content}`
+    })
+    const content = lines.join('\n\n---\n\n')
+    const ext = format === 'txt' ? 'txt' : 'md'
+    const name = `chat-export-${new Date().toISOString().slice(0, 10)}.${ext}`
+    const blob = new Blob([content], { type: format === 'txt' ? 'text/plain' : 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const getActionLinkElement = (actionLink) => {
     if (!actionLink) return null
     const pageMatch = actionLink.match(/[?&]page=(\w+)/)
@@ -520,7 +706,12 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
 
           {!isMinimized && (
             <>
-              <div className="travel-chatbot-messages">
+              <div className="travel-chatbot-messages-wrapper">
+                <div
+                  ref={messagesContainerRef}
+                  className="travel-chatbot-messages"
+                  onScroll={handleMessagesScroll}
+                >
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -549,6 +740,21 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
                           </div>
                         )}
                       </div>
+                      {msg.role === 'user' && msg.attachments?.length > 0 && (
+                        <div className="travel-chatbot-message-attachments">
+                          {msg.attachments.map((att, i) => (
+                            <span key={i} className="travel-chatbot-message-attachment">
+                              {att.type === 'image' && att.urlOrData ? (
+                                <img src={att.urlOrData} alt={att.name} className="travel-chatbot-message-attachment-img" />
+                              ) : (
+                                <span className="travel-chatbot-message-attachment-doc">
+                                  <FiFileText size={14} /> {att.name}
+                                </span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       {!msg.typing && msg.quickActions && msg.quickActions.length > 0 && (
                         <div className="travel-chatbot-quick-actions">
                           {msg.quickActions.map((action, i) => (
@@ -563,6 +769,39 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
                         </div>
                       )}
                       {!msg.typing && msg.actionLink && getActionLinkElement(msg.actionLink)}
+                      {msg.role === 'bot' && !msg.typing && (
+                        <div className="travel-chatbot-message-export-actions">
+                          <button
+                            type="button"
+                            className="travel-chatbot-export-btn"
+                            onClick={() => copyMessageToClipboard(msg)}
+                            aria-label={t('travel.chatbot.copy', 'Copy')}
+                            title={t('travel.chatbot.copy', 'Copy')}
+                          >
+                            <FiCopy size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="travel-chatbot-export-btn"
+                            onClick={() => exportMessageAsFile(msg, 'md')}
+                            aria-label={t('travel.chatbot.exportAsMd', 'Export as Markdown')}
+                            title={t('travel.chatbot.exportAsMd', 'Export as Markdown')}
+                          >
+                            <FiDownload size={14} />
+                          </button>
+                          {parseMarkdownTableToCsv(msg.message) && (
+                            <button
+                              type="button"
+                              className="travel-chatbot-export-btn"
+                              onClick={() => exportMessageAsCsv(msg)}
+                              aria-label={t('travel.chatbot.exportAsCsv', 'Export as CSV')}
+                              title={t('travel.chatbot.exportAsCsv', 'Export as CSV')}
+                            >
+                              <FiFileText size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
                       <span className="travel-chatbot-message-time">
                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
@@ -581,6 +820,20 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
                   </div>
                 )}
                 <div ref={messagesEndRef} />
+                </div>
+
+                {/* Scroll to end: show when user has scrolled up (e.g. while bot is responding) */}
+                {!isAtBottom && messages.length > 0 && (
+                  <button
+                    type="button"
+                    className="travel-chatbot-scroll-to-end"
+                    onClick={handleScrollToEnd}
+                    aria-label={t('travel.chatbot.scrollToEnd', 'Scroll to end')}
+                    title={t('travel.chatbot.scrollToEnd', 'Scroll to end')}
+                  >
+                    <FiChevronDown size={20} />
+                  </button>
+                )}
               </div>
 
               {messages.length === 1 && suggestions.length > 0 && (
@@ -603,6 +856,38 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
               )}
 
               <div className="travel-chatbot-input-container" ref={inputContainerRef}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf,.txt"
+                  multiple
+                  className="travel-chatbot-file-input-hidden"
+                  aria-label={t('travel.chatbot.attachFile', 'Attach file')}
+                  onChange={handleAttachmentSelect}
+                />
+                {attachments.length > 0 && (
+                  <div className="travel-chatbot-attachments-preview">
+                    {attachments.map((att, i) => (
+                      <span key={i} className="travel-chatbot-attachment-preview-item">
+                        {att.type === 'image' && att.preview ? (
+                          <img src={att.preview} alt={att.name} className="travel-chatbot-attachment-preview-img" />
+                        ) : (
+                          <span className="travel-chatbot-attachment-preview-doc">
+                            <FiFileText size={14} /> {att.name}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="travel-chatbot-attachment-remove"
+                          onClick={() => removeAttachment(i)}
+                          aria-label={t('travel.chatbot.removeAttachment', 'Remove attachment')}
+                        >
+                          <FiX size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <textarea
                   className="travel-chatbot-input travel-chatbot-input-textarea"
                   placeholder={t('travel.chatbot.placeholder', 'Ask about your trip...')}
@@ -614,6 +899,16 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
                   rows={1}
                   aria-label={t('travel.chatbot.placeholder', 'Ask about your trip...')}
                 />
+                <button
+                  type="button"
+                  className="travel-chatbot-attach-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                  aria-label={t('travel.chatbot.attachFile', 'Attach file')}
+                  title={t('travel.chatbot.attachFile', 'Attach file')}
+                >
+                  <FiPaperclip size={18} />
+                </button>
                 {isAiMode && (
                   <button
                     type="button"
@@ -639,13 +934,13 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
                 {!(loading && isAiMode && abortController) && (
                   <span
                     className="travel-chatbot-send-btn"
-                    onClick={() => !loading && input.trim() && sendMessage()}
+                    onClick={() => !loading && (input.trim() || attachments.length) && sendMessage()}
                     aria-label={t('travel.chatbot.send', 'Send')}
                     role="button"
                     tabIndex={0}
                     style={{
-                      opacity: loading || !input.trim() ? 0.5 : 1,
-                      cursor: loading || !input.trim() ? 'not-allowed' : 'pointer'
+                      opacity: loading || (!input.trim() && !attachments.length) ? 0.5 : 1,
+                      cursor: loading || (!input.trim() && !attachments.length) ? 'not-allowed' : 'pointer'
                     }}
                   >
                     <FiSend size={20} />
@@ -656,6 +951,14 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
               <div className="travel-chatbot-footer">
                 <button onClick={clearChat} className="travel-chatbot-footer-btn">
                   {t('travel.chatbot.clearChat', 'Clear chat')}
+                </button>
+                <button
+                  onClick={() => exportConversation('md')}
+                  className="travel-chatbot-footer-btn travel-chatbot-footer-export"
+                  disabled={messages.length === 0}
+                >
+                  <FiDownload size={14} style={{ marginRight: '6px' }} />
+                  {t('travel.chatbot.exportConversation', 'Export chat')}
                 </button>
               </div>
             </>

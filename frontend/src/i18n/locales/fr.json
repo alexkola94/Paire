@@ -358,7 +358,8 @@
     "exitFullscreen": "Quitter le plein écran",
     "thinkingModeLabel": "Mode réflexion (RAG)",
     "normalChatLabel": "Chat normal",
-    "sources": "Sources"
+    "sources": "Sources",
+    "scrollToEnd": "Aller à la fin"
   },
   "travel": {
     "chatbot": {

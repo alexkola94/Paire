@@ -1133,16 +1133,18 @@ export const aiGatewayService = {
     }))
 
     // Build fetch options with optional AbortSignal for cancellation
+    const payload = {
+      messages: formattedMessages,
+      model: options.model || null,
+      temperature: options.temperature || 0.7,
+      maxTokens: options.maxTokens || 1024,
+      stream: false,
+      skipPolishing: false
+    }
+    if (options.attachments?.length) payload.attachments = options.attachments
     const fetchOptions = {
       method: 'POST',
-      body: JSON.stringify({
-        messages: formattedMessages,
-        model: options.model || null,
-        temperature: options.temperature || 0.7,
-        maxTokens: options.maxTokens || 1024,
-        stream: false,
-        skipPolishing: false
-      })
+      body: JSON.stringify(payload)
     }
 
     // Add signal if provided for request cancellation
@@ -1173,12 +1175,14 @@ export const aiGatewayService = {
       content: m.message
     })) || []
 
+    const payload = {
+      query: query.trim(),
+      conversationHistory: conversationHistory
+    }
+    if (options.attachments?.length) payload.attachments = options.attachments
     const fetchOptions = {
       method: 'POST',
-      body: JSON.stringify({ 
-        query: query.trim(),
-        conversationHistory: conversationHistory
-      })
+      body: JSON.stringify(payload)
     }
     if (options.signal) fetchOptions.signal = options.signal
     return await apiRequest('/api/ai-gateway/rag-query', fetchOptions)

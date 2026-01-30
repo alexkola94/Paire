@@ -11,8 +11,8 @@
     /* Only visible on mobile */
     display: none;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-    /* Full safe area + small buffer so nav taps don't trigger Apple Intelligence / home indicator (iPhone 16 Pro) */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+    /* Safe area for home indicator - minimal padding to avoid triggering Apple Intelligence */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     /* Animation properties */
     transform: translateY(100%);
     opacity: 0;

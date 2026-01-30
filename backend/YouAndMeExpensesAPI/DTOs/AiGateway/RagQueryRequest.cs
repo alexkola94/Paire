@@ -31,6 +31,24 @@ public class RagQueryRequest
     /// Optional. Minimum relevance score (0.0–1.0). For user-scoped queries the backend may use a lower default (e.g. 0.2) to improve recall.
     /// </summary>
     public double? MinRelevanceScore { get; set; }
+
+    /// <summary>
+    /// Optional. Attachments (e.g. image base64 or extracted document text) to include in the prompt for the AI to "read".
+    /// </summary>
+    public List<ChatAttachment>? Attachments { get; set; }
+}
+
+/// <summary>
+/// A single attachment for chat/RAG (image as base64 or document as text).
+/// </summary>
+public class ChatAttachment
+{
+    /// <summary>Type: "image" (base64 data) or "text" (extracted document text).</summary>
+    public string Type { get; set; } = null!;
+    /// <summary>Base64 image data or plain text content.</summary>
+    public string Data { get; set; } = null!;
+    /// <summary>Optional filename or label for context.</summary>
+    public string? Name { get; set; }
 }
 
 /// <summary>

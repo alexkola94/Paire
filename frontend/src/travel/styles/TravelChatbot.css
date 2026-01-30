@@ -209,6 +209,7 @@
   border-radius: 50px;
 }
 
+.travel-layout .travel-chatbot-window.minimized .travel-chatbot-messages-wrapper,
 .travel-layout .travel-chatbot-window.minimized .travel-chatbot-messages,
 .travel-layout .travel-chatbot-window.minimized .travel-chatbot-input-container,
 .travel-layout .travel-chatbot-window.minimized .travel-chatbot-suggestions,
@@ -394,15 +395,53 @@
   border-color: rgba(255, 255, 255, 0.6);
 }
 
-/* Messages */
+/* Messages wrapper: takes remaining space so only messages scroll; scroll-to-end button positioned inside */
+.travel-layout .travel-chatbot-messages-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
 .travel-layout .travel-chatbot-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  scroll-behavior: smooth;
   transition: background 0.2s ease;
+}
+
+/* Scroll to end: show when user has scrolled up during a response */
+.travel-layout .travel-chatbot-scroll-to-end {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--travel-chatbot-border);
+  background: var(--travel-chatbot-bg);
+  color: var(--travel-chatbot-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  z-index: 2;
+}
+
+.travel-layout .travel-chatbot-scroll-to-end:hover {
+  background: var(--travel-chatbot-primary);
+  color: white;
+  transform: translateX(-50%) scale(1.05);
 }
 
 .travel-layout .travel-chatbot-message {
@@ -464,17 +503,228 @@
   border-top-right-radius: 4px;
 }
 
+/* ==========================================
+   MOBILE-FIRST RESPONSE CONTENT (MARKDOWN)
+   ========================================== */
+
 .travel-layout .travel-chatbot-markdown,
 .travel-layout .travel-chatbot-message-text .travel-chatbot-markdown {
+  font-size: clamp(13px, 3.5vw, 14px);
+  line-height: 1.65;
   word-break: break-word;
+  overflow-wrap: break-word;
+  color: inherit;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-message-text {
+  padding: 12px 14px;
+  transition: padding 0.2s ease;
 }
 
 .travel-layout .travel-chatbot-markdown p {
-  margin: 0 0 0.5em;
+  margin: 0 0 0.65em 0;
 }
 
 .travel-layout .travel-chatbot-markdown p:last-child {
   margin-bottom: 0;
+}
+
+.travel-layout .travel-chatbot-markdown p + p {
+  margin-top: 0.5em;
+}
+
+.travel-layout .travel-chatbot-markdown ul,
+.travel-layout .travel-chatbot-markdown ol {
+  padding-left: clamp(16px, 4vw, 24px);
+  margin: 12px 0;
+}
+
+.travel-layout .travel-chatbot-markdown li {
+  margin-bottom: clamp(6px, 1.5vw, 8px);
+  padding-left: 4px;
+  line-height: 1.55;
+}
+
+.travel-layout .travel-chatbot-markdown li::marker {
+  color: var(--travel-chatbot-primary);
+}
+
+.travel-layout .travel-chatbot-markdown ul ul,
+.travel-layout .travel-chatbot-markdown ol ol,
+.travel-layout .travel-chatbot-markdown ul ol,
+.travel-layout .travel-chatbot-markdown ol ul {
+  margin: 6px 0;
+  padding-left: clamp(14px, 3.5vw, 20px);
+}
+
+.travel-layout .travel-chatbot-markdown h1,
+.travel-layout .travel-chatbot-markdown h2,
+.travel-layout .travel-chatbot-markdown h3,
+.travel-layout .travel-chatbot-markdown h4 {
+  margin: clamp(14px, 3vw, 20px) 0 clamp(8px, 2vw, 12px) 0;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--travel-chatbot-text);
+}
+
+.travel-layout .travel-chatbot-markdown h1:first-child,
+.travel-layout .travel-chatbot-markdown h2:first-child,
+.travel-layout .travel-chatbot-markdown h3:first-child,
+.travel-layout .travel-chatbot-markdown h4:first-child {
+  margin-top: 0;
+}
+
+.travel-layout .travel-chatbot-markdown h1 {
+  font-size: clamp(18px, 4.5vw, 22px);
+  border-bottom: 2px solid rgba(232, 145, 58, 0.3);
+  padding-bottom: 8px;
+}
+
+.travel-layout .travel-chatbot-markdown h2 {
+  font-size: clamp(16px, 4vw, 18px);
+}
+
+.travel-layout .travel-chatbot-markdown h3 {
+  font-size: clamp(14px, 3.5vw, 16px);
+}
+
+.travel-layout .travel-chatbot-markdown h4 {
+  font-size: clamp(13px, 3.2vw, 15px);
+}
+
+.travel-layout .travel-chatbot-markdown hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232, 145, 58, 0.4), transparent);
+  margin: 16px 0;
+}
+
+.travel-layout .travel-chatbot-markdown blockquote {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--travel-chatbot-primary);
+  background: rgba(232, 145, 58, 0.08);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: var(--travel-chatbot-text-secondary);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-markdown strong {
+  font-weight: 600;
+  color: var(--travel-chatbot-text);
+}
+
+.travel-layout .travel-chatbot-markdown em {
+  font-style: italic;
+  color: var(--travel-chatbot-text-secondary);
+}
+
+.travel-layout .travel-chatbot-markdown code:not(pre code) {
+  background: rgba(232, 145, 58, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  transition: background-color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-markdown pre,
+.travel-layout .travel-chatbot-markdown code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.travel-layout .travel-chatbot-markdown pre {
+  background: rgba(0, 0, 0, 0.04);
+  padding: clamp(12px, 3vw, 16px);
+  border-radius: 8px;
+  margin: 12px 0;
+  -webkit-overflow-scrolling: touch;
+  transition: background-color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-markdown pre code {
+  background: none;
+  padding: 0;
+  font-size: clamp(11px, 2.8vw, 13px);
+}
+
+.travel-layout .travel-chatbot-markdown table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 16px 0;
+  font-size: clamp(11px, 3vw, 13px);
+  border-radius: 10px;
+  border: 1px solid var(--travel-chatbot-border);
+  border-collapse: collapse;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.travel-layout .travel-chatbot-markdown table thead,
+.travel-layout .travel-chatbot-markdown table tbody,
+.travel-layout .travel-chatbot-markdown table tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.travel-layout .travel-chatbot-markdown th,
+.travel-layout .travel-chatbot-markdown td {
+  padding: clamp(8px, 2vw, 12px) clamp(10px, 2.5vw, 14px);
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  vertical-align: top;
+  min-width: 70px;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+.travel-layout .travel-chatbot-markdown th {
+  background-color: rgba(232, 145, 58, 0.1);
+  font-weight: 600;
+  font-size: clamp(10px, 2.8vw, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--travel-chatbot-primary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.travel-layout .travel-chatbot-markdown tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  transition: background-color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-markdown a {
+  color: var(--travel-chatbot-primary);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(232, 145, 58, 0.4);
+  transition: all 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-markdown a:hover {
+  border-bottom-color: var(--travel-chatbot-primary);
+}
+
+.travel-layout .travel-chatbot-markdown img,
+.travel-layout .travel-chatbot-markdown svg,
+.travel-layout .travel-chatbot-markdown video,
+.travel-layout .travel-chatbot-markdown canvas,
+.travel-layout .travel-chatbot-markdown iframe {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 8px 0;
+  display: block;
 }
 
 .travel-layout .travel-chatbot-cursor {
@@ -492,6 +742,77 @@
   51%, 100% { opacity: 0; }
 }
 
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown table {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown th {
+  background-color: rgba(232, 145, 58, 0.2);
+  color: var(--travel-warm-secondary, #f0a85c);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown th,
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown td {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown blockquote {
+  background: rgba(232, 145, 58, 0.12);
+  border-left-color: var(--travel-warm-secondary, #f0a85c);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown code:not(pre code) {
+  background: rgba(232, 145, 58, 0.2);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown pre {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-markdown h1 {
+  border-bottom-color: rgba(232, 145, 58, 0.4);
+}
+
+@media (min-width: 481px) {
+  .travel-layout .travel-chatbot-message-text {
+    padding: 13px 16px;
+  }
+
+  .travel-layout .travel-chatbot-markdown th,
+  .travel-layout .travel-chatbot-markdown td {
+    padding: 10px 12px;
+  }
+
+  .travel-layout .travel-chatbot-markdown table {
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .travel-layout .travel-chatbot-message-text {
+    padding: 14px 18px;
+  }
+
+  .travel-layout .travel-chatbot-markdown {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .travel-layout .travel-chatbot-markdown th,
+  .travel-layout .travel-chatbot-markdown td {
+    padding: 10px 14px;
+  }
+
+  .travel-layout .travel-chatbot-markdown table {
+    font-size: 13px;
+  }
+}
+
 .travel-layout .travel-chatbot-message-type-indicator {
   margin-bottom: 4px;
 }
@@ -501,6 +822,160 @@
   color: var(--travel-chatbot-text-secondary);
   margin-top: 2px;
   transition: color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-message-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-export-btn {
+  background: none;
+  border: none;
+  color: var(--travel-chatbot-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: color 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-export-btn:hover {
+  color: var(--travel-chatbot-primary);
+  opacity: 1;
+  background: rgba(232, 145, 58, 0.1);
+}
+
+.travel-layout .travel-chatbot-export-btn:focus-visible {
+  outline: 2px solid var(--travel-chatbot-primary);
+  outline-offset: 2px;
+}
+
+.travel-layout .travel-chatbot-message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  transition: opacity 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-message-attachment-img {
+  max-width: 120px;
+  max-height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--travel-chatbot-border);
+}
+
+.travel-layout .travel-chatbot-message-attachment-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--travel-chatbot-text-secondary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.travel-layout .travel-chatbot-file-input-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.travel-layout .travel-chatbot-attachments-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--travel-chatbot-border);
+}
+
+.travel-layout .travel-chatbot-attachment-preview-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.travel-layout .travel-chatbot-attachment-preview-img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--travel-chatbot-border);
+}
+
+.travel-layout .travel-chatbot-attachment-preview-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--travel-chatbot-text-secondary);
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.04);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.travel-layout .travel-chatbot-attachment-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--travel-chatbot-primary);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-attachment-remove:hover {
+  transform: scale(1.1);
+  opacity: 0.9;
+}
+
+.travel-layout .travel-chatbot-attach-btn {
+  background: none;
+  border: none;
+  color: var(--travel-chatbot-text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: color 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-attach-btn:hover {
+  color: var(--travel-chatbot-primary);
+  opacity: 1;
+  background: rgba(232, 145, 58, 0.1);
+}
+
+.travel-layout .travel-chatbot-attach-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .travel-layout .travel-chatbot-quick-actions {
@@ -751,6 +1226,11 @@
   padding: 8px 16px;
   border-top: 1px solid var(--travel-chatbot-border);
   background: var(--travel-chatbot-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .travel-layout .travel-chatbot-footer-btn {
@@ -767,6 +1247,16 @@
 .travel-layout .travel-chatbot-footer-btn:hover {
   color: var(--travel-chatbot-primary);
   background: rgba(232, 145, 58, 0.1);
+}
+
+.travel-layout .travel-chatbot-footer-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.travel-layout .travel-chatbot-footer-export {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* Message type icons */

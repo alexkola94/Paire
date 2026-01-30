@@ -41,15 +41,15 @@ public class RagClient : IRagClient
         var topK = request.TopK ?? (isUserCategory ? 10 : 5);
         var minScore = request.MinRelevanceScore ?? (isUserCategory ? 0.2 : 0.3);
 
-        // RAG service expects { Query, Category, TopK, MinRelevanceScore, ConversationHistory, ... }
-        // Include conversation history for follow-up question support
+        // RAG service expects { Query, Category, TopK, MinRelevanceScore, ConversationHistory, Attachments?, ... }
         var body = new 
         { 
             request.Query, 
             Category = category, 
             TopK = topK, 
             MinRelevanceScore = minScore,
-            ConversationHistory = request.ConversationHistory
+            ConversationHistory = request.ConversationHistory,
+            Attachments = request.Attachments
         };
         req.Content = JsonContent.Create(body);
 

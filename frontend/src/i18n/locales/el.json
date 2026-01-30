@@ -616,7 +616,20 @@
     "exitFullscreen": "Έξοδος από πλήρη οθόνη",
     "thinkingModeLabel": "Λειτουργία σκέψης",
     "normalChatLabel": "Κανονική συνομιλία",
-    "sources": "Πηγές"
+    "sources": "Πηγές",
+    "scrollToEnd": "Μετάβαση στο τέλος",
+    "copy": "Αντιγραφή",
+    "copySuccess": "Αντιγράφηκε στο πρόχειρο",
+    "exportAsTxt": "Εξαγωγή ως TXT",
+    "exportAsMd": "Εξαγωγή ως Markdown",
+    "exportAsCsv": "Εξαγωγή ως CSV",
+    "exportConversation": "Εξαγωγή συνομιλίας",
+    "exportConversationSuccess": "Η συνομιλία εξήχθη",
+    "attachFile": "Σύνηθες αρχείο",
+    "removeAttachment": "Αφαίρεση συνημμένου",
+    "attachedFiles": "Συνημμένα",
+    "fileTooLarge": "Το αρχείο είναι πολύ μεγάλο (μέγ. {{max}}MB)",
+    "invalidFileType": "Μη έγκυρος τύπος. Χρησιμοποιήστε εικόνες, PDF ή TXT."
   },
   "reminders": {
     "title": "Ρυθμίσεις Υπενθυμίσεων",
@@ -1291,7 +1304,16 @@
       "exitFullscreen": "Έξοδος από πλήρη οθόνη",
       "thinkingModeLabel": "Λειτουργία σκέψης",
       "normalChatLabel": "Κανονική",
-      "sources": "Πηγές"
+      "sources": "Πηγές",
+      "scrollToEnd": "Μετάβαση στο τέλος",
+      "copy": "Αντιγραφή",
+      "exportAsTxt": "Εξαγωγή ως TXT",
+      "exportAsMd": "Εξαγωγή ως Markdown",
+      "exportAsCsv": "Εξαγωγή ως CSV",
+      "exportConversation": "Εξαγωγή συνομιλίας",
+      "attachFile": "Σύνηθες αρχείο",
+      "removeAttachment": "Αφαίρεση συνημμένου",
+      "attachedFiles": "Συνημμένα"
     },
     "notifications": {
       "title": "Ρυθμίσεις Ειδοποιήσεων",
