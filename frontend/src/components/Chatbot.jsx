@@ -82,6 +82,8 @@ function Chatbot() {
   const [abortController, setAbortController] = useState(null) // AbortController for cancelling AI requests
   const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen mode for desktop
   const messagesEndRef = useRef(null)
+  const inputContainerRef = useRef(null) // Ref for input container to handle keyboard
+  const chatWindowRef = useRef(null) // Ref for chat window
   const lastScrollAt = useRef(0)
   const scrollThrottleMs = 80 // Throttle auto-scroll during typewriter to avoid jank
 
@@ -97,6 +99,65 @@ function Chatbot() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  /**
+   * Handle mobile keyboard visibility using visualViewport API
+   * Adjusts the chat window height when keyboard opens/closes
+   */
+  useEffect(() => {
+    if (!isMobile || !isOpen) return
+
+    const handleViewportResize = () => {
+      if (window.visualViewport && chatWindowRef.current) {
+        const viewportHeight = window.visualViewport.height
+        const windowHeight = window.innerHeight
+        const keyboardHeight = windowHeight - viewportHeight
+        
+        // Set CSS variable for available height when keyboard is open
+        if (keyboardHeight > 100) {
+          // Keyboard is likely open
+          chatWindowRef.current.style.setProperty('--keyboard-height', `${keyboardHeight}px`)
+          chatWindowRef.current.style.height = `${viewportHeight}px`
+          // Scroll to bottom to keep input visible
+          setTimeout(() => scrollToBottom(), 100)
+        } else {
+          // Keyboard is closed
+          chatWindowRef.current.style.removeProperty('--keyboard-height')
+          chatWindowRef.current.style.height = ''
+        }
+      }
+    }
+
+    // Use visualViewport API if available (better mobile support)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportResize)
+      window.visualViewport.addEventListener('scroll', handleViewportResize)
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportResize)
+        window.visualViewport.removeEventListener('scroll', handleViewportResize)
+      }
+    }
+  }, [isMobile, isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Handle input focus on mobile - scroll into view
+   */
+  const handleInputFocus = useCallback(() => {
+    if (isMobile && inputContainerRef.current) {
+      // Small delay to let keyboard animation start
+      setTimeout(() => {
+        inputContainerRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'end' 
+        })
+        // Also scroll messages to bottom
+        scrollToBottom()
+      }, 300)
+    }
+  }, [isMobile]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
   /**
@@ -244,14 +305,15 @@ function Chatbot() {
     const userMessage = text.trim()
     addUserMessage(userMessage)
     setInput('')
-    setLoading(true)
 
-    // Create AbortController for AI mode to allow cancellation
+    // Create AbortController for AI mode BEFORE setting loading
+    // This ensures the stop button renders immediately when loading starts
     let controller = null
     if (isAiMode) {
       controller = new AbortController()
       setAbortController(controller)
     }
+    setLoading(true)
 
     try {
       // Build conversation history
@@ -646,7 +708,10 @@ function Chatbot() {
 
       {/* Chat Window - On mobile, only show if revealed */}
       {isOpen && (!isMobile || isRevealed) && (
-        <div className={`chatbot-window ${isMinimized ? 'minimized' : ''} ${isMobile ? 'chatbot-mobile' : ''} ${isMobile && isRevealed ? 'chatbot-revealed' : ''} ${isFullscreen && !isMobile ? 'fullscreen' : ''}`}>
+        <div 
+          ref={chatWindowRef}
+          className={`chatbot-window ${isMinimized ? 'minimized' : ''} ${isMobile ? 'chatbot-mobile' : ''} ${isMobile && isRevealed ? 'chatbot-revealed' : ''} ${isFullscreen && !isMobile ? 'fullscreen' : ''}`}
+        >
           {/* Header */}
           <div className="chatbot-header">
             <div className="chatbot-header-info">
@@ -831,13 +896,14 @@ function Chatbot() {
               )}
 
               {/* Input: Enter = send, Shift+Enter = new line */}
-              <div className="chatbot-input-container">
+              <div className="chatbot-input-container" ref={inputContainerRef}>
                 <textarea
                   className="chatbot-input chatbot-input-textarea"
                   placeholder={t('chatbot.placeholder', 'Ask me anything...')}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleInputKeyDown}
+                  onFocus={handleInputFocus}
                   disabled={loading}
                   rows={1}
                   aria-label={t('chatbot.placeholder', 'Ask me anything...')}

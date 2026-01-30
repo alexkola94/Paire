@@ -14,6 +14,16 @@ public class RagQueryResponse
     /// Source documents/chunks used for the response (optional).
     /// </summary>
     public List<RagSourceInfo>? Sources { get; set; }
+
+    /// <summary>
+    /// Whether RAG context was used to enhance the response.
+    /// </summary>
+    public bool RagUsed { get; set; }
+
+    /// <summary>
+    /// Number of relevant chunks retrieved from the knowledge base.
+    /// </summary>
+    public int ChunksRetrieved { get; set; }
 }
 
 /// <summary>

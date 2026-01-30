@@ -74,7 +74,9 @@ cd Ai-RAG-Service/src/AiMicroservice.RAG
 dotnet ef database update
 ```
 
-This creates RAG tables (`rag_knowledge_documents`, `rag_document_chunks`) in your Supabase database.
+This creates RAG tables (`rag_knowledge_documents`, `rag_document_chunks`) in your Supabase database. The RAG service shares the same database (and the `tenant_profiles` table) with the AI Microservice.
+
+**About `tenant_profiles`:** The table is created by the **AI Microservice** (Gateway) migrations. If it is empty, tenants are **inserted automatically** by the RAG service when you first create a document: any tenant ID in **Security:AllowedTenantIds** (e.g. `thepaire`) gets a row inserted on the first `POST /v1/documents` (e.g. when a user uses "Thinking mode" and their financial summary is synced). No manual seed is required.
 
 ### 4. Run the RAG service
 

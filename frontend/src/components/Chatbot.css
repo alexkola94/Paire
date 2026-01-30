@@ -786,7 +786,7 @@ body.calculator-open .chatbot-container {
     right: 24px;
     left: auto;
     top: auto;
-    width: 500px;
+    width: 560px; /* Increased from 500px for better content display */
     height: 700px;
     max-height: calc(100vh - 48px);
     border-radius: 24px;
@@ -852,11 +852,74 @@ body.calculator-open .chatbot-container {
     left: 0;
     right: 0;
     overflow-x: hidden;
+    /* Use dynamic viewport height for better keyboard handling */
+    height: 100dvh;
+    height: 100vh; /* Fallback for browsers without dvh support */
+    /* CSS custom property set by JS when keyboard is open */
+    --keyboard-height: 0px;
   }
 
   /* Ensure open chatbot window respects bottom nav if needed,
      or keep full screen. Let's keep full screen for immersion
      but ensure the close button/header is accessible. */
+
+  /* ==========================================
+     MOBILE KEYBOARD HANDLING
+     ========================================== */
+
+  /* When keyboard is visible, adjust layout */
+  .chatbot-window.chatbot-mobile {
+    display: flex;
+    flex-direction: column;
+    transition: height 0.15s ease-out;
+  }
+
+  /* Messages area should flex to fill available space */
+  .chatbot-window.chatbot-mobile .chatbot-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    /* Add extra bottom padding when keyboard might be open */
+    padding-bottom: 16px;
+  }
+
+  /* Input container stays at bottom and should remain visible */
+  .chatbot-window.chatbot-mobile .chatbot-input-container {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    /* Ensure input is above keyboard */
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Dark theme input container */
+  [data-theme='dark'] .chatbot-window.chatbot-mobile .chatbot-input-container {
+    background: rgba(17, 24, 39, 0.95);
+  }
+
+  /* Suggestions should scroll if needed */
+  .chatbot-window.chatbot-mobile .chatbot-suggestions {
+    flex-shrink: 0;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  /* Footer also stays fixed */
+  .chatbot-window.chatbot-mobile .chatbot-footer {
+    flex-shrink: 0;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  /* Prevent body scroll when chatbot is open on mobile */
+  body.chatbot-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
 }
 
 /* Scrollbar styling */
@@ -1042,6 +1105,284 @@ body.calculator-open .chatbot-container {
   word-break: break-word;
   max-width: 100%;
   overflow-x: auto;
+}
+
+/* ==========================================
+   MOBILE-FIRST AI RESPONSE READABILITY
+   ========================================== */
+
+/* Responsive font sizing for markdown content */
+.chatbot-markdown {
+  font-size: clamp(13px, 3.5vw, 14px);
+  line-height: 1.65;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Table wrapper for horizontal scroll on mobile */
+.chatbot-markdown table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 16px 0;
+  font-size: clamp(11px, 3vw, 13px);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Table inner structure */
+.chatbot-markdown table thead,
+.chatbot-markdown table tbody,
+.chatbot-markdown table tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* Mobile-optimized table cells */
+.chatbot-markdown th,
+.chatbot-markdown td {
+  padding: clamp(8px, 2vw, 12px) clamp(10px, 2.5vw, 14px);
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  vertical-align: top;
+  min-width: 80px;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+.chatbot-markdown th {
+  background-color: rgba(79, 70, 229, 0.08);
+  font-weight: 600;
+  font-size: clamp(10px, 2.8vw, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--chatbot-primary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.chatbot-markdown tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  transition: background-color 0.2s ease;
+}
+
+/* Improved list styles for mobile */
+.chatbot-markdown ul,
+.chatbot-markdown ol {
+  padding-left: clamp(16px, 4vw, 24px);
+  margin: 12px 0;
+}
+
+.chatbot-markdown li {
+  margin-bottom: clamp(6px, 1.5vw, 8px);
+  padding-left: 4px;
+  line-height: 1.55;
+}
+
+.chatbot-markdown li::marker {
+  color: var(--chatbot-primary);
+}
+
+/* Nested lists */
+.chatbot-markdown ul ul,
+.chatbot-markdown ol ol,
+.chatbot-markdown ul ol,
+.chatbot-markdown ol ul {
+  margin: 6px 0;
+  padding-left: clamp(14px, 3.5vw, 20px);
+}
+
+/* Headings for mobile readability */
+.chatbot-markdown h1,
+.chatbot-markdown h2,
+.chatbot-markdown h3,
+.chatbot-markdown h4 {
+  margin: clamp(14px, 3vw, 20px) 0 clamp(8px, 2vw, 12px) 0;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--chatbot-text);
+}
+
+.chatbot-markdown h1 {
+  font-size: clamp(18px, 4.5vw, 22px);
+  border-bottom: 2px solid rgba(79, 70, 229, 0.2);
+  padding-bottom: 8px;
+}
+
+.chatbot-markdown h2 {
+  font-size: clamp(16px, 4vw, 18px);
+}
+
+.chatbot-markdown h3 {
+  font-size: clamp(14px, 3.5vw, 16px);
+}
+
+.chatbot-markdown h4 {
+  font-size: clamp(13px, 3.2vw, 15px);
+}
+
+/* Horizontal rule styling */
+.chatbot-markdown hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.3), transparent);
+  margin: 16px 0;
+}
+
+/* Blockquote styling */
+.chatbot-markdown blockquote {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--chatbot-primary);
+  background: rgba(79, 70, 229, 0.05);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: var(--chatbot-text-secondary);
+}
+
+/* Strong/bold text */
+.chatbot-markdown strong {
+  font-weight: 600;
+  color: var(--chatbot-text);
+}
+
+/* Emphasized text */
+.chatbot-markdown em {
+  font-style: italic;
+  color: var(--chatbot-text-secondary);
+}
+
+/* Code inline styling */
+.chatbot-markdown code:not(pre code) {
+  background: rgba(79, 70, 229, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* Code block styling */
+.chatbot-markdown pre {
+  background: rgba(0, 0, 0, 0.04);
+  padding: clamp(12px, 3vw, 16px);
+  border-radius: 8px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.chatbot-markdown pre code {
+  background: none;
+  padding: 0;
+  font-size: clamp(11px, 2.8vw, 13px);
+}
+
+/* Links in markdown */
+.chatbot-markdown a {
+  color: var(--chatbot-primary);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.3);
+  transition: all 0.2s ease;
+}
+
+.chatbot-markdown a:hover {
+  border-bottom-color: var(--chatbot-primary);
+}
+
+/* Checkbox lists (task lists) */
+.chatbot-markdown input[type="checkbox"] {
+  margin-right: 8px;
+  accent-color: var(--chatbot-primary);
+  transform: scale(1.1);
+}
+
+/* Dark theme markdown overrides */
+[data-theme='dark'] .chatbot-markdown table {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .chatbot-markdown th {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+}
+
+[data-theme='dark'] .chatbot-markdown th,
+[data-theme='dark'] .chatbot-markdown td {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .chatbot-markdown tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme='dark'] .chatbot-markdown blockquote {
+  background: rgba(139, 92, 246, 0.1);
+  border-left-color: #a78bfa;
+}
+
+[data-theme='dark'] .chatbot-markdown code:not(pre code) {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+[data-theme='dark'] .chatbot-markdown pre {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .chatbot-markdown h1 {
+  border-bottom-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Mobile-specific table improvements */
+@media (max-width: 480px) {
+  /* Allow table to scroll horizontally */
+  .chatbot-markdown table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .chatbot-markdown table thead,
+  .chatbot-markdown table tbody {
+    display: block;
+  }
+
+  .chatbot-markdown table tr {
+    display: table;
+    width: 100%;
+  }
+
+  .chatbot-markdown th,
+  .chatbot-markdown td {
+    min-width: 70px;
+    padding: 8px 10px;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* Compact list spacing on mobile */
+  .chatbot-markdown li {
+    margin-bottom: 5px;
+  }
+
+  /* Reduce message bubble padding on mobile */
+  .chatbot-message-text {
+    padding: 12px 14px;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 481px) and (max-width: 767px) {
+  .chatbot-markdown table {
+    font-size: 12px;
+  }
+
+  .chatbot-markdown th,
+  .chatbot-markdown td {
+    padding: 10px 12px;
+  }
 }
 
 /* ============================================
@@ -1581,7 +1922,7 @@ body.calculator-open .chatbot-container {
   /* Fullscreen messages area - more breathing room */
   .chatbot-window.fullscreen .chatbot-messages {
     padding: 32px;
-    max-width: 900px;
+    max-width: 1100px; /* Increased from 900px for wider content area */
     margin: 0 auto;
     width: 100%;
   }
@@ -1589,7 +1930,7 @@ body.calculator-open .chatbot-container {
   /* Fullscreen input area */
   .chatbot-window.fullscreen .chatbot-input-container {
     padding: 20px 32px;
-    max-width: 900px;
+    max-width: 1100px; /* Increased from 900px */
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
@@ -1598,19 +1939,19 @@ body.calculator-open .chatbot-container {
   /* Fullscreen suggestions */
   .chatbot-window.fullscreen .chatbot-suggestions {
     padding: 16px 32px;
-    max-width: 900px;
+    max-width: 1100px; /* Increased from 900px */
     margin: 0 auto;
     width: 100%;
   }
 
   /* Larger messages in fullscreen */
   .chatbot-window.fullscreen .chatbot-message {
-    max-width: 75%;
+    max-width: 80%; /* Increased from 75% for better use of space */
   }
 
   /* Fullscreen footer */
   .chatbot-window.fullscreen .chatbot-footer {
-    max-width: 900px;
+    max-width: 1100px; /* Increased from 900px */
     margin: 0 auto;
     width: 100%;
   }

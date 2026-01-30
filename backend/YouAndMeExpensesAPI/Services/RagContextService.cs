@@ -42,19 +42,13 @@ public class RagContextService : IRagContextService
 
         // Skip if auto-sync is disabled
         if (!_options.AutoSyncUserContext)
-        {
-            _logger.LogDebug("Auto-sync disabled, skipping user context check for {UserId}", userId);
             return category;
-        }
 
         try
         {
             // Check cache first
             if (TryGetFromCache(userId.ToString(), out var cached) && !IsStale(cached.UpdatedAt))
-            {
-                _logger.LogDebug("User {UserId} context is cached and fresh", userId);
                 return category;
-            }
 
             // Check RAG service for existing document
             var existingDocs = await _ragClient.ListDocumentsAsync(category, 1, 1, cancellationToken);
@@ -68,21 +62,11 @@ public class RagContextService : IRagContextService
 
                 // Check if stale
                 if (!IsStale(doc.UpdatedAt))
-                {
-                    _logger.LogDebug("User {UserId} context exists and is fresh (updated {UpdatedAt})", userId, doc.UpdatedAt);
                     return category;
-                }
-
-                _logger.LogInformation("User {UserId} context is stale (updated {UpdatedAt}), refreshing...", userId, doc.UpdatedAt);
 
                 // Delete old document before creating new one
                 await _ragClient.DeleteDocumentAsync(doc.Id, cancellationToken);
             }
-            else
-            {
-                _logger.LogInformation("No existing RAG context for user {UserId}, creating...", userId);
-            }
-
             // Build and sync new context
             await SyncUserContextAsync(userId, category, cancellationToken);
 
@@ -107,18 +91,13 @@ public class RagContextService : IRagContextService
             var existingDocs = await _ragClient.ListDocumentsAsync(category, 1, 100, cancellationToken);
             
             foreach (var doc in existingDocs.Documents)
-            {
                 await _ragClient.DeleteDocumentAsync(doc.Id, cancellationToken);
-                _logger.LogDebug("Deleted existing RAG document {DocumentId} for user {UserId}", doc.Id, userId);
-            }
 
             // Invalidate cache
             _contextCache.TryRemove(userId.ToString(), out _);
 
             // Build and sync new context
             await SyncUserContextAsync(userId, category, cancellationToken);
-
-            _logger.LogInformation("Forced refresh of RAG context for user {UserId}", userId);
         }
         catch (Exception ex)
         {
@@ -156,12 +135,7 @@ public class RagContextService : IRagContextService
             tags: new[] { "user_context", "auto_generated" },
             cancellationToken: cancellationToken);
 
-        // Update cache
         UpdateCache(userId.ToString(), true, doc.UpdatedAt);
-
-        _logger.LogInformation(
-            "Synced RAG context for user {UserId}: DocumentId={DocumentId}, Chunks={ChunkCount}",
-            userId, doc.Id, doc.ChunkCount);
     }
 
     /// <summary>

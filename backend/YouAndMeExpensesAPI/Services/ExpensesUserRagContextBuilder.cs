@@ -39,19 +39,22 @@ public class ExpensesUserRagContextBuilder : IUserRagContextBuilder
         string userId,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Building RAG context for user {UserId}", userId);
-
         var sb = new StringBuilder();
+        var now = DateTime.UtcNow;
+        var currentMonthLabel = now.ToString("MMMM yyyy");
+
         sb.AppendLine("# Financial Summary");
         sb.AppendLine();
-        sb.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC");
+        sb.AppendLine($"Generated: {now:yyyy-MM-dd HH:mm} UTC");
+        sb.AppendLine($"Current month: {currentMonthLabel}");
+        sb.AppendLine($"Report period: {currentMonthLabel} expenses and income.");
         sb.AppendLine();
 
         try
         {
             // 1. Dashboard analytics (current month overview)
             var dashboard = await _analyticsService.GetDashboardAnalyticsAsync(userId);
-            AppendDashboardSummary(sb, dashboard);
+            AppendDashboardSummary(sb, dashboard, currentMonthLabel);
 
             // 2. Recurring bills summary
             if (Guid.TryParse(userId, out var userGuid))
@@ -67,22 +70,30 @@ public class ExpensesUserRagContextBuilder : IUserRagContextBuilder
             sb.AppendLine("*Note: Some financial data could not be retrieved.*");
         }
 
-        var content = sb.ToString();
-        _logger.LogInformation("Built RAG context for user {UserId}: {Length} characters", userId, content.Length);
-
-        return (content, "Financial Summary");
+        return (sb.ToString(), "Financial Summary");
     }
 
     /// <summary>
     /// Appends the dashboard analytics summary to the StringBuilder.
     /// </summary>
-    private void AppendDashboardSummary(StringBuilder sb, DashboardAnalyticsDTO dashboard)
+    private void AppendDashboardSummary(StringBuilder sb, DashboardAnalyticsDTO dashboard, string currentMonthLabel)
     {
         sb.AppendLine("## Current Month Overview");
         sb.AppendLine();
         sb.AppendLine($"- **Income:** {dashboard.CurrentMonthIncome:N2}");
         sb.AppendLine($"- **Expenses:** {dashboard.CurrentMonthExpenses:N2}");
         sb.AppendLine($"- **Balance:** {dashboard.CurrentMonthBalance:N2}");
+        sb.AppendLine();
+
+        // Compact breakdown for retrieval: "January 2026 expenses" etc. so one chunk matches date-based queries
+        sb.AppendLine($"## {currentMonthLabel} at a glance");
+        sb.AppendLine();
+        sb.AppendLine($"{currentMonthLabel}: Income {dashboard.CurrentMonthIncome:N2}, Expenses {dashboard.CurrentMonthExpenses:N2}, Balance {dashboard.CurrentMonthBalance:N2}.");
+        if (dashboard.TopCategories?.Any() == true)
+        {
+            var topNames = string.Join(", ", dashboard.TopCategories.Take(5).Select(c => $"{c.Category} ({c.Amount:N2})"));
+            sb.AppendLine($"Top spending categories in {currentMonthLabel}: {topNames}.");
+        }
         sb.AppendLine();
 
         if (dashboard.LastMonthExpenses > 0)
@@ -145,9 +156,9 @@ public class ExpensesUserRagContextBuilder : IUserRagContextBuilder
 
             sb.AppendLine();
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogDebug(ex, "Could not retrieve recurring bills summary for user {UserId}", userId);
+            // Optional section; skip on failure
         }
     }
 
@@ -180,9 +191,9 @@ public class ExpensesUserRagContextBuilder : IUserRagContextBuilder
 
             sb.AppendLine();
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogDebug(ex, "Could not retrieve savings goals summary for user {UserId}", userId);
+            // Optional section; skip on failure
         }
     }
 

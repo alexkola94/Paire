@@ -36,8 +36,13 @@ public class RagClient : IRagClient
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
         SetAuthHeaders(req, accessToken);
 
-        // RAG service expects { Query, Category, ... }; category filters retrieval to user-specific docs
-        var body = new { request.Query, Category = category };
+        // For user-scoped category, use more lenient retrieval defaults to improve recall (e.g. TF-IDF fallback)
+        var isUserCategory = !string.IsNullOrEmpty(category) && category.StartsWith("user_", StringComparison.OrdinalIgnoreCase);
+        var topK = request.TopK ?? (isUserCategory ? 10 : 5);
+        var minScore = request.MinRelevanceScore ?? (isUserCategory ? 0.2 : 0.3);
+
+        // RAG service expects { Query, Category, TopK, MinRelevanceScore, ... }
+        var body = new { request.Query, Category = category, TopK = topK, MinRelevanceScore = minScore };
         req.Content = JsonContent.Create(body);
 
         var response = await _httpClient.SendAsync(req, cancellationToken);
@@ -55,7 +60,9 @@ public class RagClient : IRagClient
             {
                 Id = s.DocumentId,
                 Title = s.Title ?? string.Empty
-            }).ToList()
+            }).ToList(),
+            RagUsed = dto.RagUsed,
+            ChunksRetrieved = dto.ChunksRetrieved
         };
     }
 
@@ -83,16 +90,12 @@ public class RagClient : IRagClient
         };
         req.Content = JsonContent.Create(body);
 
-        _logger.LogDebug("Creating RAG document: {Title}, category={Category}", title, category);
-
         var response = await _httpClient.SendAsync(req, cancellationToken);
         await EnsureSuccessOrThrowAsync(response, url, cancellationToken);
 
         var dto = await response.Content.ReadFromJsonAsync<RagServiceDocumentDto>(JsonOptions, cancellationToken);
         if (dto == null)
             throw new InvalidOperationException("RAG service returned empty document response.");
-
-        _logger.LogInformation("Created RAG document {DocumentId} for category {Category}", dto.Id, category);
 
         return new RagDocumentInfo
         {
@@ -157,12 +160,8 @@ public class RagClient : IRagClient
         using var req = new HttpRequestMessage(HttpMethod.Delete, url);
         SetAuthHeaders(req, null);
 
-        _logger.LogDebug("Deleting RAG document {DocumentId}", documentId);
-
         var response = await _httpClient.SendAsync(req, cancellationToken);
         await EnsureSuccessOrThrowAsync(response, url, cancellationToken);
-
-        _logger.LogInformation("Deleted RAG document {DocumentId}", documentId);
     }
 
     private void SetAuthHeaders(HttpRequestMessage request, string? accessToken)
@@ -181,7 +180,7 @@ public class RagClient : IRagClient
     {
         if (response.IsSuccessStatusCode) return;
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
-        _logger.LogWarning("RAG service request failed: {Url} -> {StatusCode}. Response: {Body}", url, (int)response.StatusCode, body);
+        _logger.LogWarning("RAG service failed: {Url} -> {StatusCode}. {Body}", url, (int)response.StatusCode, body);
         throw new HttpRequestException($"RAG service returned {(int)response.StatusCode}: {response.ReasonPhrase}");
     }
 
@@ -194,6 +193,8 @@ public class RagClient : IRagClient
     {
         public string? Response { get; set; }
         public List<RagServiceSourceInfo>? Sources { get; set; }
+        public bool RagUsed { get; set; }
+        public int ChunksRetrieved { get; set; }
     }
 
     private class RagServiceSourceInfo

@@ -109,9 +109,7 @@ public class AiGatewayClient : IAiGatewayClient
     {
         if (response.IsSuccessStatusCode) return;
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
-        _logger.LogWarning(
-            "AI Gateway request failed: {Url} -> {StatusCode} {ReasonPhrase}. Response body: {Body}. Check gateway logs and Gateway:AllowedTenantIds / X-Tenant-Id / X-Gateway-Secret.",
-            url, (int)response.StatusCode, response.ReasonPhrase, body);
+        _logger.LogWarning("AI Gateway request failed: {Url} -> {StatusCode}. {Body}", url, (int)response.StatusCode, body);
         throw new HttpRequestException($"AI Gateway returned {(int)response.StatusCode}: {response.ReasonPhrase}");
     }
 
