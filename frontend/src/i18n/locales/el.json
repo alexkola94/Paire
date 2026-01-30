@@ -613,7 +613,10 @@
     "stopping": "Διακοπή...",
     "responseStopped": "Η απάντηση διακόπηκε",
     "fullscreen": "Πλήρης οθόνη",
-    "exitFullscreen": "Έξοδος από πλήρη οθόνη"
+    "exitFullscreen": "Έξοδος από πλήρη οθόνη",
+    "thinkingModeLabel": "Λειτουργία σκέψης",
+    "normalChatLabel": "Κανονική συνομιλία",
+    "sources": "Πηγές"
   },
   "reminders": {
     "title": "Ρυθμίσεις Υπενθυμίσεων",

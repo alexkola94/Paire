@@ -532,7 +532,10 @@
     "stopping": "Stopping...",
     "responseStopped": "Response stopped",
     "fullscreen": "Fullscreen",
-    "exitFullscreen": "Exit fullscreen"
+    "exitFullscreen": "Exit fullscreen",
+    "thinkingModeLabel": "Thinking mode",
+    "normalChatLabel": "Normal",
+    "sources": "Sources"
   },
   "reminders": {
     "title": "Reminder Settings",

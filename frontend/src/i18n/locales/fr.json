@@ -355,7 +355,10 @@
     "stopping": "Arrêt en cours...",
     "responseStopped": "Réponse arrêtée",
     "fullscreen": "Plein écran",
-    "exitFullscreen": "Quitter le plein écran"
+    "exitFullscreen": "Quitter le plein écran",
+    "thinkingModeLabel": "Mode réflexion (RAG)",
+    "normalChatLabel": "Chat normal",
+    "sources": "Sources"
   },
   "travel": {
     "common": {

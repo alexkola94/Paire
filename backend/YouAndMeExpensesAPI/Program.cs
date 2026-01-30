@@ -437,6 +437,14 @@ builder.Services.AddHttpClient<IShieldAuthService, ShieldAuthService>();
 // AI Gateway (optional plug-and-play AI Microservice)
 builder.Services.Configure<AiGatewayOptions>(builder.Configuration.GetSection(AiGatewayOptions.SectionName));
 builder.Services.AddHttpClient<IAiGatewayClient, AiGatewayClient>(client => client.Timeout = TimeSpan.FromSeconds(120));
+builder.Services.Configure<RagServiceOptions>(builder.Configuration.GetSection(RagServiceOptions.SectionName));
+builder.Services.AddHttpClient<IRagClient, RagClient>(client => client.Timeout = TimeSpan.FromSeconds(120));
+
+// RAG User Context Services - enables per-user financial context for "Thinking mode" AI chat
+// ExpensesUserRagContextBuilder: builds financial summary from analytics, bills, savings for RAG indexing
+// RagContextService: orchestrates lazy sync - only updates RAG when context is missing or stale
+builder.Services.AddScoped<IUserRagContextBuilder, ExpensesUserRagContextBuilder>();
+builder.Services.AddScoped<IRagContextService, RagContextService>();
 builder.Services.AddScoped<IUserSyncService, UserSyncService>();
 
 // Register Achievement Service

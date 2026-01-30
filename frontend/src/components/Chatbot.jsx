@@ -17,6 +17,7 @@ import {
   FiCheckCircle,
   FiFileText
 } from 'react-icons/fi'
+import { TbBrain } from 'react-icons/tb' // Brain icon for thinking mode toggle
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
@@ -77,6 +78,7 @@ function Chatbot() {
   const [isMobile, setIsMobile] = useState(false)
   const [downloadingReport, setDownloadingReport] = useState(null) // Track which report is downloading
   const [isAiMode, setIsAiMode] = useState(false) // Toggle between rule-based and AI mode
+  const [aiSubMode, setAiSubMode] = useState('normal') // When AI mode: 'thinking' = RAG enhanced, 'normal' = normal chat
   const [abortController, setAbortController] = useState(null) // AbortController for cancelling AI requests
   const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen mode for desktop
   const messagesEndRef = useRef(null)
@@ -260,13 +262,24 @@ function Chatbot() {
       }))
 
       if (isAiMode) {
-        // AI Gateway mode - send to LLM with abort signal
-        // Include the new user message in the history for context
-        const aiHistory = [...history, { role: 'user', message: userMessage }]
-        const response = await aiGatewayService.chat(aiHistory, { signal: controller?.signal })
-        
-        // AI Gateway returns { message: { role, content }, ... }
-        addBotMessage(response.message.content, 'text')
+        if (aiSubMode === 'thinking') {
+          // Thinking mode: RAG-enhanced query (retrieval + LLM)
+          const response = await aiGatewayService.ragQuery(userMessage, { signal: controller?.signal })
+          const answer = response?.answer ?? response?.message?.content ?? ''
+          const sources = response?.sources
+          const sourceLabels = Array.isArray(sources)
+            ? sources.map(s => (typeof s === 'string' ? s : (s?.title ?? s?.id ?? ''))).filter(Boolean)
+            : []
+          const displayMessage = sourceLabels.length
+            ? `${answer}\n\n---\n*${t('chatbot.sources', 'Sources')}: ${sourceLabels.join(', ')}*`
+            : answer
+          addBotMessage(displayMessage, 'text')
+        } else {
+          // Normal chat: standard LLM conversation
+          const aiHistory = [...history, { role: 'user', message: userMessage }]
+          const response = await aiGatewayService.chat(aiHistory, { signal: controller?.signal })
+          addBotMessage(response.message.content, 'text')
+        }
       } else {
         // Rule-based mode - existing chatbot service
         const response = await chatbotService.sendQuery(userMessage, history)
@@ -700,6 +713,7 @@ function Chatbot() {
             </div>
           </div>
 
+
           {/* Messages */}
           {!isMinimized && (
             <>
@@ -828,6 +842,25 @@ function Chatbot() {
                   rows={1}
                   aria-label={t('chatbot.placeholder', 'Ask me anything...')}
                 />
+                
+                {/* Thinking Mode Toggle - only visible when AI mode is on */}
+                {isAiMode && (
+                  <button
+                    type="button"
+                    className={`chatbot-thinking-toggle ${aiSubMode === 'thinking' ? 'active' : ''}`}
+                    onClick={() => setAiSubMode(aiSubMode === 'thinking' ? 'normal' : 'thinking')}
+                    aria-pressed={aiSubMode === 'thinking'}
+                    aria-label={aiSubMode === 'thinking' 
+                      ? t('chatbot.normalChatLabel', 'Switch to Normal chat') 
+                      : t('chatbot.thinkingModeLabel', 'Switch to Thinking mode')}
+                    title={aiSubMode === 'thinking' 
+                      ? t('chatbot.thinkingModeLabel', 'Thinking mode') 
+                      : t('chatbot.normalChatLabel', 'Normal chat')}
+                  >
+                    <TbBrain size={20} />
+                  </button>
+                )}
+                
                 {/* Stop button - shows when AI is loading */}
                 {loading && isAiMode && abortController && (
                   <button

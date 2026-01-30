@@ -355,7 +355,10 @@
     "stopping": "Deteniendo...",
     "responseStopped": "Respuesta detenida",
     "fullscreen": "Pantalla completa",
-    "exitFullscreen": "Salir de pantalla completa"
+    "exitFullscreen": "Salir de pantalla completa",
+    "thinkingModeLabel": "Modo reflexión (RAG)",
+    "normalChatLabel": "Chat normal",
+    "sources": "Fuentes"
   },
   "travel": {
     "common": {

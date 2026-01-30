@@ -1123,6 +1123,35 @@ export const aiGatewayService = {
   },
 
   /**
+   * RAG-enhanced query: sends the user message to the RAG service (retrieval + LLM).
+   * Use when "Thinking mode (RAG enhanced)" is selected in the chatbot.
+   * Automatically syncs user's financial context to RAG if missing or stale.
+   * @param {string} query - User question
+   * @param {Object} options - Optional config (signal for cancellation)
+   * @returns {Promise<Object>} { answer, sources? } or { message: { content } }
+   */
+  async ragQuery(query, options = {}) {
+    const fetchOptions = {
+      method: 'POST',
+      body: JSON.stringify({ query: query.trim() })
+    }
+    if (options.signal) fetchOptions.signal = options.signal
+    return await apiRequest('/api/ai-gateway/rag-query', fetchOptions)
+  },
+
+  /**
+   * Force refresh the current user's RAG context (financial summary).
+   * Call this after significant data changes (e.g., many new transactions)
+   * to ensure the AI has the latest information.
+   * @returns {Promise<Object>} { message: 'RAG context refreshed successfully.' }
+   */
+  async ragRefresh() {
+    return await apiRequest('/api/ai-gateway/rag-refresh', {
+      method: 'POST'
+    })
+  },
+
+  /**
    * Check if AI Gateway is available/configured
    * @returns {Promise<boolean>} True if AI Gateway is available
    */
