@@ -70,6 +70,8 @@
   z-index: 10000;
   /* Increased z-index */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* PWA: prevent double-tap zoom on mobile */
+  touch-action: manipulation;
 }
 
 /* Hide chatbot when shopping list is in fullscreen mode on mobile */
@@ -428,6 +430,8 @@ body.calculator-open .chatbot-container {
 .chatbot-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -596,6 +600,8 @@ body.calculator-open .chatbot-container {
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(8px);
   border-top: 1px solid rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .chatbot-input {
@@ -750,7 +756,7 @@ body.calculator-open .chatbot-container {
   }
 }
 
-/* Mobile Adjustments for Bottom Navigation */
+/* Mobile Adjustments for Bottom Navigation + PWA containment */
 @media (max-width: 767px) {
   .chatbot-fab {
     bottom: calc(85px + env(safe-area-inset-bottom));
@@ -764,8 +770,17 @@ body.calculator-open .chatbot-container {
     bottom: calc(85px + env(safe-area-inset-bottom));
   }
 
-  /* Ensure open chatbot window respects bottom nav if needed, 
-     or keep full screen. Let's keep full screen for immersion 
+  /* PWA: lock chat window to viewport, no horizontal stretch */
+  .chatbot-window.chatbot-mobile {
+    width: 100%;
+    max-width: 100vw;
+    left: 0;
+    right: 0;
+    overflow-x: hidden;
+  }
+
+  /* Ensure open chatbot window respects bottom nav if needed,
+     or keep full screen. Let's keep full screen for immersion
      but ensure the close button/header is accessible. */
 }
 

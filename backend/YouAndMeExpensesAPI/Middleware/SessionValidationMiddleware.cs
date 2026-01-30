@@ -84,8 +84,9 @@ namespace YouAndMeExpensesAPI.Middleware
                                 // Cache the result if valid
                                 if (isValid)
                                 {
-                                    // Get cache duration from config or default to 10 minutes
-                                    var cacheMinutes = _configuration.GetValue<int>("JwtSettings:SessionValidationCacheMinutes", 10);
+                                    // SECURITY: Get cache duration from config or default to 1 minute (reduced from 10)
+                                    // This ensures revoked sessions are detected faster after security incidents
+                                    var cacheMinutes = _configuration.GetValue<int>("JwtSettings:SessionValidationCacheMinutes", 1);
                                     
                                     var cacheEntryOptions = new MemoryCacheEntryOptions
                                     {

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import { authService } from './services/auth'
 import { sessionManager } from './services/sessionManager'
+import { getCsrfToken } from './services/csrf'
 import { isTokenExpired } from './utils/tokenUtils'
 import { ThemeProvider } from './context/ThemeContext'
 import { AccessibilityProvider } from './context/AccessibilityContext'
@@ -51,6 +52,9 @@ const Landing = lazyWithRetry(() => import('./pages/Landing'))
 // Layout - Keep synchronous as it's always needed
 import Layout from './components/Layout'
 import CookieConsent from './components/CookieConsent'
+
+// Preload CSRF token on app load so the antiforgery cookie is set before any state-changing request
+getCsrfToken().catch(() => { /* non-blocking; first mutation will fetch if needed */ })
 
 /**
  * GitHub Pages Redirect Handler Component

@@ -2,11 +2,16 @@
  * Authentication Service
  * Handles all authentication operations using our custom backend API
  * Uses sessionManager for per-tab session management
+ * 
+ * SECURITY: Supports "Keep Me Logged In" with device fingerprinting
+ * - Device fingerprint binds session to specific device
+ * - Fingerprint mismatch on token refresh = session revoked (theft detection)
  */
 
 import { getBackendUrl } from '../utils/getBackendUrl';
 import { sessionManager } from './sessionManager';
 import { isTokenExpired } from '../utils/tokenUtils';
+import { getDeviceFingerprint, clearDeviceFingerprintCache } from '../utils/deviceFingerprint';
 
 /**
  * Get stored auth token (from sessionStorage)
@@ -186,18 +191,36 @@ export const authService = {
   /**
    * Sign in with email and password
    * Returns auth data if successful, or 2FA requirement if enabled
+   * 
+   * SECURITY: Includes device fingerprint for session binding.
+   * - rememberMe: true = 7-day session, false = 24-hour session
+   * - deviceFingerprint: Binds session to device for theft detection
    */
   async signIn(email, password, rememberMe = false) {
     try {
+      // Generate device fingerprint for session binding security
+      let deviceFingerprint = null;
+      try {
+        deviceFingerprint = await getDeviceFingerprint();
+      } catch (error) {
+        console.warn('Failed to generate device fingerprint:', error);
+      }
+
       const data = await apiRequest('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ 
+          email, 
+          password,
+          rememberMe,
+          deviceFingerprint
+        })
       })
 
       // Check if 2FA is required
       if (data.requiresTwoFactor) {
         // Don't store auth data yet - wait for 2FA verification
-        return data
+        // Pass along rememberMe and fingerprint for 2FA completion
+        return { ...data, rememberMe, deviceFingerprint }
       }
 
       // Store authentication data (no 2FA required)
@@ -267,8 +290,9 @@ export const authService = {
       // Continue with client-side logout even if there's an error
       console.warn('Error during logout:', error)
     } finally {
-      // Always clear local session data
+      // Always clear local session data and device fingerprint cache
       clearAuthData()
+      clearDeviceFingerprintCache()
     }
 
     // Note: Navigation is handled by the calling component (Layout.jsx)

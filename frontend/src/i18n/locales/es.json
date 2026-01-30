@@ -44,6 +44,7 @@
       "emailAlreadyRegistered": "Ya existe una cuenta con este email. Intenta iniciar sesión.",
       "authServiceUnavailable": "El servicio de inicio de sesión no está disponible. Por favor inténtalo más tarde.",
       "twoFactorCompleteFailed": "No pudimos completar el inicio de sesión. Por favor inténtalo de nuevo.",
+      "invalidCsrfToken": "Token de seguridad inválido o faltante. Actualiza la página e inténtalo de nuevo.",
       "generic": "Algo salió mal. Por favor inténtalo de nuevo."
     }
   },

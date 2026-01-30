@@ -51,6 +51,7 @@ function Login() {
   const [requires2FA, setRequires2FA] = useState(false)
   const [tempToken, setTempToken] = useState('')
   const [userEmail, setUserEmail] = useState('')
+  const [twoFactorFingerprint, setTwoFactorFingerprint] = useState(null) // Device fingerprint for 2FA completion
 
   // Form state
   const [formData, setFormData] = useState({
@@ -192,6 +193,8 @@ function Login() {
           setRequires2FA(true)
           setTempToken(response.tempToken)
           setUserEmail(formData.email)
+          // Store device fingerprint for 2FA completion (returned from auth.js)
+          setTwoFactorFingerprint(response.deviceFingerprint || null)
         } else {
           // No 2FA required - login successful
           // Session is already stored by authService.storeAuthData
@@ -324,6 +327,7 @@ function Login() {
     setRequires2FA(false)
     setTempToken('')
     setUserEmail('')
+    setTwoFactorFingerprint(null) // Clear device fingerprint
     setFormData({ email: '', password: '', confirmPassword: '' })
     handle2FASuccessRef.current = false // Reset to allow retry
   }
@@ -348,6 +352,7 @@ function Login() {
         onSuccess={handle2FASuccess}
         onCancel={handle2FACancel}
         rememberMe={rememberMe}
+        deviceFingerprint={twoFactorFingerprint}
       />
     )
   }

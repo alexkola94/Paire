@@ -1,10 +1,11 @@
 import { getToken, getStoredUser } from './auth'
 import { isTokenExpired } from '../utils/tokenUtils'
 import { sessionManager } from './sessionManager'
+import { getCsrfToken, clearCsrfCache } from './csrf'
 
 /**
  * API Service for database operations
- * Uses custom backend API with JWT authentication
+ * Uses custom backend API with JWT authentication and CSRF protection.
  */
 
 // ========================================
@@ -94,11 +95,33 @@ const apiRequest = async (url, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`
   }
 
+  // CSRF protection: send anti-forgery token on state-changing requests
+  const method = (options.method || 'GET').toUpperCase()
+  const stateChangingMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
+  if (stateChangingMethods.includes(method)) {
+    try {
+      const csrfToken = await getCsrfToken()
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken
+    } catch (e) {
+      console.warn('Could not get CSRF token:', e.message)
+    }
+  }
+
   try {
     const response = await fetch(fullUrl, {
       ...options,
-      headers
+      headers,
+      credentials: 'include' // Required for antiforgery cookie to be sent and received
     })
+
+    // On 400 invalid CSRF, clear cache so next request fetches a fresh token
+    if (response.status === 400) {
+      const cloned = response.clone()
+      try {
+        const body = await cloned.json()
+        if (body?.error?.toLowerCase?.().includes('csrf')) clearCsrfCache()
+      } catch (_) { /* ignore */ }
+    }
 
     // Handle 401 Unauthorized - session expired or invalid
     if (response.status === 401) {

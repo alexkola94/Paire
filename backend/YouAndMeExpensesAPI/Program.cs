@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
@@ -9,6 +10,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using YouAndMeExpensesAPI.Configuration;
 using YouAndMeExpensesAPI.Data;
+using YouAndMeExpensesAPI.Filters;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 using YouAndMeExpensesAPI.Repositories;
@@ -25,13 +27,23 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure Services
 // =====================================================
 
-// Add Controllers with JSON options (camelCase for frontend compatibility)
-builder.Services.AddControllers()
+// Add Controllers with JSON options (camelCase for frontend compatibility) and CSRF validation filter
+builder.Services.AddControllers(options => options.Filters.Add<ValidateCsrfTokenFilter>())
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
+
+// Anti-forgery (CSRF) protection: SPA sends token in X-CSRF-TOKEN header on state-changing requests
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest
+        : Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+});
 
 // Add SignalR
 builder.Services.AddSignalR()
@@ -251,14 +263,15 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    // Password settings
+    // SECURITY: Strengthened password requirements to prevent weak passwords
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
+    options.Password.RequireUppercase = true;              // SECURITY: Now required
+    options.Password.RequireNonAlphanumeric = true;        // SECURITY: Now required
+    options.Password.RequiredLength = 12;                   // SECURITY: Increased from 6 to 12
+    options.Password.RequiredUniqueChars = 4;              // SECURITY: Require 4 unique chars
 
-    // Lockout settings
+    // Lockout settings - already properly configured
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
@@ -305,7 +318,8 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.SaveToken = true;
-    options.RequireHttpsMetadata = false; // Set to true in production
+    // SECURITY: Require HTTPS metadata in production to prevent MITM attacks
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -314,7 +328,8 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "Codename_Shield",
         ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "Codename_Shield_Clients",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? "Supers3cretKey@345!hasToBEV3ryLongForHS256Algorithm!")),
+        // SECURITY: No fallback secret - fail if not configured properly
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
         RoleClaimType = "roles" // Map Shield's 'roles' claim to ASP.NET Identity Roles
     };
     
@@ -602,6 +617,13 @@ app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SessionValidationMiddleware>();
 // Map Controllers
 app.MapControllers();
 app.MapHub<MonitoringHub>("/hubs/monitoring");
+
+// CSRF token endpoint: SPA calls this with credentials to get the request token and set the antiforgery cookie
+app.MapGet("/api/antiforgery/token", (IAntiforgery antiforgery, HttpContext context) =>
+{
+    var tokens = antiforgery.GetAndStoreTokens(context);
+    return Results.Ok(new { token = tokens.RequestToken });
+}).AllowAnonymous();
 
 // Health Check Endpoint
 app.MapGet("/health", () => Results.Ok(new

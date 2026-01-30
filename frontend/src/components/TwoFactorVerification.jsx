@@ -4,20 +4,25 @@ import { useTranslation } from 'react-i18next';
 import { getBackendUrl } from '../utils/getBackendUrl';
 import { sessionManager } from '../services/sessionManager';
 import { decodeUserFromToken } from '../utils/jwtDecoder';
+import { getDeviceFingerprint } from '../utils/deviceFingerprint';
 import './TwoFactorVerification.css';
 
 /**
  * Two-Factor Authentication Verification Component
  * Used during login to verify 2FA code or backup code
  * 
+ * SECURITY: Includes device fingerprint for session binding.
+ * If fingerprint doesn't match during token refresh, session is revoked.
+ * 
  * @param {Object} props
  * @param {string} props.email - User's email
  * @param {string} props.tempToken - Temporary token from login
  * @param {Function} props.onSuccess - Callback on successful verification
  * @param {Function} props.onCancel - Callback to cancel and go back
- * @param {boolean} props.rememberMe - Whether to persist session
+ * @param {boolean} props.rememberMe - Whether to persist session (7 days vs 24 hours)
+ * @param {string} props.deviceFingerprint - Device fingerprint for session binding
  */
-const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, rememberMe = false }) => {
+const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, rememberMe = false, deviceFingerprint = null }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -72,6 +77,16 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
     }, 30000);
 
     try {
+      // Get device fingerprint for session binding (use prop or generate new)
+      let fingerprint = deviceFingerprint;
+      if (!fingerprint) {
+        try {
+          fingerprint = await getDeviceFingerprint();
+        } catch (err) {
+          console.warn('Failed to generate device fingerprint:', err);
+        }
+      }
+
       const response = await fetch(`${getBackendUrl()}/api/auth/2fa/verify`, {
         method: 'POST',
         headers: {
@@ -80,6 +95,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
         body: JSON.stringify({
           code: normalizedCode,
           tempToken,
+          rememberMe,
+          deviceFingerprint: fingerprint,
         }),
       });
 
@@ -152,7 +169,7 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
       setLoading(false);
       isVerifyingRef.current = false;
     }
-  }, [verificationCode, email, tempToken, onSuccess, t, rememberMe]);
+  }, [verificationCode, email, tempToken, onSuccess, t, rememberMe, deviceFingerprint]);
 
   /**
    * Verify backup code
@@ -167,6 +184,16 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
     setError('');
 
     try {
+      // Get device fingerprint for session binding
+      let fingerprint = deviceFingerprint;
+      if (!fingerprint) {
+        try {
+          fingerprint = await getDeviceFingerprint();
+        } catch (err) {
+          console.warn('Failed to generate device fingerprint:', err);
+        }
+      }
+
       const response = await fetch(`${getBackendUrl()}/api/auth/2fa/verify-backup`, {
         method: 'POST',
         headers: {
@@ -175,6 +202,8 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
         body: JSON.stringify({
           backupCode: backupCode.trim(),
           tempToken,
+          rememberMe,
+          deviceFingerprint: fingerprint,
         }),
       });
 

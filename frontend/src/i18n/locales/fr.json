@@ -44,6 +44,7 @@
       "emailAlreadyRegistered": "Un compte existe déjà avec cet email. Essayez de vous connecter.",
       "authServiceUnavailable": "Le service de connexion est temporairement indisponible. Veuillez réessayer plus tard.",
       "twoFactorCompleteFailed": "Nous n'avons pas pu terminer la connexion. Veuillez réessayer.",
+      "invalidCsrfToken": "Jeton de sécurité invalide ou manquant. Veuillez actualiser la page et réessayer.",
       "generic": "Une erreur s'est produite. Veuillez réessayer."
     }
   },

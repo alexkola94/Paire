@@ -59,6 +59,7 @@
       "emailAlreadyRegistered": "An account with this email already exists. Try signing in.",
       "authServiceUnavailable": "Sign-in service is temporarily unavailable. Please try again later.",
       "twoFactorCompleteFailed": "We couldn't complete sign-in. Please try again.",
+      "invalidCsrfToken": "Invalid or missing security token. Please refresh the page and try again.",
       "generic": "Something went wrong. Please try again."
     }
   },
