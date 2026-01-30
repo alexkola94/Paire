@@ -19,6 +19,8 @@ public class ValidateCsrfTokenFilter : IAsyncAuthorizationFilter
         "/api/auth/reset-password",
         "/api/auth/verify-email",
         "/api/auth/resend-verification",
+        "/api/ai-gateway",   // AI chatbot proxy; JWT auth is sufficient
+        "/api/chatbot",      // Rule-based chatbot and report generation
         "/health",
         "/swagger",
         "/"
