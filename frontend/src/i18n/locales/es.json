@@ -361,6 +361,38 @@
     "sources": "Fuentes"
   },
   "travel": {
+    "chatbot": {
+      "title": "Guía de Viaje",
+      "online": "En línea",
+      "open": "Abrir chat",
+      "close": "Cerrar",
+      "minimize": "Minimizar",
+      "reveal": "Mostrar Guía de Viaje",
+      "send": "Enviar",
+      "placeholder": "Pregunta sobre tu viaje...",
+      "tryAsking": "Prueba a preguntar:",
+      "clearChat": "Borrar chat",
+      "viewDetails": "Ver detalles",
+      "thinking": "Pensando...",
+      "aiMode": "Modo IA",
+      "ruleMode": "Modo reglas",
+      "aiModeActive": "Modo IA",
+      "stopResponse": "Detener",
+      "fullscreen": "Pantalla completa",
+      "exitFullscreen": "Salir de pantalla completa",
+      "thinkingModeLabel": "Modo reflexión",
+      "normalChatLabel": "Normal",
+      "sources": "Fuentes"
+    },
+    "nav": {
+      "home": "Inicio",
+      "budget": "Presupuesto",
+      "itinerary": "Itinerario",
+      "packing": "Equipaje",
+      "documents": "Documentos",
+      "explore": "Explorar",
+      "guide": "Guía"
+    },
     "common": {
       "enterTravelMode": "Modo Viaje",
       "exitTravelMode": "Salir",

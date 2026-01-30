@@ -13,6 +13,7 @@ import { FiEye, FiMap, FiX } from 'react-icons/fi'
 import '../styles/TravelLayout.css'
 import '../styles/TravelLightTheme.css'
 import TravelBackgroundMap from './TravelBackgroundMap'
+import TravelChatbot from './TravelChatbot'
 
 // Lazy load Discovery components
 const DiscoveryMap = lazy(() => import('./discovery/DiscoveryMap'))
@@ -140,6 +141,8 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
   const [selectedStay, setSelectedStay] = useState(null)
   const [staysLoading, setStaysLoading] = useState(false)
   const [isExploreExpanded, setIsExploreExpanded] = useState(false)
+  // Chatbot opened from nav (no floating FAB when using nav entry)
+  const [chatbotOpen, setChatbotOpen] = useState(false)
 
   // Static map URL for non-discovery mode – pick style per theme so
   // dark mode keeps the original dark map and light mode shows native colors.
@@ -433,8 +436,20 @@ const TravelLayout = memo(({ children, activePage, onNavigate, shouldHideNav }) 
 
       {/* Bottom Navigation - Hidden in Discovery Mode */}
       {!isDiscoveryMode && !shouldHideNav && (
-        <TravelNavigation activePage={activePage} onNavigate={onNavigate} />
+        <TravelNavigation
+          activePage={activePage}
+          onNavigate={onNavigate}
+          chatbotOpen={chatbotOpen}
+          onOpenChatbot={() => setChatbotOpen(prev => !prev)}
+        />
       )}
+
+      {/* Travel Guide chatbot - opened from nav (no floating FAB) */}
+      <TravelChatbot
+        onNavigate={onNavigate}
+        open={chatbotOpen}
+        onClose={() => setChatbotOpen(false)}
+      />
     </div>
   )
 })

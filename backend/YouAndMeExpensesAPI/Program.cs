@@ -425,6 +425,9 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 // Register Chatbot Service
 builder.Services.AddScoped<IChatbotService, ChatbotService>();
 
+// Register Travel Chatbot Service (Travel Guide)
+builder.Services.AddScoped<ITravelChatbotService, TravelChatbotService>();
+
 // Register Report Generation Service (for chatbot file downloads)
 builder.Services.AddScoped<IReportGenerationService, ReportGenerationService>();
 

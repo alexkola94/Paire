@@ -41,8 +41,16 @@ public class RagClient : IRagClient
         var topK = request.TopK ?? (isUserCategory ? 10 : 5);
         var minScore = request.MinRelevanceScore ?? (isUserCategory ? 0.2 : 0.3);
 
-        // RAG service expects { Query, Category, TopK, MinRelevanceScore, ... }
-        var body = new { request.Query, Category = category, TopK = topK, MinRelevanceScore = minScore };
+        // RAG service expects { Query, Category, TopK, MinRelevanceScore, ConversationHistory, ... }
+        // Include conversation history for follow-up question support
+        var body = new 
+        { 
+            request.Query, 
+            Category = category, 
+            TopK = topK, 
+            MinRelevanceScore = minScore,
+            ConversationHistory = request.ConversationHistory
+        };
         req.Content = JsonContent.Create(body);
 
         var response = await _httpClient.SendAsync(req, cancellationToken);

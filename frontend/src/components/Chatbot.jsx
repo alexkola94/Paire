@@ -326,7 +326,11 @@ function Chatbot() {
       if (isAiMode) {
         if (aiSubMode === 'thinking') {
           // Thinking mode: RAG-enhanced query (retrieval + LLM)
-          const response = await aiGatewayService.ragQuery(userMessage, { signal: controller?.signal })
+          // Pass conversation history to enable follow-up questions and pronoun resolution
+          const response = await aiGatewayService.ragQuery(userMessage, { 
+            signal: controller?.signal,
+            history: history  // Include conversation history for context
+          })
           const answer = response?.answer ?? response?.message?.content ?? ''
           const sources = response?.sources
           const sourceLabels = Array.isArray(sources)

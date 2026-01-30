@@ -1,0 +1,839 @@
+/* ==========================================
+   Travel Chatbot – theme-aware (light/dark)
+   Scoped under .travel-layout, uses travel palette
+   ========================================== */
+
+/* Light: travel warm palette */
+.travel-layout .travel-chatbot-container {
+  --travel-chatbot-primary: var(--travel-warm-primary, #e8913a);
+  --travel-chatbot-primary-gradient: linear-gradient(135deg, var(--travel-warm-primary, #e8913a) 0%, var(--travel-warm-secondary, #f0a85c) 100%);
+  --travel-chatbot-bg: var(--travel-glass-light, rgba(255, 252, 247, 0.95));
+  --travel-chatbot-blur: 16px;
+  --travel-chatbot-shadow: var(--travel-shadow-warm, 0 12px 48px rgba(0, 0, 0, 0.08));
+  --travel-chatbot-border: 1px solid var(--travel-glass-border-light, rgba(232, 145, 58, 0.2));
+  --travel-chatbot-text: var(--travel-text-dark, #3d3530);
+  --travel-chatbot-text-secondary: var(--travel-text-medium, #6b6058);
+  --travel-chatbot-user-msg-bg: var(--travel-warm-primary, #e8913a);
+  --travel-chatbot-user-msg-text: #fff;
+  --travel-chatbot-bot-msg-bg: var(--travel-bg-cream, #fffcf7);
+  --travel-chatbot-bot-msg-text: var(--travel-text-dark, #3d3530);
+}
+
+/* Dark theme */
+.travel-layout[data-theme='dark'] .travel-chatbot-container,
+[data-theme='dark'] .travel-layout .travel-chatbot-container {
+  --travel-chatbot-bg: rgba(17, 24, 39, 0.95);
+  --travel-chatbot-border: 1px solid rgba(255, 255, 255, 0.08);
+  --travel-chatbot-text: #f3f4f6;
+  --travel-chatbot-text-secondary: #9ca3af;
+  --travel-chatbot-bot-msg-bg: #1f2937;
+  --travel-chatbot-bot-msg-text: #f9fafb;
+}
+
+.travel-layout .travel-chatbot-container {
+  position: fixed;
+  z-index: 10000;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  touch-action: manipulation;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-container svg {
+  display: inline-block !important;
+  vertical-align: middle;
+  pointer-events: none;
+  opacity: 1 !important;
+}
+
+.travel-layout .travel-chatbot-header svg,
+.travel-layout .travel-chatbot-header-btn svg {
+  color: white !important;
+}
+
+/* Reveal button */
+.travel-layout .travel-chatbot-reveal-btn {
+  position: fixed;
+  right: 0;
+  bottom: calc(85px + env(safe-area-inset-bottom, 0px));
+  width: 28px;
+  height: 36px;
+  border-radius: 8px 0 0 8px;
+  background: rgba(232, 145, 58, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: none;
+  color: var(--travel-chatbot-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -2px 2px 8px rgba(232, 145, 58, 0.25);
+  transition: all 0.25s ease;
+  z-index: 998;
+}
+
+.travel-layout .travel-chatbot-reveal-btn:hover {
+  background: rgba(232, 145, 58, 0.3);
+  width: 32px;
+}
+
+.travel-layout .travel-chatbot-reveal-btn:active {
+  transform: scale(0.95);
+  transition: transform 0.15s ease;
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-reveal-btn {
+  background: rgba(232, 145, 58, 0.25);
+  color: var(--travel-warm-secondary, #f0a85c);
+}
+
+/* FAB */
+.travel-layout .travel-chatbot-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--travel-chatbot-primary-gradient);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(232, 145, 58, 0.4);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1000;
+}
+
+.travel-layout .travel-chatbot-fab:hover {
+  transform: scale(1.05) translateY(-4px);
+  box-shadow: 0 12px 28px rgba(232, 145, 58, 0.5);
+  transition: all 0.3s ease;
+}
+
+.travel-layout .travel-chatbot-fab:active {
+  transform: scale(0.95);
+}
+
+.travel-layout .travel-chatbot-fab-revealed {
+  animation: travel-chatbot-fab-reveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes travel-chatbot-fab-reveal {
+  from { transform: translateY(100px) scale(0.8); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Badge */
+.travel-layout .travel-chatbot-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  height: 20px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+  animation: travel-chatbot-badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.travel-layout .travel-chatbot-badge-reveal {
+  top: -4px;
+  right: -4px;
+}
+
+@keyframes travel-chatbot-badge-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Window */
+.travel-layout .travel-chatbot-window {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  top: 0;
+  background: var(--travel-chatbot-bg);
+  backdrop-filter: blur(var(--travel-chatbot-blur));
+  -webkit-backdrop-filter: blur(var(--travel-chatbot-blur));
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--travel-chatbot-shadow);
+  animation: travel-chatbot-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1001;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+@keyframes travel-chatbot-slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.travel-layout .travel-chatbot-window.minimized {
+  top: auto;
+  left: auto;
+  right: 24px;
+  bottom: 24px;
+  width: auto;
+  height: auto;
+  background: var(--travel-chatbot-primary-gradient);
+  border-radius: 50px;
+  padding: 0;
+  cursor: pointer;
+  animation: travel-chatbot-minimize 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.travel-layout .travel-chatbot-window.minimized:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(232, 145, 58, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-window.minimized .travel-chatbot-header {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 50px;
+}
+
+.travel-layout .travel-chatbot-window.minimized .travel-chatbot-messages,
+.travel-layout .travel-chatbot-window.minimized .travel-chatbot-input-container,
+.travel-layout .travel-chatbot-window.minimized .travel-chatbot-suggestions,
+.travel-layout .travel-chatbot-window.minimized .travel-chatbot-footer {
+  display: none;
+}
+
+/* Desktop: fixed-size window bottom-right */
+@media (min-width: 768px) {
+  .travel-layout .travel-chatbot-window {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    left: auto;
+    top: auto;
+    width: 420px;
+    height: 560px;
+    max-height: calc(100vh - 48px);
+    border-radius: 24px;
+    border: var(--travel-chatbot-border);
+    animation: travel-chatbot-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: width 0.3s ease, height 0.3s ease, border-radius 0.3s ease;
+  }
+
+  @keyframes travel-chatbot-pop-in {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .travel-layout .travel-chatbot-window.minimized {
+    border-radius: 32px;
+    right: 24px;
+    bottom: 24px;
+  }
+
+  .travel-layout .travel-chatbot-reveal-btn {
+    bottom: 24px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
+
+  .travel-layout .travel-chatbot-reveal-btn:hover {
+    width: 44px;
+    height: 44px;
+  }
+
+  .travel-layout .travel-chatbot-fab {
+    bottom: 24px;
+    right: 24px;
+  }
+}
+
+.travel-layout .travel-chatbot-window.fullscreen {
+  border-radius: 0;
+  max-width: 100%;
+  max-height: 100%;
+  transition: border-radius 0.2s ease;
+}
+
+/* Header */
+.travel-layout .travel-chatbot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: var(--travel-chatbot-primary-gradient);
+  color: white;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s ease;
+}
+
+.travel-layout .travel-chatbot-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+.travel-layout .travel-chatbot-header-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.travel-layout .travel-chatbot-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+.travel-layout .travel-chatbot-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.travel-layout .travel-chatbot-status {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  opacity: 0.95;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.travel-layout .travel-chatbot-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  transition: background 0.3s ease;
+}
+
+.travel-layout .travel-chatbot-status-dot.ai-mode {
+  background: #a78bfa;
+  box-shadow: 0 0 8px #a78bfa;
+}
+
+.travel-layout .travel-chatbot-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.travel-layout .travel-chatbot-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-header-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.travel-layout .travel-chatbot-header-btn:active {
+  transform: scale(0.95);
+}
+
+.travel-layout .travel-chatbot-ai-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.25s ease;
+}
+
+.travel-layout .travel-chatbot-ai-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.travel-layout .travel-chatbot-ai-toggle.active {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Messages */
+.travel-layout .travel-chatbot-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: background 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-message {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 90%;
+  animation: travel-chatbot-message-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes travel-chatbot-message-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.travel-layout .travel-chatbot-message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.travel-layout .travel-chatbot-message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--travel-chatbot-bot-msg-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  border: 1px solid var(--travel-chatbot-border);
+}
+
+.travel-layout .travel-chatbot-message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.travel-layout .travel-chatbot-message-text {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-message.bot .travel-chatbot-message-text {
+  background: var(--travel-chatbot-bot-msg-bg);
+  color: var(--travel-chatbot-bot-msg-text);
+  border-top-left-radius: 4px;
+}
+
+.travel-layout .travel-chatbot-message.user .travel-chatbot-message-text {
+  background: var(--travel-chatbot-user-msg-bg);
+  background-image: var(--travel-chatbot-primary-gradient);
+  color: var(--travel-chatbot-user-msg-text);
+  border-top-right-radius: 4px;
+}
+
+.travel-layout .travel-chatbot-markdown,
+.travel-layout .travel-chatbot-message-text .travel-chatbot-markdown {
+  word-break: break-word;
+}
+
+.travel-layout .travel-chatbot-markdown p {
+  margin: 0 0 0.5em;
+}
+
+.travel-layout .travel-chatbot-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.travel-layout .travel-chatbot-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--travel-chatbot-primary);
+  margin-left: 2px;
+  animation: travel-chatbot-blink 0.8s infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes travel-chatbot-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.travel-layout .travel-chatbot-message-type-indicator {
+  margin-bottom: 4px;
+}
+
+.travel-layout .travel-chatbot-message-time {
+  font-size: 0.75rem;
+  color: var(--travel-chatbot-text-secondary);
+  margin-top: 2px;
+  transition: color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.travel-layout .travel-chatbot-quick-action-btn {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--travel-chatbot-border);
+  background: var(--travel-chatbot-bot-msg-bg);
+  color: var(--travel-chatbot-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.travel-layout .travel-chatbot-quick-action-btn:hover {
+  border-color: var(--travel-chatbot-primary);
+  color: var(--travel-chatbot-primary);
+  background: var(--travel-chatbot-bot-msg-bg);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-quick-action-btn {
+  background: #374151;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-quick-action-btn:hover {
+  background: #4b5563;
+  border-color: var(--travel-warm-secondary, #f0a85c);
+  color: var(--travel-warm-secondary, #f0a85c);
+}
+
+.travel-layout .travel-chatbot-action-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--travel-chatbot-primary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-action-link:hover {
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+/* Suggestions */
+.travel-layout .travel-chatbot-suggestions {
+  padding: 12px 16px;
+  border-top: 1px solid var(--travel-chatbot-border);
+  background: var(--travel-chatbot-bg);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-suggestions-title {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--travel-chatbot-text-secondary);
+}
+
+.travel-layout .travel-chatbot-suggestions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.travel-layout .travel-chatbot-suggestion-btn {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--travel-chatbot-border);
+  background: var(--travel-chatbot-bot-msg-bg);
+  color: var(--travel-chatbot-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.travel-layout .travel-chatbot-suggestion-btn:hover {
+  border-color: var(--travel-chatbot-primary);
+  color: var(--travel-chatbot-primary);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-suggestions,
+[data-theme='dark'] .travel-layout .travel-chatbot-input-container,
+[data-theme='dark'] .travel-layout .travel-chatbot-footer {
+  background: rgba(17, 24, 39, 0.9);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-suggestion-btn {
+  background: #1f2937;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-suggestion-btn:hover {
+  background: #374151;
+  border-color: var(--travel-warm-secondary, #f0a85c);
+  color: var(--travel-warm-secondary, #f0a85c);
+}
+
+/* Input */
+.travel-layout .travel-chatbot-input-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--travel-chatbot-border);
+  background: var(--travel-chatbot-bg);
+  transition: background 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-input {
+  flex: 1;
+  min-height: 44px;
+  padding: 12px 16px;
+  border-radius: 22px;
+  border: 1px solid var(--travel-chatbot-border);
+  background: var(--travel-chatbot-bot-msg-bg);
+  color: var(--travel-chatbot-text);
+  font-size: 0.95rem;
+  resize: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-input:focus {
+  outline: none;
+  border-color: var(--travel-chatbot-primary);
+  box-shadow: 0 0 0 2px rgba(232, 145, 58, 0.2);
+}
+
+.travel-layout .travel-chatbot-input::placeholder {
+  color: var(--travel-chatbot-text-secondary);
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-input {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f3f4f6;
+}
+
+[data-theme='dark'] .travel-layout .travel-chatbot-input:focus {
+  border-color: var(--travel-warm-secondary, #f0a85c);
+}
+
+.travel-layout .travel-chatbot-thinking-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--travel-chatbot-border);
+  background: var(--travel-chatbot-bot-msg-bg);
+  color: var(--travel-chatbot-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.travel-layout .travel-chatbot-thinking-toggle:hover,
+.travel-layout .travel-chatbot-thinking-toggle.active {
+  border-color: var(--travel-chatbot-primary);
+  color: var(--travel-chatbot-primary);
+  background: var(--travel-chatbot-bot-msg-bg);
+}
+
+.travel-layout .travel-chatbot-stop-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-stop-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.travel-layout .travel-chatbot-send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--travel-chatbot-primary-gradient);
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-send-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(232, 145, 58, 0.4);
+}
+
+.travel-layout .travel-chatbot-send-btn:active {
+  transform: scale(0.95);
+}
+
+/* Thinking */
+.travel-layout .travel-chatbot-thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--travel-chatbot-bot-msg-bg);
+  color: var(--travel-chatbot-text-secondary);
+  font-size: 0.9rem;
+}
+
+.travel-layout .travel-chatbot-thinking-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--travel-chatbot-border);
+  border-top-color: var(--travel-chatbot-primary);
+  border-radius: 50%;
+  animation: travel-chatbot-spin 0.8s linear infinite;
+}
+
+@keyframes travel-chatbot-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.travel-layout .travel-chatbot-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--travel-chatbot-border);
+  background: var(--travel-chatbot-bg);
+}
+
+.travel-layout .travel-chatbot-footer-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--travel-chatbot-text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.travel-layout .travel-chatbot-footer-btn:hover {
+  color: var(--travel-chatbot-primary);
+  background: rgba(232, 145, 58, 0.1);
+}
+
+/* Message type icons */
+.travel-layout .travel-chatbot-message-type-icon.insight { color: #10b981; }
+.travel-layout .travel-chatbot-message-type-icon.warning { color: #f59e0b; }
+.travel-layout .travel-chatbot-message-type-icon.error { color: #ef4444; }
+.travel-layout .travel-chatbot-message-type-icon.info { color: var(--travel-chatbot-primary); }
+
+/* Mobile */
+@media (max-width: 767px) {
+  .travel-layout .travel-chatbot-window.travel-chatbot-mobile {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    border-radius: 0;
+  }
+
+  .travel-layout .travel-chatbot-reveal-btn {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .travel-layout .travel-chatbot-fab {
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    right: 20px;
+  }
+}
+
+/* Desktop fullscreen mode */
+@media (min-width: 768px) {
+  .travel-layout .travel-chatbot-window.fullscreen {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    animation: travel-chatbot-fullscreen-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes travel-chatbot-fullscreen-in {
+    from { opacity: 0.85; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .travel-layout .travel-chatbot-window.fullscreen .travel-chatbot-messages {
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .travel-layout .travel-chatbot-window.fullscreen .travel-chatbot-input-container,
+  .travel-layout .travel-chatbot-window.fullscreen .travel-chatbot-suggestions,
+  .travel-layout .travel-chatbot-window.fullscreen .travel-chatbot-footer {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+body.travel-chatbot-open {
+  overflow: hidden;
+  transition: overflow 0.2s ease;
+}

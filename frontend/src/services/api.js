@@ -576,6 +576,37 @@ export const chatbotService = {
 }
 
 // ========================================
+// Travel Chatbot Service (Travel Guide)
+// ========================================
+
+export const travelChatbotService = {
+  /**
+   * Send a travel-related query to the Travel Guide chatbot.
+   * @param {string} query - User message
+   * @param {Array} history - Conversation history (optional)
+   * @param {string} language - Language code (en, el, es, fr)
+   * @returns {Promise<Object>} ChatbotResponse (message, type, quickActions, actionLink)
+   */
+  async sendQuery(query, history = [], language) {
+    const lang = language || localStorage.getItem('language') || 'en'
+    return await apiRequest('/api/travel-chatbot/query', {
+      method: 'POST',
+      body: JSON.stringify({ query, history, language: lang })
+    })
+  },
+
+  /**
+   * Get suggested travel questions for the current language.
+   * @param {string} language - Language code (optional)
+   * @returns {Promise<string[]>} List of suggested question strings
+   */
+  async getSuggestions(language) {
+    const lang = language || localStorage.getItem('language') || 'en'
+    return await apiRequest(`/api/travel-chatbot/suggestions?language=${lang}`)
+  }
+}
+
+// ========================================
 // Savings Goals Service
 // ========================================
 
@@ -1126,14 +1157,28 @@ export const aiGatewayService = {
    * RAG-enhanced query: sends the user message to the RAG service (retrieval + LLM).
    * Use when "Thinking mode (RAG enhanced)" is selected in the chatbot.
    * Automatically syncs user's financial context to RAG if missing or stale.
+   * Supports conversation history for follow-up questions and pronoun resolution.
    * @param {string} query - User question
-   * @param {Object} options - Optional config (signal for cancellation)
+   * @param {Object} options - Optional config (signal for cancellation, history for conversation context)
+   * @param {AbortSignal} options.signal - Optional AbortSignal to cancel the request
+   * @param {Array} options.history - Optional conversation history for follow-up questions
    * @returns {Promise<Object>} { answer, sources? } or { message: { content } }
    */
   async ragQuery(query, options = {}) {
+    // Convert chatbot history format to API format
+    // Chatbot uses: { role: 'user'|'bot', message: string }
+    // API expects: { role: 'user'|'assistant', content: string }
+    const conversationHistory = options.history?.map(m => ({
+      role: m.role === 'bot' ? 'assistant' : 'user',
+      content: m.message
+    })) || []
+
     const fetchOptions = {
       method: 'POST',
-      body: JSON.stringify({ query: query.trim() })
+      body: JSON.stringify({ 
+        query: query.trim(),
+        conversationHistory: conversationHistory
+      })
     }
     if (options.signal) fetchOptions.signal = options.signal
     return await apiRequest('/api/ai-gateway/rag-query', fetchOptions)
