@@ -18,6 +18,7 @@ export { default as SavingGoalProgressBar } from './SavingGoalProgressBar';
 export { default as Dropdown } from './Dropdown';
 export { default as CurrencyInput } from './CurrencyInput';
 export { default as DateInput } from './DateInput';
+export { default as DateRangePicker } from './DateRangePicker';
 export { default as CategorySelector } from './CategorySelector';
 export { default as FormSection } from './FormSection';
 export { default as SearchInput } from './SearchInput';

@@ -261,14 +261,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   list: {
-    padding: spacing.md,
+    padding: spacing.lg,
     paddingTop: 0,
     paddingBottom: 100,
   },
   card: {
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
   periodBadge: {
     alignSelf: 'flex-start',

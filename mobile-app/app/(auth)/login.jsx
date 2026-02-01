@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
-import { useRouter, Link } from 'expo-router';
+import { useRouter, Link, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
@@ -25,12 +25,18 @@ function humanizeLoginError(err, isSignUp, t) {
 export default function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const { mode } = useLocalSearchParams();
+  const [isSignUp, setIsSignUp] = useState(mode === 'signup');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Sync sign-up mode when navigating with ?mode=signup (e.g. from Landing)
+  useEffect(() => {
+    if (mode === 'signup') setIsSignUp(true);
+  }, [mode]);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -186,6 +192,21 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
+            {/* Terms & Privacy links (sign-up) */}
+            {isSignUp && (
+              <View style={styles.legalRow}>
+                <Text style={styles.legalText}>{t('auth.agreeToTerms')} </Text>
+                <TouchableOpacity onPress={() => router.push('/(auth)/terms-of-service')}>
+                  <Text style={styles.legalLink}>{t('legal.termsOfService')}</Text>
+                </TouchableOpacity>
+                <Text style={styles.legalText}> {t('common.and')} </Text>
+                <TouchableOpacity onPress={() => router.push('/(auth)/privacy-policy')}>
+                  <Text style={styles.legalLink}>{t('legal.privacyPolicy')}</Text>
+                </TouchableOpacity>
+                <Text style={styles.legalText}>.</Text>
+              </View>
+            )}
+
             {/* Toggle mode */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
@@ -293,4 +314,14 @@ const styles = StyleSheet.create({
   },
   footerText: { color: colors.textSecondary, fontSize: 14 },
   toggleText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+  legalRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  legalText: { color: colors.textSecondary, fontSize: 12 },
+  legalLink: { color: colors.primary, fontSize: 12, fontWeight: '600' },
 });

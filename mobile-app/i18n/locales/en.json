@@ -4,6 +4,7 @@
     "tagline": "Finances, aligned."
   },
   "common": {
+    "and": "and",
     "close": "Close",
     "save": "Save",
     "saving": "Saving...",
@@ -349,9 +350,14 @@
   },
   "transactions": {
     "title": "Transactions",
+    "viewList": "List",
+    "viewTimeline": "Timeline",
     "searchPlaceholder": "Search transactions...",
     "startDate": "From",
     "endDate": "To",
+    "selectDateRange": "Select date range",
+    "presetLast7": "Last 7 days",
+    "presetThisMonth": "This month",
     "pageInfo": "Page {{page}} of {{total}}",
     "detail": "Transaction",
     "add": "Add Transaction",
@@ -393,6 +399,8 @@
   "profile": {
     "title": "Profile",
     "settings": "Settings",
+    "legal": "Legal",
+    "manage": "Manage",
     "language": "Language",
     "changePassword": "Change Password",
     "deleteAccount": "Delete Account",
@@ -1261,6 +1269,14 @@
     "swap": "Swap currencies"
   },
   "settings": {
+    "language": "Language",
+    "languageUpdated": "Language updated successfully!",
+    "languages": {
+      "en": "English",
+      "el": "Ελληνικά",
+      "es": "Español",
+      "fr": "Français"
+    },
     "fontSize": "Font Size",
     "fontSizeDesc": "Adjust text size for better readability",
     "reducedMotion": "Reduced Motion",
@@ -1279,6 +1295,22 @@
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "termsLastUpdated": "Last Updated: December 15, 2025",
+    "privacy": {
+      "introTitle": "Introduction",
+      "introBody": "Welcome to Paire. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you as to how we look after your personal data when you visit our website and use our application, and tell you about your privacy rights and how the law protects you.",
+      "dataTitle": "The Data We Collect",
+      "dataBody": "We may collect, use, store and transfer different kinds of personal data about you: Identity Data (first name, last name, display name), Contact Data (email address), Financial Data (bank account details via Plaid, transaction history, budget information), and Technical Data (IP address, login data, browser type and version).",
+      "useTitle": "How We Use Your Data",
+      "useBody": "We will only use your personal data when the law allows us to. We use it to provide expense tracking and financial management services, to verify your identity and enable secure authentication, to manage your relationship with us, and to improve our website and services.",
+      "securityTitle": "Data Security",
+      "securityBody": "We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorized way, altered or disclosed. All financial data is encrypted at rest and in transit. We use bank-grade security protocols for all connections.",
+      "thirdPartyTitle": "Third-Party Services",
+      "thirdPartyBody": "We use Supabase for authentication and database hosting, Plaid for secure bank account connectivity, and OpenAI for providing the financial chatbot assistant.",
+      "cookiesTitle": "Cookies",
+      "cookiesBody": "We use cookies to distinguish you from other users of our website. This helps us to provide you with a good experience when you browse our website and also allows us to improve our site. We use both essential cookies (for authentication) and analytical cookies.",
+      "contactTitle": "Contact Us",
+      "contactBody": "If you have any questions about this privacy policy or our privacy practices, please contact us at: support@paire.app"
+    },
     "terms": {
       "introTitle": "Acceptance of Terms",
       "introBody": "By creating an account and using Paire, you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree, please do not use the service.",

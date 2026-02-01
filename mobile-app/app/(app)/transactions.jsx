@@ -3,11 +3,12 @@
  * Full CRUD: list with search, date range, pagination; add/edit/delete; detail modal.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   FlatList,
+  SectionList,
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
@@ -23,6 +24,7 @@ import { spacing, borderRadius, typography, shadows } from '../../constants/them
 import {
   Modal,
   SearchInput,
+  DateRangePicker,
   ConfirmationModal,
   TransactionForm,
   useToast,
@@ -52,6 +54,7 @@ export default function TransactionsScreen() {
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
 
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'timeline'
   const [formOpen, setFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [detailTransaction, setDetailTransaction] = useState(null);
@@ -111,6 +114,22 @@ export default function TransactionsScreen() {
   const totalPages = Array.isArray(data) ? 1 : (data?.totalPages ?? 1);
   const totalCount = Array.isArray(data) ? data.length : (data?.totalCount ?? items.length);
 
+  // Group items by date for timeline view (newest first)
+  const timelineSections = useMemo(() => {
+    const byDate = {};
+    items.forEach((item) => {
+      const key = (item.date || '').toString().split('T')[0] || '—';
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(item);
+    });
+    const keys = Object.keys(byDate).sort((a, b) => (b > a ? 1 : -1));
+    return keys.map((key) => ({
+      title: key === '—' ? '—' : formatDate(key),
+      dateKey: key,
+      data: byDate[key],
+    }));
+  }, [items]);
+
   const openEdit = (item) => {
     setDetailTransaction(null);
     setEditingTransaction(item);
@@ -133,7 +152,15 @@ export default function TransactionsScreen() {
     const isExpense = item.type === 'expense';
     return (
       <TouchableOpacity
-        style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.colors.surface,
+            borderWidth: 1,
+            borderColor: theme.colors.glassBorder,
+          },
+          shadows.sm,
+        ]}
         onPress={() => openDetail(item)}
         onLongPress={() => setDeleteTarget(item)}
         activeOpacity={0.8}
@@ -147,7 +174,7 @@ export default function TransactionsScreen() {
               {item.category} • {formatDate(item.date)}
             </Text>
           </View>
-          <Text style={[styles.cardAmount, { color: isExpense ? '#dc2626' : '#16a34a' }]}>
+          <Text style={[styles.cardAmount, { color: isExpense ? theme.colors.error : theme.colors.success }]}>
             {isExpense ? '-' : '+'}€{Number(item.amount || 0).toFixed(2)}
           </Text>
         </View>
@@ -155,9 +182,82 @@ export default function TransactionsScreen() {
     );
   };
 
+  const renderTimelineItem = ({ item, index, section }) => {
+    const isExpense = item.type === 'expense';
+    const isLast = index === section.data.length - 1;
+    return (
+      <View style={styles.timelineRow}>
+        <View style={styles.timelineLineCol}>
+          <View style={[styles.timelineDot, { backgroundColor: isExpense ? theme.colors.error : theme.colors.success }]} />
+          {!isLast && <View style={[styles.timelineLine, { backgroundColor: theme.colors.glassBorder }]} />}
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.timelineCard,
+            {
+              backgroundColor: theme.colors.surface,
+              borderWidth: 1,
+              borderColor: theme.colors.glassBorder,
+            },
+            shadows.sm,
+          ]}
+          onPress={() => openDetail(item)}
+          onLongPress={() => setDeleteTarget(item)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]} numberOfLines={1}>
+                {item.description || item.category || '—'}
+              </Text>
+              <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>{item.category}</Text>
+            </View>
+            <Text style={[styles.cardAmount, { color: isExpense ? theme.colors.error : theme.colors.success }]}>
+              {isExpense ? '-' : '+'}€{Number(item.amount || 0).toFixed(2)}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderSectionHeader = ({ section }) => (
+    <View style={[styles.timelineSectionHeader, { backgroundColor: theme.colors.background }]}>
+      <Text style={[styles.timelineSectionTitle, { color: theme.colors.textSecondary }]}>{section.title}</Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <Text style={[styles.title, { color: theme.colors.text }]}>{t('transactions.title')}</Text>
+
+      {/* View mode toggle (List / Timeline) */}
+      <View style={styles.viewToggleRow}>
+        <TouchableOpacity
+          style={[
+            styles.viewToggleBtn,
+            { borderColor: theme.colors.glassBorder, backgroundColor: viewMode === 'list' ? theme.colors.primary + '20' : theme.colors.surface },
+          ]}
+          onPress={() => setViewMode('list')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.viewToggleText, { color: viewMode === 'list' ? theme.colors.primary : theme.colors.textSecondary }]}>
+            {t('transactions.viewList', 'List')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.viewToggleBtn,
+            { borderColor: theme.colors.glassBorder, backgroundColor: viewMode === 'timeline' ? theme.colors.primary + '20' : theme.colors.surface },
+          ]}
+          onPress={() => setViewMode('timeline')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.viewToggleText, { color: viewMode === 'timeline' ? theme.colors.primary : theme.colors.textSecondary }]}>
+            {t('transactions.viewTimeline', 'Timeline')}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Filters */}
       <View style={[styles.filters, { backgroundColor: theme.colors.background }]}>
@@ -167,74 +267,106 @@ export default function TransactionsScreen() {
           placeholder={t('transactions.searchPlaceholder', 'Search transactions...')}
           debounceMs={400}
         />
-        <View style={styles.dateRow}>
-          <Text style={[styles.dateLabel, { color: theme.colors.textSecondary }]}>
-            {t('transactions.startDate', 'From')}
-          </Text>
-          <TextInput
-            style={[styles.dateInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={theme.colors.textLight}
-            value={startDate}
-            onChangeText={setStartDate}
-          />
-          <Text style={[styles.dateLabel, { color: theme.colors.textSecondary }]}>
-            {t('transactions.endDate', 'To')}
-          </Text>
-          <TextInput
-            style={[styles.dateInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={theme.colors.textLight}
-            value={endDate}
-            onChangeText={setEndDate}
-          />
-        </View>
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          label={t('transactions.selectDateRange', 'Select date range')}
+          showQuickPresets={true}
+        />
       </View>
 
-      <FlatList
-        data={items}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderItem}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing || isFetching}
-            onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
-          />
-        }
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={[styles.empty, { color: theme.colors.textLight }]}>
-            {t('common.noData')}
-          </Text>
-        }
-        ListFooterComponent={
-          totalPages > 1 ? (
-            <View style={styles.pagination}>
-              <TouchableOpacity
-                style={[styles.pageBtn, { backgroundColor: theme.colors.surface }]}
-                onPress={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-              >
-                <Text style={{ color: theme.colors.text }}>{t('common.previous', 'Previous')}</Text>
-              </TouchableOpacity>
-              <Text style={[styles.pageInfo, { color: theme.colors.textSecondary }]}>
-                {t('transactions.pageInfo', 'Page {{page}} of {{total}}', {
-                  page,
-                  total: totalPages,
-                })}
-              </Text>
-              <TouchableOpacity
-                style={[styles.pageBtn, { backgroundColor: theme.colors.surface }]}
-                onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-              >
-                <Text style={{ color: theme.colors.text }}>{t('common.next', 'Next')}</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null
-        }
-      />
+      {viewMode === 'list' ? (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing || isFetching}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+            />
+          }
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={[styles.empty, { color: theme.colors.textLight }]}>
+              {t('common.noData')}
+            </Text>
+          }
+          ListFooterComponent={
+            totalPages > 1 ? (
+              <View style={styles.pagination}>
+                <TouchableOpacity
+                  style={[styles.pageBtn, { backgroundColor: theme.colors.surface }]}
+                  onPress={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  <Text style={{ color: theme.colors.text }}>{t('common.previous', 'Previous')}</Text>
+                </TouchableOpacity>
+                <Text style={[styles.pageInfo, { color: theme.colors.textSecondary }]}>
+                  {t('transactions.pageInfo', 'Page {{page}} of {{total}}', {
+                    page,
+                    total: totalPages,
+                  })}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.pageBtn, { backgroundColor: theme.colors.surface }]}
+                  onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  <Text style={{ color: theme.colors.text }}>{t('common.next', 'Next')}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null
+          }
+        />
+      ) : (
+        <SectionList
+          sections={timelineSections}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderTimelineItem}
+          renderSectionHeader={renderSectionHeader}
+          stickySectionHeadersEnabled={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing || isFetching}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+            />
+          }
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={[styles.empty, { color: theme.colors.textLight }]}>
+              {t('common.noData')}
+            </Text>
+          }
+          ListFooterComponent={
+            totalPages > 1 ? (
+              <View style={styles.pagination}>
+                <TouchableOpacity
+                  style={[styles.pageBtn, { backgroundColor: theme.colors.surface }]}
+                  onPress={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  <Text style={{ color: theme.colors.text }}>{t('common.previous', 'Previous')}</Text>
+                </TouchableOpacity>
+                <Text style={[styles.pageInfo, { color: theme.colors.textSecondary }]}>
+                  {t('transactions.pageInfo', 'Page {{page}} of {{total}}', { page, total: totalPages })}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.pageBtn, { backgroundColor: theme.colors.surface }]}
+                  onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  <Text style={{ color: theme.colors.text }}>{t('common.next', 'Next')}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null
+          }
+        />
+      )}
 
       {/* FAB Add */}
       <TouchableOpacity
@@ -261,14 +393,14 @@ export default function TransactionsScreen() {
         </ScrollView>
       </Modal>
 
-      {/* Detail Modal */}
+      {/* Detail Modal (glassmorphism, design system) */}
       <Modal
         isOpen={!!detailTransaction}
         onClose={() => setDetailTransaction(null)}
         title={t('transactions.detail', 'Transaction')}
       >
         {detailTransaction && (
-          <View style={styles.detail}>
+          <View style={[styles.detail, { backgroundColor: theme.colors.surfaceSecondary, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: theme.colors.glassBorder }]}>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
                 {t('transaction.amount', 'Amount')}
@@ -278,7 +410,7 @@ export default function TransactionsScreen() {
                   styles.detailValue,
                   {
                     color:
-                      detailTransaction.type === 'expense' ? '#dc2626' : '#16a34a',
+                      detailTransaction.type === 'expense' ? theme.colors.error : theme.colors.success,
                   },
                 ]}
               >
@@ -350,28 +482,27 @@ export default function TransactionsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   title: { ...typography.h2, padding: spacing.md, paddingBottom: spacing.sm },
-  filters: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
-  dateRow: {
+  viewToggleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
     gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  dateLabel: { ...typography.caption },
-  dateInput: {
-    ...typography.bodySmall,
-    borderWidth: 1,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    minWidth: 110,
-  },
-  list: { padding: spacing.md, paddingTop: 0, paddingBottom: 100 },
-  card: {
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
+  },
+  viewToggleBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  viewToggleText: { ...typography.label },
+  filters: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
+  list: { padding: spacing.lg, paddingTop: 0, paddingBottom: 100 },
+  card: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
   row: { flexDirection: 'row', alignItems: 'center' },
   cardTitle: { ...typography.body, fontWeight: '600' },
@@ -403,10 +534,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...shadows.md,
   },
-  detail: { padding: spacing.md },
+  detail: { padding: spacing.lg },
   detailRow: { marginBottom: spacing.md },
   detailLabel: { ...typography.caption, marginBottom: 2 },
   detailValue: { ...typography.body },
+  timelineSectionHeader: { paddingVertical: spacing.sm, paddingHorizontal: 0, marginTop: spacing.md },
+  timelineSectionTitle: { ...typography.label },
+  timelineRow: { flexDirection: 'row', marginBottom: spacing.sm },
+  timelineLineCol: {
+    width: 24,
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  timelineLine: {
+    flex: 1,
+    width: 2,
+    minHeight: 8,
+    marginTop: 2,
+  },
+  timelineCard: {
+    flex: 1,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+  },
   actionRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
   actionBtn: {
     flex: 1,

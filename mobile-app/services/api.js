@@ -392,6 +392,74 @@ export const travelService = {
     getCurrentUser();
     await request('delete', `/api/travel/trips/${id}`);
   },
+  // Trip expenses (budget)
+  async getExpenses(tripId) {
+    getCurrentUser();
+    return request('get', `/api/travel/trips/${tripId}/expenses`);
+  },
+  async createExpense(tripId, expense) {
+    getCurrentUser();
+    return request('post', `/api/travel/trips/${tripId}/expenses`, expense);
+  },
+  async updateExpense(tripId, expenseId, updates) {
+    getCurrentUser();
+    return request('put', `/api/travel/trips/${tripId}/expenses/${expenseId}`, updates);
+  },
+  async deleteExpense(tripId, expenseId) {
+    getCurrentUser();
+    await request('delete', `/api/travel/trips/${tripId}/expenses/${expenseId}`);
+  },
+  // Itinerary events
+  async getEvents(tripId) {
+    getCurrentUser();
+    return request('get', `/api/travel/trips/${tripId}/events`);
+  },
+  async createEvent(tripId, evt) {
+    getCurrentUser();
+    return request('post', `/api/travel/trips/${tripId}/events`, evt);
+  },
+  async updateEvent(tripId, eventId, updates) {
+    getCurrentUser();
+    return request('put', `/api/travel/trips/${tripId}/events/${eventId}`, updates);
+  },
+  async deleteEvent(tripId, eventId) {
+    getCurrentUser();
+    await request('delete', `/api/travel/trips/${tripId}/events/${eventId}`);
+  },
+  // Packing items
+  async getPackingItems(tripId) {
+    getCurrentUser();
+    return request('get', `/api/travel/trips/${tripId}/packing`);
+  },
+  async createPackingItem(tripId, item) {
+    getCurrentUser();
+    return request('post', `/api/travel/trips/${tripId}/packing`, item);
+  },
+  async updatePackingItem(tripId, itemId, updates) {
+    getCurrentUser();
+    return request('put', `/api/travel/trips/${tripId}/packing/${itemId}`, updates);
+  },
+  async deletePackingItem(tripId, itemId) {
+    getCurrentUser();
+    await request('delete', `/api/travel/trips/${tripId}/packing/${itemId}`);
+  },
+  // Documents
+  async getDocuments(tripId) {
+    getCurrentUser();
+    return request('get', `/api/travel/trips/${tripId}/documents`);
+  },
+  async createDocument(tripId, doc) {
+    getCurrentUser();
+    return request('post', `/api/travel/trips/${tripId}/documents`, doc);
+  },
+  async updateDocument(tripId, docId, updates) {
+    getCurrentUser();
+    return request('put', `/api/travel/trips/${tripId}/documents/${docId}`, updates);
+  },
+  async deleteDocument(tripId, docId) {
+    getCurrentUser();
+    await request('delete', `/api/travel/trips/${tripId}/documents/${docId}`);
+  },
 };
 
 // ========================================

@@ -3,10 +3,11 @@
  * Ported from frontend/src/styles/index.css CSS variables
  */
 
+// Paire Design System: Royal Amethyst primary, soft neutrals
 export const colors = {
-  primary: '#8e44ad',
-  primaryLight: '#a569bd',
-  primaryDark: '#7d3c98',
+  primary: '#8B5CF6',
+  primaryLight: '#a78bfa',
+  primaryDark: '#7c3aed',
 
   secondary: '#f4ecf7',
   accent: '#d2b4de',
@@ -24,21 +25,21 @@ export const colors = {
   textSecondary: '#475569',
   textLight: '#94a3b8',
 
-  // Status
-  success: '#2ecc71',
-  successDark: '#27ae60',
-  error: '#e74c3c',
-  errorDark: '#c0392b',
+  // Status (Paire: Vitality Green, Coral for expenses)
+  success: '#10B981',
+  successDark: '#059669',
+  error: '#EF4444',
+  errorDark: '#dc2626',
   warning: '#f1c40f',
   warningDark: '#f39c12',
   info: '#3498db',
   infoDark: '#2980b9',
 
-  // Dark mode overrides
+  // Dark mode overrides (deep purple-tinted)
   dark: {
-    bgPrimary: '#1a1a2e',
-    bgSecondary: '#16213e',
-    bgTertiary: '#0f3460',
+    bgPrimary: '#0F071A',
+    bgSecondary: '#1a1a2e',
+    bgTertiary: '#16213e',
     textPrimary: '#e2e8f0',
     textSecondary: '#94a3b8',
     textLight: '#64748b',

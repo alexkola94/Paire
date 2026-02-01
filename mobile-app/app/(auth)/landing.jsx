@@ -27,7 +27,6 @@ import {
   Bell,
   ShoppingCart,
   MapPin,
-  TrendingUp,
 } from 'lucide-react-native';
 import { publicStatsService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';

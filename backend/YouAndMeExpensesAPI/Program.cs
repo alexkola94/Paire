@@ -238,18 +238,17 @@ if (string.IsNullOrEmpty(connectionString))
 // Supabase connection pool: use Supabase-allowed max pool size and trim idle connections.
 //
 // 1. Max pool size: set Database:MaxPoolSize to the value from Supabase Dashboard → Database → Connection pooling.
-//    Session mode (port 5432) often allows only 5–15 on free tier. We always cap (default 5) so we never exceed.
+//    Session mode (port 5432) often allows only 5–15 on free tier. We always cap (default 3) so we never exceed.
 //    For more connections, use Transaction mode: change Port=5432 to Port=6543 in the connection string.
 //
 // 2. Idle trimming:
-//    - ConnectionIdleLifetime = 60 seconds (or Database:ConnectionIdleLifetimeSeconds if set).
+//    - ConnectionIdleLifetime = 30 seconds (or Database:ConnectionIdleLifetimeSeconds if set).
 //    - MinPoolSize = 0 so the pool can shrink and release connections back to Supabase.
 var csb = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
 var maxPoolSize = builder.Configuration.GetValue<int?>("Database:MaxPoolSize");
-// Always cap pool size so we never exceed Supabase Session mode limit (config wins, else default 5).
-var effectiveMaxPool = (maxPoolSize.HasValue && maxPoolSize.Value > 0) ? maxPoolSize.Value : 5;
-if (csb.MaxPoolSize > effectiveMaxPool)
-    csb.MaxPoolSize = effectiveMaxPool;
+// Force pool size so we never exceed Supabase Session mode limit (config wins, else default 3).
+var effectiveMaxPool = (maxPoolSize.HasValue && maxPoolSize.Value > 0) ? maxPoolSize.Value : 3;
+csb.MaxPoolSize = effectiveMaxPool;
 
 var idleLifetimeSeconds = builder.Configuration.GetValue<int?>("Database:ConnectionIdleLifetimeSeconds");
 var hasIdleLifetimeInString = connectionString.Contains("Connection Idle Lifetime", StringComparison.OrdinalIgnoreCase)
@@ -257,7 +256,7 @@ var hasIdleLifetimeInString = connectionString.Contains("Connection Idle Lifetim
 if (idleLifetimeSeconds.HasValue && idleLifetimeSeconds.Value >= 0)
     csb.ConnectionIdleLifetime = idleLifetimeSeconds.Value;
 else if (!hasIdleLifetimeInString)
-    csb.ConnectionIdleLifetime = 60; // Trim idle connections after 60s so slots free up when max reached
+    csb.ConnectionIdleLifetime = 30; // Trim idle connections after 30s so slots free up quickly on Supabase
 
 csb.MinPoolSize = 0; // Allow pool to trim down; idle connections above this are closed after ConnectionIdleLifetime
 connectionString = csb.ConnectionString;

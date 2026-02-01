@@ -4,6 +4,7 @@
     "tagline": "Finances, alignées."
   },
   "common": {
+    "and": "et",
     "close": "Fermer",
     "save": "Enregistrer",
     "cancel": "Annuler",
@@ -68,10 +69,50 @@
     "fillRequired": "Veuillez remplir tous les champs requis",
     "networkError": "Vérifiez votre connexion et réessayez."
   },
+  "settings": {
+    "language": "Langue",
+    "languageUpdated": "Langue mise à jour avec succès !",
+    "languages": {
+      "en": "English",
+      "el": "Ελληνικά",
+      "es": "Español",
+      "fr": "Français"
+    }
+  },
   "legal": {
     "privacyPolicy": "Politique de Confidentialité",
     "termsOfService": "Conditions d'utilisation",
-    "termsLastUpdated": "Dernière mise à jour : 15 décembre 2025"
+    "termsLastUpdated": "Dernière mise à jour : 15 décembre 2025",
+    "privacy": {
+      "introTitle": "Introduction",
+      "introBody": "Bienvenue sur Paire. Nous respectons votre vie privée et nous engageons à protéger vos données personnelles. Cette politique de confidentialité vous informe de la manière dont nous traitons vos données.",
+      "dataTitle": "Les Données que Nous Collectons",
+      "dataBody": "Nous pouvons collecter, utiliser et stocker différents types de données personnelles : identité, contact (e-mail), données financières (via Plaid), données techniques (IP, navigateur).",
+      "useTitle": "Comment Nous Utilisons Vos Données",
+      "useBody": "Nous n'utiliserons vos données personnelles que lorsque la loi le permet : pour les services de gestion des dépenses, la vérification d'identité, la gestion de la relation et l'amélioration des services.",
+      "securityTitle": "Sécurité des Données",
+      "securityBody": "Nous avons mis en place des mesures de sécurité appropriées. Toutes les données financières sont chiffrées au repos et en transit.",
+      "thirdPartyTitle": "Services Tiers",
+      "thirdPartyBody": "Nous utilisons Supabase pour l'authentification et la base de données, Plaid pour la connexion bancaire et OpenAI pour l'assistant chatbot.",
+      "cookiesTitle": "Cookies",
+      "cookiesBody": "Nous utilisons des cookies pour vous distinguer des autres utilisateurs. Nous utilisons des cookies essentiels (authentification) et analytiques.",
+      "contactTitle": "Nous Contacter",
+      "contactBody": "Pour toute question sur cette politique : support@paire.app"
+    },
+    "terms": {
+      "introTitle": "Acceptation des Conditions",
+      "introBody": "En créant un compte et en utilisant Paire, vous acceptez d'être lié par ces Conditions d'utilisation et notre Politique de Confidentialité.",
+      "serviceTitle": "Description du Service",
+      "serviceBody": "Paire est une application de gestion financière pour les couples et les particuliers. Le service est fourni \"tel quel\".",
+      "accountTitle": "Compte et Sécurité",
+      "accountBody": "Vous êtes responsable de la confidentialité de vos identifiants et de toute activité sur votre compte.",
+      "conductTitle": "Utilisation Acceptable",
+      "conductBody": "Vous acceptez d'utiliser Paire uniquement à des fins légales. Nous pouvons suspendre ou résilier les comptes qui violent ces conditions.",
+      "dataTitle": "Données et Confidentialité",
+      "dataBody": "Votre utilisation de Paire est également régie par notre Politique de Confidentialité. Les données financières que vous saisissez restent les vôtres.",
+      "contactTitle": "Contact",
+      "contactBody": "Pour toute question sur ces Conditions : support@paire.app"
+    }
   },
   "shoppingLists": {
     "title": "Listes de Courses",
@@ -225,6 +266,10 @@
     "noTransactions": "Aucune transaction enregistrée"
   },
   "profile": {
+    "title": "Profil",
+    "settings": "Paramètres",
+    "legal": "Mentions légales",
+    "manage": "Gérer",
     "openBanking": {
       "title": "Connexions Bancaires",
       "connectedAccounts": "Comptes Connectés",

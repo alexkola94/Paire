@@ -18,7 +18,7 @@ import { spacing, borderRadius, typography, shadows } from '../../constants/them
 function WidgetCard({ title, icon: Icon, children, onPress, theme }) {
   return (
     <TouchableOpacity
-      style={[styles.widget, { backgroundColor: theme.colors.surface }, shadows.sm]}
+      style={[styles.widget, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.sm]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
     >
@@ -82,22 +82,22 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Summary Cards */}
+        {/* Summary Cards (Paire: soft tints, theme-aware) */}
         <View style={styles.summaryRow}>
-          <View style={[styles.summaryCard, { backgroundColor: '#f0fdf4' }]}>
-            <TrendingUp size={20} color="#16a34a" />
-            <Text style={styles.summaryAmount}>€{totalIncome.toFixed(2)}</Text>
-            <Text style={styles.summaryLabel}>{t('dashboard.income')}</Text>
+          <View style={[styles.summaryCard, { backgroundColor: theme.colors.success + '18', borderColor: theme.colors.glassBorder }]}>
+            <TrendingUp size={20} color={theme.colors.success} />
+            <Text style={[styles.summaryAmount, { color: theme.colors.text }]}>€{totalIncome.toFixed(2)}</Text>
+            <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>{t('dashboard.income')}</Text>
           </View>
-          <View style={[styles.summaryCard, { backgroundColor: '#fef2f2' }]}>
-            <TrendingDown size={20} color="#dc2626" />
-            <Text style={styles.summaryAmount}>€{totalExpenses.toFixed(2)}</Text>
-            <Text style={styles.summaryLabel}>{t('dashboard.expenses')}</Text>
+          <View style={[styles.summaryCard, { backgroundColor: theme.colors.error + '18', borderColor: theme.colors.glassBorder }]}>
+            <TrendingDown size={20} color={theme.colors.error} />
+            <Text style={[styles.summaryAmount, { color: theme.colors.text }]}>€{totalExpenses.toFixed(2)}</Text>
+            <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>{t('dashboard.expenses')}</Text>
           </View>
-          <View style={[styles.summaryCard, { backgroundColor: '#f5f3ff' }]}>
-            <Wallet size={20} color="#7c3aed" />
-            <Text style={styles.summaryAmount}>€{balance.toFixed(2)}</Text>
-            <Text style={styles.summaryLabel}>{t('dashboard.balance')}</Text>
+          <View style={[styles.summaryCard, { backgroundColor: theme.colors.primary + '18', borderColor: theme.colors.glassBorder }]}>
+            <Wallet size={20} color={theme.colors.primary} />
+            <Text style={[styles.summaryAmount, { color: theme.colors.text }]}>€{balance.toFixed(2)}</Text>
+            <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>{t('dashboard.balance')}</Text>
           </View>
         </View>
 
@@ -118,8 +118,9 @@ export default function DashboardScreen() {
           ].map((item, i) => (
             <TouchableOpacity
               key={i}
-              style={[styles.quickItem, { backgroundColor: theme.colors.surface }, shadows.sm]}
+              style={[styles.quickItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.sm]}
               onPress={() => router.push(item.route)}
+              activeOpacity={0.7}
             >
               <item.icon size={22} color={theme.colors.primary} />
               <Text style={[styles.quickLabel, { color: theme.colors.text }]} numberOfLines={1}>{item.label}</Text>
@@ -135,8 +136,8 @@ export default function DashboardScreen() {
               return (
                 <View key={b.id} style={styles.budgetRow}>
                   <Text style={[styles.budgetName, { color: theme.colors.text }]}>{b.category}</Text>
-                  <View style={styles.progressBg}>
-                    <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: pct > 90 ? '#dc2626' : theme.colors.primary }]} />
+                  <View style={[styles.progressBg, { backgroundColor: theme.colors.surfaceSecondary }]}>
+                    <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: pct > 90 ? theme.colors.error : theme.colors.primary }]} />
                   </View>
                   <Text style={[styles.budgetPct, { color: theme.colors.textSecondary }]}>{pct.toFixed(0)}%</Text>
                 </View>
@@ -163,33 +164,46 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.lg, paddingBottom: 100 },
   header: { marginBottom: spacing.lg },
   greeting: { ...typography.bodySmall },
   userName: { ...typography.h2 },
-  summaryRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
+  summaryRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg },
   summaryCard: {
-    flex: 1, borderRadius: borderRadius.md, padding: spacing.md,
-    alignItems: 'center', gap: spacing.xs,
+    flex: 1,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
   },
-  summaryAmount: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
-  summaryLabel: { fontSize: 11, color: '#64748b' },
+  summaryAmount: { fontSize: 16, fontWeight: '700' },
+  summaryLabel: { fontSize: 11 },
   sectionTitle: { ...typography.h3, marginBottom: spacing.md },
-  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: spacing.lg },
   quickItem: {
-    width: '23%', borderRadius: borderRadius.md, padding: spacing.sm,
-    alignItems: 'center', gap: spacing.xs,
+    width: '23%',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
   },
   quickLabel: { fontSize: 10, textAlign: 'center' },
-  widget: { borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.md },
-  widgetHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  widget: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+  },
+  widgetHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
   widgetTitle: { ...typography.label },
-  budgetRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  budgetRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
   budgetName: { flex: 1, fontSize: 13 },
-  progressBg: { flex: 2, height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
+  progressBg: { flex: 2, height: 8, borderRadius: 4, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 4 },
   budgetPct: { width: 35, textAlign: 'right', fontSize: 12 },
-  billRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs },
+  billRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.sm },
   billName: { fontSize: 14 },
   billAmount: { fontSize: 14, fontWeight: '600' },
 });
