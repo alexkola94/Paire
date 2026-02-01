@@ -185,6 +185,10 @@ export const loanPaymentService = {
 // ========================================
 
 export const storageService = {
+  /**
+   * Upload a receipt image. File can be a React Native asset object { uri, name, type }.
+   * Returns { url, path } from backend.
+   */
   async uploadFile(file) {
     const formData = new FormData();
     formData.append('file', file);
@@ -503,11 +507,19 @@ export const adminService = {
     return request('get', `/api/admin/users?${params}`);
   },
   async getLogs(count = 50, level = null) {
-    let url = `/api/admin/logs?count=${count}`;
-    if (level && level !== 'All') url += `&level=${level}`;
-    return request('get', url);
+    let url = `/api/admin/system-logs?page=1&pageSize=${count}`;
+    if (level && level !== 'All') url += `&level=${encodeURIComponent(level)}`;
+    const result = await request('get', url);
+    return result?.logs ?? result?.entries ?? result ?? [];
   },
-  async getJobs() { return request('get', '/api/admin/jobs'); },
+  async getJobs() {
+    const result = await request('get', '/api/admin/jobs/stats');
+    const succeeded = result?.recentSucceeded ?? [];
+    const failed = result?.recentFailures ?? [];
+    const processing = result?.processing ?? [];
+    const names = new Set([...succeeded.map((j) => j?.name), ...failed.map((j) => j?.name), ...processing.map((j) => j?.name)].filter(Boolean));
+    return Array.from(names).map((name) => ({ name, id: name }));
+  },
   async lockUser(userId) { return request('post', `/api/admin/users/${userId}/lock`); },
   async unlockUser(userId) { return request('post', `/api/admin/users/${userId}/unlock`); },
   async resetTwoFactor(userId) { return request('post', `/api/admin/users/${userId}/reset-2fa`); },
@@ -646,4 +658,28 @@ export const discoveryService = {
 
 export const flightService = {
   async getStatus(flightNumber) { return request('get', `/api/flights/${encodeURIComponent(flightNumber)}`); },
+};
+
+// ========================================
+// Open Banking / Bank Linking (Plaid)
+// ========================================
+
+export const openBankingService = {
+  async createLinkToken() {
+    getCurrentUser();
+    const data = await request('post', '/api/open-banking/link-token', {});
+    return data?.link_token;
+  },
+  async exchangePublicToken(publicToken, metadata = {}) {
+    getCurrentUser();
+    return request('post', '/api/open-banking/exchange-token', {
+      publicToken,
+      institutionId: metadata?.institution?.institution_id,
+      institutionName: metadata?.institution?.name,
+    });
+  },
+  async getAccounts() {
+    getCurrentUser();
+    return request('get', '/api/open-banking/accounts');
+  },
 };

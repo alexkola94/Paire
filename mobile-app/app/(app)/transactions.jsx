@@ -52,6 +52,7 @@ export default function TransactionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [typeFilter, setTypeFilter] = useState(''); // '' = all, 'expense', 'income'
   const [page, setPage] = useState(1);
 
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'timeline'
@@ -61,7 +62,7 @@ export default function TransactionsScreen() {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const { data, refetch, isFetching } = useQuery({
-    queryKey: ['transactions', 'all', page, searchQuery, startDate, endDate],
+    queryKey: ['transactions', 'all', page, searchQuery, startDate, endDate, typeFilter],
     queryFn: () =>
       transactionService.getAll({
         page,
@@ -69,6 +70,7 @@ export default function TransactionsScreen() {
         search: searchQuery.trim() || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        type: typeFilter || undefined,
       }),
   });
 
@@ -257,6 +259,32 @@ export default function TransactionsScreen() {
             {t('transactions.viewTimeline', 'Timeline')}
           </Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Type filter: All / Expense / Income */}
+      <View style={[styles.typeFilterRow, { borderBottomColor: theme.colors.glassBorder }]}>
+        {[
+          { value: '', labelKey: 'transactions.filterAll', default: 'All' },
+          { value: 'expense', labelKey: 'transactions.filterExpense', default: 'Expense' },
+          { value: 'income', labelKey: 'transactions.filterIncome', default: 'Income' },
+        ].map(({ value, labelKey, default: def }) => (
+          <TouchableOpacity
+            key={value || 'all'}
+            style={[
+              styles.typeFilterBtn,
+              {
+                backgroundColor: typeFilter === value ? theme.colors.primary + '20' : theme.colors.surface,
+                borderColor: theme.colors.glassBorder,
+              },
+            ]}
+            onPress={() => { setTypeFilter(value); setPage(1); }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.typeFilterText, { color: typeFilter === value ? theme.colors.primary : theme.colors.textSecondary }]}>
+              {t(labelKey, def)}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Filters */}
@@ -497,6 +525,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewToggleText: { ...typography.label },
+  typeFilterRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    marginBottom: spacing.xs,
+    borderBottomWidth: 1,
+  },
+  typeFilterBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  typeFilterText: { ...typography.label, fontSize: 13 },
   filters: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
   list: { padding: spacing.lg, paddingTop: 0, paddingBottom: 100 },
   card: {

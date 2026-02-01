@@ -203,6 +203,50 @@
     "endDate": "Date de fin",
     "selectDateRange": "Sélectionner une plage de dates"
   },
+  "dashboard": {
+    "savingGoals": "Objectifs d'épargne",
+    "savingGoalsSummary": "Résumé des objectifs d'épargne",
+    "noSavingGoals": "Commencez à épargner pour vos rêves ! Créez un objectif.",
+    "filterSolo": "Seul(e)",
+    "filterTogether": "Ensemble",
+    "filterPartner": "Partenaire"
+  },
+  "transaction": {
+    "category": "Catégorie",
+    "description": "Description",
+    "date": "Date",
+    "notes": "Notes",
+    "source": "Source",
+    "manual": "Saisie manuelle"
+  },
+  "categories": {
+    "food": "Alimentation et restauration",
+    "transport": "Transport",
+    "transportation": "Transport",
+    "housing": "Logement",
+    "utilities": "Services",
+    "entertainment": "Loisirs",
+    "healthcare": "Santé",
+    "shopping": "Shopping",
+    "education": "Éducation",
+    "salary": "Salaire",
+    "freelance": "Freelance",
+    "investment": "Investissement",
+    "gift": "Cadeau",
+    "other": "Autre",
+    "subscription": "Abonnement",
+    "insurance": "Assurance",
+    "rent": "Loyer/Hypothèque",
+    "loan": "Paiement de prêt",
+    "internet": "Internet",
+    "phone": "Téléphone",
+    "gym": "Salle de sport/Fitness",
+    "groceries": "Courses",
+    "household": "Ménage",
+    "personal": "Soins personnels",
+    "electronics": "Électronique",
+    "clothing": "Vêtements"
+  },
   "allTransactions": {
     "title": "Toutes les Transactions",
     "totalCount": "Total: {{count}} transaction",
@@ -319,6 +363,16 @@
     }
   },
   "recurringBills": {
+    "searchPlaceholder": "Rechercher par nom, notes ou catégorie...",
+    "noSearchResults": "Aucune facture ne correspond à votre recherche",
+    "noSearchResultsHint": "Essayez un autre terme ou effacez la recherche pour voir toutes les factures.",
+    "clearSearch": "Effacer la recherche",
+    "linkToSavingsGoal": "Lier à l'objectif d'épargne",
+    "selectSavingsGoal": "Sélectionner un objectif d'épargne (Optionnel)",
+    "savingsGoalHint": "Marquer cette facture comme payée ajoutera automatiquement le montant à cet objectif d'épargne.",
+    "linkToLoan": "Lier au prêt",
+    "selectLoan": "Sélectionner un prêt (Optionnel)",
+    "loanHint": "Marquer cette facture comme payée créera automatiquement un paiement sur ce prêt.",
     "deleteAttachment": "Supprimer la pièce jointe?",
     "confirmDeleteAttachment": "Êtes-vous sûr de vouloir supprimer cette pièce jointe? Cette action ne peut pas être annulée.",
     "errorDeletingAttachment": "Échec de la suppression de la pièce jointe"

@@ -52,6 +52,8 @@
     "enableEmailNotifications": "Quiero recibir notificaciones por email",
     "agreeToTerms": "Acepto los",
     "termsRequired": "Debes aceptar los Términos de Servicio para registrarte.",
+    "twoFactorSetup": "Autenticación de dos factores",
+    "logoutConfirm": "¿Estás seguro de que quieres cerrar sesión?",
     "errors": {
       "networkError": "Comprueba tu conexión e inténtalo de nuevo.",
       "invalidCredentials": "Email o contraseña incorrectos. Por favor inténtalo de nuevo.",
@@ -234,6 +236,7 @@
   "common": {
     "save": "Guardar",
     "saving": "Guardando...",
+    "success": "¡Éxito!",
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "edit": "Editar",
@@ -244,7 +247,6 @@
     "update": "Actualizar",
     "loading": "Cargando...",
     "error": "Error",
-    "success": "Éxito",
     "search": "Buscar",
     "filter": "Filtrar",
     "export": "Exportar",
@@ -257,7 +259,10 @@
     "undo": "Deshacer",
     "startDate": "Fecha de inicio",
     "endDate": "Fecha de fin",
-    "selectDateRange": "Seleccionar rango de fechas"
+    "selectDateRange": "Seleccionar rango de fechas",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {{page}} de {{total}}"
   },
   "allTransactions": {
     "title": "Todas las Transacciones",
@@ -265,11 +270,39 @@
     "totalCount_plural": "Total: {{count}} transacciones",
     "noTransactions": "No hay transacciones registradas"
   },
+  "transactions": {
+    "filterAll": "Todos",
+    "filterExpense": "Gastos",
+    "filterIncome": "Ingresos"
+  },
+  "loans": {
+    "title": "Préstamos",
+    "paymentHistory": "Historial de pagos",
+    "addPayment": "Añadir pago",
+    "paymentAmount": "Importe del pago",
+    "principalAmount": "Principal",
+    "interestAmount": "Interés",
+    "paymentDate": "Fecha de pago",
+    "paymentNotes": "Notas del pago",
+    "paymentNotesPlaceholder": "Notas opcionales del pago...",
+    "deletePayment": "Eliminar pago",
+    "confirmDeletePayment": "¿Estás seguro de que quieres eliminar este pago?",
+    "paymentAdded": "Pago añadido",
+    "paymentDeleted": "Pago eliminado",
+    "paymentError": "Algo salió mal con este pago",
+    "noPayments": "Aún no hay pagos registrados",
+    "amountRequired": "Por favor ingresa un importe válido"
+  },
   "profile": {
     "title": "Perfil",
     "settings": "Ajustes",
     "legal": "Legal",
     "manage": "Gestionar",
+    "changePhoto": "Cambiar foto",
+    "takePhoto": "Tomar foto",
+    "chooseFromGallery": "Elegir de la galería",
+    "avatarUpdated": "Foto actualizada",
+    "avatarError": "Error al actualizar la foto",
     "openBanking": {
       "title": "Conexiones Bancarias",
       "connectedAccounts": "Cuentas Conectadas",
@@ -379,9 +412,17 @@
     }
   },
   "recurringBills": {
-    "deleteAttachment": "¿Eliminar adjunto?",
-    "confirmDeleteAttachment": "¿Estás seguro de que quieres eliminar este adjunto? Esta acción no se puede deshacer.",
-    "errorDeletingAttachment": "Error al eliminar el adjunto"
+    "attachments": "Adjuntos",
+    "noAttachments": "Sin adjuntos aún",
+    "addAttachment": "Añadir adjunto",
+    "attachment": "Adjunto",
+    "attachmentAdded": "Adjunto añadido",
+    "attachmentDeleted": "Adjunto eliminado",
+    "deleteAttachmentTitle": "¿Eliminar adjunto?",
+    "confirmDeleteAttachment": "¿Estás seguro de que quieres eliminar este adjunto?",
+    "errorUploading": "Error al subir el adjunto",
+    "errorDeletingAttachment": "Error al eliminar el adjunto",
+    "permissionDenied": "Se requiere permiso para acceder a la cámara o las fotos."
   },
   "chatbot": {
     "title": "Asistente Financiero",
@@ -473,8 +514,22 @@
       "loadingTripView": "Cargando la vista de tu viaje...",
       "saveFailed": "No se pudo guardar. Inténtalo de nuevo."
     },
+    "trip": {
+      "createTrip": "Crear Viaje",
+      "editTrip": "Editar Viaje",
+      "deleteTrip": "Eliminar Viaje",
+      "tripUpdated": "Viaje actualizado",
+      "tripName": "Nombre del Viaje",
+      "destination": "Destino",
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha de Fin",
+      "budget": "Presupuesto",
+      "searchDestination": "Buscar destino..."
+    },
     "home": {
       "welcome": "Bienvenido al Modo Viaje",
+      "deleteTripTitle": "¿Eliminar este viaje?",
+      "deleteTripMessage": "Se eliminará permanentemente este viaje y todos los datos relacionados.",
       "noTripTitle": "¿A dónde vamos?",
       "noTripDescription": "Comienza a planear tu viaje",
       "savedPlacesTitle": "Lugares guardados",

@@ -52,6 +52,8 @@
     "enableEmailNotifications": "Je souhaite recevoir des notifications par email",
     "agreeToTerms": "J'accepte les",
     "termsRequired": "Vous devez accepter les Conditions d'utilisation pour vous inscrire.",
+    "twoFactorSetup": "Authentification à deux facteurs",
+    "logoutConfirm": "Êtes-vous sûr de vouloir vous déconnecter ?",
     "errors": {
       "networkError": "Vérifiez votre connexion et réessayez.",
       "invalidCredentials": "Email ou mot de passe incorrect. Veuillez réessayer.",
@@ -234,6 +236,7 @@
   "common": {
     "save": "Enregistrer",
     "saving": "Enregistrement...",
+    "success": "Succès!",
     "cancel": "Annuler",
     "delete": "Supprimer",
     "edit": "Modifier",
@@ -244,7 +247,6 @@
     "update": "Mettre à jour",
     "loading": "Chargement...",
     "error": "Erreur",
-    "success": "Succès",
     "search": "Rechercher",
     "filter": "Filtrer",
     "export": "Exporter",
@@ -257,7 +259,10 @@
     "undo": "Annuler",
     "startDate": "Date de début",
     "endDate": "Date de fin",
-    "selectDateRange": "Sélectionner une plage de dates"
+    "selectDateRange": "Sélectionner une plage de dates",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "pageOf": "Page {{page}} sur {{total}}"
   },
   "allTransactions": {
     "title": "Toutes les Transactions",
@@ -265,11 +270,39 @@
     "totalCount_plural": "Total: {{count}} transactions",
     "noTransactions": "Aucune transaction enregistrée"
   },
+  "transactions": {
+    "filterAll": "Tous",
+    "filterExpense": "Dépenses",
+    "filterIncome": "Revenus"
+  },
+  "loans": {
+    "title": "Prêts",
+    "paymentHistory": "Historique des paiements",
+    "addPayment": "Ajouter un paiement",
+    "paymentAmount": "Montant du paiement",
+    "principalAmount": "Principal",
+    "interestAmount": "Intérêts",
+    "paymentDate": "Date du paiement",
+    "paymentNotes": "Notes du paiement",
+    "paymentNotesPlaceholder": "Notes optionnelles du paiement...",
+    "deletePayment": "Supprimer le paiement",
+    "confirmDeletePayment": "Êtes-vous sûr de vouloir supprimer ce paiement ?",
+    "paymentAdded": "Paiement ajouté",
+    "paymentDeleted": "Paiement supprimé",
+    "paymentError": "Un problème est survenu avec ce paiement",
+    "noPayments": "Aucun paiement enregistré pour l'instant",
+    "amountRequired": "Veuillez entrer un montant valide"
+  },
   "profile": {
     "title": "Profil",
     "settings": "Paramètres",
     "legal": "Mentions légales",
     "manage": "Gérer",
+    "changePhoto": "Changer la photo",
+    "takePhoto": "Prendre une photo",
+    "chooseFromGallery": "Choisir dans la galerie",
+    "avatarUpdated": "Photo mise à jour",
+    "avatarError": "Échec de la mise à jour de la photo",
     "openBanking": {
       "title": "Connexions Bancaires",
       "connectedAccounts": "Comptes Connectés",
@@ -379,9 +412,17 @@
     }
   },
   "recurringBills": {
-    "deleteAttachment": "Supprimer la pièce jointe?",
-    "confirmDeleteAttachment": "Êtes-vous sûr de vouloir supprimer cette pièce jointe? Cette action ne peut pas être annulée.",
-    "errorDeletingAttachment": "Échec de la suppression de la pièce jointe"
+    "attachments": "Pièces jointes",
+    "noAttachments": "Aucune pièce jointe pour l'instant",
+    "addAttachment": "Ajouter une pièce jointe",
+    "attachment": "Pièce jointe",
+    "attachmentAdded": "Pièce jointe ajoutée",
+    "attachmentDeleted": "Pièce jointe supprimée",
+    "deleteAttachmentTitle": "Supprimer la pièce jointe?",
+    "confirmDeleteAttachment": "Êtes-vous sûr de vouloir supprimer cette pièce jointe?",
+    "errorUploading": "Échec du téléchargement de la pièce jointe",
+    "errorDeletingAttachment": "Échec de la suppression de la pièce jointe",
+    "permissionDenied": "L'accès à la caméra ou aux photos est requis."
   },
   "chatbot": {
     "title": "Assistant Financier",
@@ -473,8 +514,22 @@
       "loadingTripView": "Chargement de la vue de votre voyage...",
       "saveFailed": "Impossible d'enregistrer. Veuillez réessayer."
     },
+    "trip": {
+      "createTrip": "Créer un voyage",
+      "editTrip": "Modifier le voyage",
+      "deleteTrip": "Supprimer le voyage",
+      "tripUpdated": "Voyage mis à jour",
+      "tripName": "Nom du voyage",
+      "destination": "Destination",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "budget": "Budget",
+      "searchDestination": "Rechercher une destination..."
+    },
     "home": {
       "welcome": "Bienvenue en mode voyage",
+      "deleteTripTitle": "Supprimer ce voyage ?",
+      "deleteTripMessage": "Ce voyage et toutes les données associées seront définitivement supprimés.",
       "noTripTitle": "Où partons-nous ?",
       "noTripDescription": "Commencez à planifier votre séjour",
       "savedPlacesTitle": "Lieux enregistrés",

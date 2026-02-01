@@ -11,7 +11,7 @@
  * - Theme-aware styling
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ import { spacing, borderRadius, typography, shadows } from '../../constants/them
 import {
   Modal,
   SearchInput,
+  DateRangePicker,
   ConfirmationModal,
   TransactionForm,
   useToast,
@@ -46,14 +47,26 @@ export default function IncomeScreen() {
   // Local state
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  // Fetch income
+  const PAGE_SIZE = 20;
+
+  // Fetch income (with date range and optional pagination)
   const { data, refetch, isLoading } = useQuery({
-    queryKey: ['income'],
-    queryFn: () => transactionService.getAll({ type: 'income' }),
+    queryKey: ['income', startDate, endDate, page, PAGE_SIZE],
+    queryFn: () =>
+      transactionService.getAll({
+        type: 'income',
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        page,
+        pageSize: PAGE_SIZE,
+      }),
   });
 
   // Create mutation
@@ -98,6 +111,11 @@ export default function IncomeScreen() {
     },
   });
 
+  // Reset to first page when date range changes
+  useEffect(() => {
+    setPage(1);
+  }, [startDate, endDate]);
+
   // Pull-to-refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -105,9 +123,14 @@ export default function IncomeScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  // Get and filter items
+  // Normalize response: API returns either array or { items, totalCount, totalPages }
+  const rawItems = Array.isArray(data) ? data : data?.items || [];
+  const totalCount = Array.isArray(data) ? data?.length : data?.totalCount ?? rawItems.length;
+  const totalPages = Array.isArray(data) ? 1 : (data?.totalPages ?? 1);
+  const isPaged = !Array.isArray(data) && data != null && 'totalCount' in data;
+
+  // Get and filter items (client-side search on current page)
   const items = useMemo(() => {
-    const rawItems = Array.isArray(data) ? data : data?.items || [];
     if (!searchQuery.trim()) return rawItems;
     
     const query = searchQuery.toLowerCase();
@@ -115,7 +138,7 @@ export default function IncomeScreen() {
       item.description?.toLowerCase().includes(query) ||
       item.category?.toLowerCase().includes(query)
     );
-  }, [data, searchQuery]);
+  }, [rawItems, searchQuery]);
 
   // Handle form submission (create or update)
   const handleFormSubmit = async (formData) => {
@@ -208,12 +231,20 @@ export default function IncomeScreen() {
         </Text>
       </View>
 
-      {/* Search Input */}
+      {/* Filters: search + date range */}
       <View style={styles.searchContainer}>
         <SearchInput
           onSearch={setSearchQuery}
           placeholder={t('income.searchPlaceholder', 'Search income...')}
           initialValue={searchQuery}
+        />
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          label={t('transactions.selectDateRange', 'Select date range')}
+          showQuickPresets={true}
         />
       </View>
 
@@ -238,6 +269,33 @@ export default function IncomeScreen() {
                 : t('income.empty', 'No income yet. Tap + to add one!')}
             </Text>
           </View>
+        }
+        ListFooterComponent={
+          isPaged && totalPages > 1 ? (
+            <View style={[styles.paginationRow, { borderTopColor: theme.colors.surfaceSecondary }]}>
+              <TouchableOpacity
+                style={[styles.paginationBtn, { backgroundColor: theme.colors.surfaceSecondary }]}
+                onPress={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                <Text style={[styles.paginationBtnText, { color: theme.colors.text }]}>
+                  {t('common.previous', 'Previous')}
+                </Text>
+              </TouchableOpacity>
+              <Text style={[styles.paginationInfo, { color: theme.colors.textSecondary }]}>
+                {t('common.pageOf', { page, total: totalPages })}
+              </Text>
+              <TouchableOpacity
+                style={[styles.paginationBtn, { backgroundColor: theme.colors.surfaceSecondary }]}
+                onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+              >
+                <Text style={[styles.paginationBtnText, { color: theme.colors.text }]}>
+                  {t('common.next', 'Next')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
         }
       />
 
@@ -362,5 +420,26 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderTopWidth: 1,
+    marginTop: spacing.sm,
+  },
+  paginationBtn: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.sm,
+  },
+  paginationBtnText: {
+    ...typography.caption,
+    fontWeight: '600',
+  },
+  paginationInfo: {
+    ...typography.caption,
   },
 });

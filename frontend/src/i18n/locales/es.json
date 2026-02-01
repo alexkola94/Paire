@@ -203,6 +203,50 @@
     "endDate": "Fecha de fin",
     "selectDateRange": "Seleccionar rango de fechas"
   },
+  "dashboard": {
+    "savingGoals": "Objetivos de Ahorro",
+    "savingGoalsSummary": "Resumen de objetivos de ahorro",
+    "noSavingGoals": "¡Empieza a ahorrar para tus sueños! Crea un objetivo.",
+    "filterSolo": "Solo/a",
+    "filterTogether": "Juntos",
+    "filterPartner": "Pareja"
+  },
+  "transaction": {
+    "category": "Categoría",
+    "description": "Descripción",
+    "date": "Fecha",
+    "notes": "Notas",
+    "source": "Fuente",
+    "manual": "Entrada manual"
+  },
+  "categories": {
+    "food": "Comida y restauración",
+    "transport": "Transporte",
+    "transportation": "Transporte",
+    "housing": "Vivienda",
+    "utilities": "Servicios",
+    "entertainment": "Ocio",
+    "healthcare": "Salud",
+    "shopping": "Compras",
+    "education": "Educación",
+    "salary": "Salario",
+    "freelance": "Autónomo",
+    "investment": "Inversión",
+    "gift": "Regalo",
+    "other": "Otro",
+    "subscription": "Suscripción",
+    "insurance": "Seguros",
+    "rent": "Alquiler/Hipoteca",
+    "loan": "Pago de préstamo",
+    "internet": "Internet",
+    "phone": "Teléfono",
+    "gym": "Gimnasio/Fitness",
+    "groceries": "Supermercado",
+    "household": "Hogar",
+    "personal": "Cuidado personal",
+    "electronics": "Electrónica",
+    "clothing": "Ropa"
+  },
   "allTransactions": {
     "title": "Todas las Transacciones",
     "totalCount": "Total: {{count}} transacción",
@@ -319,6 +363,16 @@
     }
   },
   "recurringBills": {
+    "searchPlaceholder": "Buscar por nombre, notas o categoría...",
+    "noSearchResults": "Ninguna factura coincide con tu búsqueda",
+    "noSearchResultsHint": "Prueba otro término o borra la búsqueda para ver todas las facturas.",
+    "clearSearch": "Borrar búsqueda",
+    "linkToSavingsGoal": "Vincular a Objetivo de Ahorro",
+    "selectSavingsGoal": "Seleccionar Objetivo de Ahorro (Opcional)",
+    "savingsGoalHint": "Marcar esta factura como pagada añadirá automáticamente el importe a este objetivo de ahorro.",
+    "linkToLoan": "Vincular a Préstamo",
+    "selectLoan": "Seleccionar Préstamo (Opcional)",
+    "loanHint": "Marcar esta factura como pagada creará automáticamente un pago en este préstamo.",
     "deleteAttachment": "¿Eliminar adjunto?",
     "confirmDeleteAttachment": "¿Estás seguro de que quieres eliminar este adjunto? Esta acción no se puede deshacer.",
     "errorDeletingAttachment": "Error al eliminar el adjunto"

@@ -1,13 +1,13 @@
 /**
  * Receipts Screen (React Native)
  * View and manage transaction receipts.
- * 
+ *
  * Features:
  * - List transactions with receipts
  * - View receipt image in fullscreen
  * - Delete receipt with confirmation
- * - Pull-to-refresh
- * - Theme-aware styling
+ * - Add receipt (camera or gallery) -> upload -> create transaction with attachment
+ * - Pull-to-refresh, theme-aware styling
  */
 
 import { useState, useCallback } from 'react';
@@ -22,12 +22,15 @@ import {
   Modal as RNModal,
   Pressable,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileText, Trash2, X, ZoomIn, ExternalLink } from 'lucide-react-native';
-import { transactionService } from '../../services/api';
+import * as ImagePicker from 'expo-image-picker';
+import { FileText, Trash2, X, ZoomIn, Plus } from 'lucide-react-native';
+import { transactionService, storageService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
@@ -46,6 +49,7 @@ export default function ReceiptsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   // Fetch receipts (transactions with attachments)
   const { data, refetch } = useQuery({
@@ -68,6 +72,65 @@ export default function ReceiptsScreen() {
       showToast(error.message || t('common.error', 'An error occurred'), 'error');
     },
   });
+
+  // Add receipt: pick image -> upload -> create transaction with attachmentUrl
+  const pickAndUploadReceipt = useCallback(
+    async (useCamera) => {
+      try {
+        const permission = useCamera
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          showToast(t('receipts.permissionDenied', 'Permission to access camera or photos is required.'), 'error');
+          return;
+        }
+        const result = useCamera
+          ? await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 })
+          : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+        if (result.canceled || !result.assets?.[0]?.uri) return;
+        const asset = result.assets[0];
+        setUploading(true);
+        const file = {
+          uri: asset.uri,
+          name: asset.fileName || `receipt_${Date.now()}.jpg`,
+          type: asset.mimeType || 'image/jpeg',
+        };
+        const uploadRes = await storageService.uploadFile(file);
+        const url = uploadRes?.url || uploadRes?.path;
+        if (!url) throw new Error('No URL returned');
+        await transactionService.create({
+          type: 'expense',
+          amount: 0,
+          description: t('receipts.receiptEntry', 'Receipt'),
+          date: new Date().toISOString().split('T')[0],
+          category: 'other',
+          attachmentUrl: url,
+        });
+        queryClient.invalidateQueries({ queryKey: ['receipts'] });
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['expenses'] });
+        queryClient.invalidateQueries({ queryKey: ['income'] });
+        showToast(t('receipts.uploadSuccess', 'Receipt added. You can edit the transaction to add amount and category.'), 'success');
+      } catch (err) {
+        showToast(err?.message || t('receipts.uploadError', 'Failed to add receipt.'), 'error');
+      } finally {
+        setUploading(false);
+      }
+    },
+    [queryClient, showToast, t]
+  );
+
+  const showAddReceiptOptions = useCallback(() => {
+    Alert.alert(
+      t('receipts.addReceipt', 'Add receipt'),
+      null,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('receipts.takePhoto', 'Take photo'), onPress: () => pickAndUploadReceipt(true) },
+        { text: t('receipts.chooseFromGallery', 'Choose from gallery'), onPress: () => pickAndUploadReceipt(false) },
+      ]
+    );
+  }, [t, pickAndUploadReceipt]);
 
   // Pull-to-refresh
   const onRefresh = useCallback(async () => {
@@ -169,9 +232,23 @@ export default function ReceiptsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        {t('receipts.title', 'Receipts')}
-      </Text>
+      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          {t('receipts.title', 'Receipts')}
+        </Text>
+        <TouchableOpacity
+          style={[styles.addBtn, { backgroundColor: theme.colors.primary }]}
+          onPress={showAddReceiptOptions}
+          disabled={uploading}
+          accessibilityLabel={t('receipts.addReceipt', 'Add receipt')}
+        >
+          {uploading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Plus size={22} color="#fff" />
+          )}
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={items}
@@ -258,10 +335,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+  },
   title: {
     ...typography.h2,
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    flex: 1,
+  },
+  addBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     padding: spacing.md,

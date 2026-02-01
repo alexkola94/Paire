@@ -1,7 +1,7 @@
 /**
  * Recurring Bills Screen (React Native)
  * Full CRUD functionality for recurring bill management.
- * 
+ *
  * Features:
  * - List recurring bills
  * - Pull-to-refresh
@@ -9,6 +9,7 @@
  * - Edit bill on tap
  * - Delete bill with confirmation
  * - Mark as paid/unpaid
+ * - Attachments per bill (upload, list, delete) via modal
  * - Theme-aware styling
  */
 
@@ -20,17 +21,23 @@ import {
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, CheckCircle, Circle, Calendar, Bell } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Plus, Pencil, Trash2, CheckCircle, Circle, Calendar, Paperclip, ExternalLink } from 'lucide-react-native';
 import { recurringBillService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import {
   Modal,
+  Button,
   ConfirmationModal,
   RecurringBillForm,
   useToast,
@@ -48,6 +55,8 @@ export default function RecurringBillsScreen() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBill, setEditingBill] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [attachmentsModalBill, setAttachmentsModalBill] = useState(null);
+  const [deleteAttachmentTarget, setDeleteAttachmentTarget] = useState(null); // { attachmentId, bill }
 
   // Fetch recurring bills
   const { data, refetch } = useQuery({
@@ -94,20 +103,113 @@ export default function RecurringBillsScreen() {
     },
   });
 
-  // Toggle paid status mutation
+  // Toggle paid status: use backend mark-paid / unmark-paid endpoints
   const togglePaidMutation = useMutation({
     mutationFn: async ({ id, isPaid }) => {
-      // This would ideally call markPaid/unmarkPaid API
-      // For now, we'll update the bill directly
-      return recurringBillService.update(id, { isPaid: !isPaid });
+      if (isPaid) return recurringBillService.unmarkPaid(id);
+      return recurringBillService.markPaid(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring-bills'] });
+      queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-bills'] });
     },
     onError: (error) => {
-      showToast(error.message || t('common.error', 'An error occurred'), 'error');
+      showToast(error?.response?.data?.message || error.message || t('common.error', 'An error occurred'), 'error');
     },
   });
+
+  // Upload attachment
+  const uploadAttachmentMutation = useMutation({
+    mutationFn: ({ billId, file }) => recurringBillService.uploadAttachment(billId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-bills'] });
+      showToast(t('recurringBills.attachmentAdded', 'Attachment added'), 'success');
+    },
+    onError: (error) => {
+      showToast(error?.message || t('recurringBills.errorUploading', 'Failed to upload attachment'), 'error');
+    },
+  });
+
+  // Delete attachment
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: ({ billId, attachmentId }) =>
+      recurringBillService.deleteAttachment(billId, attachmentId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-bills'] });
+      showToast(t('recurringBills.attachmentDeleted', 'Attachment removed'), 'success');
+      setDeleteAttachmentTarget(null);
+      setAttachmentsModalBill((prev) => {
+        if (!prev || prev.id !== variables.billId) return prev;
+        return {
+          ...prev,
+          attachments: (prev.attachments || []).filter((a) => a.id !== variables.attachmentId),
+        };
+      });
+    },
+    onError: (error) => {
+      showToast(error?.message || t('recurringBills.errorDeletingAttachment', 'Failed to delete attachment'), 'error');
+    },
+  });
+
+  const openAttachmentsModal = (bill, e) => {
+    if (e) e.stopPropagation?.();
+    setAttachmentsModalBill(bill);
+  };
+
+  const addAttachmentForBill = useCallback(
+    async (bill, useCamera) => {
+      try {
+        const permission = useCamera
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          showToast(t('recurringBills.permissionDenied', 'Permission to access camera or photos is required.'), 'error');
+          return;
+        }
+        const result = useCamera
+          ? await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 })
+          : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+        if (result.canceled || !result.assets?.[0]?.uri) return;
+        const asset = result.assets[0];
+        const filePayload = {
+          uri: asset.uri,
+          name: asset.fileName || `attachment_${Date.now()}.jpg`,
+          type: asset.mimeType || 'image/jpeg',
+        };
+        await uploadAttachmentMutation.mutateAsync({ billId: bill.id, file: filePayload });
+        setAttachmentsModalBill((prev) => {
+          if (!prev || prev.id !== bill.id) return prev;
+          const newAtt = { id: 'temp', fileName: filePayload.name, url: asset.uri };
+          return { ...prev, attachments: [...(prev.attachments || []), newAtt] };
+        });
+      } catch (err) {
+        showToast(err?.message || t('recurringBills.errorUploading', 'Failed to upload attachment'), 'error');
+      }
+    },
+    [showToast, t, uploadAttachmentMutation]
+  );
+
+  const showAddAttachmentOptions = (bill) => {
+    Alert.alert(
+      t('recurringBills.attachments', 'Attachments'),
+      null,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('profile.takePhoto', 'Take photo'), onPress: () => addAttachmentForBill(bill, true) },
+        { text: t('profile.chooseFromGallery', 'Choose from gallery'), onPress: () => addAttachmentForBill(bill, false) },
+      ]
+    );
+  };
+
+  const handleDeleteAttachmentConfirm = () => {
+    if (deleteAttachmentTarget) {
+      deleteAttachmentMutation.mutate({
+        billId: deleteAttachmentTarget.bill.id,
+        attachmentId: deleteAttachmentTarget.attachmentId,
+      });
+    }
+  };
 
   // Pull-to-refresh
   const onRefresh = useCallback(async () => {
@@ -249,6 +351,19 @@ export default function RecurringBillsScreen() {
         <View style={styles.quickActions}>
           <TouchableOpacity
             style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.primary}15` }]}
+            onPress={() => openAttachmentsModal(item)}
+            activeOpacity={0.7}
+            accessibilityLabel={t('recurringBills.attachments', 'Attachments')}
+          >
+            <Paperclip size={16} color={theme.colors.primary} />
+            {(item.attachments?.length ?? 0) > 0 && (
+              <View style={[styles.attachmentBadge, { backgroundColor: theme.colors.primary }]}>
+                <Text style={styles.attachmentBadgeText}>{item.attachments.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.primary}15` }]}
             onPress={() => handleEdit(item)}
             activeOpacity={0.7}
           >
@@ -331,6 +446,68 @@ export default function RecurringBillsScreen() {
         cancelText={t('common.cancel', 'Cancel')}
         variant="danger"
         loading={deleteMutation.isPending}
+      />
+
+      {/* Attachments Modal */}
+      <Modal
+        isOpen={attachmentsModalBill !== null}
+        onClose={() => { setAttachmentsModalBill(null); setDeleteAttachmentTarget(null); }}
+        title={`${attachmentsModalBill?.name ?? ''} – ${t('recurringBills.attachments', 'Attachments')}`}
+      >
+        {attachmentsModalBill && (
+          <ScrollView style={styles.attachmentsModalScroll}>
+            <Button
+              title={t('recurringBills.addAttachment', 'Add attachment')}
+              onPress={() => showAddAttachmentOptions(attachmentsModalBill)}
+              loading={uploadAttachmentMutation.isPending}
+              variant="secondary"
+              style={styles.attachmentsAddBtn}
+            />
+            {(attachmentsModalBill.attachments?.length ?? 0) === 0 ? (
+              <Text style={[styles.attachmentsEmpty, { color: theme.colors.textSecondary }]}>
+                {t('recurringBills.noAttachments', 'No attachments yet')}
+              </Text>
+            ) : (
+              (attachmentsModalBill.attachments || []).map((att) => (
+                <View
+                  key={att.id}
+                  style={[styles.attachmentRow, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.glassBorder }]}
+                >
+                  <TouchableOpacity
+                    style={styles.attachmentRowLeft}
+                    onPress={() => att.url && (att.url.startsWith('http') ? Linking.openURL(att.url) : null)}
+                    activeOpacity={att.url && att.url.startsWith('http') ? 0.7 : 1}
+                  >
+                    <ExternalLink size={16} color={theme.colors.primary} />
+                    <Text style={[styles.attachmentName, { color: theme.colors.text }]} numberOfLines={1}>
+                      {att.fileName || att.name || t('recurringBills.attachment', 'Attachment')}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.attachmentDeleteBtn, { backgroundColor: `${theme.colors.error}15` }]}
+                    onPress={() => setDeleteAttachmentTarget({ attachmentId: att.id, bill: attachmentsModalBill })}
+                    activeOpacity={0.7}
+                  >
+                    <Trash2 size={16} color={theme.colors.error} />
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </ScrollView>
+        )}
+      </Modal>
+
+      {/* Delete attachment confirmation */}
+      <ConfirmationModal
+        isOpen={deleteAttachmentTarget !== null}
+        onClose={() => setDeleteAttachmentTarget(null)}
+        onConfirm={handleDeleteAttachmentConfirm}
+        title={t('recurringBills.deleteAttachmentTitle', 'Delete attachment?')}
+        message={t('recurringBills.confirmDeleteAttachment', 'Are you sure you want to delete this attachment?')}
+        confirmText={t('common.delete', 'Delete')}
+        cancelText={t('common.cancel', 'Cancel')}
+        variant="danger"
+        loading={deleteAttachmentMutation.isPending}
       />
     </SafeAreaView>
   );
@@ -427,6 +604,36 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+  attachmentBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  attachmentBadgeText: { color: '#fff', fontSize: 10, fontWeight: '600' },
+  attachmentsModalScroll: { maxHeight: 320 },
+  attachmentsAddBtn: { marginBottom: spacing.md },
+  attachmentsEmpty: { ...typography.bodySmall, textAlign: 'center', paddingVertical: spacing.lg },
+  attachmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
+  },
+  attachmentRowLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  attachmentName: { ...typography.body, flex: 1 },
+  attachmentDeleteBtn: {
+    padding: spacing.sm,
+    borderRadius: borderRadius.sm,
   },
   emptyContainer: {
     flex: 1,

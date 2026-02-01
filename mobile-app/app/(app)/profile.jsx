@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import {
   User, LogOut, Users, Bell, Trophy, Shield, Moon, Globe,
   ChevronRight, CreditCard, PiggyBank, Receipt, ShoppingCart, MapPin,
-  FileText, Pencil, Lock,
+  FileText, Pencil, Lock, ShieldCheck, MessageCircle, Camera,
 } from 'lucide-react-native';
 import { profileService } from '../../services/api';
 import { authService } from '../../services/auth';
@@ -64,6 +65,58 @@ export default function ProfileScreen() {
     onError: (err) => showToast(err?.message || t('profile.profileUpdateFailed'), 'error'),
   });
 
+  const uploadAvatarMutation = useMutation({
+    mutationFn: (file) => profileService.uploadAvatar(file),
+    onSuccess: (avatarUrl) => {
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      showToast(t('profile.avatarUpdated', 'Photo updated'), 'success');
+    },
+    onError: (err) => showToast(err?.message || t('profile.avatarError', 'Failed to update photo'), 'error'),
+  });
+
+  const handleChangePhoto = () => {
+    Alert.alert(
+      t('profile.changePhoto', 'Change photo'),
+      null,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('profile.takePhoto', 'Take photo'),
+          onPress: () => pickImage(true),
+        },
+        {
+          text: t('profile.chooseFromGallery', 'Choose from gallery'),
+          onPress: () => pickImage(false),
+        },
+      ]
+    );
+  };
+
+  const pickImage = async (useCamera) => {
+    try {
+      const permission = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        showToast(t('profile.avatarError', 'Permission to access camera or photos is required.'), 'error');
+        return;
+      }
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      if (result.canceled || !result.assets?.[0]?.uri) return;
+      const asset = result.assets[0];
+      const file = {
+        uri: asset.uri,
+        name: asset.fileName || `avatar_${Date.now()}.jpg`,
+        type: asset.mimeType || 'image/jpeg',
+      };
+      await uploadAvatarMutation.mutateAsync(file);
+    } catch (err) {
+      showToast(err?.message || t('profile.avatarError', 'Failed to update photo'), 'error');
+    }
+  };
+
   const openEditProfile = () => {
     setEditDisplayName(profile?.displayName ?? profile?.display_name ?? '');
     setEditProfileModalOpen(true);
@@ -112,11 +165,38 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* User Info (Paire: soft card, glass border) */}
+        {/* User Info (Paire: soft card, glass border; avatar with change-photo) */}
         <View style={[styles.profileCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.md]}>
-          <View style={[styles.avatar, { backgroundColor: theme.colors.primary + '20' }]}>
-            <User size={32} color={theme.colors.primary} />
-          </View>
+          <TouchableOpacity
+            style={[styles.avatarWrapper]}
+            onPress={handleChangePhoto}
+            activeOpacity={0.8}
+            disabled={uploadAvatarMutation.isPending}
+            accessibilityLabel={t('profile.changePhoto', 'Change photo')}
+          >
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: theme.colors.primary + '20' }]}>
+                <User size={32} color={theme.colors.primary} />
+              </View>
+            )}
+            {uploadAvatarMutation.isPending && (
+              <View style={[styles.avatarOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+                <ActivityIndicator size="small" color="#fff" />
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleChangePhoto}
+            style={styles.changePhotoTouch}
+            disabled={uploadAvatarMutation.isPending}
+          >
+            <Camera size={14} color={theme.colors.primary} />
+            <Text style={[styles.changePhotoText, { color: theme.colors.primary }]}>
+              {t('profile.changePhoto', 'Change photo')}
+            </Text>
+          </TouchableOpacity>
           <Text style={[styles.name, { color: theme.colors.text }]}>
             {profile?.displayName || user?.displayName || user?.email?.split('@')[0]}
           </Text>
@@ -130,12 +210,17 @@ export default function ProfileScreen() {
           <MenuItem icon={Moon} label={isDark ? t('theme.lightMode') : t('theme.darkMode')} onPress={() => toggleTheme()} theme={theme} />
           <MenuItem icon={Globe} label={t('settings.language')} onPress={() => setLanguageModalOpen(true)} theme={theme} />
           <MenuItem icon={Lock} label={t('profile.changePassword')} onPress={() => setPasswordModalOpen(true)} theme={theme} />
+          <MenuItem icon={CreditCard} label={t('profile.openBanking.title', 'Linked accounts')} onPress={() => router.push('/(app)/linked-accounts')} theme={theme} />
           <MenuItem icon={Shield} label={t('auth.twoFactorSetup')} onPress={() => router.push('/(auth)/setup-2fa')} theme={theme} />
         </View>
 
         {/* Navigation */}
         <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('profile.manage')}</Text>
         <View style={[styles.menuGroup, shadows.sm]}>
+          {(user?.roles?.includes('Admin') || user?.Roles?.includes?.('Admin')) && (
+            <MenuItem icon={ShieldCheck} label={t('admin.title', 'Admin')} onPress={() => router.push('/(app)/admin/dashboard')} theme={theme} />
+          )}
+          <MenuItem icon={MessageCircle} label={t('chatbot.title', 'Financial Assistant')} onPress={() => router.push('/(app)/chatbot')} theme={theme} />
           <MenuItem icon={MapPin} label={t('travel.common.enterTravelMode', 'Travel Mode')} onPress={() => router.push('/(app)/travel')} theme={theme} />
           <MenuItem icon={Users} label={t('navigation.partnership')} onPress={() => router.push('/(app)/partnership')} theme={theme} />
           <MenuItem icon={PiggyBank} label={t('navigation.savingsGoals')} onPress={() => router.push('/(app)/savings-goals')} theme={theme} />
@@ -268,10 +353,30 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     borderWidth: 1,
   },
+  avatarWrapper: {
+    marginBottom: spacing.xs,
+  },
   avatar: {
     width: 72, height: 72, borderRadius: 36,
-    justifyContent: 'center', alignItems: 'center', marginBottom: spacing.md,
+    justifyContent: 'center', alignItems: 'center',
   },
+  avatarImage: {
+    width: 72, height: 72, borderRadius: 36,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: 36,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  changePhotoTouch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  changePhotoText: { ...typography.caption, fontWeight: '500' },
   name: { ...typography.h2 },
   email: { ...typography.bodySmall, marginTop: spacing.xs },
   sectionTitle: { ...typography.label, marginBottom: spacing.sm, marginLeft: spacing.xs },
