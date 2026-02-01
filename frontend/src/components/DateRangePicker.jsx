@@ -51,19 +51,27 @@ const DateRangePicker = ({
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [hoverDate, setHoverDate] = useState(null)
 
+    // Internal pending state to defer onChange until range is complete
+    const [pendingStart, setPendingStart] = useState(null)
+    const [pendingEnd, setPendingEnd] = useState(null)
+
     const containerRef = useRef(null)
     const dropdownRef = useRef(null)
 
-    // Initialize current month view when dropdown opens
+    // Initialize pending state and current month view when dropdown opens
     useEffect(() => {
         if (isOpen) {
+            // Sync pending state with props when opening
+            setPendingStart(startDate || null)
+            setPendingEnd(endDate || null)
+            
             if (startDate) {
                 setCurrentMonth(new Date(startDate))
             } else if (minDate) {
                 setCurrentMonth(new Date(minDate))
             }
         }
-    }, [isOpen, startDate, minDate])
+    }, [isOpen, startDate, endDate, minDate])
 
     // Close on click outside
     useEffect(() => {
@@ -81,33 +89,61 @@ const DateRangePicker = ({
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
+    /**
+     * Handle date click - uses internal pending state to defer onChange
+     * until a complete range is selected (both start and end dates)
+     */
     const handleDateClick = (day) => {
         if (disabled) return
 
         const clickedDate = startOfDay(day)
         const min = minDate ? startOfDay(new Date(minDate)) : null
+        const clickedDateStr = format(clickedDate, 'yyyy-MM-dd', { locale: dateLocale })
 
+        // Ignore clicks on disabled dates
         if (min && isBefore(clickedDate, min)) return
 
-        if ((!startDate && !endDate) || (startDate && endDate)) {
-            onChange({ startDate: format(clickedDate, 'yyyy-MM-dd', { locale: dateLocale }), endDate: null })
+        // If no pending start, or both dates are already selected, start a new selection
+        if (!pendingStart || (pendingStart && pendingEnd)) {
+            setPendingStart(clickedDateStr)
+            setPendingEnd(null)
+            
+            // Auto-advance to next month if selecting a date in the last 5 days of the month
+            const dayOfMonth = clickedDate.getDate()
+            const daysInMonth = endOfMonth(clickedDate).getDate()
+            if (dayOfMonth >= daysInMonth - 4) {
+                setCurrentMonth(addMonths(clickedDate, 1))
+            }
             return
         }
 
-        if (startDate && !endDate) {
-            const start = startOfDay(new Date(startDate))
+        // We have a pending start but no end - this is the second click
+        if (pendingStart && !pendingEnd) {
+            const start = startOfDay(new Date(pendingStart))
 
+            // If clicked date is before start, reset start date
             if (isBefore(clickedDate, start)) {
-                onChange({ startDate: format(clickedDate, 'yyyy-MM-dd', { locale: dateLocale }), endDate: null })
+                setPendingStart(clickedDateStr)
+                setPendingEnd(null)
+                
+                // Auto-advance if selecting a date in the last 5 days
+                const dayOfMonth = clickedDate.getDate()
+                const daysInMonth = endOfMonth(clickedDate).getDate()
+                if (dayOfMonth >= daysInMonth - 4) {
+                    setCurrentMonth(addMonths(clickedDate, 1))
+                }
             } else {
-                onChange({ startDate, endDate: format(clickedDate, 'yyyy-MM-dd', { locale: dateLocale }) })
+                // Complete the range - now call onChange with full range
+                setPendingEnd(clickedDateStr)
+                onChange({ startDate: pendingStart, endDate: clickedDateStr })
                 setIsOpen(false)
             }
         }
     }
 
+    // Use pending state for hover preview while picker is open
     const handleMouseEnter = (day) => {
-        if (startDate && !endDate) setHoverDate(day)
+        if (pendingStart && !pendingEnd) setHoverDate(day)
     }
 
     const handleMouseLeave = () => setHoverDate(null)
@@ -148,6 +184,10 @@ const DateRangePicker = ({
         const startPadding = Array.from({ length: monthStart.getDay() }).map(() => null)
         const allDays = [...startPadding, ...daysInMonth]
 
+        // Use pending state for visual feedback while picker is open
+        const displayStart = pendingStart
+        const displayEnd = pendingEnd
+
         return (
             <div className="picker-month">
                 <div className="picker-month-header" style={{ color: theme === 'dark' ? '#f1f5f9' : '#1e293b' }}>
@@ -163,17 +203,21 @@ const DateRangePicker = ({
                         if (!day) return <div key={`pad-${idx}`} className="picker-day empty" />
 
                         const dateStr = format(day, 'yyyy-MM-dd', { locale: dateLocale })
-                        const isSelectedStart = startDate === dateStr
-                        const isSelectedEnd = endDate === dateStr
+                        // Use pending state for selection highlighting
+                        const isSelectedStart = displayStart === dateStr
+                        const isSelectedEnd = displayEnd === dateStr
                         const min = minDate ? startOfDay(new Date(minDate)) : null
                         const isDisabled = min && isBefore(day, min)
                         const isToday = isSameDay(day, new Date())
 
                         let isInRange = false
-                        if (startDate && endDate) {
-                            isInRange = isWithinInterval(day, { start: new Date(startDate), end: new Date(endDate) })
-                        } else if (startDate && hoverDate && !isDisabled) {
-                            const start = new Date(startDate)
+                        // Show range when both dates are selected
+                        if (displayStart && displayEnd) {
+                            isInRange = isWithinInterval(day, { start: new Date(displayStart), end: new Date(displayEnd) })
+                        } 
+                        // Show hover preview range when only start is selected
+                        else if (displayStart && hoverDate && !isDisabled) {
+                            const start = new Date(displayStart)
                             if (isAfter(day, start) && (isBefore(day, hoverDate) || isSameDay(day, hoverDate))) {
                                 isInRange = true
                             }
@@ -249,7 +293,13 @@ const DateRangePicker = ({
                 {(startDate || endDate) && !disabled && (
                     <button
                         className="picker-clear"
-                        onClick={(e) => { e.stopPropagation(); onChange({ startDate: null, endDate: null }) }}
+                        onClick={(e) => { 
+                            e.stopPropagation()
+                            // Clear both pending state and notify parent immediately
+                            setPendingStart(null)
+                            setPendingEnd(null)
+                            onChange({ startDate: null, endDate: null }) 
+                        }}
                     >
                         <FiX />
                     </button>
@@ -300,8 +350,9 @@ const DateRangePicker = ({
                         </div>
                         <div className="picker-calendars">{renderCalendarMonth(currentMonth)}</div>
                         <div className="picker-footer" style={{ borderTopColor: theme === 'dark' ? '#334155' : '#e2e8f0' }}>
-                            {!startDate && <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>{t('travel.datePicker.selectDepart', 'Select departure date')}</div>}
-                            {startDate && !endDate && <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>{t('travel.datePicker.selectReturn', 'Select return date')}</div>}
+                            {/* Use pending state for hints while picker is open */}
+                            {!pendingStart && <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>{t('travel.datePicker.selectDepart', 'Select departure date')}</div>}
+                            {pendingStart && !pendingEnd && <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>{t('travel.datePicker.selectReturn', 'Select return date')}</div>}
                         </div>
                     </div>
                 </div>,

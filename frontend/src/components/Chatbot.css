@@ -1116,6 +1116,12 @@ body.calculator-open .chatbot-container {
   .chatbot-window.chatbot-mobile .chatbot-footer {
     flex-shrink: 0;
     padding-bottom: max(8px, env(safe-area-inset-bottom));
+    transition: opacity 0.2s ease, padding 0.2s ease;
+  }
+
+  /* Hide footer when keyboard is open so input has more room and user avoids accidental Clear chat tap */
+  .chatbot-window.chatbot-mobile.keyboard-open .chatbot-footer {
+    display: none;
   }
 
   /* Prevent body scroll when chatbot is open on mobile */
@@ -1390,6 +1396,64 @@ body.calculator-open .chatbot-container {
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+/* Mobile: readable tables – horizontal scroll inside message, no viewport overflow */
+@media (max-width: 767px) {
+  /* Keep message bubble within viewport so table scrolls inside it */
+  .chatbot-message {
+    width: max-content;
+    max-width: 85%;
+  }
+
+  .chatbot-message-content {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .chatbot-message-text {
+    min-width: 0;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  .chatbot-markdown {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .chatbot-markdown table {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Hide scrollbar on mobile – table remains swipeable with touch */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .chatbot-markdown table::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chatbot-markdown table thead,
+  .chatbot-markdown table tbody,
+  .chatbot-markdown table tr {
+    table-layout: auto;
+    width: max-content;
+    min-width: 360px;
+  }
+
+  .chatbot-markdown th {
+    white-space: nowrap;
+  }
+
+  .chatbot-markdown th,
+  .chatbot-markdown td {
+    hyphens: none;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    min-width: 72px;
+  }
 }
 
 .chatbot-markdown tr:hover {
@@ -2094,5 +2158,7 @@ body.calculator-open .chatbot-container {
   .chatbot-stop-btn {
     width: 44px;
     height: 44px;
+  }
+}ight: 44px;
   }
 }

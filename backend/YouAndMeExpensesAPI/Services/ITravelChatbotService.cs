@@ -15,8 +15,9 @@ namespace YouAndMeExpensesAPI.Services
         /// <param name="query">User message.</param>
         /// <param name="history">Conversation history for context.</param>
         /// <param name="language">Language code (en, el, es, fr).</param>
+        /// <param name="tripContext">Optional active trip context from frontend (destination, dates, budget) for personalized responses.</param>
         /// <returns>ChatbotResponse with message, type, optional quick actions and action link.</returns>
-        Task<ChatbotResponse> ProcessQueryAsync(string userId, string query, List<ChatMessage>? history = null, string language = "en");
+        Task<ChatbotResponse> ProcessQueryAsync(string userId, string query, List<ChatMessage>? history = null, string language = "en", TripContext? tripContext = null);
 
         /// <summary>
         /// Get suggested travel questions for the given language.

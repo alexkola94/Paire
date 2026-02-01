@@ -7,6 +7,10 @@ namespace YouAndMeExpensesAPI.Filters;
 /// <summary>
 /// Validates the anti-forgery (CSRF) token on state-changing HTTP methods (POST, PUT, PATCH, DELETE).
 /// Excludes public and token endpoints so login, register, and token retrieval work without a token.
+/// Skips validation when the request carries a Bearer (JWT) token: JWT is not sent automatically
+/// by the browser on cross-site requests, so CSRF does not apply. This allows the SPA (e.g. on
+/// a different port or origin) to perform CRUD without the antiforgery cookie being sent.
+/// CSRF is still enforced for any state-changing request that does not use Bearer auth.
 /// </summary>
 public class ValidateCsrfTokenFilter : IAsyncAuthorizationFilter
 {
@@ -55,6 +59,12 @@ public class ValidateCsrfTokenFilter : IAsyncAuthorizationFilter
             return path.StartsWith(normalizedExcluded, StringComparison.OrdinalIgnoreCase) ||
                    path.TrimEnd('/').Equals(normalizedExcluded, StringComparison.OrdinalIgnoreCase);
         }))
+            return;
+
+        // Skip CSRF when authenticated with Bearer (JWT). Standard practice: CSRF protects
+        // cookie-based sessions; Bearer tokens are not auto-sent by the browser, so no CSRF risk.
+        var authHeader = request.Headers.Authorization.ToString();
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             return;
 
         try

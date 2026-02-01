@@ -8,7 +8,15 @@
       "Bash(grep:*)",
       "Bash(wc:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: map existing codebase\n\n- STACK.md - Technologies and dependencies\n- ARCHITECTURE.md - System design and patterns\n- STRUCTURE.md - Directory layout\n- CONVENTIONS.md - Code style and patterns\n- TESTING.md - Test structure\n- INTEGRATIONS.md - External services\n- CONCERNS.md - Technical debt and issues\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: map existing codebase\n\n- STACK.md - Technologies and dependencies\n- ARCHITECTURE.md - System design and patterns\n- STRUCTURE.md - Directory layout\n- CONVENTIONS.md - Code style and patterns\n- TESTING.md - Test structure\n- INTEGRATIONS.md - External services\n- CONCERNS.md - Technical debt and issues\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(npx create-expo-app:*)",
+      "Bash(npx expo install:*)",
+      "Bash(pushd \"E:\\\\repos\\\\alexkola94\\\\You&me_Expenses\\\\mobile-app\")",
+      "Bash(cmd /c \"cd /d \"\"E:\\\\repos\\\\alexkola94\\\\You&me_Expenses\\\\mobile-app\"\" && npx expo install expo-router expo-linking expo-constants react-native-safe-area-context react-native-screens expo-secure-store @react-native-async-storage/async-storage expo-blur expo-linear-gradient expo-image-picker expo-document-picker react-native-reanimated react-native-gesture-handler react-native-svg lucide-react-native\")",
+      "Bash(cmd /c \"cd /d E:\\\\repos\\\\alexkola94\\\\You^&me_Expenses\\\\mobile-app && npx expo install expo-router expo-linking expo-constants react-native-safe-area-context react-native-screens expo-secure-store @react-native-async-storage/async-storage expo-blur expo-linear-gradient expo-image-picker expo-document-picker react-native-reanimated react-native-gesture-handler react-native-svg lucide-react-native\")",
+      "Bash(node -e \"const{execSync}=require\\(''child_process''\\);execSync\\(''npx expo install expo-router expo-linking expo-constants react-native-safe-area-context react-native-screens expo-secure-store @react-native-async-storage/async-storage expo-blur expo-linear-gradient expo-image-picker expo-document-picker react-native-reanimated react-native-gesture-handler react-native-svg lucide-react-native'',{stdio:''inherit'',cwd:process.cwd\\(\\)}\\)\")"
     ]
   }
 }

@@ -38,7 +38,9 @@ namespace YouAndMeExpensesAPI.Services
             ["budget"] = new()
             {
                 "budget", "cost", "expensive", "cheap", "money", "currency", "price",
-                "προϋπολογισμός", "κόστος", "presupuesto", "moneda", "budget voyage"
+                "trip budget", "expenses for my trip", "cost of my trip", "how much for my trip",
+                "προϋπολογισμός", "κόστος", "presupuesto", "moneda", "budget voyage",
+                "έξοδα ταξιδιού", "κόστος ταξιδιού"
             },
             ["visa_documents"] = new()
             {
@@ -62,7 +64,7 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         /// <inheritdoc />
-        public Task<ChatbotResponse> ProcessQueryAsync(string userId, string query, List<ChatMessage>? history = null, string language = "en")
+        public Task<ChatbotResponse> ProcessQueryAsync(string userId, string query, List<ChatMessage>? history = null, string language = "en", TripContext? tripContext = null)
         {
             var normalized = (query ?? "").Trim();
             if (string.IsNullOrEmpty(normalized))
@@ -70,7 +72,7 @@ namespace YouAndMeExpensesAPI.Services
                 return Task.FromResult(GetUnknownResponse(null, language));
             }
 
-            _logger.LogInformation("Travel chatbot query for user {UserId}: {Query} (Language: {Language})", userId, normalized, language);
+            _logger.LogInformation("Travel chatbot query for user {UserId}: {Query} (Language: {Language}, Trip: {Destination})", userId, normalized, language, tripContext?.Destination ?? "none");
 
             var intent = DetectIntent(normalized);
             var response = intent switch
@@ -85,7 +87,53 @@ namespace YouAndMeExpensesAPI.Services
                 "help" => GetHelpResponse(language),
                 _ => GetUnknownResponse(normalized, language)
             };
+
+            // Personalize response with trip context when available
+            if (tripContext != null && !string.IsNullOrWhiteSpace(tripContext.Destination))
+            {
+                var prefix = BuildTripContextPrefix(tripContext, language);
+                response = new ChatbotResponse
+                {
+                    Message = prefix + response.Message,
+                    Type = response.Type,
+                    Data = response.Data,
+                    QuickActions = response.QuickActions,
+                    ActionLink = response.ActionLink
+                };
+            }
+
             return Task.FromResult(response);
+        }
+
+        /// <summary>
+        /// Build a short prefix for responses when user has an active trip (e.g. "For your trip to **Paris** (Dec 1–10):\n\n").
+        /// </summary>
+        private static string BuildTripContextPrefix(TripContext ctx, string language)
+        {
+            var dest = ctx.Destination?.Trim() ?? "";
+            if (string.IsNullOrEmpty(dest)) return "";
+
+            var hasDates = !string.IsNullOrWhiteSpace(ctx.StartDate) && !string.IsNullOrWhiteSpace(ctx.EndDate);
+            var hasBudget = ctx.Budget.HasValue && ctx.Budget.Value > 0;
+
+            if (language == "el")
+            {
+                if (hasDates && hasBudget)
+                    return $"Για το ταξίδι σας στο **{dest}** ({ctx.StartDate}–{ctx.EndDate}, προϋπολογισμός: €{ctx.Budget:N0}):\n\n";
+                if (hasDates)
+                    return $"Για το ταξίδι σας στο **{dest}** ({ctx.StartDate}–{ctx.EndDate}):\n\n";
+                if (hasBudget)
+                    return $"Για το ταξίδι σας στο **{dest}** (προϋπολογισμός: €{ctx.Budget:N0}):\n\n";
+                return $"Για το ταξίδι σας στο **{dest}**:\n\n";
+            }
+
+            if (hasDates && hasBudget)
+                return $"For your trip to **{dest}** ({ctx.StartDate}–{ctx.EndDate}, budget: €{ctx.Budget:N0}):\n\n";
+            if (hasDates)
+                return $"For your trip to **{dest}** ({ctx.StartDate}–{ctx.EndDate}):\n\n";
+            if (hasBudget)
+                return $"For your trip to **{dest}** (budget: €{ctx.Budget:N0}):\n\n";
+            return $"For your trip to **{dest}**:\n\n";
         }
 
         /// <inheritdoc />

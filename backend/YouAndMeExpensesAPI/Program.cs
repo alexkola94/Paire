@@ -169,6 +169,10 @@ builder.Services.AddCors(options =>
 
             policy.SetIsOriginAllowed(origin =>
             {
+                // Allow null/empty origin in development (Expo Go / native clients often send no Origin header)
+                if (string.IsNullOrEmpty(origin))
+                    return true;
+
                 // Allow configured origins
                 if (corsOrigins.Contains(origin))
                     return true;
@@ -189,8 +193,8 @@ builder.Services.AddCors(options =>
                         hostname.StartsWith("10.") || 
                         (hostname.StartsWith("172.") && IsPrivateIPRange(hostname)))
                     {
-                        // Allow common development ports (3000-3010, 5173, 5038, 5039)
-                        return (port >= 3000 && port <= 3010) || port == 5173 || port == 5038 || port == 5039;
+                        // Allow common development ports (3000-3010, 5173, 5038, 5039, 8081 for Expo)
+                        return (port >= 3000 && port <= 3010) || port == 5173 || port == 5038 || port == 5039 || port == 8081 || port == 19000 || port == 19006;
                     }
                 }
                 catch
@@ -230,6 +234,33 @@ if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("Database connection string is missing. Please check appsettings.json");
 }
+
+// Supabase connection pool: use Supabase-allowed max pool size and trim idle connections.
+//
+// 1. Max pool size: set Database:MaxPoolSize to the value from Supabase Dashboard → Database → Connection pooling.
+//    Session mode (port 5432) often allows only 5–15 on free tier. We always cap (default 5) so we never exceed.
+//    For more connections, use Transaction mode: change Port=5432 to Port=6543 in the connection string.
+//
+// 2. Idle trimming:
+//    - ConnectionIdleLifetime = 60 seconds (or Database:ConnectionIdleLifetimeSeconds if set).
+//    - MinPoolSize = 0 so the pool can shrink and release connections back to Supabase.
+var csb = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+var maxPoolSize = builder.Configuration.GetValue<int?>("Database:MaxPoolSize");
+// Always cap pool size so we never exceed Supabase Session mode limit (config wins, else default 5).
+var effectiveMaxPool = (maxPoolSize.HasValue && maxPoolSize.Value > 0) ? maxPoolSize.Value : 5;
+if (csb.MaxPoolSize > effectiveMaxPool)
+    csb.MaxPoolSize = effectiveMaxPool;
+
+var idleLifetimeSeconds = builder.Configuration.GetValue<int?>("Database:ConnectionIdleLifetimeSeconds");
+var hasIdleLifetimeInString = connectionString.Contains("Connection Idle Lifetime", StringComparison.OrdinalIgnoreCase)
+    || connectionString.Contains("ConnectionIdleLifetime", StringComparison.OrdinalIgnoreCase);
+if (idleLifetimeSeconds.HasValue && idleLifetimeSeconds.Value >= 0)
+    csb.ConnectionIdleLifetime = idleLifetimeSeconds.Value;
+else if (!hasIdleLifetimeInString)
+    csb.ConnectionIdleLifetime = 60; // Trim idle connections after 60s so slots free up when max reached
+
+csb.MinPoolSize = 0; // Allow pool to trim down; idle connections above this are closed after ConnectionIdleLifetime
+connectionString = csb.ConnectionString;
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {

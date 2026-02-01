@@ -128,15 +128,17 @@ function Chatbot() {
         
         // Set CSS variable for available height when keyboard is open
         if (keyboardHeight > 100) {
-          // Keyboard is likely open
+          // Keyboard is likely open – resize window and hide footer on mobile
           chatWindowRef.current.style.setProperty('--keyboard-height', `${keyboardHeight}px`)
           chatWindowRef.current.style.height = `${viewportHeight}px`
+          chatWindowRef.current.classList.add('keyboard-open')
           // Scroll to bottom to keep input visible
           setTimeout(() => scrollToBottom(true), 100)
         } else {
           // Keyboard is closed
           chatWindowRef.current.style.removeProperty('--keyboard-height')
           chatWindowRef.current.style.height = ''
+          chatWindowRef.current.classList.remove('keyboard-open')
         }
       }
     }

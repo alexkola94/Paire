@@ -25,6 +25,22 @@ namespace YouAndMeExpensesAPI.DTOs
         public string Query { get; set; } = string.Empty;
         public List<ChatMessage>? History { get; set; } // Conversation history for context
         public string? Language { get; set; } = "en"; // Language code (en, el, es, fr)
+        /// <summary>Optional trip context for Travel Guide chatbot (active trip from frontend).</summary>
+        public TripContext? TripContext { get; set; }
+    }
+
+    /// <summary>
+    /// Optional trip context for Travel Guide chatbot (active trip details from frontend).
+    /// Used to personalize responses (e.g. "For your trip to Paris...").
+    /// </summary>
+    public class TripContext
+    {
+        public string? Name { get; set; }
+        public string? Destination { get; set; }
+        public string? Country { get; set; }
+        public string? StartDate { get; set; }
+        public string? EndDate { get; set; }
+        public decimal? Budget { get; set; }
     }
 
     /// <summary>

@@ -26,7 +26,9 @@ import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import { travelChatbotService, aiGatewayService } from '../../services/api'
 import { buildAttachmentsPayload } from '../../utils/chatAttachments'
-import { getStaticTravelSuggestions } from '../utils/travelChatbotSuggestions'
+import { getStaticTravelSuggestions, getContextAwareTravelSuggestions } from '../utils/travelChatbotSuggestions'
+import { useTravelMode } from '../context/TravelModeContext'
+import { useTheme } from '../../context/ThemeContext'
 import '../styles/TravelChatbot.css'
 
 /**
@@ -68,8 +70,41 @@ const TypewriterText = ({ text = '', onComplete, onUpdate, markdownClass }) => {
  * Theme-aware (travel light/dark palette).
  * When open/onClose are provided (opened from nav), no floating FAB/reveal; controlled by parent.
  */
+/**
+ * Build minimal trip context for backend/AI (destination, dates, budget).
+ * Used to personalize Travel Guide responses when user has an active trip.
+ */
+function buildTripContext(activeTrip) {
+  if (!activeTrip) return null
+  const dest = activeTrip.destination ?? activeTrip.name
+  if (!dest) return null
+  return {
+    name: activeTrip.name ?? null,
+    destination: dest,
+    country: activeTrip.country ?? null,
+    startDate: activeTrip.startDate ? (typeof activeTrip.startDate === 'string' ? activeTrip.startDate : new Date(activeTrip.startDate).toISOString().slice(0, 10)) : null,
+    endDate: activeTrip.endDate ? (typeof activeTrip.endDate === 'string' ? activeTrip.endDate : new Date(activeTrip.endDate).toISOString().slice(0, 10)) : null,
+    budget: activeTrip.budget != null ? Number(activeTrip.budget) : null
+  }
+}
+
+/**
+ * Build a short context line to prepend to user message for AI (so model knows the active trip).
+ */
+function buildTripContextForAi(activeTrip) {
+  if (!activeTrip) return ''
+  const dest = activeTrip.destination ?? activeTrip.name ?? 'Unknown'
+  const start = activeTrip.startDate ? (typeof activeTrip.startDate === 'string' ? activeTrip.startDate.slice(0, 10) : new Date(activeTrip.startDate).toISOString().slice(0, 10)) : ''
+  const end = activeTrip.endDate ? (typeof activeTrip.endDate === 'string' ? activeTrip.endDate.slice(0, 10) : new Date(activeTrip.endDate).toISOString().slice(0, 10)) : ''
+  const budget = activeTrip.budget != null ? ` Budget: ${activeTrip.budget}.` : ''
+  const dateRange = start && end ? ` ${start}–${end}.` : ''
+  return `[Context: User's active trip: ${dest},${dateRange}${budget}]\n\n`
+}
+
 function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
   const { t } = useTranslation()
+  const { theme } = useTheme()
+  const { activeTrip } = useTravelMode()
   const isControlled = controlledOpen !== undefined && typeof onClose === 'function'
   const [internalOpen, setInternalOpen] = useState(false)
   const isOpen = isControlled ? controlledOpen : internalOpen
@@ -130,10 +165,12 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
         if (keyboardHeight > 100) {
           chatWindowRef.current.style.setProperty('--keyboard-height', `${keyboardHeight}px`)
           chatWindowRef.current.style.height = `${viewportHeight}px`
+          chatWindowRef.current.classList.add('keyboard-open')
           setTimeout(() => scrollToBottom(), 100)
         } else {
           chatWindowRef.current.style.removeProperty('--keyboard-height')
           chatWindowRef.current.style.height = ''
+          chatWindowRef.current.classList.remove('keyboard-open')
         }
       }
     }
@@ -169,6 +206,11 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
       setTimeout(() => scrollToBottom(true), 100)
     }
   }, [isOpen])
+
+  // Refresh suggestions when active trip changes (so context-aware suggestions update)
+  useEffect(() => {
+    if (isOpen && messages.length <= 1) loadSuggestions()
+  }, [activeTrip?.id, activeTrip?.destination]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     scrollToBottom()
@@ -219,15 +261,19 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
-  // Load suggestions: try API first, fallback to static list when backend unavailable
+  // Load suggestions: try API first, fallback to static list; merge context-aware suggestions when user has active trip
   const loadSuggestions = async () => {
+    let list
     try {
-      const list = await travelChatbotService.getSuggestions(language)
-      setSuggestions(Array.isArray(list) && list.length > 0 ? list : getStaticTravelSuggestions(language))
+      list = await travelChatbotService.getSuggestions(language)
+      list = Array.isArray(list) && list.length > 0 ? list : getStaticTravelSuggestions(language)
     } catch (err) {
       console.warn('Travel chatbot suggestions API unavailable, using static list:', err?.message)
-      setSuggestions(getStaticTravelSuggestions(language))
+      list = getStaticTravelSuggestions(language)
     }
+    const dest = activeTrip?.destination ?? activeTrip?.name
+    const contextAware = dest ? getContextAwareTravelSuggestions(dest, language) : []
+    setSuggestions(contextAware.length > 0 ? [...contextAware, ...list].slice(0, 8) : list)
   }
 
   const addBotMessage = (message, type = 'text', data = null, quickActions = null, actionLink = null) => {
@@ -322,9 +368,12 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
     setLoading(true)
     try {
       const history = messages.map(m => ({ role: m.role, message: m.message, timestamp: m.timestamp }))
+      const tripContext = buildTripContext(activeTrip)
+      const messageForAi = activeTrip ? buildTripContextForAi(activeTrip) + userMessage : userMessage
+
       if (isAiMode) {
         if (aiSubMode === 'thinking') {
-          const response = await aiGatewayService.ragQuery(userMessage, {
+          const response = await aiGatewayService.ragQuery(messageForAi, {
             signal: controller?.signal,
             history,
             attachments: attachmentsPayload?.length ? attachmentsPayload : undefined
@@ -339,7 +388,7 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
             : answer
           addBotMessage(displayMessage, 'text')
         } else {
-          const aiHistory = [...history, { role: 'user', message: userMessage }]
+          const aiHistory = [...history, { role: 'user', message: messageForAi }]
           const response = await aiGatewayService.chat(aiHistory, {
             signal: controller?.signal,
             attachments: attachmentsPayload?.length ? attachmentsPayload : undefined
@@ -349,7 +398,7 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
       } else {
         // Rule-based: backend may not have travel-chatbot; show friendly fallback
         try {
-          const response = await travelChatbotService.sendQuery(userMessage, history, language)
+          const response = await travelChatbotService.sendQuery(userMessage, history, language, tripContext)
           addBotMessage(
             response.message,
             response.type,
@@ -613,7 +662,7 @@ function TravelChatbot({ onNavigate, open: controlledOpen, onClose }) {
   const showFloatingTrigger = !isControlled
 
   return (
-    <div className="travel-chatbot-container">
+    <div className="travel-chatbot-container" data-theme={theme}>
       {showFloatingTrigger && !isRevealed && (
         <button
           className="travel-chatbot-reveal-btn"

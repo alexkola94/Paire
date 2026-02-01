@@ -41,7 +41,7 @@ namespace YouAndMeExpensesAPI.Controllers
             try
             {
                 var language = request.Language ?? "en";
-                var response = await _travelChatbotService.ProcessQueryAsync(userId.ToString(), request.Query, request.History, language);
+                var response = await _travelChatbotService.ProcessQueryAsync(userId.ToString(), request.Query, request.History, language, request.TripContext);
                 return Ok(response);
             }
             catch (Exception ex)
