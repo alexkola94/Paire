@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, X } from 'lucide-react-native';
+import { Plus, Pencil, Trash2, X, List, Clock, Calendar } from 'lucide-react-native';
 import { transactionService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
@@ -29,6 +29,7 @@ import {
   TransactionForm,
   useToast,
 } from '../../components';
+import CalendarView from '../../components/CalendarView';
 
 const PAGE_SIZE = 20;
 
@@ -55,7 +56,8 @@ export default function TransactionsScreen() {
   const [typeFilter, setTypeFilter] = useState(''); // '' = all, 'expense', 'income'
   const [page, setPage] = useState(1);
 
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'timeline'
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'timeline' | 'calendar'
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [detailTransaction, setDetailTransaction] = useState(null);
@@ -131,6 +133,20 @@ export default function TransactionsScreen() {
       data: byDate[key],
     }));
   }, [items]);
+
+  // Filter items by selected calendar date
+  const filteredByCalendarDate = useMemo(() => {
+    if (!selectedCalendarDate || viewMode !== 'calendar') return items;
+    return items.filter((item) => {
+      const itemDate = (item.date || '').split('T')[0];
+      return itemDate === selectedCalendarDate;
+    });
+  }, [items, selectedCalendarDate, viewMode]);
+
+  // Handle calendar date selection
+  const handleCalendarDateSelect = useCallback((dateKey) => {
+    setSelectedCalendarDate((prev) => (prev === dateKey ? null : dateKey));
+  }, []);
 
   const openEdit = (item) => {
     setDetailTransaction(null);
@@ -233,16 +249,17 @@ export default function TransactionsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <Text style={[styles.title, { color: theme.colors.text }]}>{t('transactions.title')}</Text>
 
-      {/* View mode toggle (List / Timeline) */}
+      {/* View mode toggle (List / Timeline / Calendar) */}
       <View style={styles.viewToggleRow}>
         <TouchableOpacity
           style={[
             styles.viewToggleBtn,
             { borderColor: theme.colors.glassBorder, backgroundColor: viewMode === 'list' ? theme.colors.primary + '20' : theme.colors.surface },
           ]}
-          onPress={() => setViewMode('list')}
+          onPress={() => { setViewMode('list'); setSelectedCalendarDate(null); }}
           activeOpacity={0.7}
         >
+          <List size={16} color={viewMode === 'list' ? theme.colors.primary : theme.colors.textSecondary} />
           <Text style={[styles.viewToggleText, { color: viewMode === 'list' ? theme.colors.primary : theme.colors.textSecondary }]}>
             {t('transactions.viewList', 'List')}
           </Text>
@@ -252,11 +269,25 @@ export default function TransactionsScreen() {
             styles.viewToggleBtn,
             { borderColor: theme.colors.glassBorder, backgroundColor: viewMode === 'timeline' ? theme.colors.primary + '20' : theme.colors.surface },
           ]}
-          onPress={() => setViewMode('timeline')}
+          onPress={() => { setViewMode('timeline'); setSelectedCalendarDate(null); }}
           activeOpacity={0.7}
         >
+          <Clock size={16} color={viewMode === 'timeline' ? theme.colors.primary : theme.colors.textSecondary} />
           <Text style={[styles.viewToggleText, { color: viewMode === 'timeline' ? theme.colors.primary : theme.colors.textSecondary }]}>
             {t('transactions.viewTimeline', 'Timeline')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.viewToggleBtn,
+            { borderColor: theme.colors.glassBorder, backgroundColor: viewMode === 'calendar' ? theme.colors.primary + '20' : theme.colors.surface },
+          ]}
+          onPress={() => setViewMode('calendar')}
+          activeOpacity={0.7}
+        >
+          <Calendar size={16} color={viewMode === 'calendar' ? theme.colors.primary : theme.colors.textSecondary} />
+          <Text style={[styles.viewToggleText, { color: viewMode === 'calendar' ? theme.colors.primary : theme.colors.textSecondary }]}>
+            {t('calendar.viewMode.calendar', 'Calendar')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -305,7 +336,53 @@ export default function TransactionsScreen() {
         />
       </View>
 
-      {viewMode === 'list' ? (
+      {/* Calendar View */}
+      {viewMode === 'calendar' && (
+        <ScrollView
+          contentContainerStyle={styles.calendarContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing || isFetching}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+            />
+          }
+        >
+          <CalendarView
+            transactions={items}
+            selectedDate={selectedCalendarDate}
+            onSelectDate={handleCalendarDateSelect}
+          />
+          
+          {/* Transactions for selected date */}
+          {selectedCalendarDate && (
+            <View style={styles.calendarTransactionsList}>
+              <Text style={[styles.calendarDateTitle, { color: theme.colors.text }]}>
+                {formatDate(selectedCalendarDate)}
+                <Text style={{ color: theme.colors.textSecondary, fontWeight: '400' }}>
+                  {' '}({filteredByCalendarDate.length} {filteredByCalendarDate.length === 1 ? 'transaction' : 'transactions'})
+                </Text>
+              </Text>
+              {filteredByCalendarDate.length === 0 ? (
+                <Text style={[styles.empty, { color: theme.colors.textLight, marginTop: spacing.md }]}>
+                  {t('calendar.noTransactionsOnDay', 'No transactions on this day')}
+                </Text>
+              ) : (
+                filteredByCalendarDate.map((item) => renderItem({ item }))
+              )}
+            </View>
+          )}
+          
+          {/* Hint when no date selected */}
+          {!selectedCalendarDate && (
+            <Text style={[styles.calendarHint, { color: theme.colors.textSecondary }]}>
+              {t('calendar.tapDayToFilter', 'Tap a day to see transactions')}
+            </Text>
+          )}
+        </ScrollView>
+      )}
+
+      {viewMode === 'list' && (
         <FlatList
           data={items}
           keyExtractor={(item) => String(item.id)}
@@ -350,7 +427,9 @@ export default function TransactionsScreen() {
             ) : null
           }
         />
-      ) : (
+      )}
+
+      {viewMode === 'timeline' && (
         <SectionList
           sections={timelineSections}
           keyExtractor={(item) => String(item.id)}
@@ -396,7 +475,7 @@ export default function TransactionsScreen() {
         />
       )}
 
-      {/* FAB Add */}
+      {/* FAB Add - hide in calendar view when date selected */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={() => { setEditingTransaction(null); setFormOpen(true); }}
@@ -518,13 +597,20 @@ const styles = StyleSheet.create({
   },
   viewToggleBtn: {
     flex: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  viewToggleText: { ...typography.label },
+  viewToggleText: { ...typography.caption, fontWeight: '600' },
+  calendarContainer: { padding: spacing.md, paddingBottom: 100 },
+  calendarTransactionsList: { marginTop: spacing.md },
+  calendarDateTitle: { ...typography.h3, marginBottom: spacing.sm },
+  calendarHint: { ...typography.body, textAlign: 'center', marginTop: spacing.lg },
   typeFilterRow: {
     flexDirection: 'row',
     gap: spacing.sm,

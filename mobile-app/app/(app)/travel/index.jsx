@@ -3,13 +3,12 @@
  * Trip list + Travel Chatbot + Travel Advisory.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
   Platform,
   ActivityIndicator,
@@ -67,7 +66,7 @@ export default function TravelIndexScreen() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const chatListRef = useRef(null);
+  // Note: chatListRef removed - using View instead of FlatList for chat messages
 
   // Advisory state
   const [advisoryCountry, setAdvisoryCountry] = useState('');
@@ -113,7 +112,6 @@ export default function TravelIndexScreen() {
       const res = await travelChatbotService.sendQuery(trimmed, history, lang);
       const botContent = res?.response ?? res?.message ?? (typeof res === 'string' ? res : t('travel.chatbot.thinking'));
       setMessages((prev) => [...prev, { role: 'bot', content: botContent }]);
-      setTimeout(() => chatListRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (err) {
       setMessages((prev) => [...prev, { role: 'bot', content: err?.message || t('common.error') }]);
     } finally {
@@ -258,26 +256,24 @@ export default function TravelIndexScreen() {
 
         {activeSection === 'chatbot' && (
           <View style={[styles.section, { backgroundColor: theme.colors.surface }, shadows.sm]}>
-            <FlatList
-              ref={chatListRef}
-              data={messages}
-              keyExtractor={(_, i) => String(i)}
-              renderItem={({ item }) => (
-                <View style={[styles.messageRow, item.role === 'user' ? styles.messageRowUser : styles.messageRowBot]}>
-                  <View style={[styles.bubble, { backgroundColor: item.role === 'user' ? theme.colors.primary + '20' : theme.colors.background }, !(item.role === 'user') && shadows.sm]}>
-                    <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>{item.content}</Text>
-                  </View>
-                </View>
-              )}
-              style={styles.chatList}
-              contentContainerStyle={styles.chatListContent}
-              ListEmptyComponent={
-                <Text style={[styles.emptyChat, { color: theme.colors.textSecondary }]}>
-                  {t('travel.chatbot.placeholder', 'Ask about your trip...')}
-                </Text>
-              }
-              ListFooterComponent={
-                suggestions.length > 0 ? (
+            {/* Use View with mapped messages instead of FlatList to avoid nesting VirtualizedList in ScrollView */}
+            <View style={styles.chatList}>
+              <View style={styles.chatListContent}>
+                {messages.length === 0 ? (
+                  <Text style={[styles.emptyChat, { color: theme.colors.textSecondary }]}>
+                    {t('travel.chatbot.placeholder', 'Ask about your trip...')}
+                  </Text>
+                ) : (
+                  messages.map((item, i) => (
+                    <View key={i} style={[styles.messageRow, item.role === 'user' ? styles.messageRowUser : styles.messageRowBot]}>
+                      <View style={[styles.bubble, { backgroundColor: item.role === 'user' ? theme.colors.primary + '20' : theme.colors.background }, !(item.role === 'user') && shadows.sm]}>
+                        <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>{item.content}</Text>
+                      </View>
+                    </View>
+                  ))
+                )}
+                {/* Suggestion chips */}
+                {suggestions.length > 0 && (
                   <View style={styles.suggestions}>
                     <Text style={[styles.suggestionsLabel, { color: theme.colors.textSecondary }]}>
                       {t('travel.chatbot.tryAsking', 'Try asking:')}
@@ -294,9 +290,9 @@ export default function TravelIndexScreen() {
                       ))}
                     </View>
                   </View>
-                ) : null
-              }
-            />
+                )}
+              </View>
+            </View>
             <View style={[styles.inputRow, { backgroundColor: theme.colors.background, borderColor: theme.colors.glassBorder }]}>
               <TextInput
                 style={[styles.input, { color: theme.colors.text, backgroundColor: theme.colors.surface }]}

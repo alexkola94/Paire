@@ -11,6 +11,9 @@
  * - Optional notes in collapsible section
  * - Receipt attachment support
  * - Form validation
+ * - Smart category suggestions based on description
+ * - Duplicate transaction detection
+ * - Quick fill from recent transactions
  * - Theme-aware styling
  */
 
@@ -36,6 +39,9 @@ import CategorySelector from './CategorySelector';
 import DateInput from './DateInput';
 import FormSection from './FormSection';
 import Button from './Button';
+import SmartCategorySuggestions from './SmartCategorySuggestions';
+import DuplicateDetection from './DuplicateDetection';
+import QuickFill from './QuickFill';
 
 // Default categories
 const EXPENSE_CATEGORIES = [
@@ -50,6 +56,8 @@ export default function TransactionForm({
   onSubmit,
   onCancel,
   loading = false,
+  recentTransactions = [],  // For QuickFill and DuplicateDetection
+  showSmartFeatures = true, // Toggle smart features
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
@@ -70,6 +78,11 @@ export default function TransactionForm({
   const [attachment, setAttachment] = useState(null); // Local file URI
   const [uploadProgress, setUploadProgress] = useState(false);
   const [error, setError] = useState('');
+  const [duplicateDismissed, setDuplicateDismissed] = useState(false);
+
+  // Only show smart features for new transactions
+  const isNewTransaction = !transaction?.id;
+  const enableSmartFeatures = showSmartFeatures && isNewTransaction;
 
   // Get categories based on type
   const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
@@ -91,6 +104,27 @@ export default function TransactionForm({
   const handleEventChange = useCallback((e) => {
     const { name, value } = e.target;
     handleChange(name, value);
+  }, [handleChange]);
+
+  /**
+   * Handle quick fill from recent transaction
+   */
+  const handleQuickFill = useCallback((selectedTx) => {
+    setFormData(prev => ({
+      ...prev,
+      amount: String(selectedTx.amount || ''),
+      category: selectedTx.category || '',
+      description: selectedTx.description || '',
+      // Keep current date
+    }));
+    setDuplicateDismissed(false); // Reset duplicate detection
+  }, []);
+
+  /**
+   * Handle smart category suggestion selection
+   */
+  const handleCategorySuggestion = useCallback((category) => {
+    handleChange('category', category);
   }, [handleChange]);
 
   /**
@@ -251,6 +285,26 @@ export default function TransactionForm({
         </View>
       )}
 
+      {/* Quick Fill from Recent Transactions */}
+      {enableSmartFeatures && recentTransactions.length > 0 && (
+        <QuickFill
+          recentTransactions={recentTransactions}
+          type={type}
+          onSelectTransaction={handleQuickFill}
+          disabled={loading || uploadProgress}
+        />
+      )}
+
+      {/* Duplicate Detection Warning */}
+      {enableSmartFeatures && formData.amount && (
+        <DuplicateDetection
+          newTransaction={formData}
+          existingTransactions={recentTransactions}
+          onDismiss={() => setDuplicateDismissed(true)}
+          dismissed={duplicateDismissed}
+        />
+      )}
+
       {/* Basic Information Section */}
       <FormSection title={t('transaction.formSections.basicInfo', 'Basic Information')}>
         {/* Amount */}
@@ -274,6 +328,17 @@ export default function TransactionForm({
           required
           disabled={loading || uploadProgress}
         />
+
+        {/* Smart Category Suggestions */}
+        {enableSmartFeatures && formData.description && (
+          <SmartCategorySuggestions
+            description={formData.description}
+            type={type}
+            currentCategory={formData.category}
+            onSelectCategory={handleCategorySuggestion}
+            disabled={loading || uploadProgress}
+          />
+        )}
 
         {/* Date */}
         <DateInput

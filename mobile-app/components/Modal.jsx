@@ -1,6 +1,7 @@
 /**
  * Reusable Modal (React Native).
- * Ported from frontend Modal; uses RN Modal + View/Text/TouchableOpacity.
+ * Ported from frontend Modal with smooth animations using react-native-reanimated.
+ * Features slide-up content with fade overlay.
  */
 
 import React, { useEffect } from 'react';
@@ -13,10 +14,24 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  runOnJS,
+  useReducedMotion,
+  Easing,
+} from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../constants/theme';
+import { MODAL_ANIMATIONS } from '../utils/animations';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function Modal({
   isOpen,
@@ -26,17 +41,61 @@ export default function Modal({
   showCloseButton = true,
 }) {
   const { theme } = useTheme();
+  const reducedMotion = useReducedMotion();
+  
+  // Animation shared values
+  const overlayOpacity = useSharedValue(0);
+  const contentTranslateY = useSharedValue(SCREEN_HEIGHT * 0.3);
+  const contentOpacity = useSharedValue(0);
 
+  // Animate in when modal opens
   useEffect(() => {
-    if (!isOpen) return;
-    // Optional: back handler on Android
-    return () => {};
+    if (isOpen) {
+      if (reducedMotion) {
+        overlayOpacity.value = 0.5;
+        contentTranslateY.value = 0;
+        contentOpacity.value = 1;
+      } else {
+        overlayOpacity.value = withTiming(0.5, { duration: MODAL_ANIMATIONS.overlay.duration });
+        contentTranslateY.value = withSpring(0, { damping: 20, stiffness: 200 });
+        contentOpacity.value = withTiming(1, { duration: MODAL_ANIMATIONS.content.duration });
+      }
+    }
   }, [isOpen]);
+
+  // Animate out and close
+  const handleClose = () => {
+    if (reducedMotion) {
+      onClose();
+      return;
+    }
+    
+    overlayOpacity.value = withTiming(0, { duration: 200 });
+    contentOpacity.value = withTiming(0, { duration: 150 });
+    contentTranslateY.value = withTiming(
+      100,
+      { duration: 200, easing: Easing.in(Easing.cubic) },
+      (finished) => {
+        if (finished) {
+          runOnJS(onClose)();
+        }
+      }
+    );
+  };
+
+  // Animated styles
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: `rgba(0,0,0,${overlayOpacity.value})`,
+  }));
+
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+    transform: [{ translateY: contentTranslateY.value }],
+  }));
 
   if (!isOpen) return null;
 
   const dynamicStyles = {
-    overlay: { backgroundColor: 'rgba(0,0,0,0.5)' },
     content: {
       backgroundColor: theme.colors.surface,
       ...shadows.lg,
@@ -51,48 +110,62 @@ export default function Modal({
     <RNModal
       visible={isOpen}
       transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      animationType="none"
+      onRequestClose={handleClose}
       statusBarTranslucent
     >
-      <Pressable style={[styles.overlay, dynamicStyles.overlay]} onPress={onClose}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.centered}
-        >
-          <Pressable
-            style={[styles.content, dynamicStyles.content]}
-            onPress={(e) => e.stopPropagation()}
+      <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
+        <Pressable style={styles.overlayPressable} onPress={handleClose}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.centered}
           >
-            {(title || showCloseButton) && (
-              <View style={[styles.header, dynamicStyles.headerBorder]}>
-                {title && (
-                  <Text style={[styles.title, dynamicStyles.title]} numberOfLines={1}>
-                    {title}
-                  </Text>
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <Animated.View
+                style={[styles.content, dynamicStyles.content, contentAnimatedStyle]}
+              >
+                {(title || showCloseButton) && (
+                  <View style={[styles.header, dynamicStyles.headerBorder]}>
+                    {title && (
+                      <Text style={[styles.title, dynamicStyles.title]} numberOfLines={1}>
+                        {title}
+                      </Text>
+                    )}
+                    {showCloseButton && (
+                      <TouchableOpacity
+                        style={[styles.closeBtn, dynamicStyles.closeBtn]}
+                        onPress={handleClose}
+                        accessibilityLabel="Close"
+                        activeOpacity={0.7}
+                      >
+                        <X size={22} color={dynamicStyles.closeIcon} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 )}
-                {showCloseButton && (
-                  <TouchableOpacity
-                    style={[styles.closeBtn, dynamicStyles.closeBtn]}
-                    onPress={onClose}
-                    accessibilityLabel="Close"
-                    activeOpacity={0.7}
-                  >
-                    <X size={22} color={dynamicStyles.closeIcon} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-            <View style={styles.body}>{children}</View>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
+                {/* Scrollable body to handle forms with many fields */}
+                <ScrollView 
+                  style={styles.body} 
+                  contentContainerStyle={styles.bodyContent}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {children}
+                </ScrollView>
+              </Animated.View>
+            </Pressable>
+          </KeyboardAvoidingView>
+        </Pressable>
+      </Animated.View>
     </RNModal>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
+    flex: 1,
+  },
+  overlayPressable: {
     flex: 1,
     justifyContent: 'flex-end',
     paddingHorizontal: spacing.md,
@@ -128,7 +201,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: {
+    maxHeight: '70%', // Allow body to take up to 70% of modal, scrollable
+  },
+  bodyContent: {
     padding: spacing.lg,
-    maxHeight: 400,
+    paddingBottom: spacing.xl, // Extra padding at bottom for better UX
   },
 });

@@ -7,8 +7,34 @@
 export { default as Modal } from './Modal';
 export { default as Button } from './Button';
 export { default as FormField } from './FormField';
-export { default as Skeleton } from './Skeleton';
-export { ToastProvider, useToast } from './Toast';
+export { default as Skeleton, SkeletonTransaction, SkeletonBudget, SkeletonWidget, SkeletonCard, SkeletonList } from './Skeleton';
+export { ToastProvider, useToast, useToastHelpers } from './Toast';
+
+// Animated Components
+export { default as AnimatedCard } from './AnimatedCard';
+export { default as SuccessAnimation } from './SuccessAnimation';
+
+// Smart Suggestions Components
+export { default as SmartCategorySuggestions } from './SmartCategorySuggestions';
+export { default as DuplicateDetection } from './DuplicateDetection';
+export { default as QuickFill } from './QuickFill';
+
+// Calendar View
+export { default as CalendarView } from './CalendarView';
+
+// Widget System
+export { default as WidgetSelector } from './WidgetSelector';
+export { 
+  SummaryWidget, 
+  BudgetWidget, 
+  UpcomingBillsWidget, 
+  RecentTransactionsWidget, 
+  SavingsWidget, 
+  QuickAccessWidget,
+  WIDGET_REGISTRY,
+  getDefaultWidgetLayout,
+  getWidgetById,
+} from './widgets';
 
 // Progress Bars
 export { default as BudgetProgressBar } from './BudgetProgressBar';

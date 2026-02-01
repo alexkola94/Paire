@@ -2384,5 +2384,126 @@
     "divide": "Divide",
     "added": "Added to calculator",
     "hint": "Tap expense amounts to add them here"
+  },
+  "smartSuggestions": {
+    "title": "Smart Suggestions",
+    "suggestedCategory": "Suggested Category",
+    "basedOnDescription": "Based on your description",
+    "recentTransactions": "Recent Transactions",
+    "quickFill": "Quick Fill",
+    "tapToApply": "Tap to apply",
+    "noSuggestions": "No suggestions available",
+    "duplicateWarning": {
+      "title": "Possible Duplicate",
+      "message": "A similar transaction was found",
+      "amount": "Amount: {{amount}}",
+      "date": "Date: {{date}}",
+      "dismiss": "Dismiss",
+      "viewOriginal": "View Original"
+    }
+  },
+  "calendar": {
+    "title": "Calendar",
+    "viewMode": {
+      "list": "List",
+      "calendar": "Calendar"
+    },
+    "dayWithTransactions": "{{count}} transaction",
+    "dayWithTransactions_plural": "{{count}} transactions",
+    "noTransactionsOnDay": "No transactions on this day",
+    "tapDayToFilter": "Tap a day to see transactions",
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "weekdays": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
+  },
+  "widgets": {
+    "title": "Dashboard Widgets",
+    "customize": "Customize Dashboard",
+    "customizeDescription": "Toggle and reorder widgets to personalize your dashboard",
+    "dragToReorder": "Drag to reorder",
+    "toggleVisibility": "Toggle visibility",
+    "resetToDefault": "Reset to Default",
+    "saveChanges": "Save Changes",
+    "available": "Available Widgets",
+    "summary": {
+      "title": "Summary",
+      "description": "Income, expenses, and balance overview"
+    },
+    "budgets": {
+      "title": "Budget Progress",
+      "description": "Track your spending against budgets"
+    },
+    "upcomingBills": {
+      "title": "Upcoming Bills",
+      "description": "Bills due in the next 7 days"
+    },
+    "recentTransactions": {
+      "title": "Recent Transactions",
+      "description": "Your latest transactions"
+    },
+    "savings": {
+      "title": "Savings Goals",
+      "description": "Progress towards your goals"
+    },
+    "quickAccess": {
+      "title": "Quick Access",
+      "description": "Shortcuts to common actions"
+    }
+  },
+  "pushNotifications": {
+    "title": "Push Notifications",
+    "subtitle": "Configure how you receive push notifications",
+    "enable": "Enable Push Notifications",
+    "disable": "Disable Push Notifications",
+    "permissionRequired": "Permission Required",
+    "permissionDenied": "Push notifications permission was denied. Please enable it in your device settings.",
+    "permissionDescription": "We need your permission to send you important financial alerts.",
+    "enabled": "Push notifications enabled",
+    "disabled": "Push notifications disabled",
+    "errorEnabling": "Failed to enable push notifications",
+    "categories": {
+      "title": "Notification Categories",
+      "billReminders": "Bill Reminders",
+      "billRemindersDesc": "Get notified before bills are due",
+      "budgetAlerts": "Budget Alerts",
+      "budgetAlertsDesc": "Alerts when approaching budget limits",
+      "savingsMilestones": "Savings Milestones",
+      "savingsMilestonesDesc": "Celebrate when you reach savings goals",
+      "partnerActivity": "Partner Activity",
+      "partnerActivityDesc": "Updates on shared financial activity",
+      "securityAlerts": "Security Alerts",
+      "securityAlertsDesc": "Important account security notifications"
+    },
+    "timing": {
+      "title": "Reminder Timing",
+      "daysBefore": "Days before due date",
+      "budgetThreshold": "Budget alert threshold"
+    },
+    "testNotification": {
+      "title": "Test Notification",
+      "send": "Send Test Notification",
+      "sent": "Test notification sent!",
+      "error": "Failed to send test notification"
+    }
   }
 }

@@ -6,6 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from '../context/ThemeContext';
 import { PrivacyModeProvider } from '../context/PrivacyModeContext';
+import { DashboardLayoutProvider } from '../context/DashboardLayoutContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import { ToastProvider } from '../components';
 import { loadAuthData, setSessionExpiredCallback } from '../services/auth';
 import { setApiSessionExpiredCallback } from '../services/api';
@@ -47,7 +49,9 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <PrivacyModeProvider>
-              <ToastProvider>
+              <DashboardLayoutProvider>
+                <NotificationProvider>
+                  <ToastProvider>
                 <StatusBar style="auto" />
                 <Stack
                   screenOptions={{
@@ -72,7 +76,9 @@ export default function RootLayout() {
                   <Stack.Screen name="(auth)" />
                   <Stack.Screen name="(app)" />
                 </Stack>
-              </ToastProvider>
+                  </ToastProvider>
+                </NotificationProvider>
+              </DashboardLayoutProvider>
             </PrivacyModeProvider>
           </ThemeProvider>
         </QueryClientProvider>

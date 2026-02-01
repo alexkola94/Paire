@@ -16,12 +16,12 @@ import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { Modal, Button, FormField, useToast } from '../../components';
 
-// Supported locales for language picker (code -> i18n label key)
+// Supported locales for language picker with flags
 const LOCALES = [
-  { code: 'en', labelKey: 'settings.languages.en' },
-  { code: 'el', labelKey: 'settings.languages.el' },
-  { code: 'es', labelKey: 'settings.languages.es' },
-  { code: 'fr', labelKey: 'settings.languages.fr' },
+  { code: 'en', labelKey: 'settings.languages.en', flag: '🇬🇧', nativeName: 'English' },
+  { code: 'el', labelKey: 'settings.languages.el', flag: '🇬🇷', nativeName: 'Ελληνικά' },
+  { code: 'es', labelKey: 'settings.languages.es', flag: '🇪🇸', nativeName: 'Español' },
+  { code: 'fr', labelKey: 'settings.languages.fr', flag: '🇫🇷', nativeName: 'Français' },
 ];
 
 function MenuItem({ icon: Icon, label, onPress, theme, destructive }) {
@@ -211,6 +211,7 @@ export default function ProfileScreen() {
           <MenuItem icon={Globe} label={t('settings.language')} onPress={() => setLanguageModalOpen(true)} theme={theme} />
           <MenuItem icon={Lock} label={t('profile.changePassword')} onPress={() => setPasswordModalOpen(true)} theme={theme} />
           <MenuItem icon={CreditCard} label={t('profile.openBanking.title', 'Linked accounts')} onPress={() => router.push('/(app)/linked-accounts')} theme={theme} />
+          <MenuItem icon={Bell} label={t('pushNotifications.title', 'Push Notifications')} onPress={() => router.push('/(app)/notification-settings')} theme={theme} />
           <MenuItem icon={Shield} label={t('auth.twoFactorSetup')} onPress={() => router.push('/(auth)/setup-2fa')} theme={theme} />
         </View>
 
@@ -244,36 +245,52 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
 
-      {/* Language picker modal */}
+      {/* Language picker modal - Enhanced with flags */}
       <Modal
         isOpen={languageModalOpen}
         onClose={() => setLanguageModalOpen(false)}
         title={t('settings.language')}
       >
         <View style={styles.languageList}>
-          {LOCALES.map(({ code, labelKey }) => (
-            <TouchableOpacity
-              key={code}
-              style={[
-                styles.languageItem,
-                { backgroundColor: theme.colors.surfaceSecondary },
-                i18n.language === code && { backgroundColor: theme.colors.primary + '20' },
-              ]}
-              onPress={() => {
-                i18n.changeLanguage(code);
-                showToast(t('settings.languageUpdated'), 'success');
-                setLanguageModalOpen(false);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.languageLabel, { color: theme.colors.text }]}>
-                {t(labelKey)}
-              </Text>
-              {i18n.language === code && (
-                <Text style={[styles.languageCheck, { color: theme.colors.primary }]}>✓</Text>
-              )}
-            </TouchableOpacity>
-          ))}
+          {LOCALES.map(({ code, labelKey, flag, nativeName }) => {
+            const isSelected = i18n.language === code;
+            return (
+              <TouchableOpacity
+                key={code}
+                style={[
+                  styles.languageItem,
+                  { 
+                    backgroundColor: isSelected 
+                      ? theme.colors.primary + '15' 
+                      : theme.colors.surfaceSecondary,
+                    borderColor: isSelected ? theme.colors.primary : 'transparent',
+                    borderWidth: isSelected ? 2 : 0,
+                  },
+                ]}
+                onPress={() => {
+                  i18n.changeLanguage(code);
+                  showToast(t('settings.languageUpdated'), 'success');
+                  setLanguageModalOpen(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.languageFlag}>{flag}</Text>
+                <View style={styles.languageTextContainer}>
+                  <Text style={[styles.languageLabel, { color: theme.colors.text }]}>
+                    {nativeName}
+                  </Text>
+                  <Text style={[styles.languageCode, { color: theme.colors.textSecondary }]}>
+                    {code.toUpperCase()}
+                  </Text>
+                </View>
+                {isSelected && (
+                  <View style={[styles.languageCheckBadge, { backgroundColor: theme.colors.primary }]}>
+                    <Text style={styles.languageCheckIcon}>✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </Modal>
 
@@ -394,11 +411,21 @@ const styles = StyleSheet.create({
   languageItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.md,
   },
-  languageLabel: { ...typography.body },
-  languageCheck: { ...typography.body, fontWeight: '600' },
+  languageFlag: { fontSize: 28 },
+  languageTextContainer: { flex: 1 },
+  languageLabel: { ...typography.body, fontWeight: '600' },
+  languageCode: { ...typography.caption, marginTop: 2 },
+  languageCheckBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  languageCheckIcon: { color: '#fff', fontSize: 14, fontWeight: '700' },
   formModal: { gap: spacing.lg },
 });

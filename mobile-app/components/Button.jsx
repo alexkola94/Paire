@@ -1,12 +1,23 @@
 /**
  * Reusable Button (React Native).
- * TouchableOpacity + Text; supports primary/secondary/outline and theme.
+ * Animated pressable with scale feedback, supports primary/secondary/outline and theme.
+ * Uses react-native-reanimated for smooth press animations.
  */
 
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../constants/theme';
+import { BUTTON_SCALE } from '../utils/animations';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function Button({
   onPress,
@@ -20,6 +31,10 @@ export default function Button({
   rightIcon: RightIcon,
 }) {
   const { theme } = useTheme();
+  const reducedMotion = useReducedMotion();
+  
+  // Animation shared value for scale
+  const scale = useSharedValue(1);
 
   const isPrimary = variant === 'primary';
   const isSecondary = variant === 'secondary';
@@ -34,11 +49,30 @@ export default function Button({
   const borderColor = theme.colors.primary;
   const textColor = isPrimary ? '#fff' : theme.colors.text;
 
+  // Animated style for scale press effect
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  // Handle press animations
+  const handlePressIn = () => {
+    if (!reducedMotion && !disabled && !loading) {
+      scale.value = withTiming(BUTTON_SCALE.pressed, { duration: BUTTON_SCALE.duration });
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!reducedMotion && !disabled && !loading) {
+      scale.value = withSpring(BUTTON_SCALE.released, { damping: 15, stiffness: 200 });
+    }
+  };
+
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={disabled || loading}
-      activeOpacity={0.7}
       style={[
         styles.btn,
         {
@@ -48,6 +82,7 @@ export default function Button({
           opacity: disabled ? 0.6 : 1,
         },
         style,
+        animatedStyle,
       ]}
     >
       {loading ? (
@@ -59,7 +94,7 @@ export default function Button({
           {RightIcon && <RightIcon size={18} color={textColor} style={styles.iconRight} />}
         </>
       )}
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 
