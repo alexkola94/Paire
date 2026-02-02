@@ -11,7 +11,7 @@
  * - Theme-aware styling
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,11 +21,13 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2 } from 'lucide-react-native';
+import { Plus, Pencil, Trash2, Receipt } from 'lucide-react-native';
 import { transactionService } from '../../services/api';
+import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
@@ -35,6 +37,7 @@ import {
   DateRangePicker,
   ConfirmationModal,
   TransactionForm,
+  EmptyState,
   useToast,
 } from '../../components';
 
@@ -57,6 +60,9 @@ export default function ExpensesScreen() {
 
   const PAGE_SIZE = 20;
 
+  // Refs to close swipeable rows (one row open at a time)
+  const rowRefs = useRef({});
+
   // Fetch expenses (with date range and optional pagination)
   const { data, refetch, isLoading } = useQuery({
     queryKey: ['expenses', startDate, endDate, page, PAGE_SIZE],
@@ -76,6 +82,7 @@ export default function ExpensesScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      notificationSuccess();
       showToast(t('expenses.createSuccess', 'Expense added successfully'), 'success');
       setIsFormOpen(false);
     },
@@ -90,6 +97,7 @@ export default function ExpensesScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      notificationSuccess();
       showToast(t('expenses.updateSuccess', 'Expense updated successfully'), 'success');
       setEditingTransaction(null);
     },
@@ -104,6 +112,7 @@ export default function ExpensesScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      notificationWarning();
       showToast(t('expenses.deleteSuccess', 'Expense deleted successfully'), 'success');
       setDeleteTarget(null);
     },
@@ -174,50 +183,99 @@ export default function ExpensesScreen() {
     return `€${amount?.toFixed(2)}`;
   };
 
+  // Close other rows when one opens
+  const handleSwipeableWillOpen = useCallback((itemId) => {
+    Object.keys(rowRefs.current).forEach((id) => {
+      if (id !== String(itemId)) rowRefs.current[id]?.close();
+    });
+  }, []);
+
+  // Swipe left action panel (edit)
+  const renderLeftActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionLeft, { backgroundColor: theme.colors.primary }]}>
+        <Pencil size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.edit', 'Edit')}</Text>
+      </View>
+    ),
+    [theme.colors.primary, t]
+  );
+
+  // Swipe right action panel (delete)
+  const renderRightActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionRight, { backgroundColor: theme.colors.error }]}>
+        <Trash2 size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.delete', 'Delete')}</Text>
+      </View>
+    ),
+    [theme.colors.error, t]
+  );
+
   // Render list item
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}
-      onPress={() => handleEdit(item)}
-      onLongPress={() => setDeleteTarget(item)}
-      activeOpacity={0.7}
-      accessibilityLabel={`${item.description || item.category}, ${formatAmount(item.amount)}`}
-      accessibilityHint={t('common.tapToEdit', 'Tap to edit, hold to delete')}
+    <Swipeable
+      ref={(r) => { rowRefs.current[item.id] = r; }}
+      renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
+      onSwipeableLeftOpen={() => {
+        impactLight();
+        handleEdit(item);
+        setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+      }}
+      onSwipeableRightOpen={() => {
+        impactLight();
+        setDeleteTarget(item);
+        setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+      }}
+      onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
+      friction={2}
+      rightThreshold={40}
+      leftThreshold={40}
     >
-      <View style={styles.row}>
-        <View style={styles.cardContent}>
-          <Text style={[styles.cardTitle, { color: theme.colors.text }]} numberOfLines={1}>
-            {item.description || item.category}
-          </Text>
-          <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>
-            {t(`categories.${item.category}`, item.category)} • {new Date(item.date).toLocaleDateString()}
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}
+        onPress={() => handleEdit(item)}
+        onLongPress={() => setDeleteTarget(item)}
+        activeOpacity={0.7}
+        accessibilityLabel={`${item.description || item.category}, ${formatAmount(item.amount)}`}
+        accessibilityHint={t('common.swipeHint', 'Swipe right to edit, left to delete')}
+      >
+        <View style={styles.row}>
+          <View style={styles.cardContent}>
+            <Text style={[styles.cardTitle, { color: theme.colors.text }]} numberOfLines={1}>
+              {item.description || item.category}
+            </Text>
+            <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>
+              {t(`categories.${item.category}`, item.category)} • {new Date(item.date).toLocaleDateString()}
+            </Text>
+          </View>
+          <Text style={[styles.cardAmount, { color: theme.colors.error }]}>
+            -{formatAmount(item.amount)}
           </Text>
         </View>
-        <Text style={[styles.cardAmount, { color: theme.colors.error }]}>
-          -{formatAmount(item.amount)}
-        </Text>
-      </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity
-          style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.primary}15` }]}
-          onPress={() => handleEdit(item)}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Pencil size={16} color={theme.colors.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.error}15` }]}
-          onPress={() => setDeleteTarget(item)}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Trash2 size={16} color={theme.colors.error} />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.primary}15` }]}
+            onPress={() => handleEdit(item)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Pencil size={16} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.error}15` }]}
+            onPress={() => setDeleteTarget(item)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Trash2 size={16} color={theme.colors.error} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
   );
 
   // Loading indicator in form
@@ -263,13 +321,21 @@ export default function ExpensesScreen() {
         }
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.empty, { color: theme.colors.textLight }]}>
-              {searchQuery
-                ? t('expenses.noResults', 'No expenses found')
-                : t('expenses.empty', 'No expenses yet. Tap + to add one!')}
-            </Text>
-          </View>
+          searchQuery ? (
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.empty, { color: theme.colors.textLight }]}>
+                {t('expenses.noResults', 'No expenses found')}
+              </Text>
+            </View>
+          ) : (
+            <EmptyState
+              icon={Receipt}
+              title={t('expenses.emptyTitle', 'No expenses yet')}
+              description={t('expenses.emptyDescription', 'Start tracking your spending by adding your first expense.')}
+              ctaLabel={t('expenses.addFirst', 'Add Expense')}
+              onPress={() => setIsFormOpen(true)}
+            />
+          )
         }
         ListFooterComponent={
           isPaged && totalPages > 1 ? (
@@ -303,7 +369,7 @@ export default function ExpensesScreen() {
       {/* Floating Action Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => setIsFormOpen(true)}
+        onPress={() => { impactMedium(); setIsFormOpen(true); }}
         activeOpacity={0.8}
         accessibilityLabel={t('expenses.addNew', 'Add new expense')}
       >
@@ -401,6 +467,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  swipeAction: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.xs,
+  },
+  swipeActionRight: {
+    marginLeft: spacing.sm,
+  },
+  swipeActionLeft: {
+    marginRight: spacing.sm,
+  },
+  swipeActionText: {
+    ...typography.caption,
+    color: '#fff',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,

@@ -31,6 +31,15 @@ namespace YouAndMeExpensesAPI.Services
                 .AsNoTracking()
                 .ToListAsync();
 
+            var listIds = lists.Select(l => l.Id).ToList();
+            var allItems = await _dbContext.ShoppingListItems
+                .Where(i => listIds.Contains(i.ShoppingListId))
+                .OrderBy(i => i.IsChecked)
+                .ThenBy(i => i.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
+            var itemsByListId = allItems.GroupBy(i => i.ShoppingListId).ToDictionary(g => g.Key, g => g.ToList());
+
             var userIds = lists.Select(l => l.UserId).Distinct().ToList();
             var userProfiles = await _dbContext.UserProfiles
                 .Where(up => userIds.Contains(up.Id.ToString()))
@@ -61,7 +70,8 @@ namespace YouAndMeExpensesAPI.Services
                     completed_date = l.CompletedDate,
                     created_at = l.CreatedAt,
                     updated_at = l.UpdatedAt,
-                    user_profiles = profileDict.ContainsKey(l.UserId) ? profileDict[l.UserId] : null
+                    user_profiles = profileDict.ContainsKey(l.UserId) ? profileDict[l.UserId] : null,
+                    items = itemsByListId.TryGetValue(l.Id, out var listItems) ? listItems : new List<ShoppingListItem>()
                 })
                 .Cast<object>()
                 .ToList();

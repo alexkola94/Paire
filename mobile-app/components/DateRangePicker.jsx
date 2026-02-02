@@ -11,6 +11,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Modal,
+  Pressable,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Calendar } from 'lucide-react-native';
@@ -114,6 +116,30 @@ export default function DateRangePicker({
     triggerText: { color: theme.colors.text },
     triggerPlaceholder: { color: theme.colors.textLight },
     presetBtn: { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.glassBorder },
+    // iOS date range modal: theme-aware overlay and sheet
+    iosOverlay: {
+      backgroundColor: theme.colors.overlay,
+    },
+    iosPickerBox: {
+      backgroundColor: theme.colors.surface,
+      borderTopWidth: 1,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderColor: theme.colors.glassBorder,
+      ...(theme.dark
+        ? {}
+        : {
+            shadowColor: '#1e293b',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            elevation: 8,
+          }),
+    },
+    iosDoneBtn: {
+      backgroundColor: theme.colors.primary,
+    },
+    iosDoneText: { color: '#ffffff' },
   };
 
   return (
@@ -197,24 +223,27 @@ export default function DateRangePicker({
 
       {showStartPicker && (
         Platform.OS === 'ios' ? (
-          <View style={styles.iosOverlay}>
-            <View style={[styles.iosPickerBox, { backgroundColor: theme.colors.surface }]}>
-              <DateTimePicker
-                value={startDateObj}
-                mode="date"
-                display="spinner"
-                onChange={handleStartChange}
-                minimumDate={minDateObj}
-                maximumDate={maxDateObj}
-              />
-              <TouchableOpacity
-                style={[styles.iosDoneBtn, { backgroundColor: theme.colors.primary }]}
-                onPress={() => setShowStartPicker(false)}
-              >
-                <Text style={styles.iosDoneText}>{t('common.done', 'Done')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <Modal visible transparent animationType="slide" statusBarTranslucent>
+            <Pressable style={[styles.iosOverlay, dynamicStyles.iosOverlay]} onPress={() => setShowStartPicker(false)}>
+              <Pressable style={[styles.iosPickerBox, dynamicStyles.iosPickerBox]} onPress={() => {}}>
+                <DateTimePicker
+                  value={startDateObj}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleStartChange}
+                  minimumDate={minDateObj}
+                  maximumDate={maxDateObj}
+                  themeVariant={theme.dark ? 'light' : undefined}
+                />
+                <TouchableOpacity
+                  style={[styles.iosDoneBtn, dynamicStyles.iosDoneBtn]}
+                  onPress={() => setShowStartPicker(false)}
+                >
+                  <Text style={[styles.iosDoneText, dynamicStyles.iosDoneText]}>{t('common.done', 'Done')}</Text>
+                </TouchableOpacity>
+              </Pressable>
+            </Pressable>
+          </Modal>
         ) : (
           <DateTimePicker
             value={startDateObj}
@@ -229,24 +258,27 @@ export default function DateRangePicker({
 
       {showEndPicker && (
         Platform.OS === 'ios' ? (
-          <View style={styles.iosOverlay}>
-            <View style={[styles.iosPickerBox, { backgroundColor: theme.colors.surface }]}>
-              <DateTimePicker
-                value={endDateObj}
-                mode="date"
-                display="spinner"
-                onChange={handleEndChange}
-                minimumDate={startDate ? startDateObj : minDateObj}
-                maximumDate={maxDateObj}
-              />
-              <TouchableOpacity
-                style={[styles.iosDoneBtn, { backgroundColor: theme.colors.primary }]}
-                onPress={() => setShowEndPicker(false)}
-              >
-                <Text style={styles.iosDoneText}>{t('common.done', 'Done')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <Modal visible transparent animationType="slide" statusBarTranslucent>
+            <Pressable style={[styles.iosOverlay, dynamicStyles.iosOverlay]} onPress={() => setShowEndPicker(false)}>
+              <Pressable style={[styles.iosPickerBox, dynamicStyles.iosPickerBox]} onPress={() => {}}>
+                <DateTimePicker
+                  value={endDateObj}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleEndChange}
+                  minimumDate={startDate ? startDateObj : minDateObj}
+                  maximumDate={maxDateObj}
+                  themeVariant={theme.dark ? 'light' : undefined}
+                />
+                <TouchableOpacity
+                  style={[styles.iosDoneBtn, dynamicStyles.iosDoneBtn]}
+                  onPress={() => setShowEndPicker(false)}
+                >
+                  <Text style={[styles.iosDoneText, dynamicStyles.iosDoneText]}>{t('common.done', 'Done')}</Text>
+                </TouchableOpacity>
+              </Pressable>
+            </Pressable>
+          </Modal>
         ) : (
           <DateTimePicker
             value={endDateObj}
@@ -296,10 +328,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   presetText: { ...typography.caption, fontWeight: '500' },
+  // iOS modal layout (colors from dynamicStyles for theme)
   iosOverlay: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
     zIndex: 1000,
   },

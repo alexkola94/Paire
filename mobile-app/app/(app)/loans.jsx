@@ -11,7 +11,7 @@
  * - Theme-aware styling
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,10 +20,12 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, ArrowUpRight, ArrowDownLeft, List } from 'lucide-react-native';
+import { Plus, Pencil, Trash2, ArrowUpRight, ArrowDownLeft, List, HandCoins } from 'lucide-react-native';
+import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
 import { loanService, loanPaymentService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
@@ -36,6 +38,7 @@ import {
   CurrencyInput,
   DateInput,
   FormField,
+  EmptyState,
   useToast,
 } from '../../components';
 
@@ -63,6 +66,8 @@ export default function LoansScreen() {
     notes: '',
   });
 
+  const rowRefs = useRef({});
+
   // Fetch loans
   const { data, refetch } = useQuery({
     queryKey: ['loans'],
@@ -74,6 +79,7 @@ export default function LoansScreen() {
     mutationFn: (newLoan) => loanService.create(newLoan),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loans'] });
+      notificationSuccess();
       showToast(t('loans.createSuccess', 'Loan created successfully'), 'success');
       setIsFormOpen(false);
     },
@@ -87,6 +93,7 @@ export default function LoansScreen() {
     mutationFn: ({ id, ...data }) => loanService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loans'] });
+      notificationSuccess();
       showToast(t('loans.updateSuccess', 'Loan updated successfully'), 'success');
       setEditingLoan(null);
     },
@@ -100,6 +107,7 @@ export default function LoansScreen() {
     mutationFn: (id) => loanService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loans'] });
+      notificationWarning();
       showToast(t('loans.deleteSuccess', 'Loan deleted successfully'), 'success');
       setDeleteTarget(null);
     },
@@ -122,6 +130,7 @@ export default function LoansScreen() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['loan-payments', variables.loanId] });
       queryClient.invalidateQueries({ queryKey: ['loans'] });
+      notificationSuccess();
       showToast(t('loans.paymentAdded', 'Payment added'), 'success');
       setPaymentFormOpen(false);
       setPaymentFormData({
@@ -146,6 +155,7 @@ export default function LoansScreen() {
         queryClient.invalidateQueries({ queryKey: ['loan-payments', loanId] });
         queryClient.invalidateQueries({ queryKey: ['loans'] });
       }
+      notificationWarning();
       showToast(t('loans.paymentDeleted', 'Payment deleted'), 'success');
       setDeletePaymentTarget(null);
     },
@@ -249,6 +259,33 @@ export default function LoansScreen() {
     }
   };
 
+  // Close other rows when one opens
+  const handleSwipeableWillOpen = useCallback((itemId) => {
+    Object.keys(rowRefs.current).forEach((id) => {
+      if (id !== String(itemId)) rowRefs.current[id]?.close();
+    });
+  }, []);
+
+  const renderLeftActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionLeft, { backgroundColor: theme.colors.primary }]}>
+        <Pencil size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.edit', 'Edit')}</Text>
+      </View>
+    ),
+    [theme.colors.primary, t]
+  );
+
+  const renderRightActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionRight, { backgroundColor: theme.colors.error }]}>
+        <Trash2 size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.delete', 'Delete')}</Text>
+      </View>
+    ),
+    [theme.colors.error, t]
+  );
+
   // Render item
   const renderItem = ({ item }) => {
     const isGiven = item.type === 'given';
@@ -256,6 +293,25 @@ export default function LoansScreen() {
     const statusColor = getStatusColor(item.status);
 
     return (
+      <Swipeable
+        ref={(r) => { rowRefs.current[item.id] = r; }}
+        renderLeftActions={renderLeftActions}
+        renderRightActions={renderRightActions}
+        onSwipeableLeftOpen={() => {
+          impactLight();
+          handleEdit(item);
+          setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+        }}
+        onSwipeableRightOpen={() => {
+          impactLight();
+          setDeleteTarget(item);
+          setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+        }}
+        onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
+        friction={2}
+        rightThreshold={40}
+        leftThreshold={40}
+      >
       <TouchableOpacity
         style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}
         onPress={() => handleEdit(item)}
@@ -332,6 +388,7 @@ export default function LoansScreen() {
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -356,18 +413,20 @@ export default function LoansScreen() {
         }
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.empty, { color: theme.colors.textLight }]}>
-              {t('loans.empty', 'No loans yet. Tap + to add one!')}
-            </Text>
-          </View>
+          <EmptyState
+            icon={HandCoins}
+            title={t('loans.emptyTitle', 'No loans yet')}
+            description={t('loans.emptyDescription', 'Track money lent and borrowed to keep things clear between you.')}
+            ctaLabel={t('loans.addFirst', 'Add Loan')}
+            onPress={() => setIsFormOpen(true)}
+          />
         }
       />
 
       {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => setIsFormOpen(true)}
+        onPress={() => { impactMedium(); setIsFormOpen(true); }}
         activeOpacity={0.8}
       >
         <Plus size={28} color="#ffffff" />
@@ -626,6 +685,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  swipeAction: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  swipeActionRight: {
+    marginLeft: spacing.sm,
+  },
+  swipeActionLeft: {
+    marginRight: spacing.sm,
+  },
+  swipeActionText: {
+    ...typography.caption,
+    color: '#fff',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,

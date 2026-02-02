@@ -210,7 +210,7 @@ export default function SavingsGoalForm({
         />
       )}
 
-      {/* Target Date */}
+      {/* Target Date — allow future (and past when editing) */}
       <DateInput
         value={formData.targetDate}
         onChange={handleEventChange}
@@ -218,6 +218,7 @@ export default function SavingsGoalForm({
         label={t('savingsGoals.targetDate', 'Target Date')}
         disabled={loading}
         showQuickButtons={false}
+        maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() + 10))}
       />
 
       {/* Category */}

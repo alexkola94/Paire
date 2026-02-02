@@ -23,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronDown, Check, X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../constants/theme';
 
@@ -31,11 +32,14 @@ export default function Dropdown({
   value,
   onChange,
   icon: Icon = null,
-  placeholder = 'Select...',
+  placeholder: placeholderProp,
   label,
   style,
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
+  // Use translated default when no placeholder is passed
+  const placeholder = placeholderProp ?? t('common.selectPlaceholder', 'Select...');
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);

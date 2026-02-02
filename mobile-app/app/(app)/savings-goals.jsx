@@ -12,7 +12,7 @@
  * - Theme-aware styling
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,10 +21,12 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, PlusCircle, MinusCircle } from 'lucide-react-native';
+import { Plus, Pencil, Trash2, PlusCircle, MinusCircle, Target } from 'lucide-react-native';
+import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
 import { savingsGoalService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
@@ -36,6 +38,7 @@ import {
   SavingsGoalForm,
   CurrencyInput,
   Button,
+  EmptyState,
   useToast,
 } from '../../components';
 
@@ -55,6 +58,8 @@ export default function SavingsGoalsScreen() {
   const [withdrawTarget, setWithdrawTarget] = useState(null);
   const [actionAmount, setActionAmount] = useState('');
 
+  const rowRefs = useRef({});
+
   // Fetch savings goals
   const { data, refetch } = useQuery({
     queryKey: ['savings-goals'],
@@ -66,6 +71,7 @@ export default function SavingsGoalsScreen() {
     mutationFn: (newGoal) => savingsGoalService.create(newGoal),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
+      notificationSuccess();
       showToast(t('savingsGoals.createSuccess', 'Goal created successfully'), 'success');
       setIsFormOpen(false);
     },
@@ -79,6 +85,7 @@ export default function SavingsGoalsScreen() {
     mutationFn: ({ id, ...data }) => savingsGoalService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
+      notificationSuccess();
       showToast(t('savingsGoals.updateSuccess', 'Goal updated successfully'), 'success');
       setEditingGoal(null);
     },
@@ -92,6 +99,7 @@ export default function SavingsGoalsScreen() {
     mutationFn: (id) => savingsGoalService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
+      notificationWarning();
       showToast(t('savingsGoals.deleteSuccess', 'Goal deleted successfully'), 'success');
       setDeleteTarget(null);
     },
@@ -109,6 +117,7 @@ export default function SavingsGoalsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
+      notificationSuccess();
       showToast(t('savingsGoals.depositSuccess', 'Deposit successful'), 'success');
       setDepositTarget(null);
       setActionAmount('');
@@ -127,6 +136,7 @@ export default function SavingsGoalsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
+      notificationSuccess();
       showToast(t('savingsGoals.withdrawSuccess', 'Withdrawal successful'), 'success');
       setWithdrawTarget(null);
       setActionAmount('');
@@ -194,14 +204,60 @@ export default function SavingsGoalsScreen() {
     return `€${n?.toFixed(2)}`;
   };
 
+  // Close other rows when one opens
+  const handleSwipeableWillOpen = useCallback((itemId) => {
+    Object.keys(rowRefs.current).forEach((id) => {
+      if (id !== String(itemId)) rowRefs.current[id]?.close();
+    });
+  }, []);
+
+  const renderLeftActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionLeft, { backgroundColor: theme.colors.primary }]}>
+        <Pencil size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.edit', 'Edit')}</Text>
+      </View>
+    ),
+    [theme.colors.primary, t]
+  );
+
+  const renderRightActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionRight, { backgroundColor: theme.colors.error }]}>
+        <Trash2 size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.delete', 'Delete')}</Text>
+      </View>
+    ),
+    [theme.colors.error, t]
+  );
+
   // Render item
   const renderItem = ({ item }) => {
-    const pct = item.targetAmount > 0 
-      ? Math.min((item.currentAmount / item.targetAmount) * 100, 100) 
+    const pct = item.targetAmount > 0
+      ? Math.min((item.currentAmount / item.targetAmount) * 100, 100)
       : 0;
     const goalColor = item.color || theme.colors.primary;
 
     return (
+      <Swipeable
+        ref={(r) => { rowRefs.current[item.id] = r; }}
+        renderLeftActions={renderLeftActions}
+        renderRightActions={renderRightActions}
+        onSwipeableLeftOpen={() => {
+          impactLight();
+          handleEdit(item);
+          setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+        }}
+        onSwipeableRightOpen={() => {
+          impactLight();
+          setDeleteTarget(item);
+          setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+        }}
+        onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
+        friction={2}
+        rightThreshold={40}
+        leftThreshold={40}
+      >
       <TouchableOpacity
         style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}
         onPress={() => handleEdit(item)}
@@ -270,6 +326,7 @@ export default function SavingsGoalsScreen() {
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -294,18 +351,20 @@ export default function SavingsGoalsScreen() {
         }
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.empty, { color: theme.colors.textLight }]}>
-              {t('savingsGoals.empty', 'No savings goals yet. Tap + to create one!')}
-            </Text>
-          </View>
+          <EmptyState
+            icon={Target}
+            title={t('savingsGoals.emptyTitle', 'No savings goals yet')}
+            description={t('savingsGoals.emptyDescription', 'Create a goal and start saving together towards something meaningful.')}
+            ctaLabel={t('savingsGoals.addFirst', 'Create Goal')}
+            onPress={() => setIsFormOpen(true)}
+          />
         }
       />
 
       {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => setIsFormOpen(true)}
+        onPress={() => { impactMedium(); setIsFormOpen(true); }}
         activeOpacity={0.8}
       >
         <Plus size={28} color="#ffffff" />
@@ -486,6 +545,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  swipeAction: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.xs,
+  },
+  swipeActionRight: {
+    marginLeft: spacing.sm,
+  },
+  swipeActionLeft: {
+    marginRight: spacing.sm,
+  },
+  swipeActionText: {
+    ...typography.caption,
+    color: '#fff',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,

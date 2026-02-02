@@ -30,11 +30,11 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { FileText, Trash2, X, ZoomIn, Plus } from 'lucide-react-native';
-import { transactionService, storageService } from '../../services/api';
+import { transactionService, storageService, recurringBillService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { ConfirmationModal, useToast } from '../../components';
+import { ConfirmationModal, EmptyState, useToast } from '../../components';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -51,20 +51,65 @@ export default function ReceiptsScreen() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch receipts (transactions with attachments)
+  // Fetch receipts: transaction receipts + recurring bill attachments (same as web)
   const { data, refetch } = useQuery({
     queryKey: ['receipts'],
-    queryFn: () => transactionService.getReceipts(),
+    queryFn: async () => {
+      const [transactions, recurringBills] = await Promise.all([
+        transactionService.getReceipts({ category: null, search: '' }),
+        recurringBillService.getAll(),
+      ]);
+      const txReceipts = (Array.isArray(transactions) ? transactions : []).map((t) => ({
+        ...t,
+        type: 'transaction',
+        uniqueId: `tx-${t.id}`,
+      }));
+      let billAttachments = [];
+      if (recurringBills && Array.isArray(recurringBills)) {
+        recurringBills.forEach((bill) => {
+          if (bill.attachments && bill.attachments.length > 0) {
+            bill.attachments.forEach((att) => {
+              billAttachments.push({
+                id: att.id,
+                type: 'recurring',
+                billId: bill.id,
+                uniqueId: `rec-${att.id}`,
+                attachmentUrl: att.fileUrl,
+                amount: bill.amount,
+                category: bill.category,
+                description: `${bill.name || ''} - ${att.fileName || ''}`.trim(),
+                date: att.uploadedAt || bill.createdAt,
+                user_profiles: bill.user_profiles,
+                notes: bill.notes,
+                name: bill.name,
+                type: 'expense', // for amount display
+              });
+            });
+          }
+        });
+      }
+      const merged = [...txReceipts, ...billAttachments].sort(
+        (a, b) => new Date(b.date) - new Date(a.date)
+      );
+      return merged;
+    },
   });
 
-  // Delete receipt mutation
+  // Delete receipt mutation (transaction or recurring attachment)
   const deleteMutation = useMutation({
-    mutationFn: (transactionId) => transactionService.deleteReceipt(transactionId),
+    mutationFn: async (target) => {
+      if (target.type === 'recurring') {
+        await recurringBillService.deleteAttachment(target.billId, target.id);
+      } else {
+        await transactionService.deleteReceipt(target.id);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receipts'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['income'] });
+      queryClient.invalidateQueries({ queryKey: ['recurringbills'] });
       showToast(t('receipts.deleteSuccess', 'Receipt deleted successfully'), 'success');
       setDeleteTarget(null);
     },
@@ -141,10 +186,10 @@ export default function ReceiptsScreen() {
 
   const items = Array.isArray(data) ? data : [];
 
-  // Handle delete confirmation
+  // Handle delete confirmation (transaction or recurring attachment)
   const handleDeleteConfirm = async () => {
     if (deleteTarget) {
-      await deleteMutation.mutateAsync(deleteTarget.id);
+      await deleteMutation.mutateAsync(deleteTarget);
     }
   };
 
@@ -252,7 +297,7 @@ export default function ReceiptsScreen() {
 
       <FlatList
         data={items}
-        keyExtractor={(i) => String(i.id)}
+        keyExtractor={(i) => i.uniqueId || String(i.id)}
         renderItem={renderItem}
         refreshControl={
           <RefreshControl
@@ -263,12 +308,13 @@ export default function ReceiptsScreen() {
         }
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <FileText size={48} color={theme.colors.textLight} />
-            <Text style={[styles.empty, { color: theme.colors.textLight }]}>
-              {t('receipts.empty', 'No receipts yet. Add receipts to your transactions!')}
-            </Text>
-          </View>
+          <EmptyState
+            icon={FileText}
+            title={t('receipts.emptyTitle', 'No receipts yet')}
+            description={t('receipts.emptyDescription', 'Snap a photo of your receipts to keep a digital record.')}
+            ctaLabel={t('receipts.addFirst', 'Add Receipt')}
+            onPress={showAddReceiptOptions}
+          />
         }
       />
 

@@ -262,7 +262,7 @@ export default function TripPackingScreen() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         title={t('travel.packing.deleteItem', 'Remove item?')}
-        message={t('common.delete')}
+        message={t('travel.packing.deleteMessage', 'Are you sure you want to remove this item?')}
         variant="danger"
         loading={deleteMutation.isPending}
       />

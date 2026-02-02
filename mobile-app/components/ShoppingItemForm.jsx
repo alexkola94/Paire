@@ -33,15 +33,15 @@ const ITEM_CATEGORIES = [
   'groceries', 'household', 'personal', 'electronics', 'clothing', 'other'
 ];
 
-// Unit options
+// Unit options (labels translated via shoppingLists.units.*)
 const UNIT_OPTIONS = [
-  { value: 'pcs', label: 'pcs' },
-  { value: 'kg', label: 'kg' },
-  { value: 'g', label: 'g' },
-  { value: 'L', label: 'L' },
-  { value: 'mL', label: 'mL' },
-  { value: 'pack', label: 'pack' },
-  { value: 'box', label: 'box' },
+  { value: 'pcs', labelKey: 'shoppingLists.units.pcs' },
+  { value: 'kg', labelKey: 'shoppingLists.units.kg' },
+  { value: 'g', labelKey: 'shoppingLists.units.g' },
+  { value: 'L', labelKey: 'shoppingLists.units.L' },
+  { value: 'mL', labelKey: 'shoppingLists.units.mL' },
+  { value: 'pack', labelKey: 'shoppingLists.units.pack' },
+  { value: 'box', labelKey: 'shoppingLists.units.box' },
 ];
 
 export default function ShoppingItemForm({
@@ -190,8 +190,8 @@ export default function ShoppingItemForm({
           <Dropdown
             value={formData.unit}
             onChange={(value) => handleChange('unit', value)}
-            options={UNIT_OPTIONS}
-            placeholder="pcs"
+            options={UNIT_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }))}
+            placeholder={t('shoppingLists.units.pcs', 'pcs')}
             disabled={loading}
           />
         </View>
@@ -202,7 +202,6 @@ export default function ShoppingItemForm({
         value={formData.estimatedPrice}
         onChange={(value) => handleChange('estimatedPrice', value)}
         label={t('shoppingLists.estimatedPrice', 'Estimated Price')}
-        placeholder="0.00"
         disabled={loading}
         quickAmounts={[1, 5, 10, 20]}
       />

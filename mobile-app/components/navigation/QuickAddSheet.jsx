@@ -6,7 +6,7 @@
  * Features animated entrance and glassmorphism styling.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useOverlay } from '../../context/OverlayContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { QUICK_ADD_ACTIONS } from './NavigationCategories';
 import BottomSheetMenu from './BottomSheetMenu';
@@ -132,6 +133,13 @@ export default function QuickAddSheet({ isOpen, onClose }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  const { openOverlay, closeOverlay } = useOverlay();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    openOverlay();
+    return () => closeOverlay();
+  }, [isOpen, openOverlay, closeOverlay]);
 
   // Handle action press
   const handleActionPress = useCallback(

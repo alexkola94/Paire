@@ -32,7 +32,7 @@ import {
 import { achievementService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { Dropdown } from '../../components';
+import { Dropdown, EmptyState } from '../../components';
 
 // Map backend icon names to Lucide components
 const iconMap = {
@@ -223,10 +223,11 @@ export default function AchievementsScreen() {
         </View>
 
         {filteredAchievements.length === 0 ? (
-          <View style={styles.empty}>
-            <Award size={48} color={theme.colors.textLight} />
-            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>{t('achievements.noAchievements')}</Text>
-          </View>
+          <EmptyState
+            icon={Award}
+            title={t('achievements.emptyTitle', 'No achievements yet')}
+            description={t('achievements.emptyDescription', 'Keep using the app to unlock achievements and earn points!')}
+          />
         ) : (
           <FlatList
             data={filteredAchievements}

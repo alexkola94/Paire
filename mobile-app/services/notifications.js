@@ -1,8 +1,9 @@
 /**
  * Push Notifications Service
- * 
+ *
  * Handles push notification setup, permissions, and registration.
  * Uses Expo Notifications for cross-platform push notification support.
+ * Channel names and notification content use i18n (no React hooks).
  */
 
 import * as Notifications from 'expo-notifications';
@@ -10,6 +11,7 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from '../i18n/config';
 
 // Storage keys
 const PUSH_TOKEN_KEY = 'paire_push_token';
@@ -214,8 +216,12 @@ export async function scheduleBillReminder(bill, daysBefore = 3) {
   }
 
   return await scheduleLocalNotification({
-    title: 'Bill Due Soon',
-    body: `${bill.name} (€${bill.amount}) is due in ${daysBefore} days`,
+    title: i18n.t('notifications.billDueSoon'),
+    body: i18n.t('notifications.billDueBody', {
+      name: bill.name,
+      amount: bill.amount,
+      days: daysBefore,
+    }),
     data: { type: 'bill_reminder', billId: bill.id },
     trigger: { date: reminderDate },
     channelId: 'bills',
@@ -243,8 +249,11 @@ export async function sendBudgetAlert(budget, percentage) {
  */
 export async function sendSavingsMilestone(goal, percentage) {
   return await scheduleLocalNotification({
-    title: 'Savings Milestone!',
-    body: `You've reached ${percentage.toFixed(0)}% of your "${goal.name}" goal!`,
+    title: i18n.t('notifications.savingsMilestone'),
+    body: i18n.t('notifications.savingsMilestoneBody', {
+      percentage: percentage.toFixed(0),
+      name: goal.name,
+    }),
     data: { type: 'savings_milestone', goalId: goal.id },
     channelId: 'savings',
   });

@@ -16,6 +16,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Modal,
+  Pressable,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Calendar, ChevronDown } from 'lucide-react-native';
@@ -53,6 +55,31 @@ const isThisWeek = (date) => {
   return date >= startOfWeek && date <= endOfWeek;
 };
 
+/**
+ * Get start of current week (Monday) as YYYY-MM-DD
+ */
+const getStartOfWeek = () => {
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  startOfWeek.setDate(now.getDate() + diff);
+  return startOfWeek.toISOString().split('T')[0];
+};
+
+/**
+ * Normalize min/max date prop to Date or undefined
+ */
+const toDateOrUndefined = (val) => {
+  if (val == null) return undefined;
+  if (val instanceof Date) return val;
+  if (typeof val === 'string') {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+  return undefined;
+};
+
 export default function DateInput({
   value = '',
   onChange,
@@ -62,10 +89,21 @@ export default function DateInput({
   disabled = false,
   showQuickButtons = true,
   placeholder,
+  minimumDate,
+  maximumDate,
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const [showPicker, setShowPicker] = useState(false);
+
+  // Resolve min/max: default maximumDate to today when both unspecified (e.g. transaction date)
+  const resolvedMinDate = useMemo(() => toDateOrUndefined(minimumDate), [minimumDate]);
+  const resolvedMaxDate = useMemo(() => {
+    const max = toDateOrUndefined(maximumDate);
+    if (max != null) return max;
+    if (resolvedMinDate == null) return new Date(); // backward compat: past/today only
+    return undefined;
+  }, [maximumDate, resolvedMinDate]);
 
   // Parse the value string to Date object
   const dateValue = useMemo(() => {
@@ -168,7 +206,7 @@ export default function DateInput({
    */
   const isThisWeekValue = value && isThisWeek(new Date(value));
 
-  // Dynamic styles based on theme
+  // Dynamic styles based on theme (light/dark)
   const dynamicStyles = {
     inputContainer: {
       backgroundColor: theme.colors.surfaceSecondary,
@@ -192,6 +230,32 @@ export default function DateInput({
       color: theme.colors.textSecondary,
     },
     quickBtnTextActive: {
+      color: '#ffffff',
+    },
+    // iOS date picker modal: theme-aware overlay and sheet
+    iosPickerOverlay: {
+      backgroundColor: theme.colors.overlay,
+    },
+    iosPickerContainer: {
+      backgroundColor: theme.colors.surface,
+      borderTopWidth: 1,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderColor: theme.colors.glassBorder,
+      ...(theme.dark
+        ? {}
+        : {
+            shadowColor: '#1e293b',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            elevation: 8,
+          }),
+    },
+    iosDoneBtn: {
+      backgroundColor: theme.colors.primary,
+    },
+    iosDoneBtnText: {
       color: '#ffffff',
     },
   };
@@ -271,7 +335,7 @@ export default function DateInput({
               dynamicStyles.quickBtn,
               isThisWeekValue && !isToday && !isYesterday() && dynamicStyles.quickBtnActive,
             ]}
-            onPress={() => setShowPicker(true)}
+            onPress={() => handleQuickDate(getStartOfWeek())}
             activeOpacity={0.7}
           >
             <Text
@@ -287,36 +351,42 @@ export default function DateInput({
         </View>
       )}
 
-      {/* Date Picker Modal */}
-      {showPicker && (
+      {/* Android: single native date picker dialog */}
+      {showPicker && Platform.OS === 'android' && (
         <DateTimePicker
           value={dateValue}
           mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display="default"
           onChange={handleDateChange}
-          maximumDate={new Date()} // Don't allow future dates by default
+          minimumDate={resolvedMinDate}
+          maximumDate={resolvedMaxDate}
         />
       )}
 
-      {/* iOS: Add Done button to dismiss picker */}
+      {/* iOS: modal with spinner + Done; tap backdrop to dismiss */}
       {showPicker && Platform.OS === 'ios' && (
-        <View style={styles.iosPickerOverlay}>
-          <View style={[styles.iosPickerContainer, { backgroundColor: theme.colors.surface }]}>
-            <DateTimePicker
-              value={dateValue}
-              mode="date"
-              display="spinner"
-              onChange={handleDateChange}
-              style={styles.iosPicker}
-            />
-            <TouchableOpacity
-              style={[styles.iosDoneBtn, { backgroundColor: theme.colors.primary }]}
-              onPress={() => setShowPicker(false)}
-            >
-              <Text style={styles.iosDoneBtnText}>{t('common.done', 'Done')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <Modal visible transparent animationType="slide" statusBarTranslucent>
+          <Pressable style={[styles.iosPickerOverlay, dynamicStyles.iosPickerOverlay]} onPress={() => setShowPicker(false)}>
+            <Pressable style={[styles.iosPickerContainer, dynamicStyles.iosPickerContainer]} onPress={() => {}}>
+              <DateTimePicker
+                value={dateValue}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                style={styles.iosPicker}
+                minimumDate={resolvedMinDate}
+                maximumDate={resolvedMaxDate}
+                themeVariant={theme.dark ? 'light' : undefined}
+              />
+              <TouchableOpacity
+                style={[styles.iosDoneBtn, dynamicStyles.iosDoneBtn]}
+                onPress={() => setShowPicker(false)}
+              >
+                <Text style={[styles.iosDoneBtnText, dynamicStyles.iosDoneBtnText]}>{t('common.done', 'Done')}</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </Modal>
       )}
     </View>
   );
@@ -364,14 +434,13 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontWeight: '500',
   },
-  // iOS Picker Modal styles
+  // iOS Picker Modal layout (colors come from dynamicStyles for theme)
   iosPickerOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
     zIndex: 1000,
   },

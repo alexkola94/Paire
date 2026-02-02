@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../constants/theme';
 
@@ -31,11 +32,14 @@ export default function CurrencyInput({
   value = '',
   onChange,
   label,
-  placeholder = '0.00',
+  placeholder: placeholderProp,
   disabled = false,
   quickAmounts = [10, 50, 100, 500],
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
+  // Use translated default when no placeholder is passed
+  const placeholder = placeholderProp ?? t('common.amountPlaceholder', '0.00');
   const [displayValue, setDisplayValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 

@@ -61,7 +61,7 @@ export default function Setup2FAScreen() {
           )}
           <TextInput
             style={styles.codeInput}
-            placeholder="000000"
+            placeholder={t('auth.twoFactorCodePlaceholder')}
             placeholderTextColor={colors.textLight}
             value={code}
             onChangeText={setCode}

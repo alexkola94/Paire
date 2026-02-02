@@ -29,13 +29,42 @@
     "permissionRequired": "Permission Required",
     "previous": "Previous",
     "next": "Next",
-    "pageOf": "Page {{page}} of {{total}}"
+    "pageOf": "Page {{page}} of {{total}}",
+    "back": "Back",
+    "copied": "Copied to clipboard",
+    "more": "more",
+    "selectPlaceholder": "Select...",
+    "amountPlaceholder": "0.00",
+    "fabLabel": "Add new transaction",
+    "fabHint": "Opens quick add menu"
   },
   "validation": {
     "required": "{{field}} is required",
     "minLength": "{{field}} must be at least {{min}} characters",
     "maxLength": "{{field}} must be no more than {{max}} characters",
+    "email": "Please enter a valid email",
     "words": "words"
+  },
+  "notifications": {
+    "channels": {
+      "default": "Default",
+      "bills": "Bill Reminders",
+      "billsDescription": "Reminders for upcoming bill payments",
+      "budgets": "Budget Alerts",
+      "budgetsDescription": "Alerts when approaching budget limits",
+      "savings": "Savings Goals",
+      "savingsDescription": "Notifications for savings milestones",
+      "partnership": "Partner Activity",
+      "partnershipDescription": "Updates on shared financial activity",
+      "security": "Security Alerts",
+      "securityDescription": "Important security notifications"
+    },
+    "billDueSoon": "Bill Due Soon",
+    "billDueBody": "{{name}} (€{{amount}}) is due in {{days}} days",
+    "budgetAlert": "Budget Alert",
+    "budgetAlertBody": "You've used {{percentage}}% of your {{category}} budget",
+    "savingsMilestone": "Savings Milestone!",
+    "savingsMilestoneBody": "You've reached {{percentage}}% of your \"{{name}}\" goal!"
   },
   "receipts": {
     "title": "Receipts",
@@ -74,6 +103,8 @@
     "welcomeBack": "Welcome Back!",
     "createAccount": "Create Your Account",
     "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••",
+    "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 6 characters",
     "accountCreated": "Account created successfully! Please check your email to verify.",
@@ -132,6 +163,24 @@
       "lifestyle": "Lifestyle",
       "account": "Account",
       "explore": "Explore"
+    },
+    "descriptions": {
+      "trackSpending": "Track your spending",
+      "manageIncome": "Manage your income",
+      "setSpendingLimits": "Set spending limits",
+      "trackSavingsProgress": "Track savings progress",
+      "manageLoansDebts": "Manage loans & debts",
+      "financialInsights": "Financial insights",
+      "convertCurrencies": "Convert currencies",
+      "storeReceipts": "Store receipts",
+      "trackRecurringBills": "Track recurring bills",
+      "planTripsBudgets": "Plan trips & budgets",
+      "shoppingLists": "Shopping lists",
+      "paymentReminders": "Payment reminders",
+      "marketNews": "Market news",
+      "shareWithPartner": "Share with partner",
+      "bankConnections": "Bank connections",
+      "yourMilestones": "Your milestones"
     }
   },
   "quickAdd": {
@@ -302,7 +351,12 @@
     "paymentAdded": "Payment added",
     "paymentDeleted": "Payment deleted",
     "paymentError": "Something went wrong with this payment",
-    "selectStatus": "Select status"
+    "selectStatus": "Select status",
+    "status": {
+      "active": "Active",
+      "paid": "Paid",
+      "overdue": "Overdue"
+    }
   },
   "transaction": {
     "amount": "Amount",
@@ -678,6 +732,14 @@
     "networkError": "Check your connection and try again."
   },
   "chatbot": {
+    "suggestions": {
+      "suggestion1": "What did I spend most on this month?",
+      "suggestion2": "Show my income vs expenses",
+      "suggestion3": "How is my budget doing?",
+      "suggestion4": "Summarize my recent transactions",
+      "suggestion5": "Give me savings tips",
+      "suggestion6": "Analyze my spending patterns"
+    },
     "title": "Financial Assistant",
     "online": "Online",
     "open": "Open chat",
@@ -950,6 +1012,7 @@
     "quantityRequired": "Please enter a valid quantity",
     "quantity": "Qty",
     "unit": "Unit",
+    "unitPcs": "pcs",
     "selectUnit": "Select unit",
     "estimatedPrice": "Estimated Price",
     "priceHint": "Price per unit (optional)",
@@ -982,7 +1045,11 @@
       "other": "Other"
     },
     "units": {
-      "pieces": "pcs",
+      "pcs": "pcs",
+      "kg": "kg",
+      "g": "g",
+      "L": "L",
+      "mL": "mL",
       "pack": "pack",
       "box": "box"
     },
@@ -1605,6 +1672,11 @@
         "statusSummary": "Status Details"
       }
     },
+    "status": {
+      "upcoming": "Upcoming",
+      "inProgress": "In progress",
+      "past": "Past"
+    },
     "common": {
       "enterTravelMode": "Travel Mode",
       "exitTravelMode": "Exit",
@@ -1699,6 +1771,7 @@
       "itemAdded": "Item added",
       "itemDeleted": "Item removed",
       "deleteItem": "Remove item?",
+      "deleteMessage": "Are you sure you want to remove this item?",
       "categories": {
         "clothing": "Clothing",
         "toiletries": "Toiletries",
@@ -1717,7 +1790,8 @@
       "url": "URL (optional)",
       "docAdded": "Document added",
       "docDeleted": "Document removed",
-      "deleteDoc": "Delete document?"
+      "deleteDoc": "Delete document?",
+      "deleteMessage": "Are you sure you want to delete this document?"
     },
     "chatbot": {
       "title": "Travel Guide",
@@ -1753,6 +1827,10 @@
     "notifications": {
       "title": "Notification Settings",
       "subtitle": "Configure how you receive travel alerts and reminders",
+      "saved": "Preferences saved",
+      "info": "Configure which notifications you receive for your trips.",
+      "preferences": "Notification Preferences",
+      "footerInfo": "Notifications help you stay on track during your trips. You can always change these settings later.",
       "settingsSaved": "Settings saved successfully",
       "errorSaving": "Failed to save settings",
       "noTripSelected": "No trip selected",
@@ -1810,11 +1888,16 @@
       "completed": "Completed",
       "daysUntil": "{{days}}d",
       "daysLeft": "{{days}}d left",
+      "name": "Name",
       "tripName": "Trip Name",
       "destination": "Destination",
+      "destinationPlaceholder": "e.g. Paris",
       "searchDestination": "Search destination...",
       "startDate": "Start Date",
       "endDate": "End Date",
+      "startDatePlaceholder": "Start YYYY-MM-DD",
+      "endDatePlaceholder": "End YYYY-MM-DD",
+      "budgetPlaceholder": "0",
       "budget": "Budget",
       "budgetCurrency": "Currency",
       "coverImage": "Cover Image",
@@ -1907,6 +1990,7 @@
       "routeLabel": "Route"
     },
     "advisory": {
+      "countryPlaceholder": "e.g. US, GR, FRA",
       "riskLevel": {
         "low": "Low risk",
         "medium": "Medium risk",
@@ -2125,6 +2209,7 @@
     },
     "explore": {
       "title": "Explore",
+      "subtitle": "Map and nearby places",
       "essentials": "Travel Essentials",
       "noTrip": "No Trip Selected",
       "createTripFirst": "Create a trip to explore your destination",
@@ -2143,6 +2228,15 @@
       "noPois": "No places found nearby",
       "tryAnother": "Try another category",
       "selectCategory": "Select a category to explore",
+      "categories": {
+        "all": "All",
+        "attractions": "Attractions",
+        "restaurants": "Restaurants",
+        "cafes": "Cafes",
+        "shopping": "Shopping",
+        "nature": "Nature",
+        "hotels": "Hotels"
+      },
       "unnamed": "Unnamed",
       "savedPlacesTitle": "Saved places nearby",
       "savedPlacesCount": "{{count}} pinned",
@@ -2243,6 +2337,9 @@
     },
     "wizard": {
       "title": "Plan Your Trip",
+      "step1Title": "Trip details",
+      "step2Title": "Add cities",
+      "step3Title": "Budget",
       "step": "Step {{current}} of {{total}}",
       "next": "Next",
       "back": "Back",
@@ -2305,7 +2402,12 @@
     "citySelection": {
       "searchPlaceholder": "Search places...",
       "instructions": "Click on the map to add cities to your trip",
-      "legendTitle": "Transport"
+      "legendTitle": "Transport",
+      "addingPlace": "Adding place…",
+      "tapMapToAdd": "Tap map to add cities",
+      "removeCityTitle": "Remove city?",
+      "removeCityMessage": "Remove {{name}} from route?",
+      "editDestination": "Edit destination"
     },
     "setup": {
       "step1": {
@@ -2367,6 +2469,9 @@
         "selectDeparture": "Select departure date"
       },
       "tapMapToAdd": "Tap map to add cities",
+      "gettingThere": "Getting there",
+      "returnHome": "Return home",
+      "home": "Home",
       "errors": {
         "minCities": "Please select at least 2 cities",
         "cityDateRequired": "Please set arrival date for {{city}}",

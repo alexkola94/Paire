@@ -11,13 +11,40 @@
     "delete": "Supprimer",
     "confirm": "Confirmer",
     "loading": "Chargement...",
-    "noData": "Pas encore de données"
+    "noData": "Pas encore de données",
+    "back": "Retour",
+    "copied": "Copié dans le presse-papiers",
+    "more": "plus",
+    "selectPlaceholder": "Sélectionner...",
+    "amountPlaceholder": "0,00"
   },
   "validation": {
     "required": "{{field}} est requis",
     "minLength": "{{field}} doit contenir au moins {{min}} caractères",
     "maxLength": "{{field}} ne doit pas dépasser {{max}} caractères",
+    "email": "Veuillez entrer un email valide",
     "words": "mots"
+  },
+  "notifications": {
+    "channels": {
+      "default": "Par défaut",
+      "bills": "Rappels de factures",
+      "billsDescription": "Rappels pour les prochains paiements",
+      "budgets": "Alertes budget",
+      "budgetsDescription": "Alertes quand vous approchez des limites du budget",
+      "savings": "Objectifs d'épargne",
+      "savingsDescription": "Notifications pour les jalons d'épargne",
+      "partnership": "Activité partenaire",
+      "partnershipDescription": "Mises à jour sur l'activité financière partagée",
+      "security": "Alertes de sécurité",
+      "securityDescription": "Notifications de sécurité importantes"
+    },
+    "billDueSoon": "Facture bientôt",
+    "billDueBody": "{{name}} ({{amount}} €) est dû dans {{days}} jours",
+    "budgetAlert": "Alerte budget",
+    "budgetAlertBody": "Vous avez utilisé {{percentage}}% de votre budget {{category}}",
+    "savingsMilestone": "Jalon d'épargne !",
+    "savingsMilestoneBody": "Vous avez atteint {{percentage}}% de votre objectif « {{name}} » !"
   },
   "auth": {
     "login": "Connexion",
@@ -27,12 +54,15 @@
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
     "forgotPassword": "Mot de passe oublié?",
+    "rememberMe": "Rester connecté",
     "resetPassword": "Réinitialiser le mot de passe",
     "dontHaveAccount": "Vous n'avez pas de compte?",
     "alreadyHaveAccount": "Vous avez déjà un compte?",
     "welcomeBack": "Bon Retour!",
     "createAccount": "Créez votre compte",
     "emailPlaceholder": "vous@exemple.com",
+    "passwordPlaceholder": "••••••••",
+    "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
     "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
     "accountCreated": "Compte créé avec succès! Veuillez vérifier votre email pour confirmer.",
@@ -107,6 +137,24 @@
       "lifestyle": "Mode de Vie",
       "account": "Compte",
       "explore": "Explorer"
+    },
+    "descriptions": {
+      "trackSpending": "Suivez vos dépenses",
+      "manageIncome": "Gérez vos revenus",
+      "setSpendingLimits": "Définir des limites de dépenses",
+      "trackSavingsProgress": "Suivre l'épargne",
+      "manageLoansDebts": "Gérer prêts et dettes",
+      "financialInsights": "Analyses financières",
+      "convertCurrencies": "Convertir les devises",
+      "storeReceipts": "Conserver les reçus",
+      "trackRecurringBills": "Suivre les factures récurrentes",
+      "planTripsBudgets": "Planifier voyages et budgets",
+      "shoppingLists": "Listes de courses",
+      "paymentReminders": "Rappels de paiement",
+      "marketNews": "Actualités du marché",
+      "shareWithPartner": "Partager avec partenaire",
+      "bankConnections": "Connexions bancaires",
+      "yourMilestones": "Vos jalons"
     }
   },
   "quickAdd": {
@@ -184,6 +232,7 @@
     "itemNamePlaceholder": "ex., Lait, Pain, Pommes",
     "quantity": "Quantité",
     "unit": "Unité",
+    "unitPcs": "pcs",
     "selectUnit": "Sélectionner une unité",
     "estimatedPrice": "Prix Estimé",
     "priceHint": "Prix par unité (optionnel)",
@@ -202,7 +251,11 @@
       "other": "Autre"
     },
     "units": {
-      "pieces": "pcs",
+      "pcs": "pcs",
+      "kg": "kg",
+      "g": "g",
+      "L": "L",
+      "mL": "mL",
       "pack": "paquet",
       "box": "boîte"
     }
@@ -332,7 +385,13 @@
     "paymentDeleted": "Paiement supprimé",
     "paymentError": "Un problème est survenu avec ce paiement",
     "noPayments": "Aucun paiement enregistré pour l'instant",
-    "amountRequired": "Veuillez entrer un montant valide"
+    "amountRequired": "Veuillez entrer un montant valide",
+    "selectStatus": "Sélectionner le statut",
+    "status": {
+      "active": "Actif",
+      "paid": "Payé",
+      "overdue": "En retard"
+    }
   },
   "profile": {
     "title": "Profil",
@@ -503,6 +562,14 @@
     "permissionDenied": "L'accès à la caméra ou aux photos est requis."
   },
   "chatbot": {
+    "suggestions": {
+      "suggestion1": "En quoi ai-je le plus dépensé ce mois-ci ?",
+      "suggestion2": "Montrez-moi revenus vs dépenses",
+      "suggestion3": "Comment va mon budget ?",
+      "suggestion4": "Résumez mes transactions récentes",
+      "suggestion5": "Conseils d'épargne",
+      "suggestion6": "Analysez mes habitudes de dépenses"
+    },
     "title": "Assistant Financier",
     "online": "En ligne",
     "open": "Ouvrir le chat",
@@ -573,6 +640,11 @@
       "explore": "Explorer",
       "guide": "Guide"
     },
+    "status": {
+      "upcoming": "À venir",
+      "inProgress": "En cours",
+      "past": "Passé"
+    },
     "common": {
       "enterTravelMode": "Mode Voyage",
       "exitTravelMode": "Quitter",
@@ -597,10 +669,15 @@
       "editTrip": "Modifier le voyage",
       "deleteTrip": "Supprimer le voyage",
       "tripUpdated": "Voyage mis à jour",
+      "name": "Nom",
       "tripName": "Nom du voyage",
       "destination": "Destination",
+      "destinationPlaceholder": "ex. Paris",
       "startDate": "Date de début",
       "endDate": "Date de fin",
+      "startDatePlaceholder": "Début AAAA-MM-JJ",
+      "endDatePlaceholder": "Fin AAAA-MM-JJ",
+      "budgetPlaceholder": "0",
       "budget": "Budget",
       "searchDestination": "Rechercher une destination..."
     },
@@ -695,6 +772,8 @@
       "itemNamePlaceholder": "ex., T-shirt, Brosse à Dents",
       "category": "Catégorie",
       "quantity": "Qté",
+      "deleteItem": "Supprimer l'article ?",
+      "deleteMessage": "Êtes-vous sûr de vouloir supprimer cet article ?",
       "markEssential": "Marquer comme essentiel",
       "rainWarn": "Pluie prévue! ☔",
       "coldWarn": "Il fait froid! ❄️",
@@ -712,6 +791,8 @@
     },
     "documents": {
       "title": "Documents",
+      "deleteDoc": "Supprimer le document ?",
+      "deleteMessage": "Êtes-vous sûr de vouloir supprimer ce document ?",
       "noTrip": "Aucun Voyage Sélectionné",
       "createTripFirst": "Créez un voyage pour stocker vos documents",
       "emptyTitle": "Aucun document pour le moment",
@@ -788,6 +869,7 @@
     },
     "explore": {
       "title": "Explorer",
+      "subtitle": "Carte et lieux à proximité",
       "essentials": "Essentiels de voyage",
       "noTrip": "Aucun Voyage Sélectionné",
       "createTripFirst": "Créez un voyage pour explorer votre destination",
@@ -831,6 +913,16 @@
         "atm": "Distributeur",
         "pharmacy": "Pharmacie"
       }
+    },
+    "citySelection": {
+      "searchPlaceholder": "Rechercher des lieux...",
+      "instructions": "Appuyez sur la carte pour ajouter des villes à votre voyage",
+      "legendTitle": "Transport",
+      "addingPlace": "Ajout du lieu…",
+      "tapMapToAdd": "Appuyez sur la carte pour ajouter des villes",
+      "removeCityTitle": "Retirer la ville ?",
+      "removeCityMessage": "Retirer {{name}} de l'itinéraire ?",
+      "editDestination": "Modifier la destination"
     },
     "wizard": {
       "title": "Planifiez votre Voyage",
@@ -888,9 +980,14 @@
       "step2": {
         "title": "Définir les Dates",
         "description": "Définissez les dates d'arrivée et de départ pour chaque ville",
+        "manageRoute": "Revoir l'itinéraire",
+        "manageDescription": "Organisez vos étapes et choisissez le transport.",
         "arrival": "Arrivée",
         "departure": "Départ"
       },
+      "gettingThere": "Aller sur place",
+      "returnHome": "Retour à la maison",
+      "home": "Maison",
       "errors": {
         "minCities": "Veuillez sélectionner au moins 2 villes",
         "cityDateRequired": "Veuillez définir la date d'arrivée pour {{city}}",

@@ -30,7 +30,7 @@ import QuickAddSheet from './QuickAddSheet';
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 // Tab bar constants - compact design
-const TAB_BAR_HEIGHT = 52;
+const TAB_BAR_HEIGHT = 40;
 const FAB_SIZE = 54;
 const FAB_OFFSET = 26; // How much FAB overlaps above tab bar
 
@@ -113,6 +113,7 @@ function TabButton({ route, label, renderIcon, isFocused, onPress, theme }) {
  * Floating Action Button with rotation animation
  */
 function FABButton({ onPress, isOpen, theme }) {
+  const { t } = useTranslation();
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
 
@@ -149,8 +150,8 @@ function FABButton({ onPress, isOpen, theme }) {
         style={[styles.fabButton, containerAnimatedStyle]}
         activeOpacity={1}
         accessibilityRole="button"
-        accessibilityLabel="Add new transaction"
-        accessibilityHint="Opens quick add menu"
+        accessibilityLabel={t('common.fabLabel', 'Add new transaction')}
+        accessibilityHint={t('common.fabHint', 'Opens quick add menu')}
       >
         {/* Gradient background effect */}
         <View style={styles.fabGradient}>

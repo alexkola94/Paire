@@ -34,6 +34,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AlertTriangle, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { useOverlay } from '../context/OverlayContext';
 import { spacing, borderRadius, typography, shadows } from '../constants/theme';
 
 export default function ConfirmationModal({
@@ -51,6 +52,14 @@ export default function ConfirmationModal({
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
+  const { openOverlay, closeOverlay } = useOverlay();
+
+  // Register with overlay context so calculator FAB is hidden while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    openOverlay();
+    return () => closeOverlay();
+  }, [isOpen, openOverlay, closeOverlay]);
 
   // Animation shared values
   const overlayOpacity = useSharedValue(0);

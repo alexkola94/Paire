@@ -25,13 +25,40 @@
     "permissionRequired": "Απαιτείται Άδεια",
     "previous": "Προηγούμενο",
     "next": "Επόμενο",
-    "pageOf": "Σελίδα {{page}} από {{total}}"
+    "pageOf": "Σελίδα {{page}} από {{total}}",
+    "back": "Πίσω",
+    "copied": "Αντιγράφηκε στο πρόχειρο",
+    "more": "περισσότερα",
+    "selectPlaceholder": "Επιλέξτε...",
+    "amountPlaceholder": "0,00"
   },
   "validation": {
     "required": "Το {{field}} απαιτείται",
     "minLength": "Το {{field}} πρέπει να έχει τουλάχιστον {{min}} χαρακτήρες",
     "maxLength": "Το {{field}} δεν πρέπει να υπερβαίνει τους {{max}} χαρακτήρες",
+    "email": "Παρακαλώ εισάγετε έγκυρη διεύθυνση email",
     "words": "λέξεις"
+  },
+  "notifications": {
+    "channels": {
+      "default": "Προεπιλογή",
+      "bills": "Υπενθυμίσεις Λογαριασμών",
+      "billsDescription": "Υπενθυμίσεις για επερχόμενες πληρωμές",
+      "budgets": "Ειδοποιήσεις Budget",
+      "budgetsDescription": "Ειδοποιήσεις όταν πλησιάζετε τα όρια budget",
+      "savings": "Στόχοι Αποταμίευσης",
+      "savingsDescription": "Ειδοποιήσεις για ορόσημα αποταμίευσης",
+      "partnership": "Δραστηριότητα Συνεργάτη",
+      "partnershipDescription": "Ενημερώσεις για κοινή οικονομική δραστηριότητα",
+      "security": "Ειδοποιήσεις Ασφαλείας",
+      "securityDescription": "Σημαντικές ειδοποιήσεις ασφαλείας"
+    },
+    "billDueSoon": "Λογαριασμός Προσεχώς",
+    "billDueBody": "Ο {{name}} (€{{amount}}) λήγει σε {{days}} ημέρες",
+    "budgetAlert": "Ειδοποίηση Budget",
+    "budgetAlertBody": "Έχετε χρησιμοποιήσει {{percentage}}% του budget {{category}}",
+    "savingsMilestone": "Ορόσημο Αποταμίευσης!",
+    "savingsMilestoneBody": "Έχετε φτάσει {{percentage}}% του στόχου «{{name}}»!"
   },
   "receipts": {
     "title": "Αποδείξεις",
@@ -70,6 +97,8 @@
     "welcomeBack": "Καλώς Ήρθατε Πίσω!",
     "createAccount": "Δημιουργήστε τον Λογαριασμό σας",
     "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••",
+    "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Οι κωδικοί δεν ταιριάζουν",
     "passwordTooShort": "Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες",
     "accountCreated": "Ο λογαριασμός δημιουργήθηκε επιτυχώς! Παρακαλώ ελέγξτε το email σας για επαλήθευση.",
@@ -129,6 +158,24 @@
       "lifestyle": "Τρόπος Ζωής",
       "account": "Λογαριασμός",
       "explore": "Εξερεύνηση"
+    },
+    "descriptions": {
+      "trackSpending": "Παρακολουθήστε τις δαπάνες σας",
+      "manageIncome": "Διαχειριστείτε τα έσοδά σας",
+      "setSpendingLimits": "Ορίστε όρια δαπανών",
+      "trackSavingsProgress": "Παρακολουθήστε την εξέλιξη αποταμίευσης",
+      "manageLoansDebts": "Διαχείριση δανείων και χρεών",
+      "financialInsights": "Οικονομικά στοιχεία",
+      "convertCurrencies": "Μετατροπή νομισμάτων",
+      "storeReceipts": "Αποθήκευση αποδείξεων",
+      "trackRecurringBills": "Παρακολούθηση recurring λογαριασμών",
+      "planTripsBudgets": "Σχεδιάστε ταξίδια και προϋπολογισμούς",
+      "shoppingLists": "Λίστες αγορών",
+      "paymentReminders": "Υπενθυμίσεις πληρωμών",
+      "marketNews": "Νέα αγοράς",
+      "shareWithPartner": "Κοινή χρήση με συνεργάτη",
+      "bankConnections": "Συνδέσεις τραπεζών",
+      "yourMilestones": "Τα ορόσημά σας"
     }
   },
   "quickAdd": {
@@ -300,7 +347,12 @@
     "paymentAdded": "Η πληρωμή προστέθηκε",
     "paymentDeleted": "Η πληρωμή διαγράφηκε",
     "paymentError": "Κάτι πήγε στραβά με αυτήν την πληρωμή",
-    "selectStatus": "Επιλέξτε κατάσταση"
+    "selectStatus": "Επιλέξτε κατάσταση",
+    "status": {
+      "active": "Ενεργό",
+      "paid": "Πληρωμένο",
+      "overdue": "Εκπρόθεσμο"
+    }
   },
   "transaction": {
     "amount": "Ποσό",
@@ -764,6 +816,14 @@
     "networkError": "Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά."
   },
   "chatbot": {
+    "suggestions": {
+      "suggestion1": "Σε τι ξόδεψα περισσότερο αυτόν τον μήνα;",
+      "suggestion2": "Δείξε μου έσοδα vs έξοδα",
+      "suggestion3": "Πώς πάει ο προϋπολογισμός μου;",
+      "suggestion4": "Σύνοψη των πρόσφατων συναλλαγών μου",
+      "suggestion5": "Δώσε μου συμβουλές αποταμίευσης",
+      "suggestion6": "Ανάλυσε τα μοτίβα δαπανών μου"
+    },
     "title": "Οικονομικός Βοηθός",
     "online": "Συνδεδεμένος",
     "open": "Άνοιγμα συνομιλίας",
@@ -1034,6 +1094,7 @@
     "quantityRequired": "Παρακαλώ εισάγετε μια έγκυρη ποσότητα",
     "quantity": "Ποσ",
     "unit": "Μονάδα",
+    "unitPcs": "τεμ",
     "selectUnit": "Επιλογή μονάδας",
     "estimatedPrice": "Εκτιμώμενη Τιμή",
     "priceHint": "Τιμή ανά μονάδα (προαιρετικό)",
@@ -1066,7 +1127,11 @@
       "other": "Άλλα"
     },
     "units": {
-      "pieces": "τεμ",
+      "pcs": "τεμ",
+      "kg": "kg",
+      "g": "g",
+      "L": "L",
+      "mL": "mL",
       "pack": "πακέτο",
       "box": "κουτί"
     },
@@ -1584,6 +1649,11 @@
         "statusSummary": "Λεπτομέρειες Κατάστασης"
       }
     },
+    "status": {
+      "upcoming": "Επερχόμενο",
+      "inProgress": "Σε εξέλιξη",
+      "past": "Περασμένο"
+    },
     "common": {
       "enterTravelMode": "Λειτουργία Ταξιδιού",
       "exitTravelMode": "Έξοδος",
@@ -1790,6 +1860,7 @@
       "itemAdded": "Το αντικείμενο προστέθηκε",
       "itemDeleted": "Το αντικείμενο αφαιρέθηκε",
       "deleteItem": "Αφαίρεση αντικειμένου;",
+      "deleteMessage": "Είστε σίγουροι ότι θέλετε να αφαιρέσετε αυτό το αντικείμενο;",
       "categories": {
         "clothing": "Ρούχα",
         "toiletries": "Αντισηπτικά",
@@ -1808,7 +1879,8 @@
       "url": "URL (προαιρετικό)",
       "docAdded": "Το έγγραφο προστέθηκε",
       "docDeleted": "Το έγγραφο αφαιρέθηκε",
-      "deleteDoc": "Διαγραφή εγγράφου;"
+      "deleteDoc": "Διαγραφή εγγράφου;",
+      "deleteMessage": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το έγγραφο;"
     },
     "trip": {
       "createTrip": "Δημιουργία Ταξιδιού",
@@ -1820,11 +1892,16 @@
       "completed": "Ολοκληρωμένο",
       "daysUntil": "{{days}}μ",
       "daysLeft": "{{days}}μ ακόμα",
+      "name": "Όνομα",
       "tripName": "Όνομα Ταξιδιού",
       "destination": "Προορισμός",
+      "destinationPlaceholder": "π.χ. Παρίσι",
       "searchDestination": "Αναζήτηση προορισμού...",
       "startDate": "Ημερομηνία Αναχώρησης",
       "endDate": "Ημερομηνία Επιστροφής",
+      "startDatePlaceholder": "Έναρξη YYYY-MM-DD",
+      "endDatePlaceholder": "Λήξη YYYY-MM-DD",
+      "budgetPlaceholder": "0",
       "budget": "Προϋπολογισμός",
       "budgetCurrency": "Νόμισμα",
       "coverImage": "Εικόνα Εξωφύλλου",
@@ -2108,6 +2185,7 @@
     },
     "explore": {
       "title": "Εξερεύνηση",
+      "subtitle": "Χάρτης και κοντινά μέρη",
       "essentials": "Απαραίτητα Ταξιδιού",
       "noTrip": "Δεν Επιλέχθηκε Ταξίδι",
       "createTripFirst": "Δημιουργήστε ταξίδι για να εξερευνήσετε τον προορισμό σας",
@@ -2282,6 +2360,7 @@
       }
     },
     "advisory": {
+      "countryPlaceholder": "π.χ. US, GR, FRA",
       "riskLevel": {
         "low": "Χαμηλός κίνδυνος",
         "medium": "Μεσαίος κίνδυνος",
@@ -2309,7 +2388,12 @@
     "citySelection": {
       "searchPlaceholder": "Αναζήτηση μερών...",
       "instructions": "Κάντε κλικ στον χάρτη για να προσθέσετε πόλεις στο ταξίδι σας",
-      "legendTitle": "Μεταφορικά"
+      "legendTitle": "Μεταφορικά",
+      "addingPlace": "Προσθήκη τόπου…",
+      "tapMapToAdd": "Αγγίξτε τον χάρτη για να προσθέσετε πόλεις",
+      "removeCityTitle": "Αφαίρεση πόλης;",
+      "removeCityMessage": "Αφαίρεση {{name}} από τη διαδρομή;",
+      "editDestination": "Επεξεργασία προορισμού"
     },
     "wizard": {
       "title": "Σχεδιάστε το ταξίδι σας",
@@ -2389,6 +2473,9 @@
         "selectDeparture": "Επιλογή ημερομηνίας αναχώρησης"
       },
       "tapMapToAdd": "Πατήστε στον χάρτη για προσθήκη πόλεων",
+      "gettingThere": "Μετάβαση εκεί",
+      "returnHome": "Επιστροφή σπίτι",
+      "home": "Σπίτι",
       "errors": {
         "minCities": "Παρακαλώ επιλέξτε τουλάχιστον 2 πόλεις",
         "cityDateRequired": "Παρακαλώ ορίστε ημερομηνία άφιξης για {{city}}",

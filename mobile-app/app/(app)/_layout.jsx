@@ -15,6 +15,7 @@ import { Home, Wallet, Wrench, User } from 'lucide-react-native';
 import { authService } from '../../services/auth';
 import { useTheme } from '../../context/ThemeContext';
 import { CalculatorProvider } from '../../context/CalculatorContext';
+import { OverlayProvider } from '../../context/OverlayContext';
 import { TabBarWithFAB, FinanceHubSheet, ToolsHubSheet, GlobalCalculator } from '../../components';
 
 export default function AppLayout() {
@@ -46,6 +47,7 @@ export default function AppLayout() {
 
   return (
     <CalculatorProvider>
+      <OverlayProvider>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -124,6 +126,7 @@ export default function AppLayout() {
 
       {/* Global Calculator FAB - only visible in authenticated app screens */}
       <GlobalCalculator />
+      </OverlayProvider>
     </CalculatorProvider>
   );
 }

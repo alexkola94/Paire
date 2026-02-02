@@ -27,7 +27,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { useOverlay } from '../context/OverlayContext';
 import { spacing, borderRadius, typography, shadows } from '../constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -40,10 +42,19 @@ export default function Modal({
   showCloseButton = true,
   maxHeight = 0.85, // Maximum height as percentage of screen (default 85%)
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
-  
+  const { openOverlay, closeOverlay } = useOverlay();
+
+  // Register with overlay context so calculator FAB is hidden while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    openOverlay();
+    return () => closeOverlay();
+  }, [isOpen, openOverlay, closeOverlay]);
+
   // Animation shared values
   const overlayOpacity = useSharedValue(0);
   const contentTranslateY = useSharedValue(SCREEN_HEIGHT);
@@ -156,7 +167,7 @@ export default function Modal({
                       <TouchableOpacity
                         style={[styles.closeBtn, dynamicStyles.closeBtn]}
                         onPress={handleClose}
-                        accessibilityLabel="Close"
+                        accessibilityLabel={t('common.close')}
                         activeOpacity={0.7}
                       >
                         <X size={20} color={dynamicStyles.closeIcon} />

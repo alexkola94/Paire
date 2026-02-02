@@ -61,12 +61,17 @@ export const updateStoredUser = async (updates) => {
 };
 
 /**
- * Store authentication data
+ * Store authentication data.
+ * When persist is false, only keeps data in memory (session-only); user is logged out when app is killed.
  */
-const storeAuthData = async (token, refreshToken, user) => {
+const storeAuthData = async (token, refreshToken, user, persist = true) => {
   cachedToken = token;
   cachedRefreshToken = refreshToken;
   cachedUser = user;
+
+  if (!persist) {
+    return;
+  }
 
   await Promise.all([
     SecureStore.setItemAsync(KEYS.TOKEN, token),
@@ -189,7 +194,7 @@ export const authService = {
         return { ...data, rememberMe };
       }
 
-      await storeAuthData(data.token, data.refreshToken, data.user);
+      await storeAuthData(data.token, data.refreshToken, data.user, rememberMe);
       return data;
     } catch (error) {
       console.error('Sign in error:', error);

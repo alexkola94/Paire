@@ -6,7 +6,7 @@
  * Features staggered animations and glassmorphism styling.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useOverlay } from '../../context/OverlayContext';
 import { spacing, borderRadius, typography } from '../../constants/theme';
 import BottomSheetMenu from './BottomSheetMenu';
 import {
@@ -91,7 +92,7 @@ function FeatureItem({ feature, onPress, index, theme }) {
           <IconComponent size={22} color={theme.colors.primary} strokeWidth={2} />
         </View>
 
-        {/* Text content */}
+        {/* Text content (label and description use translation keys) */}
         <View style={styles.featureText}>
           <Text style={[styles.featureLabel, { color: theme.colors.text }]}>
             {t(feature.labelKey, feature.id)}
@@ -100,7 +101,7 @@ function FeatureItem({ feature, onPress, index, theme }) {
             style={[styles.featureDescription, { color: theme.colors.textLight }]}
             numberOfLines={1}
           >
-            {feature.description}
+            {feature.descriptionKey ? t(feature.descriptionKey) : (feature.description || '')}
           </Text>
         </View>
 
@@ -146,6 +147,13 @@ export function FinanceHubSheet({ isOpen, onClose }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  const { openOverlay, closeOverlay } = useOverlay();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    openOverlay();
+    return () => closeOverlay();
+  }, [isOpen, openOverlay, closeOverlay]);
 
   const handleItemPress = useCallback(
     (route) => {
@@ -183,6 +191,13 @@ export function ToolsHubSheet({ isOpen, onClose }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  const { openOverlay, closeOverlay } = useOverlay();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    openOverlay();
+    return () => closeOverlay();
+  }, [isOpen, openOverlay, closeOverlay]);
 
   const handleItemPress = useCallback(
     (route) => {

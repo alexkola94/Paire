@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Switch,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, Link, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { authService } from '../../services/auth';
 import { colors, spacing, borderRadius, typography } from '../../constants/theme';
+
+const KEEP_LOGGED_IN_KEY = 'auth_keep_logged_in';
 
 function humanizeLoginError(err, isSignUp, t) {
   const msg = (err?.message || '').toLowerCase();
@@ -32,17 +35,29 @@ export default function LoginScreen() {
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
 
   // Sync sign-up mode when navigating with ?mode=signup (e.g. from Landing)
   useEffect(() => {
     if (mode === 'signup') setIsSignUp(true);
   }, [mode]);
 
+  // Restore "Keep me logged in" preference from last visit
+  useEffect(() => {
+    AsyncStorage.getItem(KEEP_LOGGED_IN_KEY).then((stored) => {
+      if (stored !== null) setKeepLoggedIn(stored === 'true');
+    });
+  }, []);
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
   });
+
+  // Use functional updates for setFormData so that when iOS Password AutoFill fills both
+  // email and password, the password handler doesn't overwrite state with stale formData
+  // (which would have email: '') and erase the autofilled email.
 
   const handleSubmit = async () => {
     if (!formData.email || !formData.password) {
@@ -68,7 +83,7 @@ export default function LoginScreen() {
         setSuccess(t('auth.registrationSuccess'));
         setTimeout(() => setIsSignUp(false), 2000);
       } else {
-        const response = await authService.signIn(formData.email, formData.password);
+        const response = await authService.signIn(formData.email, formData.password, keepLoggedIn);
         if (response.requiresTwoFactor) {
           // TODO: navigate to 2FA screen
           setError('2FA required - not yet implemented in mobile');
@@ -111,20 +126,20 @@ export default function LoginScreen() {
             {error ? <View style={styles.alertError}><Text style={styles.alertErrorText}>{error}</Text></View> : null}
             {success ? <View style={styles.alertSuccess}><Text style={styles.alertSuccessText}>{success}</Text></View> : null}
 
-            {/* Email — textContentType helps iOS/Android autofill fill username from saved passwords */}
+            {/* Email — on login use textContentType="username" so iOS Password AutoFill fills this field when the user picks a saved credential; on sign-up use "emailAddress". */}
             <View style={styles.inputGroup}>
               <View style={styles.inputWrapper}>
                 <Mail size={18} color={colors.textLight} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="you@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   placeholderTextColor={colors.textLight}
                   value={formData.email}
-                  onChangeText={(text) => { setFormData({ ...formData, email: text }); setError(''); }}
+                  onChangeText={(text) => { setFormData((prev) => ({ ...prev, email: text })); setError(''); }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
-                  textContentType="emailAddress"
+                  textContentType={isSignUp ? 'emailAddress' : 'username'}
                 />
               </View>
             </View>
@@ -135,10 +150,10 @@ export default function LoginScreen() {
                 <Lock size={18} color={colors.textLight} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="••••••••"
+                  placeholder={t('auth.passwordPlaceholder')}
                   placeholderTextColor={colors.textLight}
                   value={formData.password}
-                  onChangeText={(text) => { setFormData({ ...formData, password: text }); setError(''); }}
+                  onChangeText={(text) => { setFormData((prev) => ({ ...prev, password: text })); setError(''); }}
                   secureTextEntry={!showPassword}
                   autoComplete={isSignUp ? 'new-password' : 'current-password'}
                   textContentType={isSignUp ? 'newPassword' : 'password'}
@@ -156,10 +171,10 @@ export default function LoginScreen() {
                   <Lock size={18} color={colors.textLight} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
-                    placeholder="••••••••"
+                    placeholder={t('auth.passwordPlaceholder')}
                     placeholderTextColor={colors.textLight}
                     value={formData.confirmPassword}
-                    onChangeText={(text) => { setFormData({ ...formData, confirmPassword: text }); setError(''); }}
+                    onChangeText={(text) => { setFormData((prev) => ({ ...prev, confirmPassword: text })); setError(''); }}
                     secureTextEntry={!showConfirmPassword}
                     autoComplete="new-password"
                   />
@@ -177,6 +192,22 @@ export default function LoginScreen() {
                   <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
                 </TouchableOpacity>
               </Link>
+            )}
+
+            {/* Keep me logged in (login only) */}
+            {!isSignUp && (
+              <View style={styles.rememberMeRow}>
+                <Text style={styles.rememberMeLabel}>{t('auth.rememberMe')}</Text>
+                <Switch
+                  value={keepLoggedIn}
+                  onValueChange={(value) => {
+                    setKeepLoggedIn(value);
+                    AsyncStorage.setItem(KEEP_LOGGED_IN_KEY, value ? 'true' : 'false');
+                  }}
+                  trackColor={{ false: colors.bgTertiary, true: colors.primaryLight }}
+                  thumbColor={keepLoggedIn ? colors.primary : colors.textLight}
+                />
+              </View>
             )}
 
             {/* Submit */}
@@ -298,6 +329,18 @@ const styles = StyleSheet.create({
   eyeBtn: { padding: spacing.md },
   forgotLink: { alignSelf: 'flex-end', marginBottom: spacing.md },
   forgotText: { color: colors.primary, fontSize: 14 },
+  rememberMeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  rememberMeLabel: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    flex: 1,
+  },
   submitBtn: {
     backgroundColor: colors.primary,
     borderRadius: borderRadius.sm,

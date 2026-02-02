@@ -12,7 +12,7 @@ namespace YouAndMeExpensesAPI.DTOs
         public string Type { get; set; } = string.Empty; // "expense" or "income"
 
         [Required]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than zero")]
+        [Range(0, double.MaxValue, ErrorMessage = "Amount must be zero or greater")]
         public decimal Amount { get; set; }
 
         [Required]

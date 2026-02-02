@@ -34,10 +34,11 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react-native';
-import { travelService } from '../../../../services/api';
+import { travelService, tripCityService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
 import { Modal, Button, ConfirmationModal, useToast } from '../../../../components';
+import { TripMicrography } from '../../../../components/travel';
 
 function formatDate(d) {
   if (!d) return '—';
@@ -91,6 +92,24 @@ export default function TripDetailScreen() {
     queryFn: () => travelService.getTrip(id),
     enabled: !!id,
   });
+
+  // Trip cities for multi-city route (TripMicrography)
+  const { data: tripCities = [] } = useQuery({
+    queryKey: ['travel-trip-cities', id],
+    queryFn: () => tripCityService.getByTrip(id),
+    enabled: !!id,
+  });
+
+  // Trip status: upcoming | inProgress | past (for status badge)
+  const tripStatus = (() => {
+    if (!trip?.startDate && !trip?.endDate) return null;
+    const now = new Date();
+    const start = trip.startDate ? new Date(trip.startDate) : null;
+    const end = trip.endDate ? new Date(trip.endDate) : null;
+    if (end && now > end) return 'past';
+    if (start && now < start) return 'upcoming';
+    return 'inProgress';
+  })();
 
   const updateMutation = useMutation({
     mutationFn: (payload) => travelService.updateTrip(id, payload),
@@ -223,6 +242,28 @@ export default function TripDetailScreen() {
         onScrollBeginDrag={() => menuVisible && setMenuVisible(false)}
         scrollEventThrottle={16}
       >
+        {/* Trip status badge (upcoming / in progress / past) */}
+        {tripStatus && (
+          <View style={[styles.statusBadge, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.sm]}>
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor:
+                    tripStatus === 'upcoming'
+                      ? theme.colors.primary
+                      : tripStatus === 'inProgress'
+                        ? '#22C55E'
+                        : theme.colors.textLight,
+                },
+              ]}
+            />
+            <Text style={[styles.statusText, { color: theme.colors.text }]}>
+              {t('travel.status.' + tripStatus, tripStatus === 'upcoming' ? 'Upcoming' : tripStatus === 'inProgress' ? 'In progress' : 'Past')}
+            </Text>
+          </View>
+        )}
+
         <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.sm]}>
           <View style={styles.row}>
             <MapPin size={20} color={theme.colors.primary} />
@@ -237,6 +278,26 @@ export default function TripDetailScreen() {
             <Text style={[styles.valueSmall, { color: theme.colors.textSecondary }]}>{trip.country}</Text>
           )}
         </View>
+
+        {/* Multi-city route summary (map + city timeline + distance) */}
+        {tripCities.length > 0 && (
+          <View style={styles.micrographySection}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+              {t('travel.layout.sections.routeSummary', 'Route Summary')}
+            </Text>
+            <TripMicrography
+              trip={trip}
+              cities={tripCities.map((c) => ({
+                ...c,
+                latitude: c.latitude ?? c.Latitude,
+                longitude: c.longitude ?? c.Longitude,
+                name: c.name ?? c.cityName,
+                orderIndex: c.orderIndex ?? c.order_index,
+              }))}
+              onNavigate={(page) => router.push(`/travel/${id}/${page}`)}
+            />
+          </View>
+        )}
 
         <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.sm]}>
           <Text style={[styles.label, { color: theme.colors.textSecondary }]}>
@@ -290,6 +351,14 @@ export default function TripDetailScreen() {
           title={t('travel.documents.title', 'Documents')}
           subtitle={t('travel.documents.subtitle', 'Trip documents')}
           onPress={() => router.push(`/travel/${id}/documents`)}
+          theme={theme}
+          styles={styles}
+        />
+        <NavCard
+          icon={MapPin}
+          title={t('travel.explore.title', 'Explore')}
+          subtitle={t('travel.explore.subtitle', 'Map and nearby places')}
+          onPress={() => router.push(`/travel/${id}/explore`)}
           theme={theme}
           styles={styles}
         />
@@ -355,7 +424,7 @@ export default function TripDetailScreen() {
             style={[styles.formInput, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder, color: theme.colors.text }]}
             value={editStartDate}
             onChangeText={setEditStartDate}
-            placeholder="YYYY-MM-DD"
+            placeholder={t('travel.trip.startDatePlaceholder', 'YYYY-MM-DD')}
             placeholderTextColor={theme.colors.textLight}
           />
           <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.endDate', 'End Date')}</Text>
@@ -363,7 +432,7 @@ export default function TripDetailScreen() {
             style={[styles.formInput, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder, color: theme.colors.text }]}
             value={editEndDate}
             onChangeText={setEditEndDate}
-            placeholder="YYYY-MM-DD"
+            placeholder={t('travel.trip.endDatePlaceholder', 'YYYY-MM-DD')}
             placeholderTextColor={theme.colors.textLight}
           />
           <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.budget', 'Budget')}</Text>
@@ -371,7 +440,7 @@ export default function TripDetailScreen() {
             style={[styles.formInput, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder, color: theme.colors.text }]}
             value={editBudget}
             onChangeText={setEditBudget}
-            placeholder="0"
+            placeholder={t('travel.trip.budgetPlaceholder', '0')}
             keyboardType="decimal-pad"
             placeholderTextColor={theme.colors.textLight}
           />
@@ -412,6 +481,23 @@ const styles = StyleSheet.create({
   loadingText: { ...typography.bodySmall, marginTop: spacing.md },
   errorText: { ...typography.body, textAlign: 'center' },
   scroll: { padding: spacing.md, paddingBottom: 100 },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: { ...typography.caption, fontWeight: '600' },
+  micrographySection: { marginBottom: spacing.md },
   menuBtn: { padding: spacing.xs },
   menuOverlay: {
     position: 'absolute',

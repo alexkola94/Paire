@@ -134,7 +134,7 @@ export default function FormField({
         />
         {getValidationIcon()}
       </View>
-      {(helpText || validationResult?.message) && (
+      {(helpText || validationResult?.message || validationResult?.messageKey) && (
         <Text
           style={[
             styles.message,
@@ -143,7 +143,9 @@ export default function FormField({
             },
           ]}
         >
-          {validationResult?.message || helpText}
+          {validationResult?.messageKey
+            ? t(validationResult.messageKey, { field: label, ...validationResult.messageParams })
+            : validationResult?.message || helpText}
         </Text>
       )}
       {(showCharacterCount || showWordCount) && (

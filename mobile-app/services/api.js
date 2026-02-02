@@ -467,6 +467,64 @@ export const travelService = {
 };
 
 // ========================================
+// Trip Cities (multi-city support)
+// ========================================
+
+export const tripCityService = {
+  async getByTrip(tripId) {
+    getCurrentUser();
+    return request('get', `/api/travel/trips/${tripId}/cities`);
+  },
+  async create(tripId, city) {
+    getCurrentUser();
+    return request('post', `/api/travel/trips/${tripId}/cities`, city);
+  },
+  async update(tripId, cityId, updates) {
+    getCurrentUser();
+    return request('put', `/api/travel/trips/${tripId}/cities/${cityId}`, updates);
+  },
+  async delete(tripId, cityId) {
+    getCurrentUser();
+    await request('delete', `/api/travel/trips/${tripId}/cities/${cityId}`);
+  },
+  async reorder(tripId, orderedCityIds) {
+    getCurrentUser();
+    await request('post', `/api/travel/trips/${tripId}/cities/reorder`, orderedCityIds);
+  },
+};
+
+// ========================================
+// Saved Places (POI pinning)
+// ========================================
+
+export const savedPlaceService = {
+  async getByTrip(tripId) {
+    getCurrentUser();
+    return request('get', `/api/travel/trips/${tripId}/saved-places`);
+  },
+  async create(tripId, place) {
+    getCurrentUser();
+    return request('post', `/api/travel/trips/${tripId}/saved-places`, place);
+  },
+  async delete(tripId, placeId) {
+    getCurrentUser();
+    await request('delete', `/api/travel/trips/${tripId}/saved-places/${placeId}`);
+  },
+};
+
+// ========================================
+// Geocoding (location search via backend)
+// ========================================
+
+export const geocodingService = {
+  async search(query, limit = 5) {
+    getCurrentUser();
+    const params = new URLSearchParams({ q: String(query).trim(), limit: String(limit) });
+    return request('get', `/api/travel/geocode?${params.toString()}`);
+  },
+};
+
+// ========================================
 // Reminders
 // ========================================
 

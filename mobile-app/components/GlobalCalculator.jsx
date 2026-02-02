@@ -22,15 +22,18 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   interpolate,
   Extrapolation,
+  Easing,
+  runOnJS,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Calculator, X, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useCalculator } from '../context/CalculatorContext';
+import { useOverlay } from '../context/OverlayContext';
 import { spacing, borderRadius, typography, shadows } from '../constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -105,6 +108,14 @@ export default function GlobalCalculator() {
     calculate,
     toggleSign,
   } = useCalculator();
+  const { overlayCount, openOverlay, closeOverlay } = useOverlay();
+
+  // Register calculator panel as overlay so FAB is hidden while it is open
+  useEffect(() => {
+    if (!isOpen) return;
+    openOverlay();
+    return () => closeOverlay();
+  }, [isOpen, openOverlay, closeOverlay]);
 
   // Local state for FAB visibility (hidden edge handle vs visible FAB)
   const [isFabVisible, setIsFabVisible] = useState(false);
@@ -128,15 +139,15 @@ export default function GlobalCalculator() {
     hideTimerRef.current = setTimeout(() => {
       if (!isOpen) {
         setIsFabVisible(false);
-        fabSlide.value = withSpring(0, { damping: 15 });
+        fabSlide.value = withTiming(0, { duration: 180, easing: Easing.in(Easing.cubic) });
       }
     }, AUTO_HIDE_DELAY);
   }, [clearHideTimer, isOpen, fabSlide]);
 
-  // Handle edge handle tap - reveal FAB
+  // Handle edge handle tap - reveal FAB (swift slide, no bounce)
   const handleEdgeTap = useCallback(() => {
     setIsFabVisible(true);
-    fabSlide.value = withSpring(1, { damping: 15 });
+    fabSlide.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) });
     startHideTimer();
   }, [fabSlide, startHideTimer]);
 
@@ -158,6 +169,31 @@ export default function GlobalCalculator() {
       startHideTimer();
     }
   }, [isOpen, isFabVisible, startHideTimer]);
+
+  // Force hide FAB on swipe (clear timer, animate out)
+  const forceHideFAB = useCallback(() => {
+    clearHideTimer();
+    setIsFabVisible(false);
+    fabSlide.value = withTiming(0, { duration: 180, easing: Easing.in(Easing.cubic) });
+  }, [clearHideTimer, fabSlide]);
+
+  // Swipe-left threshold (px) and velocity to force hide
+  const SWIPE_THRESHOLD = 40;
+  const SWIPE_VELOCITY = 350;
+
+  // Pan gesture: swipe left to force-hide FAB (tap still opens calculator via TouchableOpacity)
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-25, 25])
+        .failOffsetY([-20, 20])
+        .onEnd((e) => {
+          if (e.translationX < -SWIPE_THRESHOLD || e.velocityX < -SWIPE_VELOCITY) {
+            runOnJS(forceHideFAB)();
+          }
+        }),
+    [forceHideFAB]
+  );
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -234,44 +270,53 @@ export default function GlobalCalculator() {
   // Position higher to avoid collision with screen FABs (which are at bottom: 32)
   const bottomPosition = insets.bottom + 140;
 
+  // When any overlay is open (including calculator), hide the FAB and edge handle
+  const showFabAndHandle = overlayCount === 0;
+
   return (
     <>
-      {/* Edge Handle - visible when FAB is hidden (LEFT side) */}
-      <Animated.View
-        style={[
-          styles.edgeHandle,
-          { bottom: bottomPosition, backgroundColor: theme.colors.primary },
-          handleAnimatedStyle,
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.edgeHandleTouchable}
-          onPress={handleEdgeTap}
-          activeOpacity={0.8}
-          hitSlop={{ top: 20, bottom: 20, left: 10, right: 20 }}
-        >
-          <ChevronRight size={16} color="#ffffff" />
-        </TouchableOpacity>
-      </Animated.View>
+      {showFabAndHandle && (
+        <>
+          {/* Edge Handle - visible when FAB is hidden (LEFT side) */}
+          <Animated.View
+            style={[
+              styles.edgeHandle,
+              { bottom: bottomPosition, backgroundColor: theme.colors.primary },
+              handleAnimatedStyle,
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.edgeHandleTouchable}
+              onPress={handleEdgeTap}
+              activeOpacity={0.8}
+              hitSlop={{ top: 20, bottom: 20, left: 10, right: 20 }}
+            >
+              <ChevronRight size={16} color="#ffffff" />
+            </TouchableOpacity>
+          </Animated.View>
 
-      {/* FAB Button - slides in from LEFT when handle is tapped */}
-      <Animated.View
-        style={[
-          styles.fab,
-          { bottom: bottomPosition, backgroundColor: theme.colors.primary },
-          shadows.lg,
-          fabAnimatedStyle,
-        ]}
-        pointerEvents={isFabVisible ? 'auto' : 'none'}
-      >
-        <TouchableOpacity
-          style={styles.fabTouchable}
-          onPress={handleFabTap}
-          activeOpacity={0.8}
-        >
-          <Calculator size={22} color="#ffffff" />
-        </TouchableOpacity>
-      </Animated.View>
+          {/* FAB Button - slides in from LEFT; swipe left to force-hide */}
+          <GestureDetector gesture={panGesture}>
+            <Animated.View
+              style={[
+                styles.fab,
+                { bottom: bottomPosition, backgroundColor: theme.colors.primary },
+                shadows.lg,
+                fabAnimatedStyle,
+              ]}
+              pointerEvents={isFabVisible ? 'auto' : 'none'}
+            >
+              <TouchableOpacity
+                style={styles.fabTouchable}
+                onPress={handleFabTap}
+                activeOpacity={0.8}
+              >
+                <Calculator size={22} color="#ffffff" />
+              </TouchableOpacity>
+            </Animated.View>
+          </GestureDetector>
+        </>
+      )}
 
       {/* Calculator Modal (Bottom Sheet) */}
       <Modal

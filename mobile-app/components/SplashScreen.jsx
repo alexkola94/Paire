@@ -27,6 +27,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Stop, Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, borderRadius, typography, colors } from '../constants/theme';
 
@@ -99,6 +100,7 @@ function PaireLogo({ size = LOGO_SIZE }) {
  * Main SplashScreen Component
  */
 export default function SplashScreen({ onFinish, minDuration = 2000 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const reducedMotion = useReducedMotion();
 
@@ -215,13 +217,13 @@ export default function SplashScreen({ onFinish, minDuration = 2000 }) {
         </Animated.View>
       </View>
 
-      {/* App name */}
+      {/* App name and tagline (translated) */}
       <Animated.View style={textAnimatedStyle}>
         <Text style={[styles.appName, { color: theme.colors.text }]}>
-          Paire
+          {t('app.title')}
         </Text>
         <Text style={[styles.tagline, { color: theme.colors.textSecondary }]}>
-          Finances, aligned.
+          {t('app.tagline')}
         </Text>
       </Animated.View>
 

@@ -11,7 +11,7 @@
  * - Theme-aware styling
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,10 +20,12 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2 } from 'lucide-react-native';
+import { Plus, Pencil, Trash2, PieChart } from 'lucide-react-native';
+import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
 import { budgetService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
@@ -33,6 +35,7 @@ import {
   BudgetProgressBar,
   ConfirmationModal,
   BudgetForm,
+  EmptyState,
   useToast,
 } from '../../components';
 
@@ -52,6 +55,8 @@ export default function BudgetsScreen() {
   const [editingBudget, setEditingBudget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  const rowRefs = useRef({});
+
   // Fetch budgets
   const { data, refetch } = useQuery({
     queryKey: ['budgets'],
@@ -63,6 +68,7 @@ export default function BudgetsScreen() {
     mutationFn: (newBudget) => budgetService.create(newBudget),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      notificationSuccess();
       showToast(t('budgets.createSuccess', 'Budget created successfully'), 'success');
       setIsFormOpen(false);
     },
@@ -76,6 +82,7 @@ export default function BudgetsScreen() {
     mutationFn: ({ id, ...data }) => budgetService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      notificationSuccess();
       showToast(t('budgets.updateSuccess', 'Budget updated successfully'), 'success');
       setEditingBudget(null);
     },
@@ -89,6 +96,7 @@ export default function BudgetsScreen() {
     mutationFn: (id) => budgetService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      notificationWarning();
       showToast(t('budgets.deleteSuccess', 'Budget deleted successfully'), 'success');
       setDeleteTarget(null);
     },
@@ -139,8 +147,54 @@ export default function BudgetsScreen() {
     return formatCurrency(n);
   };
 
+  // Close other rows when one opens
+  const handleSwipeableWillOpen = useCallback((itemId) => {
+    Object.keys(rowRefs.current).forEach((id) => {
+      if (id !== String(itemId)) rowRefs.current[id]?.close();
+    });
+  }, []);
+
+  const renderLeftActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionLeft, { backgroundColor: theme.colors.primary }]}>
+        <Pencil size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.edit', 'Edit')}</Text>
+      </View>
+    ),
+    [theme.colors.primary, t]
+  );
+
+  const renderRightActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionRight, { backgroundColor: theme.colors.error }]}>
+        <Trash2 size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.delete', 'Delete')}</Text>
+      </View>
+    ),
+    [theme.colors.error, t]
+  );
+
   // Render item
   const renderItem = ({ item }) => (
+    <Swipeable
+      ref={(r) => { rowRefs.current[item.id] = r; }}
+      renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
+      onSwipeableLeftOpen={() => {
+        impactLight();
+        handleEdit(item);
+        setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+      }}
+      onSwipeableRightOpen={() => {
+        impactLight();
+        setDeleteTarget(item);
+        setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+      }}
+      onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
+      friction={2}
+      rightThreshold={40}
+      leftThreshold={40}
+    >
     <TouchableOpacity
       style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}
       onPress={() => handleEdit(item)}
@@ -179,6 +233,7 @@ export default function BudgetsScreen() {
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
+    </Swipeable>
   );
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
@@ -202,18 +257,20 @@ export default function BudgetsScreen() {
         }
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.empty, { color: theme.colors.textLight }]}>
-              {t('budgets.empty', 'No budgets yet. Tap + to create one!')}
-            </Text>
-          </View>
+          <EmptyState
+            icon={PieChart}
+            title={t('budgets.emptyTitle', 'No budgets yet')}
+            description={t('budgets.emptyDescription', 'Set a budget to track your spending and stay on target.')}
+            ctaLabel={t('budgets.addFirst', 'Create Budget')}
+            onPress={() => setIsFormOpen(true)}
+          />
         }
       />
 
       {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => setIsFormOpen(true)}
+        onPress={() => { impactMedium(); setIsFormOpen(true); }}
         activeOpacity={0.8}
       >
         <Plus size={28} color="#ffffff" />
@@ -292,6 +349,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  swipeAction: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.xs,
+  },
+  swipeActionRight: {
+    marginLeft: spacing.sm,
+  },
+  swipeActionLeft: {
+    marginRight: spacing.sm,
+  },
+  swipeActionText: {
+    ...typography.caption,
+    color: '#fff',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,

@@ -1,7 +1,7 @@
 /**
  * Trip Explore Screen (React Native)
- * POI discovery for trip destination.
- * Shows nearby places, attractions, restaurants, etc.
+ * POI discovery for trip destination: weather, saved places, map mode.
+ * Shows nearby places, attractions, restaurants; 7-day weather; Discovery Map.
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  ScrollView,
   RefreshControl,
   ActivityIndicator,
   Linking,
@@ -18,23 +19,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
   MapPin,
+  Map,
   Coffee,
   UtensilsCrossed,
   Landmark,
   ShoppingBag,
   TreePine,
   Building,
-  Heart,
   Star,
   ExternalLink,
 } from 'lucide-react-native';
-import { travelService } from '../../../../services/api';
+import { travelService, savedPlaceService, tripCityService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
+import { WeatherCard, DiscoveryMap } from '../../../../components/travel';
 
 // POI category configuration
 const POI_CATEGORIES = [
@@ -68,6 +70,8 @@ export default function TripExploreScreen() {
   
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch trip details
   const { data: trip, isLoading: tripLoading } = useQuery({
@@ -76,12 +80,39 @@ export default function TripExploreScreen() {
     enabled: !!id,
   });
 
+  // Fetch trip cities (for center lat/lng when multi-city)
+  const { data: tripCities = [] } = useQuery({
+    queryKey: ['travel-trip-cities', id],
+    queryFn: () => tripCityService.getByTrip(id),
+    enabled: !!id,
+  });
+
+  // Center for map/weather: trip lat/lng or first city
+  const centerLat = trip?.latitude ?? trip?.Latitude ?? (tripCities[0]?.latitude ?? tripCities[0]?.Latitude);
+  const centerLng = trip?.longitude ?? trip?.Longitude ?? (tripCities[0]?.longitude ?? tripCities[0]?.Longitude);
+  const tripForMap = useMemo(
+    () =>
+      trip && (centerLat != null && centerLng != null)
+        ? { ...trip, latitude: centerLat, longitude: centerLng }
+        : trip,
+    [trip, centerLat, centerLng]
+  );
+
   // Fetch saved places for this trip
   const { data: savedPlaces = [], refetch, isFetching } = useQuery({
     queryKey: ['travel-saved-places', id],
-    queryFn: () => travelService.getSavedPlaces?.(id) || [],
+    queryFn: () => savedPlaceService.getByTrip(id),
     enabled: !!id,
   });
+
+  const savedPlaceIds = useMemo(
+    () => (savedPlaces || []).map((p) => p.poiId || p.id).filter(Boolean),
+    [savedPlaces]
+  );
+
+  const handleSavePlace = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['travel-saved-places', id] });
+  }, [queryClient, id]);
 
   // Filter places by category
   const filteredPlaces = useMemo(() => {
@@ -198,6 +229,21 @@ export default function TripExploreScreen() {
     );
   }
 
+  // Full-screen map mode
+  if (showMap && tripForMap && centerLat != null && centerLng != null) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <DiscoveryMap
+          trip={tripForMap}
+          tripId={id}
+          savedPlaceIds={savedPlaceIds}
+          onSavePlace={handleSavePlace}
+          onClose={() => setShowMap(false)}
+        />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
@@ -213,7 +259,37 @@ export default function TripExploreScreen() {
             {trip.destination || trip.name}
           </Text>
         </View>
+        {centerLat != null && centerLng != null && (
+          <TouchableOpacity
+            style={[styles.mapBtn, { backgroundColor: theme.colors.primary + '20' }]}
+            onPress={() => setShowMap(true)}
+          >
+            <Map size={22} color={theme.colors.primary} />
+          </TouchableOpacity>
+        )}
       </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing || isFetching}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Weather */}
+        {centerLat != null && centerLng != null && (
+          <View style={styles.weatherSection}>
+            <WeatherCard
+              latitude={centerLat}
+              longitude={centerLng}
+              locationName={trip.destination || trip.name}
+            />
+          </View>
+        )}
 
       {/* Category filter */}
       <View style={styles.categoriesContainer}>
@@ -227,31 +303,37 @@ export default function TripExploreScreen() {
         />
       </View>
 
-      {/* Places list */}
-      <FlatList
-        data={filteredPlaces}
-        renderItem={renderPlace}
-        keyExtractor={(item) => String(item.id)}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing || isFetching}
-            onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
-          />
-        }
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <MapPin size={48} color={theme.colors.textLight} />
-            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-              {t('travel.explore.noPlaces', 'No places saved yet')}
-            </Text>
-            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-              {t('travel.explore.noPlacesHint', 'Save places from your trip to see them here')}
-            </Text>
+      {/* Saved places list */}
+      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        {t('travel.home.savedPlacesTitle', 'Saved places')}
+      </Text>
+      {filteredPlaces.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <MapPin size={48} color={theme.colors.textLight} />
+          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+            {t('travel.explore.noPlaces', 'No places saved yet')}
+          </Text>
+          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+            {t('travel.explore.noPlacesHint', 'Save places from the map to see them here')}
+          </Text>
+          {centerLat != null && centerLng != null && (
+            <TouchableOpacity
+              style={[styles.mapCta, { backgroundColor: theme.colors.primary }]}
+              onPress={() => setShowMap(true)}
+            >
+              <Map size={18} color="#fff" />
+              <Text style={styles.mapCtaText}>{t('travel.discovery.expand', 'Open map')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        filteredPlaces.map((item) => (
+          <View key={String(item.id)}>
+            {renderPlace({ item })}
           </View>
-        }
-      />
+        ))
+      )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -271,7 +353,29 @@ const styles = StyleSheet.create({
   headerContent: { flex: 1 },
   title: { ...typography.h3 },
   subtitle: { ...typography.caption, marginTop: 2 },
+  mapBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollContent: { paddingBottom: 100 },
+  weatherSection: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+  sectionTitle: { ...typography.label, marginHorizontal: spacing.md, marginTop: spacing.md, marginBottom: spacing.sm },
+  mapCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.lg,
+    alignSelf: 'center',
+  },
+  mapCtaText: { ...typography.label, color: '#fff' },
 
   // Categories
   categoriesContainer: {
@@ -297,6 +401,7 @@ const styles = StyleSheet.create({
 
   // List
   list: { padding: spacing.md, paddingBottom: 100 },
+  listInner: { paddingHorizontal: spacing.md },
 
   // Place card
   placeCard: {

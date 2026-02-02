@@ -11,13 +11,40 @@
     "delete": "Eliminar",
     "confirm": "Confirmar",
     "loading": "Cargando...",
-    "noData": "Aún no hay datos"
+    "noData": "Aún no hay datos",
+    "back": "Atrás",
+    "copied": "Copiado al portapapeles",
+    "more": "más",
+    "selectPlaceholder": "Seleccionar...",
+    "amountPlaceholder": "0,00"
   },
   "validation": {
     "required": "{{field}} es obligatorio",
     "minLength": "{{field}} debe tener al menos {{min}} caracteres",
     "maxLength": "{{field}} no debe superar {{max}} caracteres",
+    "email": "Por favor introduce un email válido",
     "words": "palabras"
+  },
+  "notifications": {
+    "channels": {
+      "default": "Predeterminado",
+      "bills": "Recordatorios de facturas",
+      "billsDescription": "Recordatorios de pagos de facturas próximos",
+      "budgets": "Alertas de presupuesto",
+      "budgetsDescription": "Alertas al acercarse al límite del presupuesto",
+      "savings": "Metas de ahorro",
+      "savingsDescription": "Notificaciones de hitos de ahorro",
+      "partnership": "Actividad del compañero",
+      "partnershipDescription": "Actualizaciones sobre actividad financiera compartida",
+      "security": "Alertas de seguridad",
+      "securityDescription": "Notificaciones de seguridad importantes"
+    },
+    "billDueSoon": "Factura próximamente",
+    "billDueBody": "{{name}} (€{{amount}}) vence en {{days}} días",
+    "budgetAlert": "Alerta de presupuesto",
+    "budgetAlertBody": "Has usado {{percentage}}% de tu presupuesto de {{category}}",
+    "savingsMilestone": "¡Hito de ahorro!",
+    "savingsMilestoneBody": "¡Has alcanzado {{percentage}}% de tu meta \"{{name}}\"!"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -27,12 +54,15 @@
     "password": "Contraseña",
     "confirmPassword": "Confirmar Contraseña",
     "forgotPassword": "¿Olvidaste tu contraseña?",
+    "rememberMe": "Recordarme",
     "resetPassword": "Restablecer Contraseña",
     "dontHaveAccount": "¿No tienes una cuenta?",
     "alreadyHaveAccount": "¿Ya tienes una cuenta?",
     "welcomeBack": "¡Bienvenido de Nuevo!",
     "createAccount": "Crea tu Cuenta",
     "emailPlaceholder": "tu@ejemplo.com",
+    "passwordPlaceholder": "••••••••",
+    "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Las contraseñas no coinciden",
     "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
     "accountCreated": "¡Cuenta creada exitosamente! Por favor verifica tu email para confirmar.",
@@ -107,6 +137,24 @@
       "lifestyle": "Estilo de Vida",
       "account": "Cuenta",
       "explore": "Explorar"
+    },
+    "descriptions": {
+      "trackSpending": "Controla tus gastos",
+      "manageIncome": "Gestiona tus ingresos",
+      "setSpendingLimits": "Establece límites de gasto",
+      "trackSavingsProgress": "Sigue el progreso de ahorro",
+      "manageLoansDebts": "Gestiona préstamos y deudas",
+      "financialInsights": "Análisis financiero",
+      "convertCurrencies": "Convertir monedas",
+      "storeReceipts": "Guardar recibos",
+      "trackRecurringBills": "Seguir facturas recurrentes",
+      "planTripsBudgets": "Planifica viajes y presupuestos",
+      "shoppingLists": "Listas de compras",
+      "paymentReminders": "Recordatorios de pago",
+      "marketNews": "Noticias del mercado",
+      "shareWithPartner": "Compartir con pareja",
+      "bankConnections": "Conexiones bancarias",
+      "yourMilestones": "Tus logros"
     }
   },
   "quickAdd": {
@@ -184,6 +232,7 @@
     "itemNamePlaceholder": "ej., Leche, Pan, Manzanas",
     "quantity": "Cantidad",
     "unit": "Unidad",
+    "unitPcs": "uds",
     "selectUnit": "Seleccionar unidad",
     "estimatedPrice": "Precio Estimado",
     "priceHint": "Precio por unidad (opcional)",
@@ -202,7 +251,11 @@
       "other": "Otro"
     },
     "units": {
-      "pieces": "pzas",
+      "pcs": "uds",
+      "kg": "kg",
+      "g": "g",
+      "L": "L",
+      "mL": "mL",
       "pack": "paquete",
       "box": "caja"
     }
@@ -332,7 +385,13 @@
     "paymentDeleted": "Pago eliminado",
     "paymentError": "Algo salió mal con este pago",
     "noPayments": "Aún no hay pagos registrados",
-    "amountRequired": "Por favor ingresa un importe válido"
+    "amountRequired": "Por favor ingresa un importe válido",
+    "selectStatus": "Seleccionar estado",
+    "status": {
+      "active": "Activo",
+      "paid": "Pagado",
+      "overdue": "Vencido"
+    }
   },
   "profile": {
     "title": "Perfil",
@@ -503,6 +562,14 @@
     "permissionDenied": "Se requiere permiso para acceder a la cámara o las fotos."
   },
   "chatbot": {
+    "suggestions": {
+      "suggestion1": "¿En qué gasté más este mes?",
+      "suggestion2": "Muéstrame ingresos vs gastos",
+      "suggestion3": "¿Cómo va mi presupuesto?",
+      "suggestion4": "Resume mis transacciones recientes",
+      "suggestion5": "Dame consejos de ahorro",
+      "suggestion6": "Analiza mis patrones de gasto"
+    },
     "title": "Asistente Financiero",
     "online": "En línea",
     "open": "Abrir chat",
@@ -573,6 +640,11 @@
       "explore": "Explorar",
       "guide": "Guía"
     },
+    "status": {
+      "upcoming": "Próximo",
+      "inProgress": "En curso",
+      "past": "Pasado"
+    },
     "common": {
       "enterTravelMode": "Modo Viaje",
       "exitTravelMode": "Salir",
@@ -597,10 +669,15 @@
       "editTrip": "Editar Viaje",
       "deleteTrip": "Eliminar Viaje",
       "tripUpdated": "Viaje actualizado",
+      "name": "Nombre",
       "tripName": "Nombre del Viaje",
       "destination": "Destino",
+      "destinationPlaceholder": "ej. París",
       "startDate": "Fecha de Inicio",
       "endDate": "Fecha de Fin",
+      "startDatePlaceholder": "Inicio YYYY-MM-DD",
+      "endDatePlaceholder": "Fin YYYY-MM-DD",
+      "budgetPlaceholder": "0",
       "budget": "Presupuesto",
       "searchDestination": "Buscar destino..."
     },
@@ -695,6 +772,8 @@
       "itemNamePlaceholder": "ej., Camiseta, Cepillo de Dientes",
       "category": "Categoría",
       "quantity": "Cant",
+      "deleteItem": "¿Eliminar artículo?",
+      "deleteMessage": "¿Estás seguro de que quieres eliminar este artículo?",
       "markEssential": "Marcar como esencial",
       "rainWarn": "¡Lluvia pronosticada! ☔",
       "coldWarn": "¡Parece que hace frío! ❄️",
@@ -712,6 +791,8 @@
     },
     "documents": {
       "title": "Documentos",
+      "deleteDoc": "¿Eliminar documento?",
+      "deleteMessage": "¿Estás seguro de que quieres eliminar este documento?",
       "noTrip": "No se Seleccionó Viaje",
       "createTripFirst": "Crea un viaje para almacenar tus documentos",
       "emptyTitle": "Aún no hay documentos",
@@ -788,6 +869,7 @@
     },
     "explore": {
       "title": "Explorar",
+      "subtitle": "Mapa y lugares cercanos",
       "essentials": "Esenciales de viaje",
       "noTrip": "No se Seleccionó Viaje",
       "createTripFirst": "Crea un viaje para explorar tu destino",
@@ -831,6 +913,16 @@
         "atm": "Cajero Automático",
         "pharmacy": "Farmacia"
       }
+    },
+    "citySelection": {
+      "searchPlaceholder": "Buscar lugares...",
+      "instructions": "Toca el mapa para añadir ciudades a tu viaje",
+      "legendTitle": "Transporte",
+      "addingPlace": "Añadiendo lugar…",
+      "tapMapToAdd": "Toca el mapa para añadir ciudades",
+      "removeCityTitle": "¿Quitar ciudad?",
+      "removeCityMessage": "¿Quitar {{name}} de la ruta?",
+      "editDestination": "Editar destino"
     },
     "wizard": {
       "title": "Planifica tu Viaje",
@@ -888,9 +980,14 @@
       "step2": {
         "title": "Establecer Fechas",
         "description": "Establece las fechas de llegada y salida para cada ciudad",
+        "manageRoute": "Revisar Ruta",
+        "manageDescription": "Ordena tus paradas y elige el transporte.",
         "arrival": "Llegada",
         "departure": "Salida"
       },
+      "gettingThere": "Cómo llegar",
+      "returnHome": "Volver a casa",
+      "home": "Casa",
       "errors": {
         "minCities": "Por favor selecciona al menos 2 ciudades",
         "cityDateRequired": "Por favor establece la fecha de llegada para {{city}}",

@@ -48,7 +48,7 @@ export default function ForgotPasswordScreen() {
           <Mail size={18} color={colors.textLight} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="you@example.com"
+            placeholder={t('auth.emailPlaceholder')}
             placeholderTextColor={colors.textLight}
             value={email}
             onChangeText={(t) => { setEmail(t); setError(''); }}

@@ -201,7 +201,7 @@ export default function TripDocumentsScreen() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         title={t('travel.documents.deleteDoc', 'Delete document?')}
-        message={t('common.delete')}
+        message={t('travel.documents.deleteMessage', 'Are you sure you want to delete this document?')}
         variant="danger"
         loading={deleteMutation.isPending}
       />

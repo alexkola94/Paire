@@ -35,6 +35,9 @@ export const colors = {
   info: '#3498db',
   infoDark: '#2980b9',
 
+  // Modal overlay (date picker, bottom sheets) — light
+  overlay: 'rgba(0,0,0,0.48)',
+
   // Dark mode overrides (deep purple-tinted)
   dark: {
     bgPrimary: '#0F071A',
@@ -45,6 +48,7 @@ export const colors = {
     textLight: '#64748b',
     glassBg: 'rgba(26, 26, 46, 0.85)',
     glassBorder: 'rgba(255, 255, 255, 0.08)',
+    overlay: 'rgba(0,0,0,0.7)',
   },
 };
 
@@ -109,6 +113,7 @@ export const lightTheme = {
     textLight: colors.textLight,
     glassBg: colors.glassBg,
     glassBorder: colors.glassBorder,
+    overlay: colors.overlay,
   },
   dark: false,
 };
@@ -124,6 +129,7 @@ export const darkTheme = {
     textLight: colors.dark.textLight,
     glassBg: colors.dark.glassBg,
     glassBorder: colors.dark.glassBorder,
+    overlay: colors.dark.overlay,
   },
   dark: true,
 };

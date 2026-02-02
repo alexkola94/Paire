@@ -32,12 +32,13 @@ import {
   isAfter,
   isSameMonth,
 } from 'date-fns';
-import { Plus, Pencil, Trash2, CheckCircle, Circle, Calendar, Paperclip, ExternalLink, Search, RotateCcw } from 'lucide-react-native';
+import { Plus, Pencil, Trash2, CheckCircle, Circle, Calendar, Paperclip, ExternalLink, Search, RotateCcw, CalendarClock } from 'lucide-react-native';
 import {
   recurringBillService,
   loanPaymentService,
   savingsGoalService,
 } from '../../services/api';
+import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
@@ -46,6 +47,7 @@ import {
   Button,
   ConfirmationModal,
   RecurringBillForm,
+  EmptyState,
   useToast,
 } from '../../components';
 
@@ -87,6 +89,7 @@ export default function RecurringBillsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring-bills'] });
       queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] });
+      notificationSuccess();
       showToast(t('recurringBills.createSuccess', 'Bill created successfully'), 'success');
       setIsFormOpen(false);
     },
@@ -101,6 +104,7 @@ export default function RecurringBillsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring-bills'] });
       queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] });
+      notificationSuccess();
       showToast(t('recurringBills.updateSuccess', 'Bill updated successfully'), 'success');
       setEditingBill(null);
     },
@@ -115,6 +119,7 @@ export default function RecurringBillsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring-bills'] });
       queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] });
+      notificationWarning();
       showToast(t('recurringBills.deleteSuccess', 'Bill deleted successfully'), 'success');
       setDeleteTarget(null);
     },
@@ -454,6 +459,7 @@ export default function RecurringBillsScreen() {
   const handleMarkPaid = useCallback(
     (item) => {
       if (getIsPaid(item)) return;
+      impactLight();
       markPaidMutation.mutate({ billId: item.id, bill: item });
       setTimeout(() => rowRefs.current[item.id]?.close(), 200);
     },
@@ -500,6 +506,7 @@ export default function RecurringBillsScreen() {
 
   // Swipe left → delete (desktop parity): open delete confirmation
   const handleSwipeDelete = useCallback((item) => {
+    impactLight();
     setDeleteTarget(item);
     setTimeout(() => rowRefs.current[item.id]?.close(), 200);
   }, []);
@@ -795,9 +802,13 @@ export default function RecurringBillsScreen() {
           }
         >
           {hasNoBills && (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.empty, { color: theme.colors.textLight }]}>{t('recurringBills.empty', 'No recurring bills yet. Tap + to add one!')}</Text>
-            </View>
+            <EmptyState
+              icon={CalendarClock}
+              title={t('recurringBills.emptyTitle', 'No recurring bills yet')}
+              description={t('recurringBills.emptyDescription', 'Add your subscriptions and recurring payments to never miss a due date.')}
+              ctaLabel={t('recurringBills.addFirst', 'Add Bill')}
+              onPress={() => setIsFormOpen(true)}
+            />
           )}
 
           {overdueBills.length > 0 && (
@@ -841,7 +852,7 @@ export default function RecurringBillsScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => setIsFormOpen(true)}
+        onPress={() => { impactMedium(); setIsFormOpen(true); }}
         activeOpacity={0.8}
       >
         <Plus size={28} color="#ffffff" />

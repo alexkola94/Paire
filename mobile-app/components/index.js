@@ -31,6 +31,9 @@ export { default as AnimatedCard } from './AnimatedCard';
 export { default as SuccessAnimation } from './SuccessAnimation';
 export { default as SplashScreen } from './SplashScreen';
 
+// Empty State
+export { default as EmptyState } from './EmptyState';
+
 // Smart Suggestions Components
 export { default as SmartCategorySuggestions } from './SmartCategorySuggestions';
 export { default as DuplicateDetection } from './DuplicateDetection';

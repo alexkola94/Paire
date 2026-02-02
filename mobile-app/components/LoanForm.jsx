@@ -275,7 +275,7 @@ export default function LoanForm({
         collapsible
         defaultExpanded={!!(formData.dueDate || formData.description || loan)}
       >
-        {/* Due Date */}
+        {/* Due Date — allow future dates for loan due date */}
         <DateInput
           value={formData.dueDate}
           onChange={handleEventChange}
@@ -283,6 +283,7 @@ export default function LoanForm({
           label={t('loans.dueDate', 'Due Date')}
           disabled={loading}
           showQuickButtons={false}
+          maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() + 10))}
         />
 
         {/* Status */}

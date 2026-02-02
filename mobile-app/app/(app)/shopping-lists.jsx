@@ -12,7 +12,7 @@
  * - Theme-aware styling
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,6 +35,7 @@ import {
   Circle,
   ShoppingCart,
 } from 'lucide-react-native';
+import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
 import { shoppingListService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
@@ -43,6 +45,7 @@ import {
   ConfirmationModal,
   ShoppingListForm,
   ShoppingItemForm,
+  EmptyState,
   useToast,
 } from '../../components';
 
@@ -64,6 +67,8 @@ export default function ShoppingListsScreen() {
   const [itemListId, setItemListId] = useState(null);
   const [deleteItemTarget, setDeleteItemTarget] = useState(null);
 
+  const rowRefs = useRef({});
+
   // Fetch shopping lists
   const { data, refetch } = useQuery({
     queryKey: ['shopping-lists'],
@@ -75,6 +80,7 @@ export default function ShoppingListsScreen() {
     mutationFn: (newList) => shoppingListService.create(newList),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
+      notificationSuccess();
       showToast(t('shoppingLists.createSuccess', 'List created successfully'), 'success');
       setIsFormOpen(false);
     },
@@ -256,6 +262,33 @@ export default function ShoppingListsScreen() {
     return `€${price.toFixed(2)}`;
   };
 
+  // Close other rows when one opens
+  const handleSwipeableWillOpen = useCallback((itemId) => {
+    Object.keys(rowRefs.current).forEach((id) => {
+      if (id !== String(itemId)) rowRefs.current[id]?.close();
+    });
+  }, []);
+
+  const renderSwipeLeftActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionLeft, { backgroundColor: theme.colors.primary }]}>
+        <Pencil size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.edit', 'Edit')}</Text>
+      </View>
+    ),
+    [theme.colors.primary, t]
+  );
+
+  const renderSwipeRightActions = useCallback(
+    () => (
+      <View style={[styles.swipeAction, styles.swipeActionRight, { backgroundColor: theme.colors.error }]}>
+        <Trash2 size={24} color="#fff" />
+        <Text style={styles.swipeActionText}>{t('common.delete', 'Delete')}</Text>
+      </View>
+    ),
+    [theme.colors.error, t]
+  );
+
   // Render list item
   const renderItem = ({ item: list }) => {
     const isExpanded = expandedListId === list.id;
@@ -264,6 +297,23 @@ export default function ShoppingListsScreen() {
     const totalEstimate = listItems.reduce((sum, i) => sum + ((i.estimatedPrice || 0) * (i.quantity || 1)), 0);
 
     return (
+      <Swipeable
+        ref={(r) => { rowRefs.current[list.id] = r; }}
+        renderLeftActions={renderSwipeLeftActions}
+        renderRightActions={renderSwipeRightActions}
+        onSwipeableLeftOpen={() => {
+          handleEditList(list);
+          setTimeout(() => rowRefs.current[list.id]?.close(), 200);
+        }}
+        onSwipeableRightOpen={() => {
+          setDeleteTarget(list);
+          setTimeout(() => rowRefs.current[list.id]?.close(), 200);
+        }}
+        onSwipeableWillOpen={() => handleSwipeableWillOpen(list.id)}
+        friction={2}
+        rightThreshold={40}
+        leftThreshold={40}
+      >
       <View style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}>
         {/* List Header */}
         <TouchableOpacity
@@ -373,6 +423,7 @@ export default function ShoppingListsScreen() {
           </View>
         )}
       </View>
+      </Swipeable>
     );
   };
 
@@ -398,11 +449,13 @@ export default function ShoppingListsScreen() {
         }
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.empty, { color: theme.colors.textLight }]}>
-              {t('shoppingLists.empty', 'No shopping lists yet. Tap + to create one!')}
-            </Text>
-          </View>
+          <EmptyState
+            icon={ShoppingCart}
+            title={t('shoppingLists.emptyTitle', 'No shopping lists yet')}
+            description={t('shoppingLists.emptyDescription', 'Create a shared shopping list to plan your purchases together.')}
+            ctaLabel={t('shoppingLists.addFirst', 'Create List')}
+            onPress={() => setIsFormOpen(true)}
+          />
         }
       />
 
@@ -579,6 +632,25 @@ const styles = StyleSheet.create({
   listActionText: {
     ...typography.bodySmall,
     fontWeight: '500',
+  },
+  swipeAction: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  swipeActionRight: {
+    marginLeft: spacing.sm,
+  },
+  swipeActionLeft: {
+    marginRight: spacing.sm,
+  },
+  swipeActionText: {
+    ...typography.caption,
+    color: '#fff',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,

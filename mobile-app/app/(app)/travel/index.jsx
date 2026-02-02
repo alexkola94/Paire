@@ -18,12 +18,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { MessageCircle, Send, AlertTriangle, Search, Plus, MapPin } from 'lucide-react-native';
+import { MessageCircle, Send, AlertTriangle, Search, Plus, MapPin, Home } from 'lucide-react-native';
 import { travelChatbotService, travelAdvisoryService, travelService } from '../../../services/api';
 import { getStaticTravelSuggestions } from '../../../utils/travelChatbotSuggestions';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 import { Modal, useToast } from '../../../components';
+import { MultiCityTripWizard } from '../../../components/travel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function TravelIndexScreen() {
@@ -41,6 +42,8 @@ export default function TravelIndexScreen() {
     queryFn: () => travelService.getTrips(),
   });
   const [addTripOpen, setAddTripOpen] = useState(false);
+  const [showTripTypePicker, setShowTripTypePicker] = useState(false);
+  const [showMultiCityWizard, setShowMultiCityWizard] = useState(false);
   const [newTripName, setNewTripName] = useState('');
   const [newTripDestination, setNewTripDestination] = useState('');
   const [newTripStart, setNewTripStart] = useState('');
@@ -154,6 +157,15 @@ export default function TravelIndexScreen() {
     createMutation.mutate(payload);
   };
 
+  const handleMultiCitySave = (createdTrip) => {
+    queryClient.invalidateQueries({ queryKey: ['travel-trips'] });
+    showToast(t('travel.common.createTrip', 'Trip created'), 'success');
+    setShowMultiCityWizard(false);
+    if (createdTrip?.id) {
+      router.push({ pathname: '/travel/[id]', params: { id: createdTrip.id } });
+    }
+  };
+
   const formatDate = (d) => {
     if (!d) return '—';
     try {
@@ -225,7 +237,7 @@ export default function TravelIndexScreen() {
               </Text>
               <TouchableOpacity
                 style={[styles.addTripBtn, { backgroundColor: theme.colors.primary }]}
-                onPress={() => setAddTripOpen(true)}
+                onPress={() => setShowTripTypePicker(true)}
               >
                 <Plus size={18} color="#fff" />
                 <Text style={styles.addTripBtnText}>{t('travel.common.createTrip', 'Create Trip')}</Text>
@@ -325,7 +337,7 @@ export default function TravelIndexScreen() {
               <Search size={20} color={theme.colors.textLight} />
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
-                placeholder="e.g. US, GR, FRA"
+                placeholder={t('travel.advisory.countryPlaceholder', 'e.g. US, GR, FRA')}
                 placeholderTextColor={theme.colors.textLight}
                 value={advisoryCountry}
                 onChangeText={(v) => { setAdvisoryCountry(v); setAdvisoryError(null); setAdvisoryResult(null); }}
@@ -364,6 +376,63 @@ export default function TravelIndexScreen() {
         )}
       </ScrollView>
 
+      {/* Trip type picker: Single vs Multi-city */}
+      <Modal
+        isOpen={showTripTypePicker}
+        onClose={() => setShowTripTypePicker(false)}
+        title={t('travel.home.createTripTypeTitle', 'What kind of trip?')}
+      >
+        <View style={styles.typePicker}>
+          <TouchableOpacity
+            style={[styles.typeOption, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}
+            onPress={() => {
+              setShowTripTypePicker(false);
+              setAddTripOpen(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <Home size={24} color={theme.colors.primary} />
+            <View style={styles.typeOptionText}>
+              <Text style={[styles.typeOptionTitle, { color: theme.colors.text }]}>
+                {t('travel.home.singleTripLabel', 'Single destination')}
+              </Text>
+              <Text style={[styles.typeOptionSub, { color: theme.colors.textSecondary }]}>
+                {t('travel.home.singleTripSubtitle', 'One main place with simple dates.')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.typeOption, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}
+            onPress={() => {
+              setShowTripTypePicker(false);
+              setShowMultiCityWizard(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <MapPin size={24} color={theme.colors.primary} />
+            <View style={styles.typeOptionText}>
+              <Text style={[styles.typeOptionTitle, { color: theme.colors.text }]}>
+                {t('travel.home.multiCityTripLabel', 'Multi-city route')}
+              </Text>
+              <Text style={[styles.typeOptionSub, { color: theme.colors.textSecondary }]}>
+                {t('travel.home.multiCityTripSubtitle', 'Several cities with a mapped route.')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Multi-city trip wizard (full screen overlay) */}
+      {showMultiCityWizard && (
+        <View style={[StyleSheet.absoluteFill, { zIndex: 1000, backgroundColor: theme.colors.background }]}>
+          <MultiCityTripWizard
+            trip={null}
+            onClose={() => setShowMultiCityWizard(false)}
+            onSave={handleMultiCitySave}
+          />
+        </View>
+      )}
+
       {/* Add Trip Modal */}
       <Modal
         isOpen={addTripOpen}
@@ -371,7 +440,7 @@ export default function TravelIndexScreen() {
         title={t('travel.common.createTrip', 'Create Trip')}
       >
         <View style={styles.form}>
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.common.save', 'Name')}</Text>
+          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.name', 'Name')}</Text>
           <TextInput
             style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
             placeholder={t('travel.itinerary.eventNamePlaceholder', 'e.g. Paris 2025')}
@@ -379,26 +448,26 @@ export default function TravelIndexScreen() {
             value={newTripName}
             onChangeText={setNewTripName}
           />
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.common.viewAll', 'Destination')}</Text>
+          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.destination', 'Destination')}</Text>
           <TextInput
             style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder="e.g. Paris"
+            placeholder={t('travel.trip.destinationPlaceholder', 'e.g. Paris')}
             placeholderTextColor={theme.colors.textLight}
             value={newTripDestination}
             onChangeText={setNewTripDestination}
           />
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('transaction.quickDate.thisWeek', 'Start')} / {t('transaction.quickDate.thisWeek', 'End')}</Text>
+          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.startDate', 'Start Date')} / {t('travel.trip.endDate', 'End Date')}</Text>
           <View style={styles.formRow}>
             <TextInput
               style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-              placeholder="Start YYYY-MM-DD"
+              placeholder={t('travel.trip.startDatePlaceholder', 'Start YYYY-MM-DD')}
               placeholderTextColor={theme.colors.textLight}
               value={newTripStart}
               onChangeText={setNewTripStart}
             />
             <TextInput
               style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-              placeholder="End YYYY-MM-DD"
+              placeholder={t('travel.trip.endDatePlaceholder', 'End YYYY-MM-DD')}
               placeholderTextColor={theme.colors.textLight}
               value={newTripEnd}
               onChangeText={setNewTripEnd}
@@ -407,7 +476,7 @@ export default function TravelIndexScreen() {
           <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.budget.amount', 'Budget')} (optional)</Text>
           <TextInput
             style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder="0"
+            placeholder={t('travel.trip.budgetPlaceholder', '0')}
             placeholderTextColor={theme.colors.textLight}
             value={newTripBudget}
             onChangeText={setNewTripBudget}
@@ -469,4 +538,16 @@ const styles = StyleSheet.create({
   formInput: { ...typography.body, borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md },
   formInputSmall: { flex: 1, ...typography.bodySmall, borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, marginBottom: spacing.md },
   formRow: { flexDirection: 'row', gap: spacing.sm },
+  typePicker: { padding: spacing.md, gap: spacing.md },
+  typeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    gap: spacing.md,
+  },
+  typeOptionText: { flex: 1 },
+  typeOptionTitle: { ...typography.body, fontWeight: '600' },
+  typeOptionSub: { ...typography.bodySmall, marginTop: 2 },
 });

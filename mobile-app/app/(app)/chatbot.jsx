@@ -59,14 +59,14 @@ import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../components';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 
-// Default suggestions when API fails or is empty
-const DEFAULT_SUGGESTIONS = [
-  'What did I spend most on this month?',
-  'Show my income vs expenses',
-  'How is my budget doing?',
-  'Summarize my recent transactions',
-  'Give me savings tips',
-  'Analyze my spending patterns',
+// Default suggestion translation keys when API fails or is empty
+const DEFAULT_SUGGESTION_KEYS = [
+  'chatbot.suggestions.suggestion1',
+  'chatbot.suggestions.suggestion2',
+  'chatbot.suggestions.suggestion3',
+  'chatbot.suggestions.suggestion4',
+  'chatbot.suggestions.suggestion5',
+  'chatbot.suggestions.suggestion6',
 ];
 
 // Message type icons
@@ -210,7 +210,7 @@ export default function ChatbotScreen() {
     })();
   }, []);
 
-  // Load suggestions
+  // Load suggestions (fallback uses translated default suggestions)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -219,14 +219,14 @@ export default function ChatbotScreen() {
         if (!cancelled && Array.isArray(list) && list.length > 0) {
           setSuggestions(list.slice(0, 6));
         } else if (!cancelled) {
-          setSuggestions(DEFAULT_SUGGESTIONS.slice(0, 6));
+          setSuggestions(DEFAULT_SUGGESTION_KEYS.map((key) => t(key)));
         }
       } catch {
-        if (!cancelled) setSuggestions(DEFAULT_SUGGESTIONS.slice(0, 6));
+        if (!cancelled) setSuggestions(DEFAULT_SUGGESTION_KEYS.map((key) => t(key)));
       }
     })();
     return () => { cancelled = true; };
-  }, [lang]);
+  }, [lang, t]);
 
   // Stop current request
   const stopRequest = useCallback(() => {
