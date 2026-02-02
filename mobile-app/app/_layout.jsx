@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { ThemeProvider } from '../context/ThemeContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { PrivacyModeProvider } from '../context/PrivacyModeContext';
 import { DashboardLayoutProvider } from '../context/DashboardLayoutContext';
 import { NotificationProvider } from '../context/NotificationContext';
@@ -13,6 +13,17 @@ import { loadAuthData, setSessionExpiredCallback } from '../services/auth';
 import { setApiSessionExpiredCallback } from '../services/api';
 import { useRouter } from 'expo-router';
 import '../i18n/config';
+
+/**
+ * StatusBarManager Component
+ * Manages status bar style based on current theme.
+ * Must be rendered inside ThemeProvider.
+ */
+function StatusBarManager() {
+  const { isDark } = useTheme();
+  // Use 'light' content (white icons) for dark mode, 'dark' content (black icons) for light mode
+  return <StatusBar style={isDark ? 'light' : 'dark'} />;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,11 +59,11 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
+            <StatusBarManager />
             <PrivacyModeProvider>
               <DashboardLayoutProvider>
                 <NotificationProvider>
                   <ToastProvider>
-                <StatusBar style="auto" />
                 <Stack
                   screenOptions={{
                     headerShown: false,

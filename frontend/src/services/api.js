@@ -606,7 +606,7 @@ export const travelChatbotService = {
    * @returns {Promise<string[]>} List of suggested question strings
    */
   async getSuggestions(language) {
-    const lang = language ?? localStorage.getItem('language') || 'en'
+    const lang = (language ?? localStorage.getItem('language')) || 'en'
     return await apiRequest(`/api/travel-chatbot/suggestions?language=${lang}`)
   }
 }

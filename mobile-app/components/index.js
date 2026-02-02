@@ -10,9 +10,26 @@ export { default as FormField } from './FormField';
 export { default as Skeleton, SkeletonTransaction, SkeletonBudget, SkeletonWidget, SkeletonCard, SkeletonList } from './Skeleton';
 export { ToastProvider, useToast, useToastHelpers } from './Toast';
 
+// Navigation Components
+export {
+  BottomSheetMenu,
+  QuickAddSheet,
+  TabBarWithFAB,
+  FinanceHubSheet,
+  ToolsHubSheet,
+  ExploreHubSheet,
+  FINANCE_FEATURES,
+  TOOLS_FEATURES,
+  LIFESTYLE_FEATURES,
+  ACCOUNT_FEATURES,
+  QUICK_ADD_ACTIONS,
+  NAVIGATION_CATEGORIES,
+} from './navigation';
+
 // Animated Components
 export { default as AnimatedCard } from './AnimatedCard';
 export { default as SuccessAnimation } from './SuccessAnimation';
+export { default as SplashScreen } from './SplashScreen';
 
 // Smart Suggestions Components
 export { default as SmartCategorySuggestions } from './SmartCategorySuggestions';

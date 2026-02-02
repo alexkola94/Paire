@@ -81,6 +81,47 @@
       "fr": "Français"
     }
   },
+  "navigation": {
+    "dashboard": "Panel",
+    "analytics": "Análisis",
+    "expenses": "Gastos",
+    "income": "Ingresos",
+    "loans": "Préstamos",
+    "budgets": "Presupuestos",
+    "savingsGoals": "Metas de Ahorro",
+    "receipts": "Recibos",
+    "recurringBills": "Facturas",
+    "shoppingLists": "Compras",
+    "economicNews": "Noticias Económicas",
+    "partnership": "Colaboración",
+    "reminders": "Recordatorios",
+    "profile": "Perfil",
+    "achievements": "Logros",
+    "more": "Más",
+    "account": "Cuenta",
+    "currencyCalculator": "Convertidor de Moneda",
+    "transactions": "Transacciones",
+    "categories": {
+      "finance": "Finanzas",
+      "tools": "Herramientas",
+      "lifestyle": "Estilo de Vida",
+      "account": "Cuenta",
+      "explore": "Explorar"
+    }
+  },
+  "quickAdd": {
+    "title": "Agregar Rápido",
+    "addExpense": "Agregar Gasto",
+    "addIncome": "Agregar Ingreso",
+    "scanReceipt": "Escanear Recibo",
+    "transfer": "Transferir",
+    "hint": "Toca una opción para comenzar",
+    "recommended": "Rápido"
+  },
+  "splash": {
+    "loading": "Cargando...",
+    "tagline": "Finanzas, alineadas."
+  },
   "legal": {
     "privacyPolicy": "Política de Privacidad",
     "termsOfService": "Términos de Servicio",
@@ -422,6 +463,9 @@
     "confirmDeleteAttachment": "¿Estás seguro de que quieres eliminar este adjunto?",
     "errorUploading": "Error al subir el adjunto",
     "errorDeletingAttachment": "Error al eliminar el adjunto",
+    "paid": "Pagado",
+    "unpaid": "No pagado",
+    "swipeHint": "Desliza a la derecha para marcar como pagado, a la izquierda como no pagado",
     "permissionDenied": "Se requiere permiso para acceder a la cámara o las fotos."
   },
   "chatbot": {

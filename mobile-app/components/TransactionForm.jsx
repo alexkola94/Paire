@@ -368,11 +368,11 @@ export default function TransactionForm({
         </View>
       </FormSection>
 
-      {/* Additional Details Section */}
+      {/* Additional Details Section - collapsed by default for compact layout */}
       <FormSection
         title={t('transaction.formSections.additionalDetails', 'Additional Details')}
         collapsible
-        defaultExpanded={!!(formData.notes || formData.attachmentUrl || attachment)}
+        defaultExpanded={false}
       >
         {/* Notes */}
         <View style={styles.fieldWrapper}>
@@ -478,20 +478,20 @@ export default function TransactionForm({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: spacing.md,
+    padding: spacing.sm, // Reduced padding for compact layout
   },
   errorContainer: {
-    padding: spacing.md,
+    padding: spacing.sm,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   errorText: {
     ...typography.bodySmall,
     textAlign: 'center',
   },
   fieldWrapper: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm, // Reduced from spacing.md for compact layout
   },
   label: {
     ...typography.label,
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   textArea: {
-    minHeight: 100,
+    minHeight: 80, // Reduced height for compact layout
     paddingTop: spacing.sm,
   },
   attachmentButtons: {
@@ -556,9 +556,9 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
   },
   actionBtn: {
     flex: 1,

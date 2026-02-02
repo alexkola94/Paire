@@ -13,7 +13,7 @@
  * - Theme-aware styling
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,7 @@ import {
   ScrollView,
   Linking,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -57,6 +58,9 @@ export default function RecurringBillsScreen() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [attachmentsModalBill, setAttachmentsModalBill] = useState(null);
   const [deleteAttachmentTarget, setDeleteAttachmentTarget] = useState(null); // { attachmentId, bill }
+
+  // Refs to close swipeable rows after pay/unpay (one row open at a time)
+  const rowRefs = useRef({});
 
   // Fetch recurring bills
   const { data, refetch } = useQuery({
@@ -241,10 +245,47 @@ export default function RecurringBillsScreen() {
     }
   };
 
-  // Handle toggle paid
+  // Handle toggle paid (tap on check/circle)
   const handleTogglePaid = (item) => {
     togglePaidMutation.mutate({ id: item.id, isPaid: item.isPaid });
   };
+
+  // Swipe right → mark as paid
+  const handleSwipePay = useCallback((item) => {
+    if (item.isPaid) return;
+    togglePaidMutation.mutate({ id: item.id, isPaid: false });
+    setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+  }, [togglePaidMutation]);
+
+  // Swipe left → mark as unpaid
+  const handleSwipeUnpay = useCallback((item) => {
+    if (!item.isPaid) return;
+    togglePaidMutation.mutate({ id: item.id, isPaid: true });
+    setTimeout(() => rowRefs.current[item.id]?.close(), 200);
+  }, [togglePaidMutation]);
+
+  // Close other rows when one opens (only one swiped at a time)
+  const handleSwipeableWillOpen = useCallback((itemId) => {
+    Object.keys(rowRefs.current).forEach((id) => {
+      if (id !== String(itemId)) rowRefs.current[id]?.close();
+    });
+  }, []);
+
+  // Underlay: swipe row RIGHT reveals left panel → "Paid"
+  const renderLeftActions = useCallback((item) => (
+    <View style={[styles.swipeAction, styles.swipeActionLeft, { backgroundColor: theme.colors.success }]}>
+      <CheckCircle size={24} color="#fff" />
+      <Text style={styles.swipeActionText}>{t('recurringBills.paid', 'Paid')}</Text>
+    </View>
+  ), [theme.colors.success, t]);
+
+  // Underlay: swipe row LEFT reveals right panel → "Unpaid"
+  const renderRightActions = useCallback((item) => (
+    <View style={[styles.swipeAction, styles.swipeActionRight, { backgroundColor: theme.colors.textSecondary }]}>
+      <Circle size={24} color="#fff" />
+      <Text style={styles.swipeActionText}>{t('recurringBills.unpaid', 'Unpaid')}</Text>
+    </View>
+  ), [theme.colors.textSecondary, t]);
 
   // Close form
   const closeForm = () => {
@@ -275,6 +316,19 @@ export default function RecurringBillsScreen() {
     const dueStatus = getDueStatus(item);
 
     return (
+      <Swipeable
+        ref={(r) => { rowRefs.current[item.id] = r; }}
+        renderRightActions={() => renderRightActions(item)}
+        renderLeftActions={() => renderLeftActions(item)}
+        onSwipeableLeftOpen={() => handleSwipePay(item)}
+        onSwipeableRightOpen={() => handleSwipeUnpay(item)}
+        onSwipeableWillOpen={() => handleSwipeableWillOpen(item.id)}
+        friction={2}
+        rightThreshold={40}
+        leftThreshold={40}
+        accessibilityLabel={item.name}
+        accessibilityHint={t('recurringBills.swipeHint', 'Swipe right to mark paid, left to mark unpaid')}
+      >
       <TouchableOpacity
         style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}
         onPress={() => handleEdit(item)}
@@ -378,6 +432,7 @@ export default function RecurringBillsScreen() {
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -531,6 +586,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
+  },
+  swipeAction: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  swipeActionRight: {
+    marginLeft: spacing.sm,
+  },
+  swipeActionLeft: {
+    marginRight: spacing.sm,
+  },
+  swipeActionText: {
+    ...typography.caption,
+    color: '#fff',
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',

@@ -3,7 +3,7 @@
  * Full CRUD: list with search, date range, pagination; add/edit/delete; detail modal.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, Fragment } from 'react';
 import {
   View,
   Text,
@@ -368,7 +368,11 @@ export default function TransactionsScreen() {
                   {t('calendar.noTransactionsOnDay', 'No transactions on this day')}
                 </Text>
               ) : (
-                filteredByCalendarDate.map((item) => renderItem({ item }))
+                filteredByCalendarDate.map((item) => (
+                  <Fragment key={String(item.id)}>
+                    {renderItem({ item })}
+                  </Fragment>
+                ))
               )}
             </View>
           )}

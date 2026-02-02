@@ -110,7 +110,7 @@ export default function CurrencyInput({
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm, // Reduced from spacing.lg for compact layout
     width: '100%',
   },
   label: {
@@ -120,23 +120,24 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 2,
     borderRadius: borderRadius.md,
-    paddingVertical: 12,
+    paddingVertical: 10, // Reduced from 12
     paddingHorizontal: spacing.md,
-    fontSize: 18,
-    minHeight: 52,
+    fontSize: 16, // Reduced from 18
+    minHeight: 46, // Reduced from 52
   },
   quickRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
+    gap: spacing.xs, // Reduced from spacing.sm
+    marginTop: spacing.xs, // Reduced from spacing.sm
   },
   quickBtn: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs, // Reduced from spacing.sm
+    paddingHorizontal: spacing.sm, // Reduced from spacing.md
     borderRadius: borderRadius.sm,
   },
   quickText: {
-    ...typography.label,
+    ...typography.bodySmall, // Smaller text
+    fontWeight: '600',
   },
 });

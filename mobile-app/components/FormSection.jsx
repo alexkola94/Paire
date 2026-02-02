@@ -128,19 +128,19 @@ export default function FormSection({
 
 const styles = StyleSheet.create({
   simpleWrapper: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   container: {
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm, // Reduced from spacing.md for compact layout
     overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm, // Reduced from spacing.md
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
   },
@@ -152,6 +152,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
+    padding: spacing.sm, // Reduced from spacing.md for compact layout
   },
 });

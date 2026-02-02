@@ -48,7 +48,7 @@ export default function Modal({
   const contentTranslateY = useSharedValue(SCREEN_HEIGHT * 0.3);
   const contentOpacity = useSharedValue(0);
 
-  // Animate in when modal opens
+  // Animate in when modal opens - faster, snappier animations
   useEffect(() => {
     if (isOpen) {
       if (reducedMotion) {
@@ -56,25 +56,28 @@ export default function Modal({
         contentTranslateY.value = 0;
         contentOpacity.value = 1;
       } else {
-        overlayOpacity.value = withTiming(0.5, { duration: MODAL_ANIMATIONS.overlay.duration });
-        contentTranslateY.value = withSpring(0, { damping: 20, stiffness: 200 });
-        contentOpacity.value = withTiming(1, { duration: MODAL_ANIMATIONS.content.duration });
+        // Faster overlay fade
+        overlayOpacity.value = withTiming(0.5, { duration: 150 });
+        // Snappier spring with higher stiffness
+        contentTranslateY.value = withSpring(0, { damping: 18, stiffness: 280 });
+        contentOpacity.value = withTiming(1, { duration: 180 });
       }
     }
   }, [isOpen]);
 
-  // Animate out and close
+  // Animate out and close - swift exit
   const handleClose = () => {
     if (reducedMotion) {
       onClose();
       return;
     }
     
-    overlayOpacity.value = withTiming(0, { duration: 200 });
-    contentOpacity.value = withTiming(0, { duration: 150 });
+    // Faster exit animations
+    overlayOpacity.value = withTiming(0, { duration: 120 });
+    contentOpacity.value = withTiming(0, { duration: 100 });
     contentTranslateY.value = withTiming(
-      100,
-      { duration: 200, easing: Easing.in(Easing.cubic) },
+      80,
+      { duration: 150, easing: Easing.in(Easing.cubic) },
       (finished) => {
         if (finished) {
           runOnJS(onClose)();
@@ -201,10 +204,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: {
-    maxHeight: '70%', // Allow body to take up to 70% of modal, scrollable
+    maxHeight: '75%', // Allow body to take up to 75% of modal, scrollable
   },
   bodyContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xl, // Extra padding at bottom for better UX
+    padding: spacing.md,
+    paddingBottom: spacing.lg, // Reduced padding for more compact layout
   },
 });

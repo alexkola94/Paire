@@ -81,6 +81,47 @@
       "fr": "Français"
     }
   },
+  "navigation": {
+    "dashboard": "Tableau de Bord",
+    "analytics": "Analyses",
+    "expenses": "Dépenses",
+    "income": "Revenus",
+    "loans": "Prêts",
+    "budgets": "Budgets",
+    "savingsGoals": "Objectifs d'Épargne",
+    "receipts": "Reçus",
+    "recurringBills": "Factures",
+    "shoppingLists": "Courses",
+    "economicNews": "Actualités Économiques",
+    "partnership": "Partenariat",
+    "reminders": "Rappels",
+    "profile": "Profil",
+    "achievements": "Réalisations",
+    "more": "Plus",
+    "account": "Compte",
+    "currencyCalculator": "Convertisseur de Devises",
+    "transactions": "Transactions",
+    "categories": {
+      "finance": "Finances",
+      "tools": "Outils",
+      "lifestyle": "Mode de Vie",
+      "account": "Compte",
+      "explore": "Explorer"
+    }
+  },
+  "quickAdd": {
+    "title": "Ajout Rapide",
+    "addExpense": "Ajouter une Dépense",
+    "addIncome": "Ajouter un Revenu",
+    "scanReceipt": "Scanner un Reçu",
+    "transfer": "Transférer",
+    "hint": "Appuyez sur une option pour commencer",
+    "recommended": "Rapide"
+  },
+  "splash": {
+    "loading": "Chargement...",
+    "tagline": "Finances, alignées."
+  },
   "legal": {
     "privacyPolicy": "Politique de Confidentialité",
     "termsOfService": "Conditions d'utilisation",
@@ -422,6 +463,9 @@
     "confirmDeleteAttachment": "Êtes-vous sûr de vouloir supprimer cette pièce jointe?",
     "errorUploading": "Échec du téléchargement de la pièce jointe",
     "errorDeletingAttachment": "Échec de la suppression de la pièce jointe",
+    "paid": "Payé",
+    "unpaid": "Non payé",
+    "swipeHint": "Glissez à droite pour marquer comme payé, à gauche comme non payé",
     "permissionDenied": "L'accès à la caméra ou aux photos est requis."
   },
   "chatbot": {

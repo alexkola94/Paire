@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <!-- Deep purple gradient -->
+    <linearGradient id="paireGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c5ce7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4a3f8f;stop-opacity:1" />
+    </linearGradient>
+    <!-- Slate accent gradient -->
+    <linearGradient id="paireGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a29bfe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6c5ce7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Two interlocking geometric shapes (abstract P forms) -->
+  <!-- Left shape - solid block -->
+  <path d="M45 40 
+           L45 160 
+           L75 160 
+           L75 115 
+           L95 115 
+           Q120 115, 120 85 
+           Q120 55, 95 55 
+           L75 55 
+           L75 40 Z
+           M75 75 L90 75 Q100 75, 100 85 Q100 95, 90 95 L75 95 Z" 
+        fill="url(#paireGrad1)"
+        fill-rule="evenodd"/>
+  
+  <!-- Right shape - offset geometric form -->
+  <path d="M85 50 
+           L85 170 
+           L115 170 
+           L115 125 
+           L135 125 
+           Q160 125, 160 95 
+           Q160 65, 135 65 
+           L115 65 
+           L115 50 Z
+           M115 85 L130 85 Q140 85, 140 95 Q140 105, 130 105 L115 105 Z" 
+        fill="url(#paireGrad2)"
+        fill-rule="evenodd"
+        opacity="0.85"/>
+</svg>

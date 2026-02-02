@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   User, LogOut, Users, Bell, Trophy, Shield, Moon, Globe,
   ChevronRight, CreditCard, PiggyBank, Receipt, ShoppingCart, MapPin,
-  FileText, Pencil, Lock, ShieldCheck, MessageCircle, Camera,
+  FileText, Pencil, Lock, MessageCircle, Camera,
 } from 'lucide-react-native';
 import { profileService } from '../../services/api';
 import { authService } from '../../services/auth';
@@ -210,7 +210,6 @@ export default function ProfileScreen() {
           <MenuItem icon={Moon} label={isDark ? t('theme.lightMode') : t('theme.darkMode')} onPress={() => toggleTheme()} theme={theme} />
           <MenuItem icon={Globe} label={t('settings.language')} onPress={() => setLanguageModalOpen(true)} theme={theme} />
           <MenuItem icon={Lock} label={t('profile.changePassword')} onPress={() => setPasswordModalOpen(true)} theme={theme} />
-          <MenuItem icon={CreditCard} label={t('profile.openBanking.title', 'Linked accounts')} onPress={() => router.push('/(app)/linked-accounts')} theme={theme} />
           <MenuItem icon={Bell} label={t('pushNotifications.title', 'Push Notifications')} onPress={() => router.push('/(app)/notification-settings')} theme={theme} />
           <MenuItem icon={Shield} label={t('auth.twoFactorSetup')} onPress={() => router.push('/(auth)/setup-2fa')} theme={theme} />
         </View>
@@ -218,9 +217,6 @@ export default function ProfileScreen() {
         {/* Navigation */}
         <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('profile.manage')}</Text>
         <View style={[styles.menuGroup, shadows.sm]}>
-          {(user?.roles?.includes('Admin') || user?.Roles?.includes?.('Admin')) && (
-            <MenuItem icon={ShieldCheck} label={t('admin.title', 'Admin')} onPress={() => router.push('/(app)/admin/dashboard')} theme={theme} />
-          )}
           <MenuItem icon={MessageCircle} label={t('chatbot.title', 'Financial Assistant')} onPress={() => router.push('/(app)/chatbot')} theme={theme} />
           <MenuItem icon={MapPin} label={t('travel.common.enterTravelMode', 'Travel Mode')} onPress={() => router.push('/(app)/travel')} theme={theme} />
           <MenuItem icon={Users} label={t('navigation.partnership')} onPress={() => router.push('/(app)/partnership')} theme={theme} />
