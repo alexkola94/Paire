@@ -5,7 +5,7 @@
  * Features:
  * - List savings goals with progress
  * - Pull-to-refresh
- * - Create new goal via FAB
+ * - Create new goal via header Add button
  * - Edit goal on tap
  * - Delete goal with confirmation
  * - Quick deposit/withdraw actions
@@ -39,6 +39,7 @@ import {
   CurrencyInput,
   Button,
   EmptyState,
+  ScreenLoading,
   useToast,
 } from '../../components';
 
@@ -61,7 +62,7 @@ export default function SavingsGoalsScreen() {
   const rowRefs = useRef({});
 
   // Fetch savings goals
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading } = useQuery({
     queryKey: ['savings-goals'],
     queryFn: () => savingsGoalService.getAll(),
   });
@@ -332,11 +333,28 @@ export default function SavingsGoalsScreen() {
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
+  // Show loading on first fetch so we don't flash empty state (after all hooks to satisfy Rules of Hooks)
+  if (isLoading && (data === undefined || data === null)) {
+    return <ScreenLoading />;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        {t('savingsGoals.title', 'Savings Goals')}
-      </Text>
+      {/* Header: title + Add button */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          {t('savingsGoals.title', 'Savings Goals')}
+        </Text>
+        <TouchableOpacity
+          onPress={() => { impactMedium(); setIsFormOpen(true); }}
+          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+          activeOpacity={0.7}
+          accessibilityLabel={t('savingsGoals.addNew', 'Add new goal')}
+          accessibilityRole="button"
+        >
+          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={items}
@@ -360,15 +378,6 @@ export default function SavingsGoalsScreen() {
           />
         }
       />
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => { impactMedium(); setIsFormOpen(true); }}
-        activeOpacity={0.8}
-      >
-        <Plus size={28} color="#ffffff" />
-      </TouchableOpacity>
 
       {/* Create/Edit Modal */}
       <Modal
@@ -491,15 +500,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   title: {
     ...typography.h2,
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    flex: 1,
+  },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     padding: spacing.lg,
     paddingTop: 0,
-    paddingBottom: 100,
+    paddingBottom: spacing.lg,
   },
   card: {
     borderRadius: borderRadius.lg,
@@ -574,16 +597,6 @@ const styles = StyleSheet.create({
   empty: {
     textAlign: 'center',
     ...typography.body,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: spacing.xl,
-    right: spacing.lg,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   actionModalContent: {
     padding: spacing.md,

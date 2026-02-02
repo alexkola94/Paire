@@ -5,7 +5,7 @@
  * Features:
  * - List budgets with progress bars
  * - Pull-to-refresh
- * - Create new budget via FAB
+ * - Create new budget via header Add button
  * - Edit budget on tap
  * - Delete budget with confirmation
  * - Theme-aware styling
@@ -36,6 +36,7 @@ import {
   ConfirmationModal,
   BudgetForm,
   EmptyState,
+  ScreenLoading,
   useToast,
 } from '../../components';
 
@@ -58,7 +59,7 @@ export default function BudgetsScreen() {
   const rowRefs = useRef({});
 
   // Fetch budgets
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading } = useQuery({
     queryKey: ['budgets'],
     queryFn: () => budgetService.getAll(),
   });
@@ -238,11 +239,28 @@ export default function BudgetsScreen() {
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
+  // Show loading on first fetch so we don't flash empty state (after all hooks to satisfy Rules of Hooks)
+  if (isLoading && (data === undefined || data === null)) {
+    return <ScreenLoading />;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        {t('budgets.title', 'Budgets')}
-      </Text>
+      {/* Header: title + Add button */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          {t('budgets.title', 'Budgets')}
+        </Text>
+        <TouchableOpacity
+          onPress={() => { impactMedium(); setIsFormOpen(true); }}
+          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+          activeOpacity={0.7}
+          accessibilityLabel={t('budgets.addNew', 'Add new budget')}
+          accessibilityRole="button"
+        >
+          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={items}
@@ -266,15 +284,6 @@ export default function BudgetsScreen() {
           />
         }
       />
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => { impactMedium(); setIsFormOpen(true); }}
-        activeOpacity={0.8}
-      >
-        <Plus size={28} color="#ffffff" />
-      </TouchableOpacity>
 
       {/* Create/Edit Modal */}
       <Modal
@@ -312,15 +321,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   title: {
     ...typography.h2,
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    flex: 1,
+  },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     padding: spacing.lg,
     paddingTop: 0,
-    paddingBottom: 100,
+    paddingBottom: spacing.lg,
   },
   card: {
     borderRadius: borderRadius.lg,
@@ -378,15 +401,5 @@ const styles = StyleSheet.create({
   empty: {
     textAlign: 'center',
     ...typography.body,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: spacing.xl,
-    right: spacing.lg,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

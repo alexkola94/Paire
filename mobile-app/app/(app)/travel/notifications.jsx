@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   // Scroll
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
 
   // Info banner
   infoBanner: {

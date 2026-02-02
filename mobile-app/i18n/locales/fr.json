@@ -112,6 +112,7 @@
     }
   },
   "navigation": {
+    "add": "Ajouter",
     "dashboard": "Tableau de Bord",
     "analytics": "Analyses",
     "expenses": "Dépenses",

@@ -76,6 +76,17 @@ export default function EconomicNewsScreen() {
   const indicators = data?.indicators;
   const news = data?.news;
 
+  // API may return metrics as objects { value, unit, change, changePercent, period, error }; render value/unit only
+  const formatMetric = (v) => {
+    if (v == null) return null;
+    if (typeof v === 'object' && !Array.isArray(v) && v !== null) {
+      const val = v.value != null ? String(v.value) : '';
+      const unit = v.unit ? ` ${v.unit}` : '';
+      return val !== '' ? `${val}${unit}`.trim() : null;
+    }
+    return String(v);
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
@@ -100,7 +111,10 @@ export default function EconomicNewsScreen() {
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('economicNews.cpi.title')}</Text>
             </View>
             <Text style={[styles.sectionValue, { color: theme.colors.text }]}>
-              {cpi.currentRate != null ? `${cpi.currentRate}%` : t('economicNews.unknown')}
+              {(() => {
+                const rateStr = formatMetric(cpi.currentRate);
+                return rateStr != null ? (rateStr.endsWith('%') ? rateStr : `${rateStr}%`) : t('economicNews.unknown');
+              })()}
             </Text>
             {cpi.lastUpdated && (
               <Text style={[styles.sectionMeta, { color: theme.colors.textSecondary }]}>
@@ -116,9 +130,11 @@ export default function EconomicNewsScreen() {
               <BarChart3 size={20} color={theme.colors.primary} />
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('economicNews.foodPrices.title')}</Text>
             </View>
-            {foodPrices.average != null && (
+            {(foodPrices.average != null || (typeof foodPrices.average === 'object' && foodPrices.average?.value != null)) && (
               <Text style={[styles.sectionValue, { color: theme.colors.text }]}>
-                {t('economicNews.foodPrices.average')}: €{Number(foodPrices.average).toFixed(2)}
+                {t('economicNews.foodPrices.average')}: €{typeof foodPrices.average === 'object' && foodPrices.average?.value != null
+                  ? Number(foodPrices.average.value).toFixed(2)
+                  : Number(foodPrices.average).toFixed(2)}
               </Text>
             )}
             {foodPrices.lastUpdated && (
@@ -135,14 +151,14 @@ export default function EconomicNewsScreen() {
               <BarChart3 size={20} color={theme.colors.primary} />
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('economicNews.indicators.title')}</Text>
             </View>
-            {indicators.gdp != null && (
-              <Text style={[styles.sectionRow, { color: theme.colors.text }]}>{t('economicNews.indicators.gdp')}: {indicators.gdp}</Text>
+            {indicators.gdp != null && formatMetric(indicators.gdp) != null && (
+              <Text style={[styles.sectionRow, { color: theme.colors.text }]}>{t('economicNews.indicators.gdp')}: {formatMetric(indicators.gdp)}</Text>
             )}
-            {indicators.unemployment != null && (
-              <Text style={[styles.sectionRow, { color: theme.colors.text }]}>{t('economicNews.indicators.unemployment')}: {indicators.unemployment}</Text>
+            {indicators.unemployment != null && formatMetric(indicators.unemployment) != null && (
+              <Text style={[styles.sectionRow, { color: theme.colors.text }]}>{t('economicNews.indicators.unemployment')}: {formatMetric(indicators.unemployment)}</Text>
             )}
-            {indicators.inflation != null && (
-              <Text style={[styles.sectionRow, { color: theme.colors.text }]}>{t('economicNews.indicators.inflation')}: {indicators.inflation}</Text>
+            {indicators.inflation != null && formatMetric(indicators.inflation) != null && (
+              <Text style={[styles.sectionRow, { color: theme.colors.text }]}>{t('economicNews.indicators.inflation')}: {formatMetric(indicators.inflation)}</Text>
             )}
             {indicators.lastUpdated && (
               <Text style={[styles.sectionMeta, { color: theme.colors.textSecondary }]}>
@@ -182,7 +198,7 @@ export default function EconomicNewsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: 120 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md },
   loadingText: { ...typography.body },
   header: { marginBottom: spacing.lg },

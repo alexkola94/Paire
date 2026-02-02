@@ -5,7 +5,7 @@
  * Features:
  * - List expenses with pull-to-refresh
  * - Search/filter expenses
- * - Create new expense via FAB
+ * - Create new expense via header Add button
  * - Edit expense on tap
  * - Delete expense with confirmation
  * - Theme-aware styling
@@ -38,6 +38,7 @@ import {
   ConfirmationModal,
   TransactionForm,
   EmptyState,
+  ScreenLoading,
   useToast,
 } from '../../components';
 
@@ -281,13 +282,27 @@ export default function ExpensesScreen() {
   // Loading indicator in form
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
+  // Show loading on first fetch so we don't flash empty state
+  if (isLoading && (data === undefined || data === null)) {
+    return <ScreenLoading />;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header */}
+      {/* Header: title + Add button */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           {t('expenses.title', 'Expenses')}
         </Text>
+        <TouchableOpacity
+          onPress={() => { impactMedium(); setIsFormOpen(true); }}
+          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+          activeOpacity={0.7}
+          accessibilityLabel={t('expenses.addNew', 'Add new expense')}
+          accessibilityRole="button"
+        >
+          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+        </TouchableOpacity>
       </View>
 
       {/* Filters: search + date range */}
@@ -366,16 +381,6 @@ export default function ExpensesScreen() {
         }
       />
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => { impactMedium(); setIsFormOpen(true); }}
-        activeOpacity={0.8}
-        accessibilityLabel={t('expenses.addNew', 'Add new expense')}
-      >
-        <Plus size={28} color="#ffffff" />
-      </TouchableOpacity>
-
       {/* Create/Edit Modal */}
       <Modal
         isOpen={isFormOpen || editingTransaction !== null}
@@ -414,12 +419,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
   title: {
     ...typography.h2,
+    flex: 1,
+  },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
     paddingHorizontal: spacing.md,
@@ -428,7 +444,7 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.lg,
     paddingTop: 0,
-    paddingBottom: 100,
+    paddingBottom: spacing.lg,
   },
   card: {
     borderRadius: borderRadius.lg,
@@ -496,16 +512,6 @@ const styles = StyleSheet.create({
   empty: {
     textAlign: 'center',
     ...typography.body,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: spacing.xl,
-    right: spacing.lg,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   paginationRow: {
     flexDirection: 'row',

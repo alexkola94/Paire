@@ -213,7 +213,7 @@ export default function CurrencyCalculatorScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   keyboard: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: 120 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md },
   loadingText: { ...typography.body },
   title: { ...typography.h2, marginBottom: spacing.xs },

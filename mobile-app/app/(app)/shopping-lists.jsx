@@ -5,7 +5,7 @@
  * Features:
  * - List shopping lists with item counts
  * - Pull-to-refresh
- * - Create new list via FAB
+ * - Create new list via header Add button
  * - Edit list on tap
  * - Delete list with confirmation
  * - Expand to see/manage items
@@ -46,6 +46,7 @@ import {
   ShoppingListForm,
   ShoppingItemForm,
   EmptyState,
+  ScreenLoading,
   useToast,
 } from '../../components';
 
@@ -70,7 +71,7 @@ export default function ShoppingListsScreen() {
   const rowRefs = useRef({});
 
   // Fetch shopping lists
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading } = useQuery({
     queryKey: ['shopping-lists'],
     queryFn: () => shoppingListService.getAll(),
   });
@@ -430,11 +431,28 @@ export default function ShoppingListsScreen() {
   const isListSubmitting = createMutation.isPending || updateMutation.isPending;
   const isItemSubmitting = addItemMutation.isPending || updateItemMutation.isPending;
 
+  // Show loading on first fetch so we don't flash empty state (after all hooks to satisfy Rules of Hooks)
+  if (isLoading && (data === undefined || data === null)) {
+    return <ScreenLoading />;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        {t('shoppingLists.title', 'Shopping Lists')}
-      </Text>
+      {/* Header: title + Add button */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          {t('shoppingLists.title', 'Shopping Lists')}
+        </Text>
+        <TouchableOpacity
+          onPress={() => setIsFormOpen(true)}
+          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+          activeOpacity={0.7}
+          accessibilityLabel={t('shoppingLists.addNew', 'Add new list')}
+          accessibilityRole="button"
+        >
+          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={items}
@@ -458,15 +476,6 @@ export default function ShoppingListsScreen() {
           />
         }
       />
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => setIsFormOpen(true)}
-        activeOpacity={0.8}
-      >
-        <Plus size={28} color="#ffffff" />
-      </TouchableOpacity>
 
       {/* Create/Edit List Modal */}
       <Modal
@@ -533,15 +542,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   title: {
     ...typography.h2,
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    flex: 1,
+  },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     padding: spacing.md,
     paddingTop: 0,
-    paddingBottom: 100,
+    paddingBottom: 100, // Clear floating tab bar
   },
   card: {
     borderRadius: borderRadius.md,
@@ -661,15 +684,5 @@ const styles = StyleSheet.create({
   empty: {
     textAlign: 'center',
     ...typography.body,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: spacing.xl,
-    right: spacing.lg,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

@@ -48,6 +48,7 @@ import {
   ConfirmationModal,
   RecurringBillForm,
   EmptyState,
+  ScreenLoading,
   useToast,
 } from '../../components';
 
@@ -72,7 +73,7 @@ export default function RecurringBillsScreen() {
   const rowRefs = useRef({});
 
   // Fetch recurring bills
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading } = useQuery({
     queryKey: ['recurring-bills'],
     queryFn: () => recurringBillService.getAll(),
   });
@@ -724,11 +725,28 @@ export default function RecurringBillsScreen() {
   const hasNoSearchResults = searchQuery.trim() && filteredActiveBills.length === 0 && items.length > 0;
   const hasNoBills = items.length === 0;
 
+  // Show loading on first fetch so we don't flash empty state (after all hooks to satisfy Rules of Hooks)
+  if (isLoading && (data === undefined || data === null)) {
+    return <ScreenLoading />;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        {t('recurringBills.title', 'Recurring Bills')}
-      </Text>
+      {/* Header: title + Add button */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          {t('recurringBills.title', 'Recurring Bills')}
+        </Text>
+        <TouchableOpacity
+          onPress={() => { impactMedium(); setIsFormOpen(true); }}
+          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+          activeOpacity={0.7}
+          accessibilityLabel={t('recurringBills.addNew', 'Add new bill')}
+          accessibilityRole="button"
+        >
+          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
 
       {/* Summary cards (desktop parity) */}
       {summary != null && (
@@ -849,15 +867,6 @@ export default function RecurringBillsScreen() {
         </ScrollView>
       )}
 
-      {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => { impactMedium(); setIsFormOpen(true); }}
-        activeOpacity={0.8}
-      >
-        <Plus size={28} color="#ffffff" />
-      </TouchableOpacity>
-
       {/* Create/Edit Modal */}
       <Modal
         isOpen={isFormOpen || editingBill !== null}
@@ -969,10 +978,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   title: {
     ...typography.h2,
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    flex: 1,
+  },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   summaryScroll: {
     maxHeight: 100,
@@ -1030,7 +1053,7 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.md,
     paddingTop: 0,
-    paddingBottom: 100,
+    paddingBottom: 100, // Clear floating tab bar
   },
   section: {
     marginBottom: spacing.lg,
@@ -1181,15 +1204,5 @@ const styles = StyleSheet.create({
   empty: {
     textAlign: 'center',
     ...typography.body,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: spacing.xl,
-    right: spacing.lg,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

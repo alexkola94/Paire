@@ -47,7 +47,7 @@ export default function BankCallbackScreen() {
   }, [params.success, params.error, router, t]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
         {status === 'processing' && (
           <>

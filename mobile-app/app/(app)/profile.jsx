@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Image, ActivityIndicator } from 'react-native';
+import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,10 +14,13 @@ import {
 import { profileService } from '../../services/api';
 import { authService } from '../../services/auth';
 import { useTheme } from '../../context/ThemeContext';
+import { useTabTransition } from '../../context/TabTransitionContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { Modal, Button, FormField, useToast } from '../../components';
 
 // Supported locales for language picker with flags
+const TAB_INDEX = 3; // Profile is fourth tab
+
 const LOCALES = [
   { code: 'en', labelKey: 'settings.languages.en', flag: '🇬🇧', nativeName: 'English' },
   { code: 'el', labelKey: 'settings.languages.el', flag: '🇬🇷', nativeName: 'Ελληνικά' },
@@ -37,10 +41,25 @@ function MenuItem({ icon: Icon, label, onPress, theme, destructive }) {
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const { theme, isDark, toggleTheme } = useTheme();
+  const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const user = authService.getCurrentUser();
+
+  useFocusEffect(
+    useCallback(() => {
+      registerTabIndex(TAB_INDEX);
+    }, [registerTabIndex])
+  );
+
+  const reducedMotion = useReducedMotion();
+  const entering = useMemo(() => {
+    if (reducedMotion) return FadeIn.duration(0);
+    if (previousTabIndex === null) return FadeIn.duration(200);
+    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(280);
+  }, [previousTabIndex, currentTabIndex, reducedMotion]);
+
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState('');
@@ -53,6 +72,10 @@ export default function ProfileScreen() {
     queryKey: ['my-profile'],
     queryFn: () => profileService.getMyProfile(),
   });
+
+  // Support both snake_case (avatar_url) and camelCase (avatarUrl) from API
+  const avatarUrl = profile?.avatar_url ?? profile?.avatarUrl;
+  const displayName = profile?.display_name ?? profile?.displayName;
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => profileService.updateMyProfile(data),
@@ -118,7 +141,7 @@ export default function ProfileScreen() {
   };
 
   const openEditProfile = () => {
-    setEditDisplayName(profile?.displayName ?? profile?.display_name ?? '');
+    setEditDisplayName(displayName ?? '');
     setEditProfileModalOpen(true);
   };
 
@@ -163,7 +186,8 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* User Info (Paire: soft card, glass border; avatar with change-photo) */}
         <View style={[styles.profileCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.md]}>
@@ -174,8 +198,8 @@ export default function ProfileScreen() {
             disabled={uploadAvatarMutation.isPending}
             accessibilityLabel={t('profile.changePhoto', 'Change photo')}
           >
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
             ) : (
               <View style={[styles.avatar, { backgroundColor: theme.colors.primary + '20' }]}>
                 <User size={32} color={theme.colors.primary} />
@@ -198,7 +222,7 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
           <Text style={[styles.name, { color: theme.colors.text }]}>
-            {profile?.displayName || user?.displayName || user?.email?.split('@')[0]}
+            {displayName || user?.displayName || user?.email?.split('@')[0]}
           </Text>
           <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{user?.email}</Text>
         </View>
@@ -352,13 +376,15 @@ export default function ProfileScreen() {
           <Button title={t('common.save')} onPress={handleChangePassword} />
         </View>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingBottom: 100 },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.lg },
   profileCard: {
     borderRadius: borderRadius.lg,
     padding: spacing.xl,

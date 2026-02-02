@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: spacing.xs, marginRight: spacing.sm },
   title: { flex: 1, ...typography.h3 },
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
   centered: { padding: spacing.xl },
   errorText: { ...typography.body, textAlign: 'center', marginTop: spacing.lg },
   sectionTitle: { ...typography.label, marginTop: spacing.lg, marginBottom: spacing.sm },

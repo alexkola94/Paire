@@ -14,6 +14,8 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
+import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +23,7 @@ import { Plus, Pencil, Trash2, X, List, Clock, Calendar } from 'lucide-react-nat
 import { transactionService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
+import { useTabTransition } from '../../context/TabTransitionContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import {
   Modal,
@@ -28,11 +31,13 @@ import {
   DateRangePicker,
   ConfirmationModal,
   TransactionForm,
+  ScreenLoading,
   useToast,
 } from '../../components';
 import CalendarView from '../../components/CalendarView';
 
 const PAGE_SIZE = 20;
+const TAB_INDEX = 1; // Transactions is second tab
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -48,8 +53,22 @@ export default function TransactionsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const { isPrivacyMode } = usePrivacyMode();
+  const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+
+  useFocusEffect(
+    useCallback(() => {
+      registerTabIndex(TAB_INDEX);
+    }, [registerTabIndex])
+  );
+
+  const reducedMotion = useReducedMotion();
+  const entering = useMemo(() => {
+    if (reducedMotion) return FadeIn.duration(0);
+    if (previousTabIndex === null) return FadeIn.duration(200);
+    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(280);
+  }, [previousTabIndex, currentTabIndex, reducedMotion]);
 
   // Format amount with privacy mode support
   const formatAmount = (amount, isExpense) => {
@@ -72,7 +91,7 @@ export default function TransactionsScreen() {
   const [detailTransaction, setDetailTransaction] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const { data, refetch, isFetching } = useQuery({
+  const { data, refetch, isFetching, isLoading } = useQuery({
     queryKey: ['transactions', 'all', page, searchQuery, startDate, endDate, typeFilter],
     queryFn: () =>
       transactionService.getAll({
@@ -254,9 +273,29 @@ export default function TransactionsScreen() {
     </View>
   );
 
+  // Show loading on first fetch so we don't flash empty state (after all hooks to satisfy Rules of Hooks)
+  if (isLoading && (data === undefined || data === null)) {
+    return <ScreenLoading />;
+  }
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>{t('transactions.title')}</Text>
+    <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      {/* Header: title + Add button (hide Add in calendar view when date selected) */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>{t('transactions.title')}</Text>
+        {!(viewMode === 'calendar' && selectedCalendarDate) && (
+          <TouchableOpacity
+            onPress={() => { setEditingTransaction(null); setFormOpen(true); }}
+            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+            activeOpacity={0.7}
+            accessibilityLabel={t('transactions.add', 'Add transaction')}
+            accessibilityRole="button"
+          >
+            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* View mode toggle (List / Timeline / Calendar) */}
       <View style={styles.viewToggleRow}>
@@ -488,14 +527,6 @@ export default function TransactionsScreen() {
         />
       )}
 
-      {/* FAB Add - hide in calendar view when date selected */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={() => { setEditingTransaction(null); setFormOpen(true); }}
-      >
-        <Plus size={24} color="#fff" />
-      </TouchableOpacity>
-
       {/* Add/Edit Form Modal */}
       <Modal
         isOpen={formOpen || !!editingTransaction}
@@ -594,13 +625,30 @@ export default function TransactionsScreen() {
         variant="danger"
         loading={deleteMutation.isPending}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
-  title: { ...typography.h2, padding: spacing.md, paddingBottom: spacing.sm },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  title: { ...typography.h2, flex: 1 },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   viewToggleRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -619,7 +667,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   viewToggleText: { ...typography.caption, fontWeight: '600' },
-  calendarContainer: { padding: spacing.md, paddingBottom: 100 },
+  calendarContainer: { padding: spacing.md, paddingBottom: spacing.lg },
   calendarTransactionsList: { marginTop: spacing.md },
   calendarDateTitle: { ...typography.h3, marginBottom: spacing.sm },
   calendarHint: { ...typography.body, textAlign: 'center', marginTop: spacing.lg },
@@ -641,7 +689,7 @@ const styles = StyleSheet.create({
   },
   typeFilterText: { ...typography.label, fontSize: 13 },
   filters: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
-  list: { padding: spacing.lg, paddingTop: 0, paddingBottom: 100 },
+  list: { padding: spacing.lg, paddingTop: 0, paddingBottom: 100 }, // Clear floating tab bar
   card: {
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
@@ -666,17 +714,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
   pageInfo: { ...typography.bodySmall },
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    bottom: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.md,
-  },
   detail: { padding: spacing.lg },
   detailRow: { marginBottom: spacing.md },
   detailLabel: { ...typography.caption, marginBottom: 2 },

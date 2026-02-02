@@ -30,6 +30,15 @@ namespace YouAndMeExpensesAPI.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Returns the current user's profile in API response shape (snake_case)
+        /// so the mobile app receives avatar_url, display_name, etc.
+        /// </summary>
+        public async Task<object?> GetMyProfileForApiAsync(Guid userId)
+        {
+            return await GetBasicProfileAsync(userId);
+        }
+
         public async Task<UserProfile?> GetMyProfileAsync(Guid userId)
         {
             return await _dbContext.UserProfiles

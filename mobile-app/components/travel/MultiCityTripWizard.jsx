@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
   },
   formScroll: {
     padding: spacing.md,
-    paddingBottom: 100,
+    paddingBottom: spacing.lg,
   },
   formLabel: {
     ...typography.label,

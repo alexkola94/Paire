@@ -139,6 +139,7 @@
     }
   },
   "navigation": {
+    "add": "Add",
     "dashboard": "Dashboard",
     "analytics": "Analytics",
     "expenses": "Expenses",
@@ -283,6 +284,7 @@
   "loans": {
     "title": "Loans",
     "addLoan": "Add Loan",
+    "addNew": "Add new loan",
     "addTitle": "Add Loan",
     "editLoan": "Edit Loan",
     "editTitle": "Edit Loan",
@@ -685,6 +687,7 @@
     "title": "Budgets",
     "subtitle": "Manage and track your spending budgets",
     "addBudget": "Add Budget",
+    "addNew": "Add new budget",
     "addTitle": "Add Budget",
     "addFirstBudget": "Add Your First Budget",
     "editBudget": "Edit Budget",
@@ -834,6 +837,7 @@
     "title": "Recurring Bills",
     "subtitle": "Manage your recurring payments",
     "addBill": "Add Bill",
+    "addNew": "Add new bill",
     "addTitle": "Add Bill",
     "editBill": "Edit Bill",
     "editTitle": "Edit Bill",
@@ -971,6 +975,7 @@
     "title": "Shopping Lists",
     "myLists": "My Lists",
     "newList": "New List",
+    "addNew": "Add new list",
     "editList": "Edit List",
     "addTitle": "New List",
     "editTitle": "Edit List",
@@ -1065,6 +1070,7 @@
     "title": "Savings Goals",
     "subtitle": "Track your savings progress",
     "addGoal": "Add Goal",
+    "addNew": "Add new goal",
     "addTitle": "Add Goal",
     "editGoal": "Edit Goal",
     "editTitle": "Edit Goal",

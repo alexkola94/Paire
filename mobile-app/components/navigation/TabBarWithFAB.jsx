@@ -1,8 +1,9 @@
 /**
  * TabBarWithFAB Component
- * 
- * Custom bottom tab bar with a prominent Floating Action Button (FAB) in the center.
- * Features glassmorphism styling, smooth animations, and accessibility support.
+ *
+ * Floating pill tab bar with real glassmorphism (blur + translucent tint) and
+ * an opaque rounded "sub-pill" behind the active tab (reference-style).
+ * Center slot is an "Add" tab (opens Quick Add sheet); 4 nav tabs (Dashboard, Transactions, Analytics, Profile).
  * Follows the Paire "Harmonious Minimalist" design system.
  */
 
@@ -14,6 +15,7 @@ import {
   Platform,
   Text,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -23,31 +25,37 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing, borderRadius, colors } from '../../constants/theme';
+import { spacing } from '../../constants/theme';
 import QuickAddSheet from './QuickAddSheet';
 
-// Animated components
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+// Floating pill (reference-style): radius, padding, insets
+const FLOATING_PILL_RADIUS = 28;
+const FLOATING_PILL_VERTICAL_PADDING = 8;
+const FLOATING_PILL_MARGIN_H = 20;
+const FLOATING_PILL_MARGIN_BOTTOM = 8;
+// Active tab sub-pill: rounded background behind selected tab
+const ACTIVE_SUB_PILL_PADDING_H = 12;
+const ACTIVE_SUB_PILL_PADDING_V = 6;
+const ACTIVE_SUB_PILL_RADIUS = 9999;
 
 // Tab bar constants - compact design
 const TAB_BAR_HEIGHT = 40;
-const FAB_SIZE = 54;
-const FAB_OFFSET = 26; // How much FAB overlaps above tab bar
+// Center "Add" tab fixed width (same visual weight as other tabs)
+const ADD_TAB_WIDTH = 64;
 
 /**
- * Individual tab button with animation
+ * Individual tab button: reference-style active sub-pill (opaque rounded bg behind selected tab)
  */
 function TabButton({ route, label, renderIcon, isFocused, onPress, theme }) {
   const scale = useSharedValue(1);
-  const opacity = useSharedValue(isFocused ? 1 : 0.6);
+  const opacity = useSharedValue(isFocused ? 1 : 0.7);
 
-  // Update opacity when focus changes
   React.useEffect(() => {
-    opacity.value = withTiming(isFocused ? 1 : 0.6, { duration: 200 });
+    opacity.value = withTiming(isFocused ? 1 : 0.7, { duration: 200 });
   }, [isFocused]);
 
   const handlePressIn = () => {
-    scale.value = withTiming(0.92, { duration: 100 });
+    scale.value = withTiming(0.95, { duration: 100 });
   };
 
   const handlePressOut = () => {
@@ -59,16 +67,14 @@ function TabButton({ route, label, renderIcon, isFocused, onPress, theme }) {
     opacity: opacity.value,
   }));
 
-  // Active indicator style
-  const indicatorStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isFocused ? 1 : 0, { duration: 200 }),
-    transform: [
-      { scaleX: withTiming(isFocused ? 1 : 0.5, { duration: 150 }) },
-    ],
-  }));
-
-  // Get the icon color based on focus state
+  // Active tab: primary; inactive: textLight (on glass)
   const iconColor = isFocused ? theme.colors.primary : theme.colors.textLight;
+  const labelColor = isFocused ? theme.colors.primary : theme.colors.textLight;
+
+  // Sub-pill background for active tab (reference: opaque rounded pill behind icon + label)
+  const activeSubPillBg = theme.dark
+    ? 'rgba(255, 255, 255, 0.18)'
+    : 'rgba(0, 0, 0, 0.06)';
 
   return (
     <TouchableOpacity
@@ -81,49 +87,55 @@ function TabButton({ route, label, renderIcon, isFocused, onPress, theme }) {
       accessibilityLabel={label}
     >
       <Animated.View style={[styles.tabContent, animatedStyle]}>
-        {/* Render the icon using the provided render function */}
-        {renderIcon && renderIcon({ color: iconColor, focused: isFocused })}
-        <Text
-          style={[
-            styles.tabLabel,
-            {
-              color: isFocused ? theme.colors.primary : theme.colors.textLight,
-              fontWeight: isFocused ? '600' : '500',
-            },
-          ]}
-          numberOfLines={1}
-        >
-          {label}
-        </Text>
+        {/* When focused: wrap in sub-pill (opaque rounded bg) like reference */}
+        {isFocused ? (
+          <View
+            style={[
+              styles.activeSubPill,
+              {
+                backgroundColor: activeSubPillBg,
+              },
+            ]}
+          >
+            {renderIcon && renderIcon({ color: iconColor, focused: isFocused })}
+            <Text
+              style={[
+                styles.tabLabel,
+                { color: labelColor, fontWeight: '600' },
+              ]}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
+          </View>
+        ) : (
+          <>
+            {renderIcon && renderIcon({ color: iconColor, focused: isFocused })}
+            <Text
+              style={[
+                styles.tabLabel,
+                { color: labelColor, fontWeight: '500' },
+              ]}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
+          </>
+        )}
       </Animated.View>
-
-      {/* Active indicator dot */}
-      <Animated.View
-        style={[
-          styles.activeIndicator,
-          { backgroundColor: theme.colors.primary },
-          indicatorStyle,
-        ]}
-      />
     </TouchableOpacity>
   );
 }
 
 /**
- * Floating Action Button with rotation animation
+ * Center "Add" tab: opens Quick Add sheet. Same pill style as other tabs; shows active sub-pill when sheet is open.
  */
-function FABButton({ onPress, isOpen, theme }) {
+function AddTabButton({ onPress, isOpen, theme }) {
   const { t } = useTranslation();
-  const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
 
-  // Rotate when sheet opens/closes - clean animation
-  React.useEffect(() => {
-    rotation.value = withTiming(isOpen ? 45 : 0, { duration: 200 });
-  }, [isOpen]);
-
   const handlePressIn = () => {
-    scale.value = withTiming(0.92, { duration: 100 });
+    scale.value = withTiming(0.95, { duration: 100 });
   };
 
   const handlePressOut = () => {
@@ -131,38 +143,50 @@ function FABButton({ onPress, isOpen, theme }) {
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { rotate: `${rotation.value}deg` },
-    ],
-  }));
-
-  const containerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
+  const iconColor = isOpen ? theme.colors.primary : theme.colors.textLight;
+  const labelColor = isOpen ? theme.colors.primary : theme.colors.textLight;
+  const activeSubPillBg = theme.dark
+    ? 'rgba(255, 255, 255, 0.18)'
+    : 'rgba(0, 0, 0, 0.06)';
+
   return (
-    <View style={styles.fabContainer}>
-      <AnimatedTouchable
+    <View style={styles.addTabContainer}>
+      <TouchableOpacity
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={[styles.fabButton, containerAnimatedStyle]}
-        activeOpacity={1}
+        style={styles.tabButton}
         accessibilityRole="button"
         accessibilityLabel={t('common.fabLabel', 'Add new transaction')}
         accessibilityHint={t('common.fabHint', 'Opens quick add menu')}
       >
-        {/* Gradient background effect */}
-        <View style={styles.fabGradient}>
-          <Animated.View style={animatedStyle}>
-            <Plus size={28} color="#fff" strokeWidth={2.5} />
-          </Animated.View>
-        </View>
-      </AnimatedTouchable>
-
-      {/* Glow effect */}
-      <View style={styles.fabGlow} />
+        <Animated.View style={[styles.tabContent, animatedStyle]}>
+          {isOpen ? (
+            <View style={[styles.activeSubPill, { backgroundColor: activeSubPillBg }]}>
+              <Plus size={22} color={iconColor} strokeWidth={2.5} />
+              <Text
+                style={[styles.tabLabel, { color: labelColor, fontWeight: '600' }]}
+                numberOfLines={1}
+              >
+                {t('navigation.add', 'Add')}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Plus size={22} color={iconColor} strokeWidth={2} />
+              <Text
+                style={[styles.tabLabel, { color: labelColor, fontWeight: '500' }]}
+                numberOfLines={1}
+              >
+                {t('navigation.add', 'Add')}
+              </Text>
+            </>
+          )}
+        </Animated.View>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -196,95 +220,146 @@ export default function TabBarWithFAB({ state, descriptors, navigation }) {
   const leftRoutes = visibleRoutes.slice(0, 2);
   const rightRoutes = visibleRoutes.slice(2, 4);
 
-  // Dynamic styles based on theme
-  const tabBarStyle = {
-    backgroundColor: theme.dark
-      ? 'rgba(15, 7, 26, 0.92)'
-      : 'rgba(255, 255, 255, 0.95)',
-    borderTopColor: theme.dark
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(0, 0, 0, 0.06)',
-    paddingBottom: insets.bottom,
-    height: TAB_BAR_HEIGHT + insets.bottom,
+  // Blur intensity from theme (fallback for older theme objects)
+  const blurIntensity = theme.colors.blurIntensity ?? 70;
+  const blurTint = theme.dark ? 'dark' : 'light';
+
+  // Outer wrapper: overlay content (Revolut-style) so content scrolls behind the bar
+  // Custom tab bar does not receive tabBarStyle from navigator; we apply absolute positioning here
+  const isFloatingPill = true;
+  const outerWrapperStyle = {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingBottom: isFloatingPill ? FLOATING_PILL_MARGIN_BOTTOM + insets.bottom : insets.bottom,
+    backgroundColor: 'transparent', // Let BlurView show; no solid bar background
+  };
+
+  // Inner bar: floating pill on iOS (margins, radius), full-width on Android
+  const innerBarHeight = isFloatingPill
+    ? TAB_BAR_HEIGHT + FLOATING_PILL_VERTICAL_PADDING * 2
+    : TAB_BAR_HEIGHT;
+  // Subtle light border around pill (reference: thin light outline)
+  const pillBorderColor = theme.dark
+    ? 'rgba(255, 255, 255, 0.12)'
+    : 'rgba(0, 0, 0, 0.08)';
+  const innerBarStyle = {
+    height: innerBarHeight,
+    borderColor: pillBorderColor,
+    backgroundColor: 'transparent', // BlurView provides the glass; no solid fill
+    ...(isFloatingPill
+      ? {
+          marginHorizontal: FLOATING_PILL_MARGIN_H,
+          borderRadius: FLOATING_PILL_RADIUS,
+          borderWidth: 1,
+          overflow: 'hidden',
+        }
+      : {
+          borderTopWidth: 1,
+        }),
   };
 
   return (
     <>
-      {/* Tab bar container */}
-      <View style={[styles.container, tabBarStyle]}>
-        {/* Left tabs */}
-        <View style={styles.tabGroup}>
-          {leftRoutes.map((route, index) => {
-            const { options } = descriptors[route.key];
-            const isFocused = state.index === state.routes.indexOf(route);
+      {/* Outer wrapper: safe area and bottom spacing */}
+      <View style={[styles.outerWrapper, outerWrapperStyle]}>
+        {/* Inner bar: BlurView + content (pill on iOS, full-width on Android) */}
+        <View style={[styles.innerBar, innerBarStyle]}>
+          {/* Real glassmorphism: blur content behind the bar (iOS; Android may fall back to semi-transparent) */}
+          <BlurView
+            intensity={blurIntensity}
+            tint={blurTint}
+            style={StyleSheet.absoluteFill}
+          />
+          {/* Android: light tint so bar stays translucent when BlurView fallback is used */}
+          {Platform.OS === 'android' && (
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: theme.dark
+                    ? 'rgba(15, 7, 26, 0.12)'
+                    : 'rgba(255, 255, 255, 0.12)',
+                },
+              ]}
+              pointerEvents="none"
+            />
+          )}
+          {/* Content row: left tabs + Add tab + right tabs */}
+          <View style={styles.contentRow}>
+            {/* Left tabs */}
+            <View style={styles.tabGroup}>
+              {leftRoutes.map((route) => {
+                const { options } = descriptors[route.key];
+                const isFocused = state.index === state.routes.indexOf(route);
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+                const onPress = () => {
+                  const event = navigation.emit({
+                    type: 'tabPress',
+                    target: route.key,
+                    canPreventDefault: true,
+                  });
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
-              }
-            };
+                  if (!isFocused && !event.defaultPrevented) {
+                    navigation.navigate(route.name);
+                  }
+                };
 
-            return (
-              <TabButton
-                key={route.key}
-                route={route}
-                label={options.title || route.name}
-                renderIcon={options.tabBarIcon}
-                isFocused={isFocused}
-                onPress={onPress}
-                theme={theme}
-              />
-            );
-          })}
+                return (
+                  <TabButton
+                    key={route.key}
+                    route={route}
+                    label={options.title || route.name}
+                    renderIcon={options.tabBarIcon}
+                    isFocused={isFocused}
+                    onPress={onPress}
+                    theme={theme}
+                  />
+                );
+              })}
+            </View>
+
+            {/* Center Add tab: opens Quick Add sheet (no route) */}
+            <AddTabButton
+              onPress={handleFABPress}
+              isOpen={isQuickAddOpen}
+              theme={theme}
+            />
+
+            {/* Right tabs */}
+            <View style={styles.tabGroup}>
+              {rightRoutes.map((route) => {
+                const { options } = descriptors[route.key];
+                const isFocused = state.index === state.routes.indexOf(route);
+
+                const onPress = () => {
+                  const event = navigation.emit({
+                    type: 'tabPress',
+                    target: route.key,
+                    canPreventDefault: true,
+                  });
+
+                  if (!isFocused && !event.defaultPrevented) {
+                    navigation.navigate(route.name);
+                  }
+                };
+
+                return (
+                  <TabButton
+                    key={route.key}
+                    route={route}
+                    label={options.title || route.name}
+                    renderIcon={options.tabBarIcon}
+                    isFocused={isFocused}
+                    onPress={onPress}
+                    theme={theme}
+                  />
+                );
+              })}
+            </View>
+          </View>
         </View>
-
-        {/* FAB spacer */}
-        <View style={styles.fabSpacer} />
-
-        {/* Right tabs */}
-        <View style={styles.tabGroup}>
-          {rightRoutes.map((route, index) => {
-            const { options } = descriptors[route.key];
-            const isFocused = state.index === state.routes.indexOf(route);
-
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
-
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
-              }
-            };
-
-            return (
-              <TabButton
-                key={route.key}
-                route={route}
-                label={options.title || route.name}
-                renderIcon={options.tabBarIcon}
-                isFocused={isFocused}
-                onPress={onPress}
-                theme={theme}
-              />
-            );
-          })}
-        </View>
-
-        {/* Floating Action Button */}
-        <FABButton
-          onPress={handleFABPress}
-          isOpen={isQuickAddOpen}
-          theme={theme}
-        />
       </View>
 
       {/* Quick Add Sheet */}
@@ -294,22 +369,32 @@ export default function TabBarWithFAB({ state, descriptors, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    // Glassmorphism shadow
+  outerWrapper: {
+    overflow: 'visible',
+  },
+  innerBar: {
+    // Height, border, radius (iOS pill) set dynamically
+    // Shadow for depth
     ...Platform.select({
       ios: {
         shadowColor: '#8B5CF6',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
         shadowRadius: 16,
       },
       android: {
         elevation: 8,
       },
     }),
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   tabGroup: {
     flex: 1,
@@ -324,63 +409,26 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     alignItems: 'center',
-    gap: 4, // Increased from 2 for better spacing
+    gap: 4,
   },
   tabLabel: {
-    fontSize: 11, // Slightly larger for better readability
+    fontSize: 11,
     letterSpacing: -0.2,
   },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: -spacing.xs,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
-  fabSpacer: {
-    width: FAB_SIZE + spacing.lg, // Increased spacing around FAB
-  },
-  fabContainer: {
-    position: 'absolute',
-    top: -FAB_OFFSET,
-    left: '50%',
-    marginLeft: -FAB_SIZE / 2,
-    alignItems: 'center',
-  },
-  fabButton: {
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: FAB_SIZE / 2,
-    overflow: 'hidden',
-    // Shadow
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 10,
-      },
-    }),
-  },
-  fabGradient: {
-    flex: 1,
+  // Active tab sub-pill: opaque rounded background behind icon + label (reference-style)
+  activeSubPill: {
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: FAB_SIZE / 2,
+    gap: 4,
+    paddingHorizontal: ACTIVE_SUB_PILL_PADDING_H,
+    paddingVertical: ACTIVE_SUB_PILL_PADDING_V,
+    borderRadius: ACTIVE_SUB_PILL_RADIUS,
   },
-  fabGlow: {
-    position: 'absolute',
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
-    borderRadius: (FAB_SIZE + 16) / 2,
-    backgroundColor: colors.primary,
-    opacity: 0.12,
-    zIndex: -1,
+  // Center Add tab: fixed width so layout stays even with left/right tab groups
+  addTabContainer: {
+    width: ADD_TAB_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

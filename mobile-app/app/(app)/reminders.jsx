@@ -87,7 +87,7 @@ export default function RemindersScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
@@ -344,7 +344,7 @@ export default function RemindersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   keyboard: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: 24 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
   loadingWrap: {
     flex: 1,
     alignItems: 'center',

@@ -123,7 +123,7 @@ export default function TripDocumentsScreen() {
 
   if (tripLoading || !trip) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -138,6 +138,15 @@ export default function TripDocumentsScreen() {
           <ChevronLeft size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.colors.text }]}>{t('travel.documents.title', 'Documents')}</Text>
+        <TouchableOpacity
+          onPress={() => setAddModalOpen(true)}
+          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+          activeOpacity={0.7}
+          accessibilityLabel={t('travel.documents.addDoc', 'Add document')}
+          accessibilityRole="button"
+        >
+          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -154,13 +163,6 @@ export default function TripDocumentsScreen() {
           </Text>
         }
       />
-
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={() => setAddModalOpen(true)}
-      >
-        <Plus size={24} color="#fff" />
-      </TouchableOpacity>
 
       <Modal
         isOpen={addModalOpen}
@@ -220,8 +222,15 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: spacing.xs, marginRight: spacing.sm },
   title: { flex: 1, ...typography.h3 },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  list: { padding: spacing.md, paddingBottom: 100 },
+  list: { padding: spacing.md, paddingBottom: 100 }, // Clear floating tab bar
   card: {
     borderRadius: borderRadius.lg,
     padding: spacing.md,
@@ -232,17 +241,6 @@ const styles = StyleSheet.create({
   docTitle: { ...typography.body, fontWeight: '600' },
   docUrl: { ...typography.bodySmall, marginTop: 2 },
   empty: { textAlign: 'center', marginTop: spacing.xl, ...typography.body },
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    bottom: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.md,
-  },
   formRow: { marginBottom: spacing.md },
   label: { ...typography.label, marginBottom: spacing.xs },
   inputTouch: { padding: spacing.md, borderRadius: borderRadius.sm, borderWidth: 1 },

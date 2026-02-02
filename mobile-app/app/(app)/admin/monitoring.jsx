@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: spacing.xs, marginRight: spacing.sm },
   title: { flex: 1, ...typography.h3 },
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
   card: {
     padding: spacing.md,
     borderRadius: borderRadius.lg,

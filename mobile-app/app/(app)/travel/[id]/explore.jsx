@@ -221,7 +221,7 @@ export default function TripExploreScreen() {
 
   if (tripLoading || !trip) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContent: { paddingBottom: 100 },
+  scrollContent: { paddingBottom: spacing.lg },
   weatherSection: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   sectionTitle: { ...typography.label, marginHorizontal: spacing.md, marginTop: spacing.md, marginBottom: spacing.sm },
   mapCta: {
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   categoryText: { ...typography.bodySmall, fontWeight: '500' },
 
   // List
-  list: { padding: spacing.md, paddingBottom: 100 },
+  list: { padding: spacing.md, paddingBottom: spacing.lg },
   listInner: { paddingHorizontal: spacing.md },
 
   // Place card

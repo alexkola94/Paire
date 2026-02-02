@@ -34,7 +34,8 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var profile = await _profileService.GetMyProfileAsync(userId);
+                // Return API-shaped profile (snake_case: avatar_url, display_name) for frontend compatibility
+                var profile = await _profileService.GetMyProfileForApiAsync(userId);
 
                 if (profile == null)
                 {

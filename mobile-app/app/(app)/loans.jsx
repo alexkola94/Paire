@@ -5,7 +5,7 @@
  * Features:
  * - List loans with type indicators
  * - Pull-to-refresh
- * - Create new loan via FAB
+ * - Create new loan via header Add button
  * - Edit loan on tap
  * - Delete loan with confirmation
  * - Theme-aware styling
@@ -39,6 +39,7 @@ import {
   DateInput,
   FormField,
   EmptyState,
+  ScreenLoading,
   useToast,
 } from '../../components';
 
@@ -69,7 +70,7 @@ export default function LoansScreen() {
   const rowRefs = useRef({});
 
   // Fetch loans
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading } = useQuery({
     queryKey: ['loans'],
     queryFn: () => loanService.getAll(),
   });
@@ -394,11 +395,28 @@ export default function LoansScreen() {
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
+  // Show loading on first fetch so we don't flash empty state (after all hooks to satisfy Rules of Hooks)
+  if (isLoading && (data === undefined || data === null)) {
+    return <ScreenLoading />;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        {t('loans.title', 'Loans')}
-      </Text>
+      {/* Header: title + Add button */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          {t('loans.title', 'Loans')}
+        </Text>
+        <TouchableOpacity
+          onPress={() => { impactMedium(); setIsFormOpen(true); }}
+          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+          activeOpacity={0.7}
+          accessibilityLabel={t('loans.addNew', 'Add new loan')}
+          accessibilityRole="button"
+        >
+          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={items}
@@ -422,15 +440,6 @@ export default function LoansScreen() {
           />
         }
       />
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }, shadows.lg]}
-        onPress={() => { impactMedium(); setIsFormOpen(true); }}
-        activeOpacity={0.8}
-      >
-        <Plus size={28} color="#ffffff" />
-      </TouchableOpacity>
 
       {/* Create/Edit Modal */}
       <Modal
@@ -602,15 +611,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   title: {
     ...typography.h2,
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    flex: 1,
+  },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     padding: spacing.md,
     paddingTop: 0,
-    paddingBottom: 100,
+    paddingBottom: spacing.lg,
   },
   card: {
     borderRadius: borderRadius.md,
@@ -714,16 +737,6 @@ const styles = StyleSheet.create({
   empty: {
     textAlign: 'center',
     ...typography.body,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: spacing.xl,
-    right: spacing.lg,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   // Payment history modal
   paymentsModalContent: {

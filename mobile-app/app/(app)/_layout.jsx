@@ -16,6 +16,7 @@ import { authService } from '../../services/auth';
 import { useTheme } from '../../context/ThemeContext';
 import { CalculatorProvider } from '../../context/CalculatorContext';
 import { OverlayProvider } from '../../context/OverlayContext';
+import { TabTransitionProvider } from '../../context/TabTransitionContext';
 import { TabBarWithFAB, FinanceHubSheet, ToolsHubSheet, GlobalCalculator } from '../../components';
 
 export default function AppLayout() {
@@ -48,9 +49,22 @@ export default function AppLayout() {
   return (
     <CalculatorProvider>
       <OverlayProvider>
+      <TabTransitionProvider>
       <Tabs
         screenOptions={{
           headerShown: false,
+          // Overlay positioning is applied inside TabBarWithFAB (custom bar does not use tabBarStyle root)
+          tabBarStyle: {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            elevation: 10, // Keep bar above scrolling content on Android
+            shadowOpacity: 0, // Our pill has its own shadow
+            zIndex: 10,
+          },
           // Theme-aware colors for fallback
           tabBarActiveTintColor: theme.colors.primary,
           tabBarInactiveTintColor: theme.colors.textLight,
@@ -114,7 +128,7 @@ export default function AppLayout() {
         <Tabs.Screen name="admin" options={{ href: null }} />
       </Tabs>
 
-      {/* Feature Hub Bottom Sheets */}
+      {/* Feature Hub Bottom Sheets - inside TabTransitionProvider so tab screens can use context */}
       <FinanceHubSheet
         isOpen={isFinanceHubOpen}
         onClose={() => setIsFinanceHubOpen(false)}
@@ -126,6 +140,7 @@ export default function AppLayout() {
 
       {/* Global Calculator FAB - only visible in authenticated app screens */}
       <GlobalCalculator />
+      </TabTransitionProvider>
       </OverlayProvider>
     </CalculatorProvider>
   );

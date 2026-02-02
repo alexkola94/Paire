@@ -168,7 +168,7 @@ export default function TripDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
@@ -181,7 +181,7 @@ export default function TripDetailScreen() {
 
   if (error || !trip) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ChevronLeft size={24} color={theme.colors.text} />
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
   loadingText: { ...typography.bodySmall, marginTop: spacing.md },
   errorText: { ...typography.body, textAlign: 'center' },
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',

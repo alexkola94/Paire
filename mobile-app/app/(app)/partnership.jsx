@@ -33,7 +33,7 @@ export default function PartnershipScreen() {
   const partnerships = Array.isArray(data) ? data : [];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
         <Text style={[styles.title, { color: theme.colors.text }]}>{t('partnership.title')}</Text>
@@ -70,7 +70,7 @@ export default function PartnershipScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
   title: { ...typography.h2, marginBottom: spacing.lg },
   card: { borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center' },
   cardTitle: { ...typography.body, fontWeight: '600' },

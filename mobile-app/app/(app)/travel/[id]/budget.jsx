@@ -166,7 +166,7 @@ export default function TripBudgetScreen() {
 
   if (tripLoading || !trip) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -181,6 +181,15 @@ export default function TripBudgetScreen() {
           <ChevronLeft size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.colors.text }]}>{t('travel.budget.title', 'Budget')}</Text>
+        <TouchableOpacity
+          onPress={() => { setEditingExpense(null); resetForm(); setAddModalOpen(true); }}
+          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+          activeOpacity={0.7}
+          accessibilityLabel={t('travel.budget.addExpense', 'Add expense')}
+          accessibilityRole="button"
+        >
+          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -218,13 +227,6 @@ export default function TripBudgetScreen() {
           }
         />
       </ScrollView>
-
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={() => { setEditingExpense(null); resetForm(); setAddModalOpen(true); }}
-      >
-        <Plus size={24} color="#fff" />
-      </TouchableOpacity>
 
       <Modal
         isOpen={addModalOpen || !!editingExpense}
@@ -320,8 +322,15 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: spacing.xs, marginRight: spacing.sm },
   title: { flex: 1, ...typography.h3 },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.md, paddingBottom: 100 }, // Clear floating tab bar
   summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -345,17 +354,6 @@ const styles = StyleSheet.create({
   cardSub: { ...typography.bodySmall, marginTop: 2 },
   amount: { ...typography.body, fontWeight: '700' },
   empty: { textAlign: 'center', marginTop: spacing.lg, ...typography.body },
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    bottom: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.md,
-  },
   formRow: { marginBottom: spacing.md },
   label: { ...typography.label, marginBottom: spacing.xs },
   input: { ...typography.body, padding: spacing.sm, borderWidth: 1, borderRadius: borderRadius.sm },

@@ -34,7 +34,7 @@ import { transactionService, storageService, recurringBillService } from '../../
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { ConfirmationModal, EmptyState, useToast } from '../../components';
+import { ConfirmationModal, EmptyState, ScreenLoading, useToast } from '../../components';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -52,7 +52,7 @@ export default function ReceiptsScreen() {
   const [uploading, setUploading] = useState(false);
 
   // Fetch receipts: transaction receipts + recurring bill attachments (same as web)
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading } = useQuery({
     queryKey: ['receipts'],
     queryFn: async () => {
       const [transactions, recurringBills] = await Promise.all([
@@ -185,6 +185,11 @@ export default function ReceiptsScreen() {
   }, [refetch]);
 
   const items = Array.isArray(data) ? data : [];
+
+  // Show loading on first fetch so we don't flash empty state
+  if (isLoading && (data === undefined || data === null)) {
+    return <ScreenLoading />;
+  }
 
   // Handle delete confirmation (transaction or recurring attachment)
   const handleDeleteConfirm = async () => {
@@ -403,7 +408,7 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.md,
     paddingTop: 0,
-    paddingBottom: 100,
+    paddingBottom: spacing.lg,
   },
   card: {
     borderRadius: borderRadius.md,
@@ -507,7 +512,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.lg,
-    paddingBottom: spacing.xl + 20,
+    paddingBottom: spacing.lg,
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
   },

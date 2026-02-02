@@ -34,6 +34,9 @@ export { default as SplashScreen } from './SplashScreen';
 // Empty State
 export { default as EmptyState } from './EmptyState';
 
+// Screen loading (full-screen spinner + message)
+export { default as ScreenLoading } from './ScreenLoading';
+
 // Smart Suggestions Components
 export { default as SmartCategorySuggestions } from './SmartCategorySuggestions';
 export { default as DuplicateDetection } from './DuplicateDetection';

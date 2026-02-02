@@ -112,6 +112,7 @@
     }
   },
   "navigation": {
+    "add": "Añadir",
     "dashboard": "Panel",
     "analytics": "Análisis",
     "expenses": "Gastos",

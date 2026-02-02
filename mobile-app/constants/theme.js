@@ -12,10 +12,12 @@ export const colors = {
   secondary: '#f4ecf7',
   accent: '#d2b4de',
 
-  // Glassmorphism
+  // Glassmorphism (blur + translucent surfaces)
   glassBg: 'rgba(255, 255, 255, 0.85)',
   glassBorder: 'rgba(0, 0, 0, 0.08)',
   glassShadowColor: 'rgba(31, 38, 135, 0.08)',
+  // Blur effect tokens (for BlurView / backdrop blur)
+  blurIntensity: 70,
 
   // Neutrals
   bgPrimary: '#fdfbfd',
@@ -49,6 +51,7 @@ export const colors = {
     glassBg: 'rgba(26, 26, 46, 0.85)',
     glassBorder: 'rgba(255, 255, 255, 0.08)',
     overlay: 'rgba(0,0,0,0.7)',
+    blurIntensity: 70,
   },
 };
 
@@ -114,6 +117,7 @@ export const lightTheme = {
     glassBg: colors.glassBg,
     glassBorder: colors.glassBorder,
     overlay: colors.overlay,
+    blurIntensity: colors.blurIntensity ?? 70,
   },
   dark: false,
 };
@@ -130,6 +134,7 @@ export const darkTheme = {
     glassBg: colors.dark.glassBg,
     glassBorder: colors.dark.glassBorder,
     overlay: colors.dark.overlay,
+    blurIntensity: colors.dark.blurIntensity ?? 70,
   },
   dark: true,
 };

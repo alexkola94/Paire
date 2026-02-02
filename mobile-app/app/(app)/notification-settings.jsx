@@ -137,7 +137,7 @@ export default function NotificationSettingsScreen() {
   }, [showToast, t]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: spacing.lg,
   },
   mainToggle: {
     flexDirection: 'row',

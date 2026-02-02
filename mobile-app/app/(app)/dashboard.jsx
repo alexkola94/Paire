@@ -1,8 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, ScrollView, RefreshControl, StyleSheet, TouchableOpacity,
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,14 +22,16 @@ import { authService } from '../../services/auth';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { useDashboardLayout } from '../../context/DashboardLayoutContext';
+import { useTabTransition } from '../../context/TabTransitionContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { 
-  Modal, Button, ConfirmationModal, useToast, WidgetSelector,
+  Modal, Button, ConfirmationModal, ScreenLoading, useToast, WidgetSelector,
   SummaryWidget, BudgetWidget, UpcomingBillsWidget, RecentTransactionsWidget,
   SavingsWidget, QuickAccessWidget,
 } from '../../components';
 
 const RECENT_PAGE_SIZE = 10;
+const TAB_INDEX = 0; // Dashboard is first tab
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -43,13 +51,27 @@ export default function DashboardScreen() {
   const { showToast } = useToast();
   const { isPrivacyMode, togglePrivacyMode } = usePrivacyMode();
   const { layout, saveLayout, isWidgetVisible } = useDashboardLayout();
+  const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
   const [refreshing, setRefreshing] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      registerTabIndex(TAB_INDEX);
+    }, [registerTabIndex])
+  );
+
+  const reducedMotion = useReducedMotion();
+  const entering = useMemo(() => {
+    if (reducedMotion) return FadeIn.duration(0);
+    if (previousTabIndex === null) return FadeIn.duration(200);
+    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(280);
+  }, [previousTabIndex, currentTabIndex, reducedMotion]);
   const [detailTransaction, setDetailTransaction] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [widgetSelectorOpen, setWidgetSelectorOpen] = useState(false);
   const user = authService.getCurrentUser();
 
-  const { data: dashData, refetch } = useQuery({
+  const { data: dashData, refetch, isLoading: dashLoading } = useQuery({
     queryKey: ['dashboard-analytics'],
     queryFn: () => analyticsService.getDashboardAnalytics(),
   });
@@ -100,8 +122,14 @@ export default function DashboardScreen() {
   const recentList = Array.isArray(recentData) ? recentData : recentData?.items ?? [];
   const formatAmount = (n) => (isPrivacyMode ? '••••' : `€${Number(n).toFixed(2)}`);
 
+  // Show loading until primary dashboard data is ready (avoids empty/zero widgets flash)
+  if (dashLoading && (dashData === undefined || dashData === null)) {
+    return <ScreenLoading />;
+  }
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
@@ -271,13 +299,15 @@ export default function DashboardScreen() {
         layout={layout}
         onSave={saveLayout}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingBottom: 100 },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.lg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

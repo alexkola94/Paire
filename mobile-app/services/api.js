@@ -209,7 +209,8 @@ export const profileService = {
     const formData = new FormData();
     formData.append('file', file);
     const response = await request('post', '/api/profile/avatar', formData);
-    return response.avatar_url;
+    // Support both snake_case and camelCase from backend
+    return response?.avatar_url ?? response?.avatarUrl;
   },
 };
 

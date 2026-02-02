@@ -1,7 +1,7 @@
 /**
  * BottomSheetMenu Component
- * 
- * Reusable bottom sheet with glassmorphism styling and spring animations.
+ *
+ * Reusable bottom sheet with real glassmorphism (BlurView) and spring animations.
  * Features gesture-based dismiss, smooth transitions, and accessibility support.
  * Follows the Paire "Harmonious Minimalist" design system.
  */
@@ -16,6 +16,7 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -146,14 +147,11 @@ export default function BottomSheetMenu({
 
   if (!isOpen) return null;
 
-  // Theme-aware styles
+  // Theme-aware styles; blur tint for glassmorphism
+  const blurIntensity = theme.colors.blurIntensity ?? 70;
+  const blurTint = theme.dark ? 'dark' : 'light';
   const dynamicStyles = {
-    sheetBg: theme.dark
-      ? 'rgba(15, 7, 26, 0.95)'
-      : 'rgba(255, 255, 255, 0.92)',
-    sheetBorder: theme.dark
-      ? 'rgba(255, 255, 255, 0.1)'
-      : 'rgba(0, 0, 0, 0.08)',
+    sheetBorder: theme.colors.glassBorder,
     handleBar: theme.dark
       ? 'rgba(255, 255, 255, 0.3)'
       : 'rgba(0, 0, 0, 0.2)',
@@ -173,7 +171,7 @@ export default function BottomSheetMenu({
         />
       </Pressable>
 
-      {/* Bottom sheet */}
+      {/* Bottom sheet with BlurView for real glassmorphism */}
       <GestureDetector gesture={panGesture}>
         <Animated.View
           style={[
@@ -182,11 +180,17 @@ export default function BottomSheetMenu({
             {
               maxHeight: sheetMaxHeight,
               paddingBottom: insets.bottom + spacing.lg,
-              backgroundColor: dynamicStyles.sheetBg,
+              backgroundColor: 'transparent',
               borderColor: dynamicStyles.sheetBorder,
             },
           ]}
         >
+          {/* Blur background so content behind sheet is blurred */}
+          <BlurView
+            intensity={blurIntensity}
+            tint={blurTint}
+            style={StyleSheet.absoluteFill}
+          />
           {/* Handle bar for drag gesture */}
           <Animated.View
             style={[

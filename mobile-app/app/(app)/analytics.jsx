@@ -5,7 +5,7 @@
  * optional analyticsService.getLoanAnalytics() for loan summary.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
+import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
+import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -31,6 +33,7 @@ import { transactionService, analyticsService, partnershipService } from '../../
 import { getStoredUser } from '../../services/auth';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
+import { useTabTransition } from '../../context/TabTransitionContext';
 import { spacing, borderRadius, typography, shadows, colors } from '../../constants/theme';
 import { Dropdown } from '../../components';
 import { subDays } from 'date-fns';
@@ -200,12 +203,28 @@ const CATEGORY_COLORS = [
   '#6366F1',
 ];
 
+const TAB_INDEX = 2; // Analytics is third tab
+
 export default function AnalyticsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const { isPrivacyMode } = usePrivacyMode();
+  const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
   const { width } = useWindowDimensions();
   const [dateRange, setDateRange] = useState('month');
+
+  useFocusEffect(
+    useCallback(() => {
+      registerTabIndex(TAB_INDEX);
+    }, [registerTabIndex])
+  );
+
+  const reducedMotion = useReducedMotion();
+  const entering = useMemo(() => {
+    if (reducedMotion) return FadeIn.duration(0);
+    if (previousTabIndex === null) return FadeIn.duration(200);
+    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(280);
+  }, [previousTabIndex, currentTabIndex, reducedMotion]);
   const [viewFilter, setViewFilter] = useState('together');
   const [refreshing, setRefreshing] = useState(false);
   
@@ -277,7 +296,8 @@ export default function AnalyticsScreen() {
   const isLoading = loadingTx;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={
@@ -519,13 +539,15 @@ export default function AnalyticsScreen() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
   header: { marginBottom: spacing.md },
   title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.bodySmall },
