@@ -70,7 +70,7 @@ export default function PartnershipScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
+  scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   title: { ...typography.h2, marginBottom: spacing.lg },
   card: { borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center' },
   cardTitle: { ...typography.body, fontWeight: '600' },

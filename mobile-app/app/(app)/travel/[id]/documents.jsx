@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  list: { padding: spacing.md, paddingBottom: 100 }, // Clear floating tab bar
+  list: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   card: {
     borderRadius: borderRadius.lg,
     padding: spacing.md,

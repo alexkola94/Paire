@@ -198,7 +198,7 @@ export default function EconomicNewsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
+  scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md },
   loadingText: { ...typography.body },
   header: { marginBottom: spacing.lg },

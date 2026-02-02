@@ -307,7 +307,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.lg },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.tabBarBottomClearance },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

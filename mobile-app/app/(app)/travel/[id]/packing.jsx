@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: spacing.md, paddingBottom: 100 }, // Clear floating tab bar
+  scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   categoryBlock: { marginBottom: spacing.lg },
   categoryTitle: { ...typography.label, marginBottom: spacing.sm },
   card: {

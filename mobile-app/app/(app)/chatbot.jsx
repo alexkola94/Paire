@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
 
   // Messages
   list: { flex: 1 },
-  listContent: { padding: spacing.md, paddingBottom: spacing.lg },
+  listContent: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   messageRow: { 
     flexDirection: 'row',
     marginBottom: spacing.sm,

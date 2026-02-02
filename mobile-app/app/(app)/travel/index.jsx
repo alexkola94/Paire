@@ -497,7 +497,7 @@ export default function TravelIndexScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: spacing.md, paddingBottom: spacing.lg },
+  scrollContent: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   title: { ...typography.h2, marginBottom: spacing.md },
   tabs: { flexDirection: 'row', borderRadius: borderRadius.md, marginBottom: spacing.md, overflow: 'hidden' },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.md },

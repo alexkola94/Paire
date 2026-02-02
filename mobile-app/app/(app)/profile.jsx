@@ -384,7 +384,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.lg },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.tabBarBottomClearance },
   profileCard: {
     borderRadius: borderRadius.lg,
     padding: spacing.xl,

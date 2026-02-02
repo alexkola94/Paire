@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.tabBarBottomClearance,
   },
   mainToggle: {
     flexDirection: 'row',

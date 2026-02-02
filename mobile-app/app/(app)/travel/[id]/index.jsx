@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
   loadingText: { ...typography.bodySmall, marginTop: spacing.md },
   errorText: { ...typography.body, textAlign: 'center' },
-  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
+  scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',

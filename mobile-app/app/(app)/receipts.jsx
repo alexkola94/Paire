@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.md,
     paddingTop: 0,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.tabBarBottomClearance,
   },
   card: {
     borderRadius: borderRadius.md,

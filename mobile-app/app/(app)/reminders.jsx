@@ -344,7 +344,7 @@ export default function RemindersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   keyboard: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
+  scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   loadingWrap: {
     flex: 1,
     alignItems: 'center',

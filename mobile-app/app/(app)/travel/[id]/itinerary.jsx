@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  list: { padding: spacing.md, paddingBottom: 100 }, // Clear floating tab bar
+  list: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   sectionHeader: { paddingVertical: spacing.sm, paddingHorizontal: 0, marginTop: spacing.md },
   sectionTitle: { ...typography.label },
   card: {

@@ -547,7 +547,7 @@ export default function AnalyticsScreen() {
 const styles = StyleSheet.create({
   tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
-  scroll: { padding: spacing.md, paddingBottom: spacing.lg },
+  scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   header: { marginBottom: spacing.md },
   title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.bodySmall },

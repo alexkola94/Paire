@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   viewToggleText: { ...typography.caption, fontWeight: '600' },
-  calendarContainer: { padding: spacing.md, paddingBottom: spacing.lg },
+  calendarContainer: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   calendarTransactionsList: { marginTop: spacing.md },
   calendarDateTitle: { ...typography.h3, marginBottom: spacing.sm },
   calendarHint: { ...typography.body, textAlign: 'center', marginTop: spacing.lg },
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   },
   typeFilterText: { ...typography.label, fontSize: 13 },
   filters: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
-  list: { padding: spacing.lg, paddingTop: 0, paddingBottom: 100 }, // Clear floating tab bar
+  list: { padding: spacing.lg, paddingTop: 0, paddingBottom: spacing.tabBarBottomClearance },
   card: {
     borderRadius: borderRadius.lg,
     padding: spacing.lg,

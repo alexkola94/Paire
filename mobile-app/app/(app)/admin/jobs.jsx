@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: spacing.xs, marginRight: spacing.sm },
   title: { flex: 1, ...typography.h3 },
-  list: { padding: spacing.md, paddingBottom: spacing.lg },
+  list: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

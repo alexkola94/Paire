@@ -61,6 +61,8 @@ export const spacing = {
   md: 16,
   lg: 24,
   xl: 32,
+  /** Bottom padding for scroll content so floating tab bar does not hide content */
+  tabBarBottomClearance: 100,
 };
 
 export const borderRadius = {
