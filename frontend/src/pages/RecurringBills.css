@@ -146,6 +146,114 @@
   margin: 0;
 }
 
+/* ================================
+   Search Bar
+   ================================ */
+.recurring-bills-search-wrap {
+  margin-bottom: var(--spacing-xl);
+}
+
+.recurring-bills-search {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.recurring-bills-search:focus-within {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.recurring-bills-search-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.recurring-bills-search:focus-within .recurring-bills-search-icon {
+  color: var(--primary);
+}
+
+.recurring-bills-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--text-primary);
+  outline: none;
+  padding: var(--spacing-xs) 0;
+}
+
+.recurring-bills-search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.recurring-bills-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.recurring-bills-search-clear:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .recurring-bills-search {
+  background: rgba(15, 7, 26, 0.5);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .recurring-bills-search:focus-within {
+  border-color: var(--primary);
+  background: rgba(15, 7, 26, 0.7);
+}
+
+/* No search results empty state */
+.recurring-bills-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  border-radius: 24px;
+  text-align: center;
+  gap: var(--spacing-md);
+  transition: all 0.3s ease;
+}
+
+.recurring-bills-no-results h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.recurring-bills-no-results p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  max-width: 320px;
+}
+
 .summary-detail {
   margin: var(--spacing-xs) 0 0 0;
   font-size: 0.875rem;

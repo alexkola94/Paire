@@ -1,9 +1,10 @@
 /* ==========================================
    Travel Chatbot – theme-aware (light/dark)
-   Scoped under .travel-layout, uses travel palette
+   Uses data-theme on .travel-chatbot-container for palette; also scoped under .travel-layout
    ========================================== */
 
-/* Light: travel warm palette */
+/* Light: travel warm palette (standalone or under .travel-layout) */
+.travel-chatbot-container,
 .travel-layout .travel-chatbot-container {
   --travel-chatbot-primary: var(--travel-warm-primary, #e8913a);
   --travel-chatbot-primary-gradient: linear-gradient(135deg, var(--travel-warm-primary, #e8913a) 0%, var(--travel-warm-secondary, #f0a85c) 100%);
@@ -19,17 +20,25 @@
   --travel-chatbot-bot-msg-text: var(--travel-text-dark, #3d3530);
 }
 
-/* Dark theme */
+/* Dark theme: Paire palette – #0F071A background, Royal Amethyst #8B5CF6, glassmorphism */
+.travel-chatbot-container[data-theme='dark'],
 .travel-layout[data-theme='dark'] .travel-chatbot-container,
 [data-theme='dark'] .travel-layout .travel-chatbot-container {
-  --travel-chatbot-bg: rgba(17, 24, 39, 0.95);
+  --travel-chatbot-primary: #8B5CF6;
+  --travel-chatbot-primary-gradient: linear-gradient(135deg, #8B5CF6 0%, #a78bfa 100%);
+  --travel-chatbot-bg: #0F071A;
   --travel-chatbot-border: 1px solid rgba(255, 255, 255, 0.08);
-  --travel-chatbot-text: #f3f4f6;
+  --travel-chatbot-text: #f9fafb;
   --travel-chatbot-text-secondary: #9ca3af;
-  --travel-chatbot-bot-msg-bg: #1f2937;
+  /* Glassmorphism for message bubbles and inputs */
+  --travel-chatbot-bot-msg-bg: rgba(255, 255, 255, 0.06);
   --travel-chatbot-bot-msg-text: #f9fafb;
+  --travel-chatbot-user-msg-bg: #8B5CF6;
+  --travel-chatbot-user-msg-text: #fff;
+  --travel-chatbot-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
 }
 
+.travel-chatbot-container,
 .travel-layout .travel-chatbot-container {
   position: fixed;
   z-index: 10000;
@@ -38,6 +47,7 @@
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+.travel-chatbot-container svg,
 .travel-layout .travel-chatbot-container svg {
   display: inline-block !important;
   vertical-align: middle;
@@ -45,6 +55,8 @@
   opacity: 1 !important;
 }
 
+.travel-chatbot-header svg,
+.travel-chatbot-header-btn svg,
 .travel-layout .travel-chatbot-header svg,
 .travel-layout .travel-chatbot-header-btn svg {
   color: white !important;
@@ -82,9 +94,16 @@
   transition: transform 0.15s ease;
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-reveal-btn,
 [data-theme='dark'] .travel-layout .travel-chatbot-reveal-btn {
-  background: rgba(232, 145, 58, 0.25);
-  color: var(--travel-warm-secondary, #f0a85c);
+  background: rgba(139, 92, 246, 0.25);
+  color: #a78bfa;
+  box-shadow: -2px 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-reveal-btn:hover,
+[data-theme='dark'] .travel-layout .travel-chatbot-reveal-btn:hover {
+  background: rgba(139, 92, 246, 0.35);
 }
 
 /* FAB */
@@ -111,6 +130,16 @@
   transform: scale(1.05) translateY(-4px);
   box-shadow: 0 12px 28px rgba(232, 145, 58, 0.5);
   transition: all 0.3s ease;
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-fab,
+[data-theme='dark'] .travel-layout .travel-chatbot-fab {
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-fab:hover,
+[data-theme='dark'] .travel-layout .travel-chatbot-fab:hover {
+  box-shadow: 0 12px 28px rgba(139, 92, 246, 0.5);
 }
 
 .travel-layout .travel-chatbot-fab:active {
@@ -345,6 +374,13 @@
   box-shadow: 0 0 8px #a78bfa;
 }
 
+/* Dark: AI/Online status – Vitality Green #10B981 per Paire */
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-status-dot.ai-mode,
+[data-theme='dark'] .travel-layout .travel-chatbot-status-dot.ai-mode {
+  background: #10B981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
 .travel-layout .travel-chatbot-header-actions {
   display: flex;
   align-items: center;
@@ -395,6 +431,32 @@
   border-color: rgba(255, 255, 255, 0.6);
 }
 
+/* Dark: header – Royal Amethyst #8B5CF6, white text, glassmorphism buttons */
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-header,
+[data-theme='dark'] .travel-layout .travel-chatbot-header {
+  background: #8B5CF6;
+  background-image: none;
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-header h3,
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-status,
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-ai-toggle,
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-ai-toggle-label,
+[data-theme='dark'] .travel-layout .travel-chatbot-header h3,
+[data-theme='dark'] .travel-layout .travel-chatbot-status,
+[data-theme='dark'] .travel-layout .travel-chatbot-ai-toggle,
+[data-theme='dark'] .travel-layout .travel-chatbot-ai-toggle-label {
+  color: #ffffff !important;
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-ai-toggle:hover,
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-ai-toggle.active,
+[data-theme='dark'] .travel-layout .travel-chatbot-ai-toggle:hover,
+[data-theme='dark'] .travel-layout .travel-chatbot-ai-toggle.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff !important;
+}
+
 /* Messages wrapper: takes remaining space so only messages scroll; scroll-to-end button positioned inside */
 .travel-layout .travel-chatbot-messages-wrapper {
   flex: 1;
@@ -442,6 +504,17 @@
   background: var(--travel-chatbot-primary);
   color: white;
   transform: translateX(-50%) scale(1.05);
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-scroll-to-end,
+[data-theme='dark'] .travel-layout .travel-chatbot-scroll-to-end {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-scroll-to-end:hover,
+[data-theme='dark'] .travel-layout .travel-chatbot-scroll-to-end:hover {
+  background: #8B5CF6;
+  color: #fff;
 }
 
 .travel-layout .travel-chatbot-message {
@@ -698,6 +771,63 @@
   z-index: 1;
 }
 
+/* Mobile: readable tables – horizontal scroll inside message, no viewport overflow */
+@media (max-width: 767px) {
+  .travel-layout .travel-chatbot-message {
+    width: max-content;
+    max-width: 90%;
+  }
+
+  .travel-layout .travel-chatbot-message-content {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .travel-layout .travel-chatbot-message-text {
+    min-width: 0;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  .travel-layout .travel-chatbot-markdown {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .travel-layout .travel-chatbot-markdown table {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Hide scrollbar on mobile – table remains swipeable with touch */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .travel-layout .travel-chatbot-markdown table::-webkit-scrollbar {
+    display: none;
+  }
+
+  .travel-layout .travel-chatbot-markdown table thead,
+  .travel-layout .travel-chatbot-markdown table tbody,
+  .travel-layout .travel-chatbot-markdown table tr {
+    table-layout: auto;
+    width: max-content;
+    min-width: 360px;
+  }
+
+  .travel-layout .travel-chatbot-markdown th {
+    white-space: nowrap;
+  }
+
+  .travel-layout .travel-chatbot-markdown th,
+  .travel-layout .travel-chatbot-markdown td {
+    hyphens: none;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    min-width: 72px;
+  }
+}
+
 .travel-layout .travel-chatbot-markdown tr:hover {
   background-color: rgba(0, 0, 0, 0.02);
   transition: background-color 0.2s ease;
@@ -742,40 +872,49 @@
   51%, 100% { opacity: 0; }
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown table,
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown table {
   background-color: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown th,
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown th {
-  background-color: rgba(232, 145, 58, 0.2);
-  color: var(--travel-warm-secondary, #f0a85c);
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown th,
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown td,
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown th,
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown td {
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown tr:hover,
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown tr:hover {
   background-color: rgba(255, 255, 255, 0.03);
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown blockquote,
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown blockquote {
-  background: rgba(232, 145, 58, 0.12);
-  border-left-color: var(--travel-warm-secondary, #f0a85c);
+  background: rgba(139, 92, 246, 0.1);
+  border-left-color: #8B5CF6;
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown code:not(pre code),
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown code:not(pre code) {
-  background: rgba(232, 145, 58, 0.2);
+  background: rgba(139, 92, 246, 0.15);
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown pre,
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown pre {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-markdown h1,
 [data-theme='dark'] .travel-layout .travel-chatbot-markdown h1 {
-  border-bottom-color: rgba(232, 145, 58, 0.4);
+  border-bottom-color: rgba(139, 92, 246, 0.4);
 }
 
 @media (min-width: 481px) {
@@ -928,6 +1067,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-attachment-preview-doc,
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-message-attachment-doc,
+[data-theme='dark'] .travel-layout .travel-chatbot-attachment-preview-doc,
+[data-theme='dark'] .travel-layout .travel-chatbot-message-attachment-doc {
+  background: rgba(255, 255, 255, 0.06);
+  color: #9ca3af;
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-export-btn:hover,
+[data-theme='dark'] .travel-layout .travel-chatbot-export-btn:hover {
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.1);
 }
 
 .travel-layout .travel-chatbot-attachment-remove {
@@ -1002,16 +1156,18 @@
   background: var(--travel-chatbot-bot-msg-bg);
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-quick-action-btn,
 [data-theme='dark'] .travel-layout .travel-chatbot-quick-action-btn {
-  background: #374151;
+  background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.1);
   color: #e5e7eb;
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-quick-action-btn:hover,
 [data-theme='dark'] .travel-layout .travel-chatbot-quick-action-btn:hover {
-  background: #4b5563;
-  border-color: var(--travel-warm-secondary, #f0a85c);
-  color: var(--travel-warm-secondary, #f0a85c);
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #a78bfa;
 }
 
 .travel-layout .travel-chatbot-action-link {
@@ -1069,23 +1225,52 @@
   color: var(--travel-chatbot-primary);
 }
 
+/* Dark: messages area – #0F071A (Paire dark background) */
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-messages,
+[data-theme='dark'] .travel-layout .travel-chatbot-messages {
+  background: #0F071A;
+  transition: background 0.2s ease;
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-suggestions,
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-input-container,
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-footer,
 [data-theme='dark'] .travel-layout .travel-chatbot-suggestions,
 [data-theme='dark'] .travel-layout .travel-chatbot-input-container,
 [data-theme='dark'] .travel-layout .travel-chatbot-footer {
-  background: rgba(17, 24, 39, 0.9);
+  background: #0F071A;
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme='dark'] .travel-layout .travel-chatbot-suggestion-btn {
-  background: #1f2937;
-  border-color: rgba(255, 255, 255, 0.1);
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-suggestions-title,
+[data-theme='dark'] .travel-layout .travel-chatbot-suggestions-title {
   color: #e5e7eb;
 }
 
+/* Dark: bot message bubbles – glassmorphism (translucent + blur) */
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-message.bot .travel-chatbot-message-text,
+[data-theme='dark'] .travel-layout .travel-chatbot-message.bot .travel-chatbot-message-text {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Dark: suggestion buttons – glassmorphism pills, white text, purple hover */
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-suggestion-btn,
+[data-theme='dark'] .travel-layout .travel-chatbot-suggestion-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f9fafb;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-suggestion-btn:hover,
 [data-theme='dark'] .travel-layout .travel-chatbot-suggestion-btn:hover {
-  background: #374151;
-  border-color: var(--travel-warm-secondary, #f0a85c);
-  color: var(--travel-warm-secondary, #f0a85c);
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #a78bfa;
 }
 
 /* Input */
@@ -1122,14 +1307,24 @@
   color: var(--travel-chatbot-text-secondary);
 }
 
-[data-theme='dark'] .travel-layout .travel-chatbot-input {
-  background: #111827;
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #f3f4f6;
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-input::placeholder,
+[data-theme='dark'] .travel-layout .travel-chatbot-input::placeholder {
+  color: #6b7280;
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-input,
+[data-theme='dark'] .travel-layout .travel-chatbot-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f9fafb;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-input:focus,
 [data-theme='dark'] .travel-layout .travel-chatbot-input:focus {
-  border-color: var(--travel-warm-secondary, #f0a85c);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
 }
 
 .travel-layout .travel-chatbot-thinking-toggle {
@@ -1192,6 +1387,11 @@
   box-shadow: 0 4px 12px rgba(232, 145, 58, 0.4);
 }
 
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-send-btn:hover,
+[data-theme='dark'] .travel-layout .travel-chatbot-send-btn:hover {
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+}
+
 .travel-layout .travel-chatbot-send-btn:active {
   transform: scale(0.95);
 }
@@ -1231,6 +1431,7 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  transition: opacity 0.2s ease, padding 0.2s ease;
 }
 
 .travel-layout .travel-chatbot-footer-btn {
@@ -1252,6 +1453,18 @@
 .travel-layout .travel-chatbot-footer-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Dark: footer – white text, purple hover */
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-footer-btn,
+[data-theme='dark'] .travel-layout .travel-chatbot-footer-btn {
+  color: #e5e7eb;
+}
+
+.travel-chatbot-container[data-theme='dark'] .travel-chatbot-footer-btn:hover:not(:disabled),
+[data-theme='dark'] .travel-layout .travel-chatbot-footer-btn:hover:not(:disabled) {
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.15);
 }
 
 .travel-layout .travel-chatbot-footer-export {
@@ -1282,6 +1495,11 @@
   .travel-layout .travel-chatbot-fab {
     bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     right: 20px;
+  }
+
+  /* Hide footer when keyboard is open so input has more room and user avoids accidental Clear chat tap */
+  .travel-layout .travel-chatbot-window.travel-chatbot-mobile.keyboard-open .travel-chatbot-footer {
+    display: none;
   }
 }
 

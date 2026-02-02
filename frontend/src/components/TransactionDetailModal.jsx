@@ -2,6 +2,19 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
+import { enUS, el, es, fr } from 'date-fns/locale'
+
+/** Map i18n language to date-fns locale for localized date/time in modal */
+const getDateFnsLocale = (language) => {
+  const lang = (language || '').split('-')[0]
+  switch (lang) {
+    case 'el': return el
+    case 'es': return es
+    case 'fr': return fr
+    case 'en':
+    default: return enUS
+  }
+}
 import {
   FiX,
   FiTrendingUp,
@@ -26,10 +39,11 @@ import './TransactionDetailModal.css'
  * @param {boolean} isOpen - Whether the modal is open
  */
 function TransactionDetailModal({ transaction, onClose, isOpen }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const formatCurrency = useCurrencyFormatter()
   const modalRef = useRef(null)
   const overlayRef = useRef(null)
+  const dateLocale = getDateFnsLocale(i18n.language)
 
   // Handle click outside to close
   useEffect(() => {
@@ -63,8 +77,8 @@ function TransactionDetailModal({ transaction, onClose, isOpen }) {
   // Don't render if not open or no transaction
   if (!isOpen || !transaction) return null
 
-  // Format the date
-  const formattedDate = format(new Date(transaction.date), 'EEEE, MMMM dd, yyyy')
+  // Format the date with current locale (categories and date/time translated)
+  const formattedDate = format(new Date(transaction.date), 'EEEE, MMMM dd, yyyy', { locale: dateLocale })
   
   // Determine if income or expense
   const isIncome = transaction.type === 'income'

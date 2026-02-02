@@ -91,7 +91,13 @@
     "monthlyOverview": "Monthly Overview",
     "noTransactions": "No transactions yet",
     "addedBy": "Added by",
-    "bankConnection": "Imported from Bank"
+    "bankConnection": "Imported from Bank",
+    "savingGoals": "Saving Goals",
+    "savingGoalsSummary": "Saving goals summary",
+    "noSavingGoals": "Start saving for your dreams! Create a goal.",
+    "filterSolo": "Solo",
+    "filterTogether": "Together",
+    "filterPartner": "Partner"
   },
   "allTransactions": {
     "title": "All Transactions",
@@ -288,7 +294,8 @@
     "household": "Household",
     "personal": "Personal Care",
     "electronics": "Electronics",
-    "clothing": "Clothing"
+    "clothing": "Clothing",
+    "savings": "Savings"
   },
   "profile": {
     "title": "Profile",
@@ -512,6 +519,9 @@
     "tryAsking": "Try asking:",
     "clearChat": "Clear chat",
     "viewDetails": "View Details",
+    "showPastMonthExpenses": "Show past month expenses",
+    "showAllTimeExpenses": "Show all time expenses",
+    "showExpensesDateRange": "Show expenses for a date range",
     "welcomeMessage": "Hi! 👋 I'm your financial assistant. Ask me anything about your expenses, income, or financial insights!",
     "errorMessage": "Sorry, I encountered an error. Please try again.",
     "chatCleared": "Chat cleared! How can I help you?",
@@ -647,6 +657,12 @@
     "errorSaving": "Failed to save recurring bill",
     "errorDeleting": "Failed to delete recurring bill",
     "errorMarkingPaid": "Failed to mark bill as paid",
+    "linkToSavingsGoal": "Link to Savings Goal",
+    "selectSavingsGoal": "Select a Savings Goal (Optional)",
+    "savingsGoalHint": "Marking this bill as paid will automatically add money to this savings goal.",
+    "linkToLoan": "Link to Loan",
+    "selectLoan": "Select a Loan (Optional)",
+    "loanHint": "Marking this bill as paid will automatically add a payment to this loan.",
     "categories": {
       "utilities": "Utilities",
       "subscription": "Subscription",
@@ -664,6 +680,10 @@
       "quarterly": "Quarterly",
       "yearly": "Yearly"
     },
+    "searchPlaceholder": "Search by name, notes or category...",
+    "noSearchResults": "No bills match your search",
+    "noSearchResultsHint": "Try a different term or clear the search to see all bills.",
+    "clearSearch": "Clear search",
     "attachments": "Attachments",
     "noAttachments": "No attachments yet",
     "errorUploading": "Failed to upload attachment",

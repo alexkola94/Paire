@@ -585,13 +585,18 @@ export const travelChatbotService = {
    * @param {string} query - User message
    * @param {Array} history - Conversation history (optional)
    * @param {string} language - Language code (en, el, es, fr)
+   * @param {Object} [tripContext] - Optional active trip context { name, destination, country, startDate, endDate, budget } for personalized responses
    * @returns {Promise<Object>} ChatbotResponse (message, type, quickActions, actionLink)
    */
-  async sendQuery(query, history = [], language) {
+  async sendQuery(query, history = [], language, tripContext = null) {
     const lang = language || localStorage.getItem('language') || 'en'
+    const body = { query, history, language: lang }
+    if (tripContext && typeof tripContext === 'object') {
+      body.tripContext = tripContext
+    }
     return await apiRequest('/api/travel-chatbot/query', {
       method: 'POST',
-      body: JSON.stringify({ query, history, language: lang })
+      body: JSON.stringify(body)
     })
   },
 

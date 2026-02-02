@@ -38,7 +38,10 @@ namespace YouAndMeExpensesAPI.Services
                 "how much.*spend", "what.*spend", "did.*spend", "show.*spending",
                 "my spending", "all.*expenses", "all my.*expenses", "my expenses",
                 "what are my expenses", "sum.*expenses", "total expenses", "expense total",
-                "spent this", "spending summary", "expenses summary", "what did i spend"
+                "spent this", "spending summary", "expenses summary", "what did i spend",
+                "show past month expenses", "past month spending", "past month expenses",
+                "show all time expenses", "all time spending", "all time expenses",
+                "total spending ever", "expenses from.*to", "expenses for.*date"
             },
             ["category_spending"] = new() { 
                 "spent.*on (\\w+)", "spending.*on (\\w+)", 
@@ -297,7 +300,9 @@ namespace YouAndMeExpensesAPI.Services
             // Spending queries (Greek)
             ["total_spending"] = new() { 
                 "πόσο.*ξόδεψα", "συνολικά.*έξοδα", "τι.*ξόδεψα", "έξοδα.*σύνολο",
-                "χρήματα.*ξόδεψα", "ξόδεψα.*μέχρι.*τώρα", "δαπάνες"
+                "χρήματα.*ξόδεψα", "ξόδεψα.*μέχρι.*τώρα", "δαπάνες",
+                "δείξε.*περασμένο.*μήνα.*έξοδα", "περασμένο.*μήνα.*έξοδα", "περασμένος.*μήνας.*έξοδα",
+                "δείξε.*όλα.*τα.*έξοδα", "όλα.*τα.*έξοδα", "σύνολο.*όλων", "έξοδα.*από.*έως"
             },
             ["category_spending"] = new() { 
                 "ξόδεψα.*για (\\w+)", "έξοδα.*για (\\w+)", 
@@ -585,7 +590,10 @@ namespace YouAndMeExpensesAPI.Services
                         {
                             "Δείξε μου τα κύρια έξοδά μου",
                             "Ποιος είναι ο ημερήσιος μέσος όρος των δαπανών μου;",
-                            "Δώσε μου ανάλυση των δαπανών"
+                            "Δώσε μου ανάλυση των δαπανών",
+                            "Δείξε έξοδα περασμένου μήνα",
+                            "Δείξε όλα τα έξοδα (όλο το διάστημα)",
+                            "Δείξε έξοδα από [ημερομηνία] έως [ημερομηνία]"
                         });
                     }
                     else
@@ -594,7 +602,10 @@ namespace YouAndMeExpensesAPI.Services
                         {
                             "Show me my top expenses",
                             "What's my daily average spending?",
-                            "Give me spending insights"
+                            "Give me spending insights",
+                            "Show past month expenses",
+                            "Show all time expenses",
+                            "Show expenses for a date range"
                         });
                     }
                 }
@@ -1049,7 +1060,17 @@ namespace YouAndMeExpensesAPI.Services
         private async Task<ChatbotResponse> GetTotalSpendingAsync(string userId, string query, string language = "en")
         {
             var period = ExtractTimePeriod(query, language);
-            var (start, end) = GetDateRange(period);
+            DateTime start, end;
+            if (period == "specific_date")
+            {
+                var (s, e, ok) = TryParseDateRangeFromQuery(query);
+                if (ok) { start = s; end = e; }
+                else { (start, end) = GetDateRange("this month"); period = "this month"; }
+            }
+            else
+            {
+                (start, end) = GetDateRange(period);
+            }
 
             // Fetch transactions with null-safe amount handling
             var transactions = await _dbContext.Transactions
@@ -1064,33 +1085,30 @@ namespace YouAndMeExpensesAPI.Services
             // Safe average calculation - prevent division by zero
             var avgPerTransaction = count > 0 ? Math.Round(total / count, 2) : 0m;
 
-            // Get previous period for comparison - ensure proper date range
-            var periodDays = Math.Max((end - start).Days + 1, 1); // Ensure at least 1 day
-            var prevStart = start.AddDays(-periodDays);
-            var prevEnd = start.AddTicks(-1); // End just before current period starts
-            
-            var prevTransactions = await _dbContext.Transactions
-                .Where(t => t.UserId == userId && t.Type == "expense")
-                .Where(t => t.Date >= prevStart && t.Date <= prevEnd)
-                .ToListAsync();
-            
-            var prevTotal = prevTransactions.Sum(t => t.Amount);
-            var change = total - prevTotal;
-            
-            // Safe percentage calculation - handle zero previous total
+            decimal prevTotal = 0m;
+            decimal change = total;
             decimal changePercent = 0m;
-            if (prevTotal > 0)
+            var periodDays = Math.Max((end - start).Days + 1, 1);
+
+            // Skip previous-period comparison for "all_time" (range too large to be meaningful)
+            if (period != "all_time")
             {
-                changePercent = Math.Round((change / prevTotal) * 100, 1);
-            }
-            else if (total > 0)
-            {
-                // If no previous data but we have current spending, show as 100% increase
-                changePercent = 100m;
+                var prevStart = start.AddDays(-periodDays);
+                var prevEnd = start.AddTicks(-1);
+                var prevTransactions = await _dbContext.Transactions
+                    .Where(t => t.UserId == userId && t.Type == "expense")
+                    .Where(t => t.Date >= prevStart && t.Date <= prevEnd)
+                    .ToListAsync();
+                prevTotal = prevTransactions.Sum(t => t.Amount);
+                change = total - prevTotal;
+                if (prevTotal > 0)
+                    changePercent = Math.Round((change / prevTotal) * 100, 1);
+                else if (total > 0)
+                    changePercent = 100m;
             }
 
-            // Generate personalized message
-            var message = GenerateSpendingMessage(total, count, avgPerTransaction, change, changePercent, period, language);
+            var displayPeriod = GetPeriodDisplayName(period, language);
+            var message = GenerateSpendingMessage(total, count, avgPerTransaction, change, changePercent, displayPeriod, language);
 
             // Add report offer if there's meaningful data
             if (count > 0)
@@ -4854,7 +4872,17 @@ I use natural language and advanced calculations to help you make smart financia
         /// </summary>
         private string ExtractTimePeriod(string query, string language = "en")
         {
-            // Check for specific dates first (formats: MM/DD/YYYY, DD-MM-YYYY, etc.)
+            // "All time" / "ever" must be checked before specific dates so "show all time expenses" is not parsed as date
+            if (language == "el")
+            {
+                if (Regex.IsMatch(query, @"\b(όλα τα έξοδα|σύνολο όλων|όλο το διάστημα|όλων των εσόδων)\b", RegexOptions.IgnoreCase)) return "all_time";
+            }
+            else
+            {
+                if (Regex.IsMatch(query, @"\b(all time|ever|all time expenses|all time spending|total spending ever|spending ever)\b", RegexOptions.IgnoreCase)) return "all_time";
+            }
+
+            // Check for specific dates (formats: MM/DD/YYYY, DD-MM-YYYY, etc.)
             var datePattern = @"(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})";
             if (Regex.IsMatch(query, datePattern)) return "specific_date";
 
@@ -4866,7 +4894,7 @@ I use natural language and advanced calculations to help you make smart financia
                 if (Regex.IsMatch(query, @"\b(αυτή.*εβδομάδα|τρέχουσα.*εβδομάδα|εβδομάδα|7.*ημέρες|τελευταία.*εβδομάδα|αυτήν.*εβδομάδα)\b", RegexOptions.IgnoreCase)) return "this week";
                 if (Regex.IsMatch(query, @"\b(προηγούμενη.*εβδομάδα|πέρυσι.*εβδομάδα|περασμένη.*εβδομάδα)\b", RegexOptions.IgnoreCase)) return "last week";
                 if (Regex.IsMatch(query, @"\b(αυτό.*μήνα|τρέχον.*μήνα|μήνας|30.*ημέρες|τελευταίο.*μήνα|αυτόν.*μήνα|τον.*μήνα)\b", RegexOptions.IgnoreCase)) return "this month";
-                if (Regex.IsMatch(query, @"\b(προηγούμενος.*μήνας|πέρυσι.*μήνα|περασμένο.*μήνα|προηγούμενο.*μήνα)\b", RegexOptions.IgnoreCase)) return "last month";
+                if (Regex.IsMatch(query, @"\b(προηγούμενος.*μήνας|πέρυσι.*μήνα|περασμένο.*μήνα|προηγούμενο.*μήνα|περασμένος.*μήνας)\b", RegexOptions.IgnoreCase)) return "last month";
                 if (Regex.IsMatch(query, @"\b(αυτό.*έτος|τρέχον.*έτος|έτος|365.*ημέρες|τελευταίο.*έτος|φέτος)\b", RegexOptions.IgnoreCase)) return "this year";
                 if (Regex.IsMatch(query, @"\b(προηγούμενο.*έτος|πέρυσι.*έτος|πέρσι|πέρυσι)\b", RegexOptions.IgnoreCase)) return "last year";
             }
@@ -4888,9 +4916,10 @@ I use natural language and advanced calculations to help you make smart financia
                 // This month patterns - more comprehensive
                 if (Regex.IsMatch(query, @"\b(this month|this month's|current month|past 30 days|last 30 days|30 days|monthly|the month)\b", RegexOptions.IgnoreCase)) return "this month";
                 
-                // Last month patterns
-                if (Regex.IsMatch(query, @"\b(last month|last month's|previous month|month before)\b", RegexOptions.IgnoreCase)) return "last month";
-                
+                // Last month patterns (including "past month")
+                if (Regex.IsMatch(query, @"\b(last month|last month's|previous month|month before|past month)\b", RegexOptions.IgnoreCase)) return "last month";
+                if (Regex.IsMatch(query, @"\b(in the past|over the past|during the past)\s*month\b", RegexOptions.IgnoreCase)) return "last month";
+
                 // This year patterns - more comprehensive
                 if (Regex.IsMatch(query, @"\b(this year|this year's|current year|past year|ytd|year to date|annually|the year|all year)\b", RegexOptions.IgnoreCase)) return "this year";
                 
@@ -4979,8 +5008,59 @@ I use natural language and advanced calculations to help you make smart financia
                 "this year" => (new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc), now),
                 "last year" => (new DateTime(now.Year - 1, 1, 1, 0, 0, 0, DateTimeKind.Utc), 
                                new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddTicks(-1)),
+                "all_time" => (now.AddYears(-20), now),
                 _ => (new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc), now)
             };
+        }
+
+        /// <summary>
+        /// Try to parse one or two dates from the query for "specific_date" period.
+        /// Supports "from DD/MM/YYYY to DD/MM/YYYY", "DD/MM/YYYY to DD/MM/YYYY", "on DD/MM/YYYY", or single date.
+        /// </summary>
+        private static (DateTime start, DateTime end, bool success) TryParseDateRangeFromQuery(string query)
+        {
+            // Match dates: 1-2 digits, / or -, 1-2 digits, / or -, 2 or 4 digits
+            var datePattern = @"(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})";
+            var matches = Regex.Matches(query, datePattern);
+            if (matches.Count == 0) return (default, default, false);
+
+            DateTime ParseMatch(Match m)
+            {
+                var g1 = m.Groups[1].Value; var g2 = m.Groups[2].Value; var g3 = m.Groups[3].Value;
+                int d, mo, y = int.Parse(g3);
+                if (y < 100) y += y < 50 ? 2000 : 1900;
+                // Assume first number is day or month depending on magnitude
+                int n1 = int.Parse(g1), n2 = int.Parse(g2);
+                if (n1 > 12) { d = n1; mo = n2; }
+                else if (n2 > 12) { mo = n1; d = n2; }
+                else { mo = n1; d = n2; }
+                try
+                {
+                    return new DateTime(y, mo, Math.Min(d, DateTime.DaysInMonth(y, mo)), 0, 0, 0, DateTimeKind.Utc);
+                }
+                catch { return new DateTime(y, 1, 1, 0, 0, 0, DateTimeKind.Utc); }
+            }
+
+            var d1 = ParseMatch(matches[0]);
+            if (matches.Count >= 2)
+            {
+                var d2 = ParseMatch(matches[1]);
+                var start = d1 < d2 ? d1 : d2;
+                var end = d1 < d2 ? d2 : d1;
+                end = end.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
+                return (start, end, true);
+            }
+            return (d1.Date, d1.Date.AddHours(23).AddMinutes(59).AddSeconds(59), true);
+        }
+
+        /// <summary>
+        /// Get display label for period (used in spending/income messages).
+        /// </summary>
+        private static string GetPeriodDisplayName(string period, string language)
+        {
+            if (period == "all_time") return language == "el" ? "όλο το διάστημα" : "all time";
+            if (period == "specific_date") return language == "el" ? "για την επιλεγμένη περίοδο" : "for the selected period";
+            return period;
         }
 
         /// <summary>
@@ -5207,7 +5287,17 @@ I use natural language and advanced calculations to help you make smart financia
         private async Task<ChatbotResponse> GetTotalIncomeAsync(string userId, string query, string language = "en")
         {
             var period = ExtractTimePeriod(query, language);
-            var (start, end) = GetDateRange(period);
+            DateTime start, end;
+            if (period == "specific_date")
+            {
+                var (s, e, ok) = TryParseDateRangeFromQuery(query);
+                if (ok) { start = s; end = e; }
+                else { (start, end) = GetDateRange("this month"); period = "this month"; }
+            }
+            else
+            {
+                (start, end) = GetDateRange(period);
+            }
 
             var transactions = await _dbContext.Transactions
                 .Where(t => t.UserId == userId && t.Type == "income")
@@ -5218,20 +5308,24 @@ I use natural language and advanced calculations to help you make smart financia
             var count = transactions.Count;
             var avgPerTransaction = count > 0 ? total / count : 0;
 
-            // Get previous period for comparison
+            decimal prevTotal = 0m;
+            decimal change = total;
+            decimal changePercent = 0m;
             var periodDays = (end - start).Days + 1;
-            var prevStart = start.AddDays(-periodDays);
-            var prevEnd = start.AddDays(-1);
-            
-            var prevTransactions = await _dbContext.Transactions
-                .Where(t => t.UserId == userId && t.Type == "income")
-                .Where(t => t.Date >= prevStart && t.Date <= prevEnd)
-                .ToListAsync();
-            
-            var prevTotal = prevTransactions.Sum(t => t.Amount);
-            var change = total - prevTotal;
-            var changePercent = prevTotal > 0 ? (change / prevTotal) * 100 : 0;
+            if (period != "all_time")
+            {
+                var prevStart = start.AddDays(-periodDays);
+                var prevEnd = start.AddDays(-1);
+                var prevTransactions = await _dbContext.Transactions
+                    .Where(t => t.UserId == userId && t.Type == "income")
+                    .Where(t => t.Date >= prevStart && t.Date <= prevEnd)
+                    .ToListAsync();
+                prevTotal = prevTransactions.Sum(t => t.Amount);
+                change = total - prevTotal;
+                changePercent = prevTotal > 0 ? (change / prevTotal) * 100 : 0;
+            }
 
+            var displayPeriod = GetPeriodDisplayName(period, language);
             var message = "";
             var trendEmoji = change > 0 ? "📈" : change < 0 ? "📉" : "➖";
             var trendText = "";
@@ -5247,7 +5341,7 @@ I use natural language and advanced calculations to help you make smart financia
 
                 message = $"### 💰 Αναφορά Εσόδων\n" +
                          $"**Σύνολο:** ${total:N2}\n" +
-                         $"*Περίοδος: {period}*\n\n" +
+                         $"*Περίοδος: {displayPeriod}*\n\n" +
                          $"**📊 Τάση:** {trendEmoji} {trendText} σε σχέση με την προηγούμενη περίοδο.\n" +
                          $"* Προηγούμενο Σύνολο: ${prevTotal:N2}\n" +
                          $"* Συναλλαγές: {count}";
@@ -5263,7 +5357,7 @@ I use natural language and advanced calculations to help you make smart financia
 
                 message = $"### 💰 Income Report\n" +
                          $"**Total:** ${total:N2}\n" +
-                         $"*Period: {period}*\n\n" +
+                         $"*Period: {displayPeriod}*\n\n" +
                          $"**📊 Trend:** {trendEmoji} {trendText} vs previous period.\n" +
                          $"* Previous Total: ${prevTotal:N2}\n" +
                          $"* Transactions: {count}";

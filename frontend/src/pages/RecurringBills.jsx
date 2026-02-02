@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
-  FiGrid, FiList, FiChevronLeft, FiChevronRight, FiPaperclip, FiDownload, FiX, FiFileText, FiTarget
+  FiGrid, FiList, FiChevronLeft, FiChevronRight, FiPaperclip, FiDownload, FiX, FiFileText, FiTarget, FiSearch
 } from 'react-icons/fi'
 import {
   addMonths, addYears, addWeeks, startOfMonth, endOfMonth, isSameMonth,
@@ -97,6 +97,9 @@ function RecurringBills() {
 
   // Pagination State
   const [page, setPage] = useState(1)
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Mutations
   const createBillMutation = useMutation({
@@ -685,12 +688,29 @@ function RecurringBills() {
 
   // --- END CALCULATION LOGIC ---
 
+  /**
+   * Filter bills by search query (name, notes, category) - case-insensitive
+   */
+  const filterBillsBySearch = (billList, query) => {
+    const q = (query || '').trim().toLowerCase()
+    if (!q) return billList
+    return billList.filter(bill => {
+      const name = (bill.name || '').toLowerCase()
+      const notes = (bill.notes || '').toLowerCase()
+      const category = (bill.category || '').toLowerCase()
+      return name.includes(q) || notes.includes(q) || category.includes(q)
+    })
+  }
+
+  // Apply search filter to active bills (used for list and calendar)
+  const filteredActiveBills = filterBillsBySearch(activeBills, searchQuery)
+
   // 1. Overdue: Due date is strictly before today (and not paid)
-  const overdueBills = activeBills.filter(b => isOverdue(b.nextDueDate || b.next_due_date))
+  const overdueBills = filteredActiveBills.filter(b => isOverdue(b.nextDueDate || b.next_due_date))
 
   // 2. To Pay This Month: Due date is within current month (Today to EndOfMonth)
   // Exclude overdue (already handled)
-  const dueThisMonthBills = activeBills.filter(b => {
+  const dueThisMonthBills = filteredActiveBills.filter(b => {
     const dueDate = new Date(b.nextDueDate || b.next_due_date)
     return isSameMonth(dueDate, today) && !isOverdue(b.nextDueDate || b.next_due_date)
   })
@@ -698,7 +718,7 @@ function RecurringBills() {
   // 3. Paid This Month: 
   // Heuristic: Monthly bills where NextDueDate is in the future (Next Month)
   // This implies the bill for 'Current Month' has been processed.
-  const paidThisMonthBills = activeBills.filter(b => {
+  const paidThisMonthBills = filteredActiveBills.filter(b => {
     const dueDate = new Date(b.nextDueDate || b.next_due_date)
     // Only apply to Monthly/Weekly. Yearly is too sparse.
     if (b.frequency !== 'monthly' && b.frequency !== 'weekly') return false
@@ -715,14 +735,14 @@ function RecurringBills() {
     ...dueThisMonthBills.map(b => b.id),
     ...paidThisMonthBills.map(b => b.id)
   ])
-  const futureBills = activeBills.filter(b => !excludeIds.has(b.id))
+  const futureBills = filteredActiveBills.filter(b => !excludeIds.has(b.id))
 
   // Update "laterBills" usage for pagination if needed, or just use futureBills
   const laterBills = futureBills
-  // Reset pagination when list changes
+  // Reset pagination when list or search changes
   useEffect(() => {
     setPage(1)
-  }, [laterBills.length])
+  }, [laterBills.length, searchQuery])
 
   // Filter for active loans only for the dropdown
   const activeLoanOptions = loans.filter(l => !(l.isSettled ?? l.is_settled))
@@ -938,11 +958,37 @@ function RecurringBills() {
         </motion.div>
       )}
 
+      {/* Search Bar - filters list and calendar */}
+      <div className="recurring-bills-search-wrap">
+        <div className="recurring-bills-search glass-card">
+          <FiSearch className="recurring-bills-search-icon" aria-hidden />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('recurringBills.searchPlaceholder')}
+            className="recurring-bills-search-input"
+            aria-label={t('recurringBills.searchPlaceholder')}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="recurring-bills-search-clear"
+              onClick={() => setSearchQuery('')}
+              aria-label={t('common.clear')}
+              title={t('common.clear')}
+            >
+              <FiX size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Calendar View */}
       {viewMode === 'calendar' && (
         <div className="fade-in">
           <CalendarView
-            bills={activeBills}
+            bills={filteredActiveBills}
             onEdit={handleEdit}
             onDelete={openDeleteModal}
             onMarkPaid={handleMarkPaid}
@@ -954,6 +1000,18 @@ function RecurringBills() {
 
       {/* Bills Sections - List View */}
       <div className={`bills-container ${viewMode === 'calendar' ? 'hidden' : ''}`} style={viewMode === 'calendar' ? { display: 'none' } : {}}>
+
+        {/* No search results - show when search is active but no bills match */}
+        {searchQuery.trim() && filteredActiveBills.length === 0 && bills.length > 0 && (
+          <div className="recurring-bills-no-results empty-state glass-card">
+            <FiSearch size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+            <h3>{t('recurringBills.noSearchResults')}</h3>
+            <p>{t('recurringBills.noSearchResultsHint')}</p>
+            <button type="button" className="btn btn-secondary" onClick={() => setSearchQuery('')}>
+              {t('recurringBills.clearSearch')}
+            </button>
+          </div>
+        )}
 
         {/* Overdue Bills */}
         {overdueBills.length > 0 && (
@@ -1270,7 +1328,7 @@ function RecurringBills() {
                 <div className="form-layout-item-full fade-in">
                   <div className="form-group">
                     <label style={{ color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FiLink /> Link to Loan
+                      <FiLink /> {t('recurringBills.linkToLoan')}
                     </label>
                     <select
                       name="loanId"
@@ -1279,7 +1337,7 @@ function RecurringBills() {
                       className="form-select"
                       style={{ borderColor: 'var(--primary-color)' }}
                     >
-                      <option value="">-- Select a Loan (Optional) --</option>
+                      <option value="">-- {t('recurringBills.selectLoan')} --</option>
                       {activeLoanOptions.map(loan => {
                         const isGiven = (loan.lentBy || loan.lent_by) === 'Me'
                         const partyName = isGiven ? (loan.borrowedBy || loan.borrowed_by) : (loan.lentBy || loan.lent_by)
@@ -1294,7 +1352,7 @@ function RecurringBills() {
                       })}
                     </select>
                     <small className="form-hint">
-                      Marking this bill as paid will automatically add a payment to this loan.
+                      {t('recurringBills.loanHint')}
                     </small>
                   </div>
                 </div>
@@ -1305,7 +1363,7 @@ function RecurringBills() {
                 <div className="form-layout-item-full fade-in">
                   <div className="form-group">
                     <label style={{ color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FiTarget /> {t('recurringBills.linkToSavingsGoal') || 'Link to Savings Goal'}
+                      <FiTarget /> {t('recurringBills.linkToSavingsGoal')}
                     </label>
                     <select
                       name="savingsGoalId"
@@ -1314,7 +1372,7 @@ function RecurringBills() {
                       className="form-select"
                       style={{ borderColor: 'var(--success-color)' }}
                     >
-                      <option value="">-- {t('recurringBills.selectSavingsGoal') || 'Select a Savings Goal (Optional)'} --</option>
+                      <option value="">-- {t('recurringBills.selectSavingsGoal')} --</option>
                       {activeSavingsGoals.map(goal => {
                         const currentAmount = goal.currentAmount ?? goal.current_amount ?? 0
                         const targetAmount = goal.targetAmount ?? goal.target_amount ?? 0
@@ -1327,7 +1385,7 @@ function RecurringBills() {
                       })}
                     </select>
                     <small className="form-hint">
-                      {t('recurringBills.savingsGoalHint') || 'Marking this bill as paid will automatically add money to this savings goal.'}
+                      {t('recurringBills.savingsGoalHint')}
                     </small>
                   </div>
                 </div>
