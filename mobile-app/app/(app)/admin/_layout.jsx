@@ -23,7 +23,7 @@ export default function AdminLayout() {
       return;
     }
     if (!isAdmin()) {
-      router.replace('/(app)/profile');
+      router.replace('/(app)/(tabs)/profile');
     }
   }, []);
 

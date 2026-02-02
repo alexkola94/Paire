@@ -1,0 +1,259 @@
+/**
+ * AppDrawerContent Component
+ *
+ * Custom drawer content: Logo Hero at top, nav links (Main, Finance, Tools),
+ * footer with theme toggle and logout. Theme-aware; closes drawer on navigation.
+ */
+
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { DrawerContentScrollView } from '@react-navigation/drawer';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import {
+  Home,
+  Wallet,
+  Wrench,
+  User,
+  TrendingDown,
+  TrendingUp,
+  PiggyBank,
+  CreditCard,
+  BarChart3,
+  Calculator,
+  Receipt,
+  Repeat,
+  MapPin,
+  ShoppingCart,
+  Bell,
+  Users,
+  Trophy,
+  Moon,
+  LogOut,
+  ChevronRight,
+} from 'lucide-react-native';
+import { useTheme } from '../../context/ThemeContext';
+import { useScrollToTop } from '../../context/ScrollToTopContext';
+import { authService } from '../../services/auth';
+import { spacing, borderRadius, typography } from '../../constants/theme';
+import LogoHero from '../LogoHero';
+
+/**
+ * Returns true if the drawer state shows we're currently on the given (tabs) route.
+ * state from drawer: when active route is (tabs), state.routes[state.index].state has nested tab state.
+ */
+function isCurrentlyOnRoute(state, route) {
+  const active = state?.routes?.[state.index];
+  if (!active) return false;
+  // (tabs) route: check nested tab name
+  if (active.name === '(tabs)' && active.state?.routes?.[active.state.index]) {
+    const tabName = active.state.routes[active.state.index].name;
+    if (route === '/(app)/(tabs)/dashboard' && tabName === 'dashboard') return true;
+    if (route === '/(app)/(tabs)/transactions' && tabName === 'transactions') return true;
+    if (route === '/(app)/(tabs)/analytics' && tabName === 'analytics') return true;
+    if (route === '/(app)/(tabs)/profile' && tabName === 'profile') return true;
+  }
+  return false;
+}
+
+// Main tab routes (under (tabs))
+const MAIN_ITEMS = [
+  { route: '/(app)/(tabs)/dashboard', icon: Home, labelKey: 'navigation.dashboard' },
+  { route: '/(app)/(tabs)/transactions', icon: Wallet, labelKey: 'navigation.transactions' },
+  { route: '/(app)/(tabs)/analytics', icon: Wrench, labelKey: 'navigation.analytics' },
+  { route: '/(app)/(tabs)/profile', icon: User, labelKey: 'navigation.profile' },
+];
+
+// Finance and tools (under (app))
+const FINANCE_ITEMS = [
+  { route: '/(app)/expenses', icon: TrendingDown, labelKey: 'navigation.expenses' },
+  { route: '/(app)/income', icon: TrendingUp, labelKey: 'navigation.income' },
+  { route: '/(app)/budgets', icon: Wallet, labelKey: 'navigation.budgets' },
+  { route: '/(app)/savings-goals', icon: PiggyBank, labelKey: 'navigation.savingsGoals' },
+  { route: '/(app)/loans', icon: CreditCard, labelKey: 'navigation.loans' },
+];
+
+const TOOLS_ITEMS = [
+  { route: '/(app)/currency-calculator', icon: Calculator, labelKey: 'navigation.currencyCalculator' },
+  { route: '/(app)/receipts', icon: Receipt, labelKey: 'receipts.title' },
+  { route: '/(app)/recurring-bills', icon: Repeat, labelKey: 'navigation.recurringBills' },
+];
+
+const LIFESTYLE_ITEMS = [
+  { route: '/(app)/travel', icon: MapPin, labelKey: 'travel.common.enterTravelMode' },
+  { route: '/(app)/shopping-lists', icon: ShoppingCart, labelKey: 'navigation.shoppingLists' },
+  { route: '/(app)/reminders', icon: Bell, labelKey: 'navigation.reminders' },
+  { route: '/(app)/achievements', icon: Trophy, labelKey: 'navigation.achievements' },
+  { route: '/(app)/partnership', icon: Users, labelKey: 'navigation.partnership' },
+];
+
+function DrawerItemRow({ icon: Icon, label, onPress, theme, destructive }) {
+  return (
+    <TouchableOpacity
+      style={[styles.itemRow, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.glassBorder }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Icon size={20} color={destructive ? '#dc2626' : theme.colors.primary} />
+      <Text style={[styles.itemLabel, { color: destructive ? '#dc2626' : theme.colors.text }]} numberOfLines={1}>
+        {label}
+      </Text>
+      <ChevronRight size={18} color={theme.colors.textLight} />
+    </TouchableOpacity>
+  );
+}
+
+function SectionTitle({ title, theme }) {
+  return (
+    <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+      {title}
+    </Text>
+  );
+}
+
+export default function AppDrawerContent(props) {
+  const { state, navigation } = props;
+  const router = useRouter();
+  const { t } = useTranslation();
+  const { theme, isDark, toggleTheme } = useTheme();
+  const { scrollToTop } = useScrollToTop();
+
+  const navigateAndClose = (route) => {
+    navigation.closeDrawer();
+    router.push(route);
+  };
+
+  // When tapping a Main item (e.g. Dashboard) while already on that screen, scroll to top instead of navigating
+  const handleMainItemPress = (route) => {
+    if (MAIN_ITEMS.some((item) => item.route === route) && isCurrentlyOnRoute(state, route)) {
+      scrollToTop(route);
+      navigation.closeDrawer();
+      return;
+    }
+    navigateAndClose(route);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(t('auth.logout'), t('auth.logoutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('auth.logout'),
+        style: 'destructive',
+        onPress: async () => {
+          navigation.closeDrawer();
+          await authService.signOut();
+          router.replace('/(auth)/login');
+        },
+      },
+    ]);
+  };
+
+  return (
+    <DrawerContentScrollView
+      {...props}
+      contentContainerStyle={[styles.scrollContent, { backgroundColor: theme.colors.background }]}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.heroWrap}>
+        <LogoHero variant="drawer" />
+      </View>
+
+      <SectionTitle theme={theme} title={t('navigation.categories.main', 'Main')} />
+      {MAIN_ITEMS.map(({ route, icon, labelKey }) => (
+        <DrawerItemRow
+          key={route}
+          icon={icon}
+          label={t(labelKey)}
+          onPress={() => handleMainItemPress(route)}
+          theme={theme}
+        />
+      ))}
+
+      <SectionTitle theme={theme} title={t('navigation.categories.finance', 'Finance')} />
+      {FINANCE_ITEMS.map(({ route, icon, labelKey }) => (
+        <DrawerItemRow
+          key={route}
+          icon={icon}
+          label={t(labelKey)}
+          onPress={() => navigateAndClose(route)}
+          theme={theme}
+        />
+      ))}
+
+      <SectionTitle theme={theme} title={t('navigation.categories.tools', 'Tools')} />
+      {TOOLS_ITEMS.map(({ route, icon, labelKey }) => (
+        <DrawerItemRow
+          key={route}
+          icon={icon}
+          label={t(labelKey)}
+          onPress={() => navigateAndClose(route)}
+          theme={theme}
+        />
+      ))}
+
+      <SectionTitle theme={theme} title={t('navigation.categories.lifestyle', 'Lifestyle')} />
+      {LIFESTYLE_ITEMS.map(({ route, icon, labelKey }) => (
+        <DrawerItemRow
+          key={route}
+          icon={icon}
+          label={t(labelKey)}
+          onPress={() => navigateAndClose(route)}
+          theme={theme}
+        />
+      ))}
+
+      <View style={[styles.footer, { borderTopColor: theme.colors.glassBorder }]}>
+        <DrawerItemRow
+          icon={Moon}
+          label={isDark ? t('theme.lightMode') : t('theme.darkMode')}
+          onPress={() => {
+            toggleTheme();
+          }}
+          theme={theme}
+        />
+        <DrawerItemRow
+          icon={LogOut}
+          label={t('auth.logout')}
+          onPress={handleLogout}
+          theme={theme}
+          destructive
+        />
+      </View>
+    </DrawerContentScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.xl,
+  },
+  heroWrap: {
+    marginBottom: spacing.sm,
+  },
+  sectionTitle: {
+    ...typography.label,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    marginHorizontal: spacing.lg,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    minHeight: 44,
+  },
+  itemLabel: {
+    flex: 1,
+    ...typography.body,
+  },
+  footer: {
+    marginTop: spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+});

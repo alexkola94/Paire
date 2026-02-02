@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Image, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -9,17 +9,20 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   User, LogOut, Users, Bell, Trophy, Shield, Moon, Globe,
   ChevronRight, CreditCard, PiggyBank, Receipt, ShoppingCart, MapPin,
-  FileText, Pencil, Lock, MessageCircle, Camera,
+  FileText, Pencil, Lock, MessageCircle, Camera, Menu,
 } from 'lucide-react-native';
-import { profileService } from '../../services/api';
-import { authService } from '../../services/auth';
-import { useTheme } from '../../context/ThemeContext';
-import { useTabTransition } from '../../context/TabTransitionContext';
-import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { Modal, Button, FormField, useToast } from '../../components';
+import { profileService } from '../../../services/api';
+import { authService } from '../../../services/auth';
+import { useTheme } from '../../../context/ThemeContext';
+import { useTabTransition } from '../../../context/TabTransitionContext';
+import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
+import { Modal, Button, FormField, useToast } from '../../../components';
+import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { useScrollToTop } from '../../../context/ScrollToTopContext';
 
 // Supported locales for language picker with flags
 const TAB_INDEX = 3; // Profile is fourth tab
+const PROFILE_ROUTE = '/(app)/(tabs)/profile';
 
 const LOCALES = [
   { code: 'en', labelKey: 'settings.languages.en', flag: '🇬🇧', nativeName: 'English' },
@@ -43,9 +46,27 @@ export default function ProfileScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
   const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
   const router = useRouter();
+  const navigation = useNavigation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const user = authService.getCurrentUser();
+
+  const scrollViewRef = useRef(null);
+  const { register } = useScrollToTop();
+
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  useEffect(() => {
+    const unregister = register(PROFILE_ROUTE, scrollToTop);
+    return unregister;
+  }, [register, scrollToTop]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', scrollToTop);
+    return unsubscribe;
+  }, [navigation, scrollToTop]);
 
   useFocusEffect(
     useCallback(() => {
@@ -185,10 +206,23 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
+
   return (
     <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      {/* Header: menu + Profile */}
+      <View style={[styles.headerRow, { borderBottomColor: theme.colors.glassBorder }]}>
+        <TouchableOpacity
+          onPress={openDrawer}
+          style={[styles.headerMenuBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}
+          accessibilityLabel={t('common.menu', 'Menu')}
+        >
+          <Menu size={20} color={theme.colors.textSecondary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{t('navigation.profile')}</Text>
+      </View>
+      <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scroll}>
         {/* User Info (Paire: soft card, glass border; avatar with change-photo) */}
         <View style={[styles.profileCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.md]}>
           <TouchableOpacity
@@ -384,6 +418,23 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    gap: spacing.sm,
+  },
+  headerMenuBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { ...typography.h2, flex: 1 },
   scroll: { padding: spacing.lg, paddingBottom: spacing.tabBarBottomClearance },
   profileCard: {
     borderRadius: borderRadius.lg,

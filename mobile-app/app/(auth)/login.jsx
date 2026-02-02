@@ -88,7 +88,7 @@ export default function LoginScreen() {
           // TODO: navigate to 2FA screen
           setError('2FA required - not yet implemented in mobile');
         } else {
-          router.replace('/(app)/dashboard');
+          router.replace('/(app)/(tabs)/dashboard');
         }
       }
     } catch (err) {

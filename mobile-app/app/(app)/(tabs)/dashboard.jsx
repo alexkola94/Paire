@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,22 +15,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Wallet, TrendingDown, TrendingUp, PiggyBank, CreditCard, ShoppingCart,
   Bell, BarChart3, Calculator, Newspaper, Users, MapPin, Plus, MessageCircle,
-  Eye, EyeOff, ChevronRight, Pencil, Trash2, Receipt, Repeat, Settings,
+  Eye, EyeOff, ChevronRight, Pencil, Trash2, Receipt, Repeat, Settings, Menu,
 } from 'lucide-react-native';
-import { analyticsService, budgetService, recurringBillService, transactionService, savingsGoalService } from '../../services/api';
-import { authService } from '../../services/auth';
-import { useTheme } from '../../context/ThemeContext';
-import { usePrivacyMode } from '../../context/PrivacyModeContext';
-import { useDashboardLayout } from '../../context/DashboardLayoutContext';
-import { useTabTransition } from '../../context/TabTransitionContext';
-import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { 
+import { analyticsService, budgetService, recurringBillService, transactionService, savingsGoalService } from '../../../services/api';
+import { authService } from '../../../services/auth';
+import { useTheme } from '../../../context/ThemeContext';
+import { usePrivacyMode } from '../../../context/PrivacyModeContext';
+import { useDashboardLayout } from '../../../context/DashboardLayoutContext';
+import { useTabTransition } from '../../../context/TabTransitionContext';
+import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
+import {
   Modal, Button, ConfirmationModal, ScreenLoading, useToast, WidgetSelector,
   SummaryWidget, BudgetWidget, UpcomingBillsWidget, RecentTransactionsWidget,
   SavingsWidget, QuickAccessWidget,
-} from '../../components';
+} from '../../../components';
+import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { useScrollToTop } from '../../../context/ScrollToTopContext';
 
 const RECENT_PAGE_SIZE = 10;
+const DASHBOARD_ROUTE = '/(app)/(tabs)/dashboard';
 const TAB_INDEX = 0; // Dashboard is first tab
 
 function formatDate(dateStr) {
@@ -47,12 +50,34 @@ export default function DashboardScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  const navigation = useNavigation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { isPrivacyMode, togglePrivacyMode } = usePrivacyMode();
   const { layout, saveLayout, isWidgetVisible } = useDashboardLayout();
   const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
   const [refreshing, setRefreshing] = useState(false);
+  const scrollViewRef = useRef(null);
+  const { register } = useScrollToTop();
+
+  // Scroll-to-top helper (used by drawer and tab bar)
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  // Register scroll-to-top so drawer can trigger it when user taps Dashboard again
+  useEffect(() => {
+    const unregister = register(DASHBOARD_ROUTE, scrollToTop);
+    return unregister;
+  }, [register, scrollToTop]);
+
+  // When user taps Dashboard tab in bottom bar while already on Dashboard, scroll to top
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', () => {
+      scrollToTop();
+    });
+    return unsubscribe;
+  }, [navigation, scrollToTop]);
 
   useFocusEffect(
     useCallback(() => {
@@ -122,27 +147,38 @@ export default function DashboardScreen() {
   const recentList = Array.isArray(recentData) ? recentData : recentData?.items ?? [];
   const formatAmount = (n) => (isPrivacyMode ? '••••' : `€${Number(n).toFixed(2)}`);
 
-  // Show loading until primary dashboard data is ready (avoids empty/zero widgets flash)
   if (dashLoading && (dashData === undefined || dashData === null)) {
     return <ScreenLoading />;
   }
+
+  const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
 
   return (
     <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
-        {/* Header: greeting + privacy toggle + customize */}
+        {/* Header: menu + greeting + privacy toggle + customize */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
-              {t('dashboard.welcome')}
-            </Text>
-            <Text style={[styles.userName, { color: theme.colors.text }]}>
-              {user?.displayName || user?.email?.split('@')[0] || 'User'}
-            </Text>
+            <TouchableOpacity
+              onPress={openDrawer}
+              style={[styles.headerBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}
+              accessibilityLabel={t('common.menu', 'Menu')}
+            >
+              <Menu size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            <View>
+              <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
+                {t('dashboard.welcome')}
+              </Text>
+              <Text style={[styles.userName, { color: theme.colors.text }]}>
+                {user?.displayName || user?.email?.split('@')[0] || 'User'}
+              </Text>
+            </View>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity
@@ -188,9 +224,9 @@ export default function DashboardScreen() {
         {/* Budget Progress Widget */}
         {isWidgetVisible('budgets') && budgets?.length > 0 && (
           <View style={{ marginBottom: spacing.md }}>
-            <BudgetWidget 
-              budgets={budgets} 
-              onPress={() => router.push('/(app)/budgets')} 
+            <BudgetWidget
+              budgets={budgets}
+              onPress={() => router.push('/(app)/budgets')}
             />
           </View>
         )}
@@ -198,9 +234,9 @@ export default function DashboardScreen() {
         {/* Upcoming Bills Widget */}
         {isWidgetVisible('upcomingBills') && upcomingBills?.length > 0 && (
           <View style={{ marginBottom: spacing.md }}>
-            <UpcomingBillsWidget 
-              bills={upcomingBills} 
-              onPress={() => router.push('/(app)/recurring-bills')} 
+            <UpcomingBillsWidget
+              bills={upcomingBills}
+              onPress={() => router.push('/(app)/recurring-bills')}
             />
           </View>
         )}
@@ -210,7 +246,7 @@ export default function DashboardScreen() {
           <View style={{ marginBottom: spacing.md }}>
             <RecentTransactionsWidget
               transactions={recentList}
-              onPress={() => router.push('/(app)/transactions')}
+              onPress={() => router.push('/(app)/(tabs)/transactions')}
               onTransactionPress={(tx) => setDetailTransaction(tx)}
             />
           </View>
@@ -219,9 +255,9 @@ export default function DashboardScreen() {
         {/* Savings Goals Widget */}
         {isWidgetVisible('savings') && savingsGoals?.length > 0 && (
           <View style={{ marginBottom: spacing.md }}>
-            <SavingsWidget 
-              goals={savingsGoals} 
-              onPress={() => router.push('/(app)/savings-goals')} 
+            <SavingsWidget
+              goals={savingsGoals}
+              onPress={() => router.push('/(app)/savings-goals')}
             />
           </View>
         )}
@@ -264,7 +300,7 @@ export default function DashboardScreen() {
               <Button
                 variant="secondary"
                 title={t('common.edit')}
-                onPress={() => { setDetailTransaction(null); router.push('/(app)/transactions'); }}
+                onPress={() => { setDetailTransaction(null); router.push('/(app)/(tabs)/transactions'); }}
               />
               <Button
                 variant="outline"
@@ -280,7 +316,6 @@ export default function DashboardScreen() {
         )}
       </Modal>
 
-      {/* Delete transaction confirmation */}
       <ConfirmationModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
@@ -292,7 +327,6 @@ export default function DashboardScreen() {
         loading={deleteMutation.isPending}
       />
 
-      {/* Widget Selector Modal */}
       <WidgetSelector
         isOpen={widgetSelectorOpen}
         onClose={() => setWidgetSelectorOpen(false)}
@@ -314,7 +348,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.lg,
   },
-  headerLeft: { flex: 1 },
+  headerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerRight: { flexDirection: 'row', gap: spacing.sm },
   greeting: { ...typography.bodySmall },
   userName: { ...typography.h2 },

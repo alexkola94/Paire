@@ -3,7 +3,7 @@
  * Full CRUD: list with search, date range, pagination; add/edit/delete; detail modal.
  */
 
-import { useState, useCallback, useMemo, Fragment } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect, Fragment } from 'react';
 import {
   View,
   Text,
@@ -15,16 +15,17 @@ import {
   ScrollView,
 } from 'react-native';
 import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
-import { useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, X, List, Clock, Calendar } from 'lucide-react-native';
-import { transactionService } from '../../services/api';
-import { useTheme } from '../../context/ThemeContext';
-import { usePrivacyMode } from '../../context/PrivacyModeContext';
-import { useTabTransition } from '../../context/TabTransitionContext';
-import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
+import { Plus, Pencil, Trash2, X, List, Clock, Calendar, Menu } from 'lucide-react-native';
+import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { transactionService } from '../../../services/api';
+import { useTheme } from '../../../context/ThemeContext';
+import { usePrivacyMode } from '../../../context/PrivacyModeContext';
+import { useTabTransition } from '../../../context/TabTransitionContext';
+import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 import {
   Modal,
   SearchInput,
@@ -33,11 +34,13 @@ import {
   TransactionForm,
   ScreenLoading,
   useToast,
-} from '../../components';
-import CalendarView from '../../components/CalendarView';
+} from '../../../components';
+import CalendarView from '../../../components/CalendarView';
+import { useScrollToTop } from '../../../context/ScrollToTopContext';
 
 const PAGE_SIZE = 20;
 const TAB_INDEX = 1; // Transactions is second tab
+const TRANSACTIONS_ROUTE = '/(app)/(tabs)/transactions';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -51,6 +54,8 @@ function formatDate(dateStr) {
 
 export default function TransactionsScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const navigation = useNavigation();
   const { theme } = useTheme();
   const { isPrivacyMode } = usePrivacyMode();
   const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
@@ -87,6 +92,27 @@ export default function TransactionsScreen() {
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'timeline' | 'calendar'
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
+  const flatListRef = useRef(null);
+  const sectionListRef = useRef(null);
+  const calendarScrollRef = useRef(null);
+  const { register } = useScrollToTop();
+
+  // Scroll to top: works for drawer "tap again" and tab bar "tap again"
+  const scrollToTop = useCallback(() => {
+    if (viewMode === 'list') flatListRef.current?.scrollToOffset?.({ offset: 0, animated: true });
+    else if (viewMode === 'timeline') sectionListRef.current?.scrollToLocation?.({ sectionIndex: 0, itemIndex: 0, animated: true });
+    else if (viewMode === 'calendar') calendarScrollRef.current?.scrollTo?.({ y: 0, animated: true });
+  }, [viewMode]);
+
+  useEffect(() => {
+    const unregister = register(TRANSACTIONS_ROUTE, scrollToTop);
+    return unregister;
+  }, [register, scrollToTop]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', scrollToTop);
+    return unsubscribe;
+  }, [navigation, scrollToTop]);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [detailTransaction, setDetailTransaction] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -281,10 +307,17 @@ export default function TransactionsScreen() {
   return (
     <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: title + Add button (hide Add in calendar view when date selected) */}
+      {/* Header: menu + title + Add button (hide Add in calendar view when date selected) */}
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+          style={[styles.headerMenuBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}
+          accessibilityLabel={t('common.menu', 'Menu')}
+        >
+          <Menu size={20} color={theme.colors.textSecondary} />
+        </TouchableOpacity>
         <Text style={[styles.title, { color: theme.colors.text }]}>{t('transactions.title')}</Text>
-        {!(viewMode === 'calendar' && selectedCalendarDate) && (
+        {!(viewMode === 'calendar' && selectedCalendarDate) ? (
           <TouchableOpacity
             onPress={() => { setEditingTransaction(null); setFormOpen(true); }}
             style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
@@ -294,7 +327,7 @@ export default function TransactionsScreen() {
           >
             <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
           </TouchableOpacity>
-        )}
+        ) : <View style={styles.headerAddBtn} />}
       </View>
 
       {/* View mode toggle (List / Timeline / Calendar) */}
@@ -387,6 +420,7 @@ export default function TransactionsScreen() {
       {/* Calendar View */}
       {viewMode === 'calendar' && (
         <ScrollView
+          ref={calendarScrollRef}
           contentContainerStyle={styles.calendarContainer}
           refreshControl={
             <RefreshControl
@@ -436,6 +470,7 @@ export default function TransactionsScreen() {
 
       {viewMode === 'list' && (
         <FlatList
+          ref={flatListRef}
           data={items}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
@@ -483,6 +518,7 @@ export default function TransactionsScreen() {
 
       {viewMode === 'timeline' && (
         <SectionList
+          ref={sectionListRef}
           sections={timelineSections}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderTimelineItem}
@@ -641,7 +677,15 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
-  title: { ...typography.h2, flex: 1 },
+  title: { ...typography.h2, flex: 1, marginLeft: spacing.sm },
+  headerMenuBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerAddBtn: {
     width: 44,
     height: 44,

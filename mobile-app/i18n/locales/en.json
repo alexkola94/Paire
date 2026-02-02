@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "Paire",
+    "name": "Paire",
     "tagline": "Finances, aligned."
   },
   "splash": {
@@ -36,7 +37,8 @@
     "selectPlaceholder": "Select...",
     "amountPlaceholder": "0.00",
     "fabLabel": "Add new transaction",
-    "fabHint": "Opens quick add menu"
+    "fabHint": "Opens quick add menu",
+    "menu": "Menu"
   },
   "validation": {
     "required": "{{field}} is required",
@@ -159,6 +161,7 @@
     "currencyCalculator": "Currency Calculator",
     "transactions": "Transactions",
     "categories": {
+      "main": "Main",
       "finance": "Finance",
       "tools": "Tools",
       "lifestyle": "Lifestyle",

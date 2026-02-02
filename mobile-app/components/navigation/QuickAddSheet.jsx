@@ -151,14 +151,14 @@ export default function QuickAddSheet({ isOpen, onClose }) {
         case 'add-expense':
           // Navigate to transactions with expense type pre-selected
           router.push({
-            pathname: '/(app)/transactions',
+            pathname: '/(app)/(tabs)/transactions',
             params: { type: 'expense', openForm: 'true' },
           });
           break;
         case 'add-income':
           // Navigate to transactions with income type pre-selected
           router.push({
-            pathname: '/(app)/transactions',
+            pathname: '/(app)/(tabs)/transactions',
             params: { type: 'income', openForm: 'true' },
           });
           break;
@@ -172,7 +172,7 @@ export default function QuickAddSheet({ isOpen, onClose }) {
         case 'transfer':
           // Navigate to transactions with transfer type
           router.push({
-            pathname: '/(app)/transactions',
+            pathname: '/(app)/(tabs)/transactions',
             params: { type: 'transfer', openForm: 'true' },
           });
           break;

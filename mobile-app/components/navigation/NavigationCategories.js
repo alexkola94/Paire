@@ -65,7 +65,7 @@ export const TOOLS_FEATURES = [
     icon: BarChart3,
     labelKey: 'navigation.analytics',
     descriptionKey: 'navigation.descriptions.financialInsights',
-    route: '/(app)/analytics',
+    route: '/(app)/(tabs)/analytics',
   },
   {
     id: 'calculator',

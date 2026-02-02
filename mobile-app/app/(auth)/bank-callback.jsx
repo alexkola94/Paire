@@ -29,20 +29,20 @@ export default function BankCallbackScreen() {
     if (error) {
       setStatus('error');
       setMessage(t('profile.openBanking.callback.bankError', 'Bank authorization was cancelled or failed.'));
-      const tid = setTimeout(() => router.replace('/(app)/profile'), 3000);
+      const tid = setTimeout(() => router.replace('/(app)/(tabs)/profile'), 3000);
       return () => clearTimeout(tid);
     }
 
     if (success === 'true' || success === true) {
       setStatus('success');
       setMessage(t('profile.openBanking.connectionSuccess', 'Bank account connected successfully!'));
-      const tid = setTimeout(() => router.replace('/(app)/profile'), 2500);
+      const tid = setTimeout(() => router.replace('/(app)/(tabs)/profile'), 2500);
       return () => clearTimeout(tid);
     }
 
     setStatus('error');
     setMessage(t('profile.openBanking.callback.missingParams', 'Missing authorization parameters.'));
-    const tid = setTimeout(() => router.replace('/(app)/profile'), 3000);
+    const tid = setTimeout(() => router.replace('/(app)/(tabs)/profile'), 3000);
     return () => clearTimeout(tid);
   }, [params.success, params.error, router, t]);
 

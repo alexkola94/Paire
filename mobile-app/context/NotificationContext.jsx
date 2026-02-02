@@ -100,11 +100,11 @@ export function NotificationProvider({ children }) {
         router.push('/(app)/partnership');
         break;
       case 'security_alert':
-        router.push('/(app)/profile');
+        router.push('/(app)/(tabs)/profile');
         break;
       default:
         // Default to dashboard
-        router.push('/(app)/dashboard');
+        router.push('/(app)/(tabs)/dashboard');
     }
   }, [router]);
   

@@ -1,153 +1,47 @@
 /**
- * App Layout with Custom Tab Bar
- * 
- * Main navigation layout featuring:
- * - Custom TabBarWithFAB for quick transaction entry
- * - 4 visible tabs: Dashboard, Finance, Tools, Profile
- * - Bottom sheets for Finance and Tools feature hubs
- * - All other screens accessible via navigation
+ * App Layout – Drawer + Tabs
+ *
+ * Drawer wraps the app: custom drawer content (Logo Hero + nav links + footer).
+ * Main content is the (tabs) group (Dashboard, Transactions, Analytics, Profile).
+ * Other screens (expenses, loans, etc.) remain under (app) and are linked from the drawer.
  */
 
-import { useEffect, useState, useCallback } from 'react';
-import { Tabs, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { Home, Wallet, Wrench, User } from 'lucide-react-native';
-import { authService } from '../../services/auth';
+import { useEffect } from 'react';
+import { Drawer } from 'expo-router/drawer';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
-import { CalculatorProvider } from '../../context/CalculatorContext';
-import { OverlayProvider } from '../../context/OverlayContext';
-import { TabTransitionProvider } from '../../context/TabTransitionContext';
-import { TabBarWithFAB, FinanceHubSheet, ToolsHubSheet, GlobalCalculator } from '../../components';
+import { ScrollToTopProvider } from '../../context/ScrollToTopContext';
+import { authService } from '../../services/auth';
+import AppDrawerContent from '../../components/navigation/AppDrawerContent';
+
+// Default route when opening the app group (tabs = main content)
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
 
 export default function AppLayout() {
   const router = useRouter();
-  const { t } = useTranslation();
   const { theme } = useTheme();
-  
-  // Hub sheet states
-  const [isFinanceHubOpen, setIsFinanceHubOpen] = useState(false);
-  const [isToolsHubOpen, setIsToolsHubOpen] = useState(false);
 
-  // Auth check on mount
   useEffect(() => {
     if (!authService.isAuthenticated()) {
       router.replace('/(auth)/login');
     }
   }, []);
 
-  // Custom tab bar component with FAB
-  const renderTabBar = useCallback((props) => {
-    return (
-      <TabBarWithFAB
-        {...props}
-        onFinancePress={() => setIsFinanceHubOpen(true)}
-        onToolsPress={() => setIsToolsHubOpen(true)}
-      />
-    );
-  }, []);
-
   return (
-    <CalculatorProvider>
-      <OverlayProvider>
-      <TabTransitionProvider>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          // Overlay positioning is applied inside TabBarWithFAB (custom bar does not use tabBarStyle root)
-          tabBarStyle: {
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'transparent',
-            borderTopWidth: 0,
-            elevation: 10, // Keep bar above scrolling content on Android
-            shadowOpacity: 0, // Our pill has its own shadow
-            zIndex: 10,
-          },
-          // Theme-aware colors for fallback
-          tabBarActiveTintColor: theme.colors.primary,
-          tabBarInactiveTintColor: theme.colors.textLight,
-        }}
-        tabBar={renderTabBar}
-      >
-        {/* Visible tabs in tab bar (4 tabs + FAB in center) */}
-        <Tabs.Screen
-          name="dashboard"
-          options={{
-            title: t('navigation.dashboard'),
-            tabBarIcon: ({ color, focused }) => (
-              <Home size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="transactions"
-          options={{
-            title: t('navigation.transactions', 'Transactions'),
-            tabBarIcon: ({ color, focused }) => (
-              <Wallet size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="analytics"
-          options={{
-            title: t('navigation.analytics', 'Analytics'),
-            tabBarIcon: ({ color, focused }) => (
-              <Wrench size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: t('navigation.profile'),
-            tabBarIcon: ({ color, focused }) => (
-              <User size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            ),
-          }}
-        />
-
-        {/* Hidden from tab bar but navigable via bottom sheets and direct links */}
-        <Tabs.Screen name="expenses" options={{ href: null }} />
-        <Tabs.Screen name="income" options={{ href: null }} />
-        <Tabs.Screen name="budgets" options={{ href: null }} />
-        <Tabs.Screen name="savings-goals" options={{ href: null }} />
-        <Tabs.Screen name="loans" options={{ href: null }} />
-        <Tabs.Screen name="recurring-bills" options={{ href: null }} />
-        <Tabs.Screen name="receipts" options={{ href: null }} />
-        <Tabs.Screen name="partnership" options={{ href: null }} />
-        <Tabs.Screen name="shopping-lists" options={{ href: null }} />
-        <Tabs.Screen name="reminders" options={{ href: null }} />
-        <Tabs.Screen name="achievements" options={{ href: null }} />
-        <Tabs.Screen name="economic-news" options={{ href: null }} />
-        <Tabs.Screen name="currency-calculator" options={{ href: null }} />
-        <Tabs.Screen name="travel" options={{ href: null }} />
-        <Tabs.Screen
-          name="chatbot"
-          options={{
-            href: null,
-            tabBarStyle: { display: 'none' },
-          }}
-        />
-        <Tabs.Screen name="admin" options={{ href: null }} />
-      </Tabs>
-
-      {/* Feature Hub Bottom Sheets - inside TabTransitionProvider so tab screens can use context */}
-      <FinanceHubSheet
-        isOpen={isFinanceHubOpen}
-        onClose={() => setIsFinanceHubOpen(false)}
-      />
-      <ToolsHubSheet
-        isOpen={isToolsHubOpen}
-        onClose={() => setIsToolsHubOpen(false)}
-      />
-
-      {/* Global Calculator FAB - only visible in authenticated app screens */}
-      <GlobalCalculator />
-      </TabTransitionProvider>
-      </OverlayProvider>
-    </CalculatorProvider>
+    <ScrollToTopProvider>
+    <Drawer
+      screenOptions={{
+        headerShown: false,
+        drawerType: 'front',
+        drawerStyle: { width: 280, maxWidth: '85%' },
+        drawerActiveTintColor: theme.colors.primary,
+        drawerInactiveTintColor: theme.colors.textSecondary,
+        swipeEdgeWidth: 24,
+      }}
+      drawerContent={(props) => <AppDrawerContent {...props} />}
+    />
+    </ScrollToTopProvider>
   );
 }

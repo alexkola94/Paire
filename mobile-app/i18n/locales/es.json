@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "Paire",
+    "name": "Paire",
     "tagline": "Finanzas, alineadas."
   },
   "common": {
@@ -16,7 +17,8 @@
     "copied": "Copiado al portapapeles",
     "more": "más",
     "selectPlaceholder": "Seleccionar...",
-    "amountPlaceholder": "0,00"
+    "amountPlaceholder": "0,00",
+    "menu": "Menú"
   },
   "validation": {
     "required": "{{field}} es obligatorio",
@@ -133,6 +135,7 @@
     "currencyCalculator": "Convertidor de Moneda",
     "transactions": "Transacciones",
     "categories": {
+      "main": "Principal",
       "finance": "Finanzas",
       "tools": "Herramientas",
       "lifestyle": "Estilo de Vida",

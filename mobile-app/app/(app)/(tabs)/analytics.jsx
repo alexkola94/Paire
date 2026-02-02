@@ -5,7 +5,7 @@
  * optional analyticsService.getLoanAnalytics() for loan summary.
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
-import { useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -28,14 +28,17 @@ import {
   Activity,
   PieChart,
   Calendar,
+  Menu,
 } from 'lucide-react-native';
-import { transactionService, analyticsService, partnershipService } from '../../services/api';
-import { getStoredUser } from '../../services/auth';
-import { useTheme } from '../../context/ThemeContext';
-import { usePrivacyMode } from '../../context/PrivacyModeContext';
-import { useTabTransition } from '../../context/TabTransitionContext';
-import { spacing, borderRadius, typography, shadows, colors } from '../../constants/theme';
-import { Dropdown } from '../../components';
+import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { transactionService, analyticsService, partnershipService } from '../../../services/api';
+import { getStoredUser } from '../../../services/auth';
+import { useTheme } from '../../../context/ThemeContext';
+import { usePrivacyMode } from '../../../context/PrivacyModeContext';
+import { useTabTransition } from '../../../context/TabTransitionContext';
+import { spacing, borderRadius, typography, shadows, colors } from '../../../constants/theme';
+import { Dropdown } from '../../../components';
+import { useScrollToTop } from '../../../context/ScrollToTopContext';
 import { subDays } from 'date-fns';
 
 // Simple currency formatter; respects privacy mode when passed
@@ -204,14 +207,33 @@ const CATEGORY_COLORS = [
 ];
 
 const TAB_INDEX = 2; // Analytics is third tab
+const ANALYTICS_ROUTE = '/(app)/(tabs)/analytics';
 
 export default function AnalyticsScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const navigation = useNavigation();
   const { theme } = useTheme();
   const { isPrivacyMode } = usePrivacyMode();
   const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
   const { width } = useWindowDimensions();
   const [dateRange, setDateRange] = useState('month');
+  const scrollViewRef = useRef(null);
+  const { register } = useScrollToTop();
+
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  useEffect(() => {
+    const unregister = register(ANALYTICS_ROUTE, scrollToTop);
+    return unregister;
+  }, [register, scrollToTop]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', scrollToTop);
+    return unsubscribe;
+  }, [navigation, scrollToTop]);
 
   useFocusEffect(
     useCallback(() => {
@@ -299,14 +321,22 @@ export default function AnalyticsScreen() {
     <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.scroll}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
-        {/* Header */}
+        {/* Header: menu + title */}
         <View style={styles.header}>
-          <View>
+          <TouchableOpacity
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            style={[styles.headerMenuBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}
+            accessibilityLabel={t('common.menu', 'Menu')}
+          >
+            <Menu size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
             <Text style={[styles.title, { color: theme.colors.text }]}>{t('analytics.title')}</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
               {t('analytics.subtitle')}
@@ -548,7 +578,21 @@ const styles = StyleSheet.create({
   tabTransitionWrapper: { flex: 1 },
   container: { flex: 1 },
   scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
-  header: { marginBottom: spacing.md },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  headerMenuBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitleWrap: { flex: 1 },
   title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.bodySmall },
   filters: {

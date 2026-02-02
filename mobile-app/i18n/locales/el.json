@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "Paire",
+    "name": "Paire",
     "tagline": "Οικονομικά, σε αρμονία."
   },
   "common": {
@@ -30,7 +31,8 @@
     "copied": "Αντιγράφηκε στο πρόχειρο",
     "more": "περισσότερα",
     "selectPlaceholder": "Επιλέξτε...",
-    "amountPlaceholder": "0,00"
+    "amountPlaceholder": "0,00",
+    "menu": "Μενού"
   },
   "validation": {
     "required": "Το {{field}} απαιτείται",
@@ -154,6 +156,7 @@
     "currencyCalculator": "Μετατροπέας Νομισμάτων",
     "transactions": "Συναλλαγές",
     "categories": {
+      "main": "Κύρια",
       "finance": "Οικονομικά",
       "tools": "Εργαλεία",
       "lifestyle": "Τρόπος Ζωής",

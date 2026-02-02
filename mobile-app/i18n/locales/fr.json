@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "Paire",
+    "name": "Paire",
     "tagline": "Finances, alignées."
   },
   "common": {
@@ -16,7 +17,8 @@
     "copied": "Copié dans le presse-papiers",
     "more": "plus",
     "selectPlaceholder": "Sélectionner...",
-    "amountPlaceholder": "0,00"
+    "amountPlaceholder": "0,00",
+    "menu": "Menu"
   },
   "validation": {
     "required": "{{field}} est requis",
@@ -133,6 +135,7 @@
     "currencyCalculator": "Convertisseur de Devises",
     "transactions": "Transactions",
     "categories": {
+      "main": "Principal",
       "finance": "Finances",
       "tools": "Outils",
       "lifestyle": "Mode de Vie",

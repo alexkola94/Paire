@@ -33,8 +33,8 @@ export default function Index() {
         const session = await authService.getSession();
 
         if (session) {
-          // User is authenticated - go to dashboard
-          setNavigationTarget('/(app)/dashboard');
+          // User is authenticated - go to dashboard (tabs)
+          setNavigationTarget('/(app)/(tabs)/dashboard');
         } else if (hasLaunched === null) {
           // First time user - show landing page and mark as launched
           await AsyncStorage.setItem(HAS_LAUNCHED_KEY, 'true');

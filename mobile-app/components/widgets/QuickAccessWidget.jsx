@@ -16,7 +16,7 @@ import { spacing, borderRadius, typography, shadows } from '../../constants/them
 
 // Default quick access items
 const DEFAULT_ITEMS = [
-  { icon: Plus, labelKey: 'navigation.transactions', route: '/(app)/transactions' },
+  { icon: Plus, labelKey: 'navigation.transactions', route: '/(app)/(tabs)/transactions' },
   { icon: MapPin, labelKey: 'travel.common.enterTravelMode', route: '/(app)/travel' },
   { icon: PiggyBank, labelKey: 'navigation.savingsGoals', route: '/(app)/savings-goals' },
   { icon: CreditCard, labelKey: 'navigation.loans', route: '/(app)/loans' },
@@ -24,7 +24,7 @@ const DEFAULT_ITEMS = [
   { icon: Repeat, labelKey: 'navigation.recurringBills', route: '/(app)/recurring-bills' },
   { icon: ShoppingCart, labelKey: 'navigation.shoppingLists', route: '/(app)/shopping-lists' },
   { icon: Bell, labelKey: 'navigation.reminders', route: '/(app)/reminders' },
-  { icon: BarChart3, labelKey: 'navigation.analytics', route: '/(app)/analytics' },
+  { icon: BarChart3, labelKey: 'navigation.analytics', route: '/(app)/(tabs)/analytics' },
   { icon: Calculator, labelKey: 'navigation.currencyCalculator', route: '/(app)/currency-calculator' },
   { icon: Newspaper, labelKey: 'navigation.economicNews', route: '/(app)/economic-news' },
   { icon: Users, labelKey: 'navigation.partnership', route: '/(app)/partnership' },
