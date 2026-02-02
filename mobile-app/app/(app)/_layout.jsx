@@ -124,7 +124,13 @@ export default function AppLayout() {
         <Tabs.Screen name="economic-news" options={{ href: null }} />
         <Tabs.Screen name="currency-calculator" options={{ href: null }} />
         <Tabs.Screen name="travel" options={{ href: null }} />
-        <Tabs.Screen name="chatbot" options={{ href: null }} />
+        <Tabs.Screen
+          name="chatbot"
+          options={{
+            href: null,
+            tabBarStyle: { display: 'none' },
+          }}
+        />
         <Tabs.Screen name="admin" options={{ href: null }} />
       </Tabs>
 

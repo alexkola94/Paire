@@ -200,6 +200,11 @@ export default function TabBarWithFAB({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
+  // Whether to hide tab bar when active screen requests it (e.g. chatbot full-screen)
+  const activeRoute = state.routes[state.index];
+  const activeOptions = activeRoute ? descriptors[activeRoute.key]?.options : {};
+  const hideTabBar = activeOptions.tabBarStyle?.display === 'none';
+
   // Handle FAB press
   const handleFABPress = useCallback(() => {
     setIsQuickAddOpen(true);
@@ -259,6 +264,11 @@ export default function TabBarWithFAB({ state, descriptors, navigation }) {
           borderTopWidth: 1,
         }),
   };
+
+  // Hide tab bar after all hooks (avoids "Rendered fewer hooks than expected")
+  if (hideTabBar) {
+    return null;
+  }
 
   return (
     <>
