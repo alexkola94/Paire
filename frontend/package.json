@@ -26,7 +26,7 @@
     "@microsoft/signalr": "^10.0.0",
     "@tanstack/react-query": "^5.90.12",
     "chart.js": "^4.5.1",
-    "date-fns": "^3.0.6",
+    "date-fns": "^4.1.0",
     "dexie": "^4.2.1",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.26.2",
