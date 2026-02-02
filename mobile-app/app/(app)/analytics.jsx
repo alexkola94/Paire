@@ -14,6 +14,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -203,9 +204,13 @@ export default function AnalyticsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const { isPrivacyMode } = usePrivacyMode();
+  const { width } = useWindowDimensions();
   const [dateRange, setDateRange] = useState('month');
   const [viewFilter, setViewFilter] = useState('together');
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Responsive: use row layout on tablets (width >= 600)
+  const isTablet = width >= 600;
 
   const range = useMemo(() => getDateRange(dateRange), [dateRange]);
 
@@ -289,20 +294,22 @@ export default function AnalyticsScreen() {
           </View>
         </View>
 
-        {/* Filters */}
-        <View style={styles.filters}>
+        {/* Filters - responsive layout: column on mobile, row on tablet */}
+        <View style={[styles.filters, isTablet && styles.filtersRow]}>
           <Dropdown
             options={dateOptions}
             value={dateRange}
             onChange={setDateRange}
             icon={Calendar}
             placeholder={t('analytics.thisMonth')}
+            style={isTablet && { flex: 1 }}
           />
           <Dropdown
             options={partnerOptions}
             value={viewFilter}
             onChange={setViewFilter}
             placeholder={t('analytics.together')}
+            style={isTablet && { flex: 1 }}
           />
         </View>
 
@@ -523,9 +530,14 @@ const styles = StyleSheet.create({
   title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.bodySmall },
   filters: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: spacing.sm,
     marginBottom: spacing.lg,
+  },
+  // Row layout for filters on wider screens (tablets)
+  filtersRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
   loading: {
     alignItems: 'center',

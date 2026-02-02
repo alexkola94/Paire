@@ -1,6 +1,6 @@
 /**
- * ConfirmationModal Component (React Native)
- * Ported from frontend/src/components/ConfirmationModal.jsx
+ * ConfirmationModal Component (React Native) - Bottom Sheet Style
+ * All confirmation dialogs rise from the bottom of the screen.
  * 
  * Features:
  * - Confirm/Cancel actions
@@ -9,9 +9,10 @@
  * - Warning variant for caution
  * - Theme-aware styling
  * - Loading state support
+ * - Bottom sheet animation
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +22,15 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+  useReducedMotion,
+  Easing,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AlertTriangle, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
@@ -39,6 +49,61 @@ export default function ConfirmationModal({
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
+
+  // Animation shared values
+  const overlayOpacity = useSharedValue(0);
+  const contentTranslateY = useSharedValue(300);
+  const contentOpacity = useSharedValue(0);
+
+  // Animate in when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (reducedMotion) {
+        overlayOpacity.value = 0.5;
+        contentTranslateY.value = 0;
+        contentOpacity.value = 1;
+      } else {
+        overlayOpacity.value = withTiming(0.5, { duration: 150 });
+        // Clean, swift slide-up animation
+        contentTranslateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
+        contentOpacity.value = withTiming(1, { duration: 150 });
+      }
+    }
+  }, [isOpen]);
+
+  // Animate out and close
+  const handleClose = () => {
+    if (loading) return;
+    
+    if (reducedMotion) {
+      onClose();
+      return;
+    }
+
+    overlayOpacity.value = withTiming(0, { duration: 120 });
+    contentOpacity.value = withTiming(0, { duration: 100 });
+    contentTranslateY.value = withTiming(
+      200,
+      { duration: 180, easing: Easing.in(Easing.cubic) },
+      (finished) => {
+        if (finished) {
+          runOnJS(onClose)();
+        }
+      }
+    );
+  };
+
+  // Animated styles
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: `rgba(0,0,0,${overlayOpacity.value})`,
+  }));
+
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+    transform: [{ translateY: contentTranslateY.value }],
+  }));
 
   if (!isOpen) return null;
 
@@ -65,11 +130,11 @@ export default function ConfirmationModal({
 
   // Dynamic styles based on theme
   const dynamicStyles = {
-    overlay: { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
     content: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.background,
       ...shadows.lg,
     },
+    handle: { backgroundColor: theme.colors.textLight },
     iconBg: { backgroundColor: variantBgColor },
     title: { color: theme.colors.text },
     message: { color: theme.colors.textSecondary },
@@ -87,82 +152,95 @@ export default function ConfirmationModal({
     <RNModal
       visible={isOpen}
       transparent
-      animationType="fade"
-      onRequestClose={loading ? undefined : onClose}
+      animationType="none"
+      onRequestClose={loading ? undefined : handleClose}
       statusBarTranslucent
     >
-      <Pressable
-        style={[styles.overlay, dynamicStyles.overlay]}
-        onPress={loading ? undefined : onClose}
-      >
+      <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
         <Pressable
-          style={[styles.content, dynamicStyles.content]}
-          onPress={(e) => e.stopPropagation()}
+          style={styles.overlayPressable}
+          onPress={loading ? undefined : handleClose}
         >
-          {/* Close Button */}
-          {!loading && (
-            <TouchableOpacity
-              style={[styles.closeBtn, dynamicStyles.closeBtn]}
-              onPress={onClose}
-              activeOpacity={0.7}
-              accessibilityLabel={t('common.close', 'Close')}
-            >
-              <X size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-
-          {/* Icon */}
-          <View style={[styles.iconContainer, dynamicStyles.iconBg]}>
-            <AlertTriangle size={32} color={variantColor} />
-          </View>
-
-          {/* Title */}
-          <Text style={[styles.title, dynamicStyles.title]}>
-            {title || defaultTitle}
-          </Text>
-
-          {/* Message */}
-          <Text style={[styles.message, dynamicStyles.message]}>
-            {message || defaultMessage}
-          </Text>
-
-          {/* Actions */}
-          <View style={styles.actions}>
-            {/* Cancel Button */}
-            <TouchableOpacity
-              style={[styles.button, styles.cancelBtn, dynamicStyles.cancelBtn]}
-              onPress={onClose}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.buttonText, dynamicStyles.cancelBtnText]}>
-                {cancelText || defaultCancelText}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Confirm Button */}
-            <TouchableOpacity
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <Animated.View
               style={[
-                styles.button,
-                styles.confirmBtn,
-                dynamicStyles.confirmBtn,
-                loading && styles.buttonDisabled,
+                styles.content,
+                dynamicStyles.content,
+                contentAnimatedStyle,
+                { paddingBottom: insets.bottom + spacing.lg },
               ]}
-              onPress={handleConfirm}
-              disabled={loading}
-              activeOpacity={0.7}
             >
-              {loading ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Text style={[styles.buttonText, dynamicStyles.confirmBtnText]}>
-                  {confirmText || defaultConfirmText}
-                </Text>
+              {/* Drag Handle */}
+              <View style={styles.handleContainer}>
+                <View style={[styles.handle, dynamicStyles.handle]} />
+              </View>
+
+              {/* Close Button */}
+              {!loading && (
+                <TouchableOpacity
+                  style={[styles.closeBtn, dynamicStyles.closeBtn]}
+                  onPress={handleClose}
+                  activeOpacity={0.7}
+                  accessibilityLabel={t('common.close', 'Close')}
+                >
+                  <X size={18} color={theme.colors.textSecondary} />
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
-          </View>
+
+              {/* Icon */}
+              <View style={[styles.iconContainer, dynamicStyles.iconBg]}>
+                <AlertTriangle size={32} color={variantColor} />
+              </View>
+
+              {/* Title */}
+              <Text style={[styles.title, dynamicStyles.title]}>
+                {title || defaultTitle}
+              </Text>
+
+              {/* Message */}
+              <Text style={[styles.message, dynamicStyles.message]}>
+                {message || defaultMessage}
+              </Text>
+
+              {/* Actions */}
+              <View style={styles.actions}>
+                {/* Cancel Button */}
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelBtn, dynamicStyles.cancelBtn]}
+                  onPress={handleClose}
+                  disabled={loading}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.buttonText, dynamicStyles.cancelBtnText]}>
+                    {cancelText || defaultCancelText}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Confirm Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    styles.confirmBtn,
+                    dynamicStyles.confirmBtn,
+                    loading && styles.buttonDisabled,
+                  ]}
+                  onPress={handleConfirm}
+                  disabled={loading}
+                  activeOpacity={0.7}
+                >
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <Text style={[styles.buttonText, dynamicStyles.confirmBtnText]}>
+                      {confirmText || defaultConfirmText}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </Animated.View>
     </RNModal>
   );
 }
@@ -170,32 +248,48 @@ export default function ConfirmationModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
+  },
+  overlayPressable: {
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   content: {
     width: '100%',
-    maxWidth: 340,
-    borderRadius: borderRadius.lg,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     padding: spacing.lg,
+    paddingTop: 0,
     alignItems: 'center',
     position: 'relative',
   },
+  // Drag handle indicator
+  handleContainer: {
+    alignItems: 'center',
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    width: '100%',
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.4,
+  },
   closeBtn: {
     position: 'absolute',
-    top: spacing.md,
+    top: spacing.sm,
     right: spacing.md,
     width: 32,
     height: 32,
-    borderRadius: borderRadius.full,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
   iconContainer: {
     width: 64,
     height: 64,
-    borderRadius: borderRadius.full,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
@@ -210,6 +304,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     textAlign: 'center',
     marginBottom: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
   actions: {
     flexDirection: 'row',

@@ -17,7 +17,6 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,10 +29,10 @@ import QuickAddSheet from './QuickAddSheet';
 // Animated components
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-// Tab bar constants - adjusted for better visual balance
-const TAB_BAR_HEIGHT = 64;
-const FAB_SIZE = 58;
-const FAB_OFFSET = 30; // How much FAB overlaps above tab bar
+// Tab bar constants - compact design
+const TAB_BAR_HEIGHT = 52;
+const FAB_SIZE = 54;
+const FAB_OFFSET = 26; // How much FAB overlaps above tab bar
 
 /**
  * Individual tab button with animation
@@ -48,11 +47,11 @@ function TabButton({ route, label, renderIcon, isFocused, onPress, theme }) {
   }, [isFocused]);
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.9, { damping: 15 });
+    scale.value = withTiming(0.92, { duration: 100 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15 });
+    scale.value = withTiming(1, { duration: 100 });
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -64,7 +63,7 @@ function TabButton({ route, label, renderIcon, isFocused, onPress, theme }) {
   const indicatorStyle = useAnimatedStyle(() => ({
     opacity: withTiming(isFocused ? 1 : 0, { duration: 200 }),
     transform: [
-      { scaleX: withSpring(isFocused ? 1 : 0.5, { damping: 15 }) },
+      { scaleX: withTiming(isFocused ? 1 : 0.5, { duration: 150 }) },
     ],
   }));
 
@@ -117,17 +116,17 @@ function FABButton({ onPress, isOpen, theme }) {
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
 
-  // Rotate when sheet opens/closes
+  // Rotate when sheet opens/closes - clean animation
   React.useEffect(() => {
-    rotation.value = withSpring(isOpen ? 45 : 0, { damping: 12 });
+    rotation.value = withTiming(isOpen ? 45 : 0, { duration: 200 });
   }, [isOpen]);
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.92, { damping: 15 });
+    scale.value = withTiming(0.92, { duration: 100 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15 });
+    scale.value = withTiming(1, { duration: 100 });
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -296,9 +295,8 @@ export default function TabBarWithFAB({ state, descriptors, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     borderTopWidth: 1,
-    paddingTop: spacing.sm,
     // Glassmorphism shadow
     ...Platform.select({
       ios: {
@@ -358,11 +356,11 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
       },
       android: {
-        elevation: 12,
+        elevation: 10,
       },
     }),
   },
@@ -371,20 +369,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    // Subtle gradient effect via overlay
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: FAB_SIZE / 2,
   },
   fabGlow: {
     position: 'absolute',
-    top: -10,
-    left: -10,
-    right: -10,
-    bottom: -10,
-    borderRadius: (FAB_SIZE + 20) / 2,
+    top: -8,
+    left: -8,
+    right: -8,
+    bottom: -8,
+    borderRadius: (FAB_SIZE + 16) / 2,
     backgroundColor: colors.primary,
-    opacity: 0.15,
+    opacity: 0.12,
     zIndex: -1,
   },
 });

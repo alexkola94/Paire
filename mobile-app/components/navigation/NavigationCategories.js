@@ -9,8 +9,8 @@ import {
   TrendingDown, TrendingUp, Wallet, PiggyBank, CreditCard,
   BarChart3, Calculator, Receipt, Repeat,
   MapPin, ShoppingCart, Bell, Newspaper,
-  Users, Link2, Trophy, Shield,
-  Plus, Camera, ArrowLeftRight,
+  Users, Link2, Trophy,
+  Plus, Camera,
 } from 'lucide-react-native';
 
 /**
@@ -155,7 +155,7 @@ export const ACCOUNT_FEATURES = [
 
 /**
  * Quick Add Actions
- * Actions available from the FAB
+ * Actions available from the FAB (transfer removed for cleaner UX)
  */
 export const QUICK_ADD_ACTIONS = [
   {
@@ -179,13 +179,6 @@ export const QUICK_ADD_ACTIONS = [
     labelKey: 'quickAdd.scanReceipt',
     action: 'scan-receipt',
     color: 'primary',
-  },
-  {
-    id: 'transfer',
-    icon: ArrowLeftRight,
-    labelKey: 'quickAdd.transfer',
-    action: 'transfer',
-    color: 'info',
   },
 ];
 

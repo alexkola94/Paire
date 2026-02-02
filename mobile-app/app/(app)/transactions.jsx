@@ -20,6 +20,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, X, List, Clock, Calendar } from 'lucide-react-native';
 import { transactionService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import {
   Modal,
@@ -46,8 +47,16 @@ function formatDate(dateStr) {
 export default function TransactionsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const { isPrivacyMode } = usePrivacyMode();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+
+  // Format amount with privacy mode support
+  const formatAmount = (amount, isExpense) => {
+    if (isPrivacyMode) return '••••';
+    const prefix = isExpense ? '-' : '+';
+    return `${prefix}€${Number(amount || 0).toFixed(2)}`;
+  };
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -193,7 +202,7 @@ export default function TransactionsScreen() {
             </Text>
           </View>
           <Text style={[styles.cardAmount, { color: isExpense ? theme.colors.error : theme.colors.success }]}>
-            {isExpense ? '-' : '+'}€{Number(item.amount || 0).toFixed(2)}
+            {formatAmount(item.amount, isExpense)}
           </Text>
         </View>
       </TouchableOpacity>
@@ -231,7 +240,7 @@ export default function TransactionsScreen() {
               <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>{item.category}</Text>
             </View>
             <Text style={[styles.cardAmount, { color: isExpense ? theme.colors.error : theme.colors.success }]}>
-              {isExpense ? '-' : '+'}€{Number(item.amount || 0).toFixed(2)}
+              {formatAmount(item.amount, isExpense)}
             </Text>
           </View>
         </TouchableOpacity>
@@ -525,8 +534,7 @@ export default function TransactionsScreen() {
                   },
                 ]}
               >
-                {detailTransaction.type === 'expense' ? '-' : '+'}€
-                {Number(detailTransaction.amount || 0).toFixed(2)}
+                {formatAmount(detailTransaction.amount, detailTransaction.type === 'expense')}
               </Text>
             </View>
             <View style={styles.detailRow}>

@@ -19,12 +19,12 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   runOnJS,
   useReducedMotion,
   interpolate,
   Extrapolation,
+  Easing,
 } from 'react-native-reanimated';
 import {
   Gesture,
@@ -37,9 +37,8 @@ import { spacing, borderRadius, typography } from '../../constants/theme';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Animation constants - snappier, faster animations
-const SPRING_DAMPING = 18;
-const SPRING_STIFFNESS = 280;
+// Animation constants - clean, swift animations
+const ANIMATION_DURATION = 250;
 const DISMISS_THRESHOLD = 80;
 const VELOCITY_THRESHOLD = 400;
 
@@ -60,42 +59,35 @@ export default function BottomSheetMenu({
   // Animation shared values
   const translateY = useSharedValue(sheetMaxHeight);
   const overlayOpacity = useSharedValue(0);
-  const scale = useSharedValue(0.95);
 
-  // Open animation
+  // Open animation - clean, swift
   useEffect(() => {
     if (isOpen) {
       if (reducedMotion) {
         translateY.value = 0;
         overlayOpacity.value = 0.5;
-        scale.value = 1;
       } else {
-        translateY.value = withSpring(0, {
-          damping: SPRING_DAMPING,
-          stiffness: SPRING_STIFFNESS,
+        translateY.value = withTiming(0, { 
+          duration: ANIMATION_DURATION, 
+          easing: Easing.out(Easing.cubic) 
         });
         overlayOpacity.value = withTiming(0.5, { duration: 150 });
-        scale.value = withSpring(1, {
-          damping: SPRING_DAMPING,
-          stiffness: SPRING_STIFFNESS,
-        });
       }
     }
   }, [isOpen]);
 
-  // Close animation
+  // Close animation - clean, swift
   const handleClose = useCallback(() => {
     if (reducedMotion) {
       onClose();
       return;
     }
 
-    translateY.value = withSpring(sheetMaxHeight, {
-      damping: SPRING_DAMPING,
-      stiffness: SPRING_STIFFNESS,
+    translateY.value = withTiming(sheetMaxHeight, { 
+      duration: 200, 
+      easing: Easing.in(Easing.cubic) 
     });
-    overlayOpacity.value = withTiming(0, { duration: 120 });
-    scale.value = withTiming(0.95, { duration: 150 }, (finished) => {
+    overlayOpacity.value = withTiming(0, { duration: 120 }, (finished) => {
       if (finished) {
         runOnJS(onClose)();
       }
@@ -125,10 +117,10 @@ export default function BottomSheetMenu({
       ) {
         runOnJS(handleClose)();
       } else {
-        // Snap back to open position
-        translateY.value = withSpring(0, {
-          damping: SPRING_DAMPING,
-          stiffness: SPRING_STIFFNESS,
+        // Snap back to open position - clean animation
+        translateY.value = withTiming(0, { 
+          duration: 200, 
+          easing: Easing.out(Easing.cubic) 
         });
         overlayOpacity.value = withTiming(0.5, { duration: 150 });
       }
@@ -140,10 +132,7 @@ export default function BottomSheetMenu({
   }));
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
+    transform: [{ translateY: translateY.value }],
   }));
 
   const handleBarAnimatedStyle = useAnimatedStyle(() => ({

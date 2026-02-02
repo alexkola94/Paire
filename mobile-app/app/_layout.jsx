@@ -64,29 +64,29 @@ export default function RootLayout() {
               <DashboardLayoutProvider>
                 <NotificationProvider>
                   <ToastProvider>
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    gestureEnabled: true,
-                    fullScreenGestureEnabled: true,
-                    fullScreenGestureShadowEnabled: true,
-                    animationMatchesGesture: true,
-                    sheetGrabberVisible: false,
-                    sheetExpandsWhenScrolledToEdge: true,
-                    sheetShouldOverflowTopInset: false,
-                    sheetResizeAnimationEnabled: true,
-                    freezeOnBlur: false,
-                    autoHideHomeIndicator: false,
-                    keyboardHandlingEnabled: true,
-                    navigationBarTranslucent: false,
-                    navigationBarHidden: false,
-                    statusBarHidden: false,
-                    statusBarTranslucent: false,
-                  }}
-                >
-                  <Stack.Screen name="(auth)" />
-                  <Stack.Screen name="(app)" />
-                </Stack>
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                        gestureEnabled: true,
+                        fullScreenGestureEnabled: true,
+                        fullScreenGestureShadowEnabled: true,
+                        animationMatchesGesture: true,
+                        sheetGrabberVisible: false,
+                        sheetExpandsWhenScrolledToEdge: true,
+                        sheetShouldOverflowTopInset: false,
+                        sheetResizeAnimationEnabled: true,
+                        freezeOnBlur: false,
+                        autoHideHomeIndicator: false,
+                        keyboardHandlingEnabled: true,
+                        navigationBarTranslucent: false,
+                        navigationBarHidden: false,
+                        statusBarHidden: false,
+                        statusBarTranslucent: false,
+                      }}
+                    >
+                      <Stack.Screen name="(auth)" />
+                      <Stack.Screen name="(app)" />
+                    </Stack>
                   </ToastProvider>
                 </NotificationProvider>
               </DashboardLayoutProvider>

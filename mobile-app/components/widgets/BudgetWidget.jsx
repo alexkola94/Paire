@@ -36,9 +36,13 @@ export default function BudgetWidget({
         </View>
         
         {displayBudgets.map((budget) => {
-          const pct = budget.amount > 0 ? Math.min((budget.spentAmount / budget.amount) * 100, 100) : 0;
+          // API may return camelCase (amount, spentAmount) or snake_case (amount, spent_amount)
+          const limit = Number(budget.amount ?? budget.limit ?? 0) || 0;
+          const spent = Number(budget.spentAmount ?? budget.spent_amount ?? 0) || 0;
+          const pct = limit > 0 ? Math.min(100, Math.max(0, (spent / limit) * 100)) : 0;
           const isOverBudget = pct > 90;
-          
+          const pctDisplay = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : '0%';
+
           return (
             <View key={budget.id} style={styles.budgetRow}>
               <Text style={[styles.budgetName, { color: theme.colors.text }]} numberOfLines={1}>
@@ -56,7 +60,7 @@ export default function BudgetWidget({
                 />
               </View>
               <Text style={[styles.budgetPct, { color: theme.colors.textSecondary }]}>
-                {pct.toFixed(0)}%
+                {pctDisplay}
               </Text>
             </View>
           );

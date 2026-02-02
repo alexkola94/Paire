@@ -1,21 +1,12 @@
 /**
  * RecurringBillForm Component (React Native)
- * Form for creating/editing recurring bills.
- * 
- * Features:
- * - Bill name
- * - Amount input
- * - Category selector
- * - Frequency selector
- * - Due day (1-31)
- * - Reminder days
- * - Auto-pay and active toggles
- * - Notes
- * - Form validation
- * - Theme-aware styling
+ * Form for creating/editing recurring bills (desktop parity).
+ * - Loan link when category = loan
+ * - Savings goal link when category = savings
+ * - Notes with [LOAN_REF:id] / [SAVINGS_REF:id] on submit
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,18 +16,20 @@ import {
   Switch,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../constants/theme';
+import { loanService, savingsGoalService } from '../services/api';
 import CurrencyInput from './CurrencyInput';
 import CategorySelector from './CategorySelector';
 import Dropdown from './Dropdown';
 import Button from './Button';
 import FormSection from './FormSection';
 
-// Bill categories
+// Bill categories (include savings for linking to savings goals — desktop parity)
 const BILL_CATEGORIES = [
   'housing', 'utilities', 'subscription', 'insurance', 'rent',
-  'loan', 'internet', 'phone', 'gym', 'other'
+  'loan', 'savings', 'internet', 'phone', 'gym', 'other'
 ];
 
 // Frequency options
@@ -56,19 +49,47 @@ export default function RecurringBillForm({
   const { t } = useTranslation();
   const { theme } = useTheme();
 
-  // Form state
-  const [formData, setFormData] = useState({
-    name: bill?.name || '',
-    amount: bill?.amount || '',
-    category: bill?.category || '',
-    frequency: bill?.frequency || 'monthly',
-    dueDay: bill?.dueDay || '1',
-    reminderDays: bill?.reminderDays || '3',
-    autoPay: bill?.autoPay ?? false,
-    isActive: bill?.isActive ?? true,
-    notes: bill?.notes || '',
+  // Loans and savings goals for link dropdowns (desktop parity)
+  const { data: loans = [] } = useQuery({
+    queryKey: ['loans'],
+    queryFn: () => loanService.getAll(),
   });
+  const { data: savingsGoals = [] } = useQuery({
+    queryKey: ['savingsGoals'],
+    queryFn: () => savingsGoalService.getAll(),
+  });
+
+  // Active only: not settled / not achieved
+  const activeLoans = (loans || []).filter((l) => !(l.isSettled ?? l.is_settled));
+  const activeSavingsGoals = (savingsGoals || []).filter((g) => !(g.isAchieved ?? g.is_achieved));
+
+  // Parse bill.notes for LOAN_REF and SAVINGS_REF when editing
+  const getInitialFormState = useCallback(() => {
+    const loanRefMatch = bill?.notes?.match(/\[LOAN_REF:([^\]]+)\]/);
+    const savingsRefMatch = bill?.notes?.match(/\[SAVINGS_REF:([^\]]+)\]/);
+    let displayNotes = (bill?.notes || '').replace(/\[LOAN_REF:[^\]]+\]\s*/g, '').replace(/\[SAVINGS_REF:[^\]]+\]\s*/g, '').trim();
+    return {
+      name: bill?.name || '',
+      amount: bill?.amount ?? '',
+      category: bill?.category || '',
+      frequency: bill?.frequency || 'monthly',
+      dueDay: (bill?.dueDay ?? bill?.due_day ?? '1').toString(),
+      reminderDays: (bill?.reminderDays ?? bill?.reminder_days ?? '3').toString(),
+      autoPay: bill?.autoPay ?? bill?.auto_pay ?? false,
+      isActive: bill?.isActive ?? bill?.is_active ?? true,
+      notes: displayNotes,
+      loanId: loanRefMatch?.[1] || '',
+      savingsGoalId: savingsRefMatch?.[1] || '',
+    };
+  }, [bill]);
+
+  const [formData, setFormData] = useState(getInitialFormState);
   const [error, setError] = useState('');
+
+  // Reset form when bill changes (e.g. switch from create to edit)
+  useEffect(() => {
+    setFormData(getInitialFormState());
+  }, [bill?.id, getInitialFormState]);
 
   // Get translated frequency options
   const frequencyOptions = FREQUENCY_OPTIONS.map(opt => ({
@@ -120,19 +141,30 @@ export default function RecurringBillForm({
   };
 
   /**
-   * Handle form submission
+   * Handle form submission — build notes with LOAN_REF/SAVINGS_REF (desktop parity)
    */
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
     try {
+      let notes = (formData.notes || '').replace(/\[LOAN_REF:[^\]]+\]\s*/g, '').replace(/\[SAVINGS_REF:[^\]]+\]\s*/g, '').trim();
+      if (formData.category === 'loan' && formData.loanId) {
+        notes = `${notes} [LOAN_REF:${formData.loanId}]`.trim();
+      }
+      if (formData.category === 'savings' && formData.savingsGoalId) {
+        notes = `${notes} [SAVINGS_REF:${formData.savingsGoalId}]`.trim();
+      }
+
       const submitData = {
         ...formData,
+        notes,
         id: bill?.id,
         amount: parseFloat(formData.amount),
         dueDay: parseInt(formData.dueDay),
         reminderDays: parseInt(formData.reminderDays) || 3,
       };
+      delete submitData.loanId;
+      delete submitData.savingsGoalId;
 
       await onSubmit?.(submitData);
     } catch (err) {
@@ -212,6 +244,62 @@ export default function RecurringBillForm({
         required
         disabled={loading}
       />
+
+      {/* Loan link (desktop parity) — only when category = loan and active loans exist */}
+      {formData.category === 'loan' && activeLoans.length > 0 && (
+        <View style={styles.fieldWrapper}>
+          <Text style={[styles.label, dynamicStyles.label]}>
+            {t('recurringBills.linkToLoan', 'Link to Loan')}
+          </Text>
+          <Dropdown
+            value={formData.loanId}
+            onChange={(value) => handleChange('loanId', value)}
+            options={[
+              { value: '', label: `-- ${t('recurringBills.selectLoan', 'Select loan')} --` },
+              ...activeLoans.map((loan) => {
+                const isGiven = (loan.lentBy ?? loan.lent_by) === 'Me';
+                const partyName = isGiven ? (loan.borrowedBy ?? loan.borrowed_by) : (loan.lentBy ?? loan.lent_by);
+                const type = isGiven ? t('loans.moneyLentShort', 'Lent') : t('loans.moneyBorrowedShort', 'Borrowed');
+                const remaining = loan.remainingAmount ?? loan.remaining_amount ?? 0;
+                const label = `${partyName || 'Loan'} (${type}) - €${Number(remaining).toFixed(2)}`;
+                return { value: loan.id, label };
+              }),
+            ]}
+            placeholder={t('recurringBills.selectLoan', 'Select loan')}
+            disabled={loading}
+          />
+          <Text style={[styles.hint, { color: theme.colors.textSecondary }]}>
+            {t('recurringBills.loanHint', 'Marking this bill paid will create a loan payment.')}
+          </Text>
+        </View>
+      )}
+
+      {/* Savings goal link (desktop parity) — only when category = savings and active goals exist */}
+      {formData.category === 'savings' && activeSavingsGoals.length > 0 && (
+        <View style={styles.fieldWrapper}>
+          <Text style={[styles.label, dynamicStyles.label]}>
+            {t('recurringBills.linkToSavingsGoal', 'Link to Savings Goal')}
+          </Text>
+          <Dropdown
+            value={formData.savingsGoalId}
+            onChange={(value) => handleChange('savingsGoalId', value)}
+            options={[
+              { value: '', label: `-- ${t('recurringBills.selectSavingsGoal', 'Select goal')} --` },
+              ...activeSavingsGoals.map((goal) => {
+                const current = goal.currentAmount ?? goal.current_amount ?? 0;
+                const target = goal.targetAmount ?? goal.target_amount ?? 0;
+                const label = `${goal.name} - €${Number(current).toFixed(2)} / €${Number(target).toFixed(2)}`;
+                return { value: goal.id, label };
+              }),
+            ]}
+            placeholder={t('recurringBills.selectSavingsGoal', 'Select goal')}
+            disabled={loading}
+          />
+          <Text style={[styles.hint, { color: theme.colors.textSecondary }]}>
+            {t('recurringBills.savingsGoalHint', 'Marking this bill paid will add a deposit to the goal.')}
+          </Text>
+        </View>
+      )}
 
       {/* Frequency */}
       <View style={styles.fieldWrapper}>
@@ -358,6 +446,10 @@ const styles = StyleSheet.create({
   label: {
     ...typography.label,
     marginBottom: spacing.xs,
+  },
+  hint: {
+    ...typography.caption,
+    marginTop: spacing.xs,
   },
   input: {
     borderWidth: 2,

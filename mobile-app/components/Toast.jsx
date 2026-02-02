@@ -160,9 +160,11 @@ export function ToastProvider({ children }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // showToast provides a unified API matching useToastHelpers pattern
   const value = {
     addToast,
     removeToast,
+    showToast: (message, type = 'info', duration = 3000) => addToast(message, type, duration),
     success: (msg, dur) => addToast(msg, 'success', dur ?? 3000),
     error: (msg, dur) => addToast(msg, 'error', dur ?? 3000),
     info: (msg, dur) => addToast(msg, 'info', dur ?? 3000),

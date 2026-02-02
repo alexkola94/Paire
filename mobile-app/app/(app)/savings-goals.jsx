@@ -226,8 +226,8 @@ export default function SavingsGoalsScreen() {
 
         {/* Progress Bar */}
         <SavingGoalProgressBar
-          current={item.currentAmount ?? 0}
-          target={item.targetAmount ?? 0}
+          currentAmount={item.currentAmount ?? 0}
+          targetAmount={item.targetAmount ?? 0}
           currencyFormatter={formatCurrency}
           color={goalColor}
         />

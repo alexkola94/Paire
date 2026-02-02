@@ -111,7 +111,7 @@ export default function LoginScreen() {
             {error ? <View style={styles.alertError}><Text style={styles.alertErrorText}>{error}</Text></View> : null}
             {success ? <View style={styles.alertSuccess}><Text style={styles.alertSuccessText}>{success}</Text></View> : null}
 
-            {/* Email */}
+            {/* Email — textContentType helps iOS/Android autofill fill username from saved passwords */}
             <View style={styles.inputGroup}>
               <View style={styles.inputWrapper}>
                 <Mail size={18} color={colors.textLight} style={styles.inputIcon} />
@@ -124,11 +124,12 @@ export default function LoginScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
+                  textContentType="emailAddress"
                 />
               </View>
             </View>
 
-            {/* Password */}
+            {/* Password — textContentType helps iOS Password AutoFill match username + password */}
             <View style={styles.inputGroup}>
               <View style={styles.inputWrapper}>
                 <Lock size={18} color={colors.textLight} style={styles.inputIcon} />
@@ -140,6 +141,7 @@ export default function LoginScreen() {
                   onChangeText={(text) => { setFormData({ ...formData, password: text }); setError(''); }}
                   secureTextEntry={!showPassword}
                   autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                  textContentType={isSignUp ? 'newPassword' : 'password'}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                   {showPassword ? <EyeOff size={18} color={colors.textLight} /> : <Eye size={18} color={colors.textLight} />}

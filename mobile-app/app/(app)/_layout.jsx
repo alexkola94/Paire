@@ -14,7 +14,8 @@ import { useTranslation } from 'react-i18next';
 import { Home, Wallet, Wrench, User } from 'lucide-react-native';
 import { authService } from '../../services/auth';
 import { useTheme } from '../../context/ThemeContext';
-import { TabBarWithFAB, FinanceHubSheet, ToolsHubSheet } from '../../components';
+import { CalculatorProvider } from '../../context/CalculatorContext';
+import { TabBarWithFAB, FinanceHubSheet, ToolsHubSheet, GlobalCalculator } from '../../components';
 
 export default function AppLayout() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function AppLayout() {
   }, []);
 
   return (
-    <>
+    <CalculatorProvider>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -120,6 +121,9 @@ export default function AppLayout() {
         isOpen={isToolsHubOpen}
         onClose={() => setIsToolsHubOpen(false)}
       />
-    </>
+
+      {/* Global Calculator FAB - only visible in authenticated app screens */}
+      <GlobalCalculator />
+    </CalculatorProvider>
   );
 }

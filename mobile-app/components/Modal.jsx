@@ -1,7 +1,7 @@
 /**
- * Reusable Modal (React Native).
- * Ported from frontend Modal with smooth animations using react-native-reanimated.
- * Features slide-up content with fade overlay.
+ * Reusable Modal (React Native) - Bottom Sheet Style
+ * All modals rise from the bottom of the screen with a drag handle.
+ * Features: slide-up animation, gesture dismiss, safe area support.
  */
 
 import React, { useEffect } from 'react';
@@ -21,15 +21,14 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   runOnJS,
   useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../constants/theme';
-import { MODAL_ANIMATIONS } from '../utils/animations';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -39,16 +38,18 @@ export default function Modal({
   title,
   children,
   showCloseButton = true,
+  maxHeight = 0.85, // Maximum height as percentage of screen (default 85%)
 }) {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   
   // Animation shared values
   const overlayOpacity = useSharedValue(0);
-  const contentTranslateY = useSharedValue(SCREEN_HEIGHT * 0.3);
+  const contentTranslateY = useSharedValue(SCREEN_HEIGHT);
   const contentOpacity = useSharedValue(0);
 
-  // Animate in when modal opens - faster, snappier animations
+  // Animate in when modal opens
   useEffect(() => {
     if (isOpen) {
       if (reducedMotion) {
@@ -56,28 +57,28 @@ export default function Modal({
         contentTranslateY.value = 0;
         contentOpacity.value = 1;
       } else {
-        // Faster overlay fade
+        // Fade in overlay
         overlayOpacity.value = withTiming(0.5, { duration: 150 });
-        // Snappier spring with higher stiffness
-        contentTranslateY.value = withSpring(0, { damping: 18, stiffness: 280 });
-        contentOpacity.value = withTiming(1, { duration: 180 });
+        // Slide up from bottom - clean, swift animation
+        contentTranslateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
+        contentOpacity.value = withTiming(1, { duration: 150 });
       }
     }
   }, [isOpen]);
 
-  // Animate out and close - swift exit
+  // Animate out and close
   const handleClose = () => {
     if (reducedMotion) {
       onClose();
       return;
     }
     
-    // Faster exit animations
+    // Slide down and fade out
     overlayOpacity.value = withTiming(0, { duration: 120 });
     contentOpacity.value = withTiming(0, { duration: 100 });
     contentTranslateY.value = withTiming(
-      80,
-      { duration: 150, easing: Easing.in(Easing.cubic) },
+      SCREEN_HEIGHT * 0.3,
+      { duration: 200, easing: Easing.in(Easing.cubic) },
       (finished) => {
         if (finished) {
           runOnJS(onClose)();
@@ -100,10 +101,11 @@ export default function Modal({
 
   const dynamicStyles = {
     content: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.background,
       ...shadows.lg,
     },
-    headerBorder: { borderBottomColor: theme.colors.surfaceSecondary },
+    handle: { backgroundColor: theme.colors.textLight },
+    headerBorder: { borderBottomColor: theme.colors.glassBorder },
     title: { color: theme.colors.text },
     closeBtn: { backgroundColor: theme.colors.surfaceSecondary },
     closeIcon: theme.colors.textSecondary,
@@ -121,18 +123,34 @@ export default function Modal({
         <Pressable style={styles.overlayPressable} onPress={handleClose}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.centered}
+            style={styles.keyboardView}
           >
             <Pressable onPress={(e) => e.stopPropagation()}>
               <Animated.View
-                style={[styles.content, dynamicStyles.content, contentAnimatedStyle]}
+                style={[
+                  styles.content,
+                  dynamicStyles.content,
+                  contentAnimatedStyle,
+                  { 
+                    maxHeight: SCREEN_HEIGHT * maxHeight,
+                    paddingBottom: insets.bottom + spacing.md,
+                  },
+                ]}
               >
+                {/* Drag Handle */}
+                <View style={styles.handleContainer}>
+                  <View style={[styles.handle, dynamicStyles.handle]} />
+                </View>
+
+                {/* Header with title and close button */}
                 {(title || showCloseButton) && (
                   <View style={[styles.header, dynamicStyles.headerBorder]}>
-                    {title && (
+                    {title ? (
                       <Text style={[styles.title, dynamicStyles.title]} numberOfLines={1}>
                         {title}
                       </Text>
+                    ) : (
+                      <View style={styles.titlePlaceholder} />
                     )}
                     {showCloseButton && (
                       <TouchableOpacity
@@ -141,17 +159,19 @@ export default function Modal({
                         accessibilityLabel="Close"
                         activeOpacity={0.7}
                       >
-                        <X size={22} color={dynamicStyles.closeIcon} />
+                        <X size={20} color={dynamicStyles.closeIcon} />
                       </TouchableOpacity>
                     )}
                   </View>
                 )}
-                {/* Scrollable body to handle forms with many fields */}
+
+                {/* Scrollable body */}
                 <ScrollView 
                   style={styles.body} 
                   contentContainerStyle={styles.bodyContent}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
+                  bounces={false}
                 >
                   {children}
                 </ScrollView>
@@ -171,24 +191,35 @@ const styles = StyleSheet.create({
   overlayPressable: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
   },
-  centered: {
-    flex: 1,
+  keyboardView: {
     justifyContent: 'flex-end',
   },
   content: {
     width: '100%',
-    maxHeight: '90%',
-    borderRadius: borderRadius.lg,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     overflow: 'hidden',
   },
+  // Drag handle indicator
+  handleContainer: {
+    alignItems: 'center',
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.4,
+  },
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
   },
   title: {
@@ -196,18 +227,21 @@ const styles = StyleSheet.create({
     ...typography.h3,
     marginRight: spacing.sm,
   },
+  titlePlaceholder: {
+    flex: 1,
+  },
   closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.full,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Body
   body: {
-    maxHeight: '75%', // Allow body to take up to 75% of modal, scrollable
+    flexGrow: 0,
   },
   bodyContent: {
     padding: spacing.md,
-    paddingBottom: spacing.lg, // Reduced padding for more compact layout
   },
 });

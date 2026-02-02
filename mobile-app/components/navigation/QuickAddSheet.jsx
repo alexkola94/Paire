@@ -16,10 +16,9 @@ import {
 } from 'react-native';
 import Animated, {
   FadeInDown,
-  FadeOutDown,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -57,23 +56,21 @@ function ActionButton({ action, onPress, index, theme }) {
 
   const actionColor = getActionColor();
 
-  // Press animation
+  // Press animation - clean, swift
   const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 15 });
+    scale.value = withTiming(0.97, { duration: 100 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15 });
+    scale.value = withTiming(1, { duration: 100 });
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  // Staggered entrance animation
-  const enteringAnimation = FadeInDown.delay(index * 50)
-    .springify()
-    .damping(15);
+  // Staggered entrance animation - clean fade
+  const enteringAnimation = FadeInDown.delay(index * 40).duration(200);
 
   return (
     <Animated.View
@@ -123,20 +120,6 @@ function ActionButton({ action, onPress, index, theme }) {
         >
           {t(action.labelKey, action.id)}
         </Text>
-
-        {/* Primary badge */}
-        {action.primary && (
-          <View
-            style={[
-              styles.primaryBadge,
-              { backgroundColor: actionColor },
-            ]}
-          >
-            <Text style={styles.primaryBadgeText}>
-              {t('quickAdd.recommended', 'Quick')}
-            </Text>
-          </View>
-        )}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -228,13 +211,12 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
+    flexDirection: 'column',
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   actionWrapper: {
-    width: '47%', // 2 columns with gap
+    width: '100%', // Full width stacked layout
   },
   actionButton: {
     flexDirection: 'row',
@@ -265,20 +247,8 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     flex: 1,
-    ...typography.label,
-    letterSpacing: -0.2,
-  },
-  primaryBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-  primaryBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...typography.body,
+    fontWeight: '500',
   },
   hint: {
     ...typography.caption,

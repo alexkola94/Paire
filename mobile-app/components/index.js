@@ -75,3 +75,6 @@ export { default as SavingsGoalForm } from './SavingsGoalForm';
 export { default as RecurringBillForm } from './RecurringBillForm';
 export { default as ShoppingListForm } from './ShoppingListForm';
 export { default as ShoppingItemForm } from './ShoppingItemForm';
+
+// Global Calculator
+export { default as GlobalCalculator } from './GlobalCalculator';

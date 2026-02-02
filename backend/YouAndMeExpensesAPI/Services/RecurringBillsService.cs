@@ -55,31 +55,70 @@ namespace YouAndMeExpensesAPI.Services
                     avatar_url = p.AvatarUrl
                 });
 
+            // Bills are "paid" only for the current period: the occurrence due at NextDueDate is unpaid;
+            // the previous occurrence is paid if we have a transaction with [RecurringBill:billId] on or after that due date.
+            var billIds = bills.Select(b => b.Id).ToList();
+            var transactionsWithBillTag = await _dbContext.Transactions
+                .Where(t => allUserIds.Contains(t.UserId) && t.Notes != null && t.Notes.Contains("[RecurringBill:"))
+                .Select(t => new { t.Date, t.Notes })
+                .ToListAsync();
+
+            const string prefix = "[RecurringBill:";
+            // For each bill id, keep the latest transaction date (most recent payment).
+            var latestPaymentByBill = new Dictionary<Guid, DateTime>();
+            foreach (var t in transactionsWithBillTag)
+            {
+                if (string.IsNullOrEmpty(t.Notes)) continue;
+                var start = t.Notes.IndexOf(prefix, StringComparison.Ordinal);
+                if (start < 0) continue;
+                start += prefix.Length;
+                var end = t.Notes.IndexOf(']', start);
+                if (end < 0) continue;
+                var guidStr = t.Notes.Substring(start, end - start);
+                if (!Guid.TryParse(guidStr, out var bid) || !billIds.Contains(bid)) continue;
+                var dateUtc = t.Date.Kind == DateTimeKind.Utc ? t.Date : t.Date.ToUniversalTime();
+                if (!latestPaymentByBill.TryGetValue(bid, out var existing) || dateUtc > existing)
+                    latestPaymentByBill[bid] = dateUtc;
+            }
+
+            var todayUtc = DateTime.UtcNow.Date;
+
             var enrichedBills = bills
-                .Select(b => new
+                .Select(b =>
                 {
-                    id = b.Id,
-                    userId = b.UserId,
-                    name = b.Name,
-                    amount = b.Amount,
-                    category = b.Category,
-                    frequency = b.Frequency,
-                    dueDay = b.DueDay,
-                    nextDueDate = b.NextDueDate,
-                    autoPay = b.AutoPay,
-                    reminderDays = b.ReminderDays,
-                    isActive = b.IsActive,
-                    notes = b.Notes,
-                    createdAt = b.CreatedAt,
-                    updatedAt = b.UpdatedAt,
-                    user_profiles = profileDict.ContainsKey(b.UserId) ? profileDict[b.UserId] : null,
-                    attachments = b.Attachments.Select(a => new
+                    var previousDueDate = CalculatePreviousDueDate(b.Frequency, b.DueDay, b.NextDueDate);
+                    var hasPayment = latestPaymentByBill.TryGetValue(b.Id, out var lastPaymentDate);
+                    var nextDueNormalized = b.NextDueDate.Kind == DateTimeKind.Utc ? b.NextDueDate : b.NextDueDate.ToUniversalTime();
+                    var isOverdue = nextDueNormalized.Date < todayUtc;
+                    // Paid only if: we have a payment on or after previous due date, AND the bill is not overdue
+                    // (if overdue, the current occurrence is unpaid so we must show isPaid = false)
+                    var isPaid = hasPayment && lastPaymentDate >= previousDueDate && !isOverdue;
+                    return new
                     {
-                        id = a.Id,
-                        fileUrl = a.FileUrl,
-                        fileName = a.FileName,
-                        uploadedAt = a.UploadedAt
-                    }).ToList()
+                        id = b.Id,
+                        userId = b.UserId,
+                        name = b.Name,
+                        amount = b.Amount,
+                        category = b.Category,
+                        frequency = b.Frequency,
+                        dueDay = b.DueDay,
+                        nextDueDate = b.NextDueDate,
+                        autoPay = b.AutoPay,
+                        reminderDays = b.ReminderDays,
+                        isActive = b.IsActive,
+                        isPaid,
+                        notes = b.Notes,
+                        createdAt = b.CreatedAt,
+                        updatedAt = b.UpdatedAt,
+                        user_profiles = profileDict.ContainsKey(b.UserId) ? profileDict[b.UserId] : null,
+                        attachments = b.Attachments.Select(a => new
+                        {
+                            id = a.Id,
+                            fileUrl = a.FileUrl,
+                            fileName = a.FileName,
+                            uploadedAt = a.UploadedAt
+                        }).ToList()
+                    };
                 })
                 .Cast<object>()
                 .ToList();

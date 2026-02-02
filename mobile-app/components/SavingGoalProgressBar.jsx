@@ -15,6 +15,7 @@ export default function SavingGoalProgressBar({
   targetAmount,
   currencyFormatter,
   icon: Icon,
+  color, // Optional custom color for the progress bar
 }) {
   const { theme } = useTheme();
   const { isPrivate } = usePrivacyMode();
@@ -24,10 +25,12 @@ export default function SavingGoalProgressBar({
     return Math.min(100, Math.max(0, (currentAmount / targetAmount) * 100));
   }, [currentAmount, targetAmount]);
 
+  // Use custom color if provided, otherwise default based on completion
   const progressColor = useMemo(() => {
+    if (color) return color;
     if (percentage >= 100) return theme.colors.success;
     return theme.colors.info;
-  }, [percentage, theme]);
+  }, [percentage, theme, color]);
 
   const displayCurrent = isPrivate
     ? '••••'

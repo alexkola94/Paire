@@ -1,7 +1,15 @@
 /**
  * Financial Chatbot Screen (React Native)
- * Full-screen chat for financial questions via chatbotService.
- * Pattern aligned with Travel Chatbot; entry from Dashboard or Profile.
+ * Full-featured chat for financial questions with AI mode support.
+ * 
+ * Features:
+ * - Rule-based mode (chatbotService) - Default
+ * - AI mode (aiGatewayService.chat) - LLM-powered
+ * - Thinking mode (aiGatewayService.ragQuery) - RAG-enhanced
+ * - Typewriter effect for bot responses
+ * - Stop button for AI requests
+ * - Message copy/share functionality
+ * - Report generation
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -15,13 +23,40 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Switch,
+  Alert,
+  Share,
+  Clipboard,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { MessageCircle, Send, ChevronLeft } from 'lucide-react-native';
-import { chatbotService } from '../../services/api';
+import {
+  MessageCircle,
+  Send,
+  ChevronLeft,
+  Bot,
+  Sparkles,
+  Brain,
+  Copy,
+  Share2,
+  StopCircle,
+  RefreshCw,
+  FileText,
+  AlertCircle,
+  Lightbulb,
+  Info,
+} from 'lucide-react-native';
+import { chatbotService, aiGatewayService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useToast } from '../../components';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 
 // Default suggestions when API fails or is empty
@@ -30,19 +65,152 @@ const DEFAULT_SUGGESTIONS = [
   'Show my income vs expenses',
   'How is my budget doing?',
   'Summarize my recent transactions',
+  'Give me savings tips',
+  'Analyze my spending patterns',
 ];
+
+// Message type icons
+const MESSAGE_TYPE_ICONS = {
+  insight: { icon: Lightbulb, color: '#F59E0B' },
+  warning: { icon: AlertCircle, color: '#EF4444' },
+  info: { icon: Info, color: '#3B82F6' },
+  default: { icon: Bot, color: null },
+};
+
+// Typewriter hook for animated text display
+function useTypewriter(text, speed = 20, enabled = true) {
+  const [displayedText, setDisplayedText] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (!enabled || !text) {
+      setDisplayedText(text || '');
+      setIsComplete(true);
+      return;
+    }
+
+    setDisplayedText('');
+    setIsComplete(false);
+    let index = 0;
+    
+    const interval = setInterval(() => {
+      if (index < text.length) {
+        setDisplayedText(text.slice(0, index + 1));
+        index++;
+      } else {
+        setIsComplete(true);
+        clearInterval(interval);
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [text, speed, enabled]);
+
+  return { displayedText, isComplete };
+}
+
+// Message bubble component with typewriter effect
+function MessageBubble({ item, theme, isLatest, onCopy, onShare }) {
+  const isUser = item.role === 'user';
+  const { displayedText, isComplete } = useTypewriter(
+    item.content,
+    15,
+    !isUser && isLatest && !item.isComplete
+  );
+
+  // Mark message as complete when typewriter finishes
+  useEffect(() => {
+    if (isComplete && !item.isComplete) {
+      item.isComplete = true;
+    }
+  }, [isComplete, item]);
+
+  const content = isUser ? item.content : (isLatest && !item.isComplete ? displayedText : item.content);
+  const messageType = item.type || 'default';
+  const TypeIcon = MESSAGE_TYPE_ICONS[messageType]?.icon || Bot;
+  const typeColor = MESSAGE_TYPE_ICONS[messageType]?.color || theme.colors.primary;
+
+  return (
+    <View style={[styles.messageRow, isUser ? styles.messageRowUser : styles.messageRowBot]}>
+      {!isUser && (
+        <View style={[styles.avatarContainer, { backgroundColor: typeColor + '20' }]}>
+          <TypeIcon size={16} color={typeColor} />
+        </View>
+      )}
+      <View
+        style={[
+          styles.bubble,
+          {
+            backgroundColor: isUser ? theme.colors.primary + '20' : theme.colors.surface,
+            borderColor: theme.colors.glassBorder,
+          },
+          !isUser && shadows.sm,
+        ]}
+      >
+        <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>
+          {content}
+        </Text>
+        
+        {/* Action buttons for bot messages */}
+        {!isUser && isComplete && (
+          <View style={styles.messageActions}>
+            <TouchableOpacity
+              style={[styles.messageActionBtn, { backgroundColor: theme.colors.surfaceSecondary }]}
+              onPress={() => onCopy(item.content)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Copy size={12} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.messageActionBtn, { backgroundColor: theme.colors.surfaceSecondary }]}
+              onPress={() => onShare(item.content)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Share2 size={12} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
 
 export default function ChatbotScreen() {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
+  const { showToast } = useToast();
   const router = useRouter();
+  
+  // Chat state
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  
+  // AI mode state
+  const [isAiMode, setIsAiMode] = useState(false);
+  const [isThinkingMode, setIsThinkingMode] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState(false);
+  
+  // Request cancellation
+  const abortControllerRef = useRef(null);
+  
   const listRef = useRef(null);
   const lang = i18n.language || 'en';
 
+  // Check AI availability on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const available = await aiGatewayService.isAvailable();
+        setAiAvailable(available);
+      } catch {
+        setAiAvailable(false);
+      }
+    })();
+  }, []);
+
+  // Load suggestions
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -60,42 +228,196 @@ export default function ChatbotScreen() {
     return () => { cancelled = true; };
   }, [lang]);
 
+  // Stop current request
+  const stopRequest = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+  }, []);
+
+  // Copy message to clipboard
+  const handleCopy = useCallback((text) => {
+    Clipboard.setString(text);
+    showToast(t('common.copied', 'Copied to clipboard'), 'success');
+  }, [showToast, t]);
+
+  // Share message
+  const handleShare = useCallback(async (text) => {
+    try {
+      await Share.share({ message: text });
+    } catch (err) {
+      // User cancelled or error
+    }
+  }, []);
+
+  // Send message
   const sendMessage = useCallback(
     async (text) => {
       const trimmed = (text || input).trim();
       if (!trimmed || loading) return;
+      
       setInput('');
-      setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
+      const userMessage = { role: 'user', content: trimmed, isComplete: true };
+      setMessages((prev) => [...prev, userMessage]);
       setLoading(true);
+
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController();
+
       try {
-        const history = messages.map((m) => ({ role: m.role, content: m.content }));
-        const res = await chatbotService.sendQuery(trimmed, history);
-        const botContent =
-          res?.response ?? res?.message ?? (typeof res === 'string' ? res : t('chatbot.thinking', 'Thinking...'));
-        setMessages((prev) => [...prev, { role: 'bot', content: botContent }]);
+        let botContent = '';
+        let messageType = 'default';
+        
+        if (isAiMode && aiAvailable) {
+          // AI Mode - Use aiGatewayService
+          const history = messages.map((m) => ({
+            role: m.role,
+            message: m.content,
+          }));
+
+          if (isThinkingMode) {
+            // RAG-enhanced query (Thinking mode)
+            const res = await aiGatewayService.ragQuery(trimmed, { history });
+            botContent = res?.response || res?.answer || res?.message || 
+              t('chatbot.thinking', 'Let me think about that...');
+            messageType = 'insight';
+          } else {
+            // Standard AI chat
+            const formattedHistory = [...history, { role: 'user', message: trimmed }];
+            const res = await aiGatewayService.chat(formattedHistory);
+            botContent = res?.response || res?.content || res?.message ||
+              t('chatbot.aiResponse', 'Here\'s what I found...');
+          }
+        } else {
+          // Rule-based mode - Use chatbotService
+          const history = messages.map((m) => ({ role: m.role, content: m.content }));
+          const res = await chatbotService.sendQuery(trimmed, history);
+          botContent = res?.response ?? res?.message ?? 
+            (typeof res === 'string' ? res : t('chatbot.thinking', 'Thinking...'));
+        }
+
+        const botMessage = { 
+          role: 'bot', 
+          content: botContent, 
+          type: messageType,
+          isComplete: false,
+        };
+        setMessages((prev) => [...prev, botMessage]);
         setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+        
       } catch (err) {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'bot', content: err?.message || t('chatbot.errorMessage', 'Something went wrong.') },
-        ]);
+        if (err.name === 'AbortError') {
+          // Request was cancelled
+          return;
+        }
+        const errorMessage = { 
+          role: 'bot', 
+          content: err?.message || t('chatbot.errorMessage', 'Something went wrong.'),
+          type: 'warning',
+          isComplete: true,
+        };
+        setMessages((prev) => [...prev, errorMessage]);
       } finally {
         setLoading(false);
+        abortControllerRef.current = null;
       }
     },
-    [input, loading, messages, lang, t]
+    [input, loading, messages, isAiMode, isThinkingMode, aiAvailable, t]
   );
+
+  // Clear chat history
+  const clearHistory = useCallback(() => {
+    Alert.alert(
+      t('chatbot.clearHistoryTitle', 'Clear Chat'),
+      t('chatbot.clearHistoryMessage', 'Are you sure you want to clear all messages?'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('common.clear', 'Clear'), 
+          style: 'destructive',
+          onPress: () => setMessages([]),
+        },
+      ]
+    );
+  }, [t]);
+
+  // Toggle AI mode
+  const toggleAiMode = useCallback((value) => {
+    if (value && !aiAvailable) {
+      showToast(t('chatbot.aiNotAvailable', 'AI mode is not available'), 'warning');
+      return;
+    }
+    setIsAiMode(value);
+    if (!value) {
+      setIsThinkingMode(false);
+    }
+  }, [aiAvailable, showToast, t]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel={t('common.close')}>
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={styles.backBtn} 
+          accessibilityLabel={t('common.back')}
+        >
           <ChevronLeft size={24} color={theme.colors.text} />
         </TouchableOpacity>
+        
         <View style={styles.headerTitleRow}>
           <MessageCircle size={22} color={theme.colors.primary} />
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{t('chatbot.title', 'Financial Assistant')}</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            {t('chatbot.title', 'Financial Assistant')}
+          </Text>
         </View>
+
+        <TouchableOpacity 
+          onPress={clearHistory}
+          style={styles.headerAction}
+          accessibilityLabel={t('chatbot.clearHistory', 'Clear history')}
+        >
+          <RefreshCw size={20} color={theme.colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Mode toggles */}
+      <View style={[styles.modeBar, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.glassBorder }]}>
+        {/* AI Mode Toggle */}
+        <View style={styles.modeToggle}>
+          <View style={styles.modeToggleLabel}>
+            <Sparkles size={16} color={isAiMode ? theme.colors.primary : theme.colors.textSecondary} />
+            <Text style={[styles.modeToggleText, { color: theme.colors.text }]}>
+              {t('chatbot.aiMode', 'AI Mode')}
+            </Text>
+          </View>
+          <Switch
+            value={isAiMode}
+            onValueChange={toggleAiMode}
+            trackColor={{ false: theme.colors.surfaceSecondary, true: theme.colors.primary + '50' }}
+            thumbColor={isAiMode ? theme.colors.primary : theme.colors.textLight}
+          />
+        </View>
+
+        {/* Thinking Mode Toggle (only when AI mode is on) */}
+        {isAiMode && (
+          <View style={styles.modeToggle}>
+            <View style={styles.modeToggleLabel}>
+              <Brain size={16} color={isThinkingMode ? theme.colors.success : theme.colors.textSecondary} />
+              <Text style={[styles.modeToggleText, { color: theme.colors.text }]}>
+                {t('chatbot.thinkingMode', 'Deep Think')}
+              </Text>
+            </View>
+            <Switch
+              value={isThinkingMode}
+              onValueChange={setIsThinkingMode}
+              trackColor={{ false: theme.colors.surfaceSecondary, true: theme.colors.success + '50' }}
+              thumbColor={isThinkingMode ? theme.colors.success : theme.colors.textLight}
+            />
+          </View>
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -107,33 +429,37 @@ export default function ChatbotScreen() {
           ref={listRef}
           data={messages}
           keyExtractor={(_, i) => String(i)}
-          renderItem={({ item }) => (
-            <View style={[styles.messageRow, item.role === 'user' ? styles.messageRowUser : styles.messageRowBot]}>
-              <View
-                style={[
-                  styles.bubble,
-                  {
-                    backgroundColor: item.role === 'user' ? theme.colors.primary + '20' : theme.colors.surface,
-                    borderColor: theme.colors.glassBorder,
-                  },
-                  item.role === 'bot' && shadows.sm,
-                ]}
-              >
-                <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>
-                  {item.content}
-                </Text>
-              </View>
-            </View>
+          renderItem={({ item, index }) => (
+            <MessageBubble
+              item={item}
+              theme={theme}
+              isLatest={index === messages.length - 1}
+              onCopy={handleCopy}
+              onShare={handleShare}
+            />
           )}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
-            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-              {t('chatbot.welcomeMessage', "Hi! I'm your financial assistant. Ask me anything about your expenses, income, or insights!")}
-            </Text>
+            <View style={styles.emptyContainer}>
+              <Bot size={48} color={theme.colors.textLight} />
+              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                {t('chatbot.welcomeMessage', "Hi! I'm your financial assistant. Ask me anything about your expenses, income, or insights!")}
+              </Text>
+              {isAiMode && (
+                <View style={[styles.aiModeBadge, { backgroundColor: theme.colors.primary + '15' }]}>
+                  <Sparkles size={14} color={theme.colors.primary} />
+                  <Text style={[styles.aiModeText, { color: theme.colors.primary }]}>
+                    {isThinkingMode 
+                      ? t('chatbot.thinkingModeActive', 'Deep thinking mode active') 
+                      : t('chatbot.aiModeActive', 'AI-powered mode active')}
+                  </Text>
+                </View>
+              )}
+            </View>
           }
           ListFooterComponent={
-            suggestions.length > 0 ? (
+            messages.length === 0 && suggestions.length > 0 ? (
               <View style={styles.suggestions}>
                 <Text style={[styles.suggestionsLabel, { color: theme.colors.textSecondary }]}>
                   {t('chatbot.tryAsking', 'Try asking:')}
@@ -156,9 +482,18 @@ export default function ChatbotScreen() {
             ) : null
           }
         />
+
+        {/* Input area */}
         <View style={[styles.inputRow, { backgroundColor: theme.colors.background, borderColor: theme.colors.glassBorder }]}>
           <TextInput
-            style={[styles.input, { color: theme.colors.text, backgroundColor: theme.colors.surface }]}
+            style={[
+              styles.input, 
+              { 
+                color: theme.colors.text, 
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.glassBorder,
+              }
+            ]}
             placeholder={t('chatbot.placeholder', 'Ask me anything...')}
             placeholderTextColor={theme.colors.textLight}
             value={input}
@@ -168,13 +503,30 @@ export default function ChatbotScreen() {
             multiline
             maxLength={2000}
           />
-          <TouchableOpacity
-            style={[styles.sendBtn, { backgroundColor: theme.colors.primary }]}
-            onPress={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
-          >
-            {loading ? <ActivityIndicator size="small" color="#fff" /> : <Send size={20} color="#fff" />}
-          </TouchableOpacity>
+          
+          {loading ? (
+            <TouchableOpacity
+              style={[styles.sendBtn, { backgroundColor: theme.colors.error }]}
+              onPress={stopRequest}
+              accessibilityLabel={t('chatbot.stop', 'Stop')}
+            >
+              <StopCircle size={20} color="#fff" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.sendBtn, 
+                { 
+                  backgroundColor: input.trim() ? theme.colors.primary : theme.colors.surfaceSecondary,
+                }
+              ]}
+              onPress={() => sendMessage(input)}
+              disabled={!input.trim()}
+              accessibilityLabel={t('chatbot.send', 'Send')}
+            >
+              <Send size={20} color={input.trim() ? '#fff' : theme.colors.textLight} />
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -184,6 +536,8 @@ export default function ChatbotScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
+  
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -191,23 +545,100 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
   },
-  backBtn: { padding: spacing.xs, marginRight: spacing.sm },
-  headerTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  backBtn: { padding: spacing.xs },
+  headerTitleRow: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: spacing.sm,
+    marginLeft: spacing.sm,
+  },
   headerTitle: { ...typography.h3 },
+  headerAction: { padding: spacing.xs },
+
+  // Mode bar
+  modeBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    gap: spacing.lg,
+  },
+  modeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  modeToggleLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  modeToggleText: { ...typography.bodySmall, fontWeight: '500' },
+
+  // Messages
   list: { flex: 1 },
   listContent: { padding: spacing.md, paddingBottom: spacing.lg },
-  messageRow: { marginBottom: spacing.sm },
-  messageRowUser: { alignItems: 'flex-end' },
-  messageRowBot: { alignItems: 'flex-start' },
+  messageRow: { 
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+    alignItems: 'flex-start',
+  },
+  messageRowUser: { justifyContent: 'flex-end' },
+  messageRowBot: { justifyContent: 'flex-start' },
+  avatarContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+    marginTop: spacing.xs,
+  },
   bubble: {
-    maxWidth: '85%',
+    maxWidth: '80%',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
   },
   bubbleText: { ...typography.body },
-  emptyText: { ...typography.body, textAlign: 'center', paddingVertical: spacing.xl },
+  messageActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  messageActionBtn: {
+    padding: spacing.xs,
+    borderRadius: borderRadius.sm,
+  },
+
+  // Empty state
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  emptyText: { 
+    ...typography.body, 
+    textAlign: 'center', 
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  aiModeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.sm,
+  },
+  aiModeText: { ...typography.caption, fontWeight: '500' },
+
+  // Suggestions
   suggestions: { marginTop: spacing.md },
   suggestionsLabel: { ...typography.label, marginBottom: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
@@ -218,6 +649,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipText: { ...typography.bodySmall },
+
+  // Input
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
