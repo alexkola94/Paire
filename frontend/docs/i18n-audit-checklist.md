@@ -47,6 +47,16 @@ Before each release:
 
 ---
 
+## Empty states
+
+Every empty state (no data, no results, no list items) must use translation keys and exist in **all** locale files (en, el, es, fr). Parity must include these keys.
+
+**Main namespaces for empty states:** `dashboard.noTransactions`, `allTransactions.noTransactions`, `common.noResults`, `expenses.noExpenses`, `income.noIncome`, `receipts.noReceipts`, `loans.noLoans`, `budgets.noBudgets`, `recurringBills.noBills` / `noBillsDescription` / `noBillsUpcoming`, `savingsGoals.noGoals` / `noGoalsDescription`, `shoppingLists.noItems` / `noItemsDescription` / `selectList` / `selectListDescription`, `achievements.noAchievements`, `timeline.noTransactions`, `notifications.noNotifications`, `travel.explore.*` (noTrip, createTripFirst, noLocation, setLocation), `travel.packing.emptyTitle` / `emptyDescription`, `travel.documents.emptyTitle` / `emptyDescription`, `travel.itinerary.emptyTitle` / `emptyDescription`, `travel.trips.selector.noTrips` / `createNew`, `travel.home.savedPlacesEmpty`.
+
+When adding a new empty state in code, add the key to `en.json` first, then to `el.json`, `es.json`, and `fr.json`.
+
+---
+
 ## Locale files
 
 - **Path:** `frontend/src/i18n/locales/`

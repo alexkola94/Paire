@@ -10,7 +10,7 @@ import {
   Calculator, Receipt, Repeat, BarChart3,
   MapPin, ShoppingCart, Bell, Newspaper,
   Users, Link2, Trophy,
-  Plus, Camera,
+  Plus, Camera, Upload,
 } from 'lucide-react-native';
 
 /**
@@ -171,6 +171,13 @@ export const QUICK_ADD_ACTIONS = [
     icon: Camera,
     labelKey: 'quickAdd.scanReceipt',
     action: 'scan-receipt',
+    color: 'primary',
+  },
+  {
+    id: 'import',
+    icon: Upload,
+    labelKey: 'import.importFromFile',
+    action: 'import-from-file',
     color: 'primary',
   },
 ];

@@ -201,7 +201,8 @@
     "undo": "Annuler",
     "startDate": "Date de début",
     "endDate": "Date de fin",
-    "selectDateRange": "Sélectionner une plage de dates"
+    "selectDateRange": "Sélectionner une plage de dates",
+    "noResults": "Aucune transaction ne correspond à votre recherche."
   },
   "dashboard": {
     "savingGoals": "Objectifs d'épargne",

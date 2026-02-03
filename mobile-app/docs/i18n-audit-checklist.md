@@ -53,6 +53,14 @@ For a focused English/Greek audit, run in this order:
 - [ ] Use `useTranslation()` and `t()` for all user-facing strings
 - [ ] Add new keys to all four locale files: `en`, `el`, `es`, `fr`
 
+## 7. Empty states
+
+Every empty state (no data, no results, no list items) must use translation keys and exist in **all** locale files (en, el, es, fr). Parity must include these keys.
+
+**Main namespaces for empty states:** `common.noData`, `achievements.emptyTitle` / `emptyDescription`, `partnership.noPartner`, `loans.emptyTitle` / `emptyDescription`, `shoppingLists.emptyTitle` / `emptyDescription`, `receipts.emptyTitle` / `emptyDescription`, `recurringBills.noSearchResults` / `emptyTitle` / `emptyDescription` / `noAttachments`, `budgets.emptyTitle` / `emptyDescription`, `savingsGoals.emptyTitle` / `emptyDescription`, `expenses.emptyTitle` / `emptyDescription`, `income.emptyTitle` / `emptyDescription`, `travel.documents.noDocs`, `travel.budget.noExpenses`, `travel.packing.noItems`, `travel.explore.noPlaces` / `noPlacesHint`, `travel.itinerary.noEvents`, `travel.common.noTrip`, `travel.chatbot.welcomeMessage`, `chatbot.welcomeMessage` / `tryAsking`.
+
+When adding a new empty state in code, add the key to `en.json` first, then to `el.json`, `es.json`, and `fr.json`.
+
 ---
 
 **Scripts location:** `You-me-Expenses/mobile-app/scripts/`

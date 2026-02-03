@@ -881,7 +881,8 @@
     "remove": "Remove",
     "confirmDelete": "Confirm delete",
     "deleting": "Deleting...",
-    "searching": "Searching..."
+    "searching": "Searching...",
+    "noResults": "No transactions found matching your search."
   },
   "notifications": {
     "title": "Notifications",

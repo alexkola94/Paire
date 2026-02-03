@@ -31,6 +31,7 @@ import {
   Moon,
   LogOut,
   ChevronRight,
+  Upload,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useScrollToTop } from '../../context/ScrollToTopContext';
@@ -77,6 +78,7 @@ const FINANCE_ITEMS = [
 
 const TOOLS_ITEMS = [
   { route: '/(app)/currency-calculator', icon: Calculator, labelKey: 'navigation.currencyCalculator' },
+  { route: '/(app)/bank-import', icon: Upload, labelKey: 'import.title' },
   { route: '/(app)/receipts', icon: Receipt, labelKey: 'receipts.title' },
   { route: '/(app)/recurring-bills', icon: Repeat, labelKey: 'navigation.recurringBills' },
 ];

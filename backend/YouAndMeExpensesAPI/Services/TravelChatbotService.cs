@@ -107,6 +107,7 @@ namespace YouAndMeExpensesAPI.Services
 
         /// <summary>
         /// Build a short prefix for responses when user has an active trip (e.g. "For your trip to **Paris** (Dec 1–10):\n\n").
+        /// When CityNames are present, includes "Cities: X, Y, Z" in the prefix.
         /// </summary>
         private static string BuildTripContextPrefix(TripContext ctx, string language)
         {
@@ -115,25 +116,28 @@ namespace YouAndMeExpensesAPI.Services
 
             var hasDates = !string.IsNullOrWhiteSpace(ctx.StartDate) && !string.IsNullOrWhiteSpace(ctx.EndDate);
             var hasBudget = ctx.Budget.HasValue && ctx.Budget.Value > 0;
+            var citiesPart = ctx.CityNames != null && ctx.CityNames.Count > 0
+                ? " " + (language == "el" ? "Πόλεις: " : "Cities: ") + string.Join(", ", ctx.CityNames) + "."
+                : "";
 
             if (language == "el")
             {
                 if (hasDates && hasBudget)
-                    return $"Για το ταξίδι σας στο **{dest}** ({ctx.StartDate}–{ctx.EndDate}, προϋπολογισμός: €{ctx.Budget:N0}):\n\n";
+                    return $"Για το ταξίδι σας στο **{dest}**{citiesPart} ({ctx.StartDate}–{ctx.EndDate}, προϋπολογισμός: €{ctx.Budget:N0}):\n\n";
                 if (hasDates)
-                    return $"Για το ταξίδι σας στο **{dest}** ({ctx.StartDate}–{ctx.EndDate}):\n\n";
+                    return $"Για το ταξίδι σας στο **{dest}**{citiesPart} ({ctx.StartDate}–{ctx.EndDate}):\n\n";
                 if (hasBudget)
-                    return $"Για το ταξίδι σας στο **{dest}** (προϋπολογισμός: €{ctx.Budget:N0}):\n\n";
-                return $"Για το ταξίδι σας στο **{dest}**:\n\n";
+                    return $"Για το ταξίδι σας στο **{dest}**{citiesPart} (προϋπολογισμός: €{ctx.Budget:N0}):\n\n";
+                return $"Για το ταξίδι σας στο **{dest}**{citiesPart}:\n\n";
             }
 
             if (hasDates && hasBudget)
-                return $"For your trip to **{dest}** ({ctx.StartDate}–{ctx.EndDate}, budget: €{ctx.Budget:N0}):\n\n";
+                return $"For your trip to **{dest}**{citiesPart} ({ctx.StartDate}–{ctx.EndDate}, budget: €{ctx.Budget:N0}):\n\n";
             if (hasDates)
-                return $"For your trip to **{dest}** ({ctx.StartDate}–{ctx.EndDate}):\n\n";
+                return $"For your trip to **{dest}**{citiesPart} ({ctx.StartDate}–{ctx.EndDate}):\n\n";
             if (hasBudget)
-                return $"For your trip to **{dest}** (budget: €{ctx.Budget:N0}):\n\n";
-            return $"For your trip to **{dest}**:\n\n";
+                return $"For your trip to **{dest}**{citiesPart} (budget: €{ctx.Budget:N0}):\n\n";
+            return $"For your trip to **{dest}**{citiesPart}:\n\n";
         }
 
         /// <inheritdoc />

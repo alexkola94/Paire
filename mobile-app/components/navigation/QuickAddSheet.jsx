@@ -169,6 +169,9 @@ export default function QuickAddSheet({ isOpen, onClose }) {
             params: { mode: 'scan' },
           });
           break;
+        case 'import-from-file':
+          router.push('/(app)/bank-import');
+          break;
         case 'transfer':
           // Navigate to transactions with transfer type
           router.push({

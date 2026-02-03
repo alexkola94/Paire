@@ -201,7 +201,8 @@
     "undo": "Deshacer",
     "startDate": "Fecha de inicio",
     "endDate": "Fecha de fin",
-    "selectDateRange": "Seleccionar rango de fechas"
+    "selectDateRange": "Seleccionar rango de fechas",
+    "noResults": "No se encontraron transacciones que coincidan con tu búsqueda."
   },
   "dashboard": {
     "savingGoals": "Objetivos de Ahorro",

@@ -197,6 +197,60 @@ export const storageService = {
 };
 
 // ========================================
+// Bank Statement Import
+// ========================================
+
+/**
+ * Normalize import history item from backend (PascalCase or snake_case) to camelCase.
+ */
+function normalizeImportHistoryItem(item) {
+  if (!item) return null;
+  return {
+    id: item.id ?? item.Id,
+    fileName: item.fileName ?? item.FileName,
+    importDate: item.importDate ?? item.ImportDate,
+    transactionCount: item.transactionCount ?? item.TransactionCount ?? 0,
+    totalAmount: item.totalAmount ?? item.TotalAmount ?? 0,
+  };
+}
+
+export const importService = {
+  /**
+   * Get list of past bank statement imports for the current user.
+   * Returns array of { id, fileName, importDate, transactionCount, totalAmount }.
+   */
+  async getImportHistory() {
+    const data = await request('get', '/api/imports');
+    const list = Array.isArray(data) ? data : [];
+    return list.map(normalizeImportHistoryItem).filter(Boolean);
+  },
+
+  /**
+   * Revert an import: delete all transactions from that import batch.
+   * @param {string} id - Import history record ID (UUID).
+   */
+  async revertImport(id) {
+    await request('delete', `/api/imports/${id}`);
+  },
+
+  /**
+   * Upload a bank statement file (CSV, Excel, or PDF).
+   * @param {object} fileAsset - From expo-document-picker: { uri, name, mimeType }.
+   *   Pass as FormData file: { uri, name, type: mimeType } for React Native.
+   * @returns {Promise<{ message, result }>} result has totalImported, duplicatesSkipped, errors, errorMessages.
+   */
+  async importTransactions(fileAsset) {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: fileAsset.uri,
+      name: fileAsset.name || 'statement.csv',
+      type: fileAsset.mimeType || 'text/csv',
+    });
+    return request('post', '/api/transactions/import', formData);
+  },
+};
+
+// ========================================
 // Profile
 // ========================================
 
@@ -362,9 +416,11 @@ export const chatbotService = {
 // ========================================
 
 export const travelChatbotService = {
-  async sendQuery(query, history = [], language) {
+  async sendQuery(query, history = [], language, tripContext = null) {
     const lang = language || (await AsyncStorage.getItem('language')) || 'en';
-    return request('post', '/api/travel-chatbot/query', { query, history, language: lang });
+    const body = { query, history, language: lang };
+    if (tripContext) body.tripContext = tripContext;
+    return request('post', '/api/travel-chatbot/query', body);
   },
   async getSuggestions(language) {
     const lang = language || (await AsyncStorage.getItem('language')) || 'en';
