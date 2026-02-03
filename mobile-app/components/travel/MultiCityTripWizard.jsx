@@ -336,7 +336,7 @@ export default function MultiCityTripWizard({ trip = null, onClose, onSave }) {
             <TextInput
               style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
               placeholder={t('travel.itinerary.eventNamePlaceholder', 'e.g. Paris 2025')}
-              placeholderTextColor={theme.colors.textLight}
+              placeholderTextColor={theme.dark ? theme.colors.textSecondary : theme.colors.textLight}
               value={name}
               onChangeText={setName}
             />
@@ -484,7 +484,7 @@ export default function MultiCityTripWizard({ trip = null, onClose, onSave }) {
             <TextInput
               style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
               placeholder={t('travel.trip.budgetPlaceholder', '0')}
-              placeholderTextColor={theme.colors.textLight}
+              placeholderTextColor={theme.dark ? theme.colors.textSecondary : theme.colors.textLight}
               value={budget}
               onChangeText={setBudget}
               keyboardType="decimal-pad"

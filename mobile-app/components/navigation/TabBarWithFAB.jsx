@@ -32,7 +32,8 @@ import QuickAddSheet from './QuickAddSheet';
 const FLOATING_PILL_RADIUS = 28;
 const FLOATING_PILL_VERTICAL_PADDING = 8;
 const FLOATING_PILL_MARGIN_H = 20;
-const FLOATING_PILL_MARGIN_BOTTOM = 8;
+// Distance from bottom edge; increase to sit bar higher, decrease to sit lower (closer to edge)
+const FLOATING_PILL_MARGIN_BOTTOM = -5;
 // Active tab sub-pill: rounded background behind selected tab
 const ACTIVE_SUB_PILL_PADDING_H = 12;
 const ACTIVE_SUB_PILL_PADDING_V = 6;

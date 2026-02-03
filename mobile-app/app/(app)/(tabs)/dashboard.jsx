@@ -28,7 +28,7 @@ import { spacing, borderRadius, typography, shadows } from '../../../constants/t
 import {
   Modal, Button, ConfirmationModal, ScreenLoading, useToast, WidgetSelector,
   SummaryWidget, BudgetWidget, UpcomingBillsWidget, RecentTransactionsWidget,
-  SavingsWidget, QuickAccessWidget, InsightsWidget,
+  SavingsWidget, QuickAccessWidget, InsightsWidget, AnalyticsWidget, AddToCalculatorButton,
 } from '../../../components';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { useDrawerStatus } from '@react-navigation/drawer';
@@ -250,6 +250,15 @@ export default function DashboardScreen() {
           <QuickAccessWidget onItemPress={(route) => router.push(route)} />
         )}
 
+        {/* Analytics Widget */}
+        {isWidgetVisible('analytics') && (
+          <AnalyticsWidget
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            onPress={() => router.push('/(app)/analytics')}
+          />
+        )}
+
         {/* Budget Progress Widget */}
         {isWidgetVisible('budgets') && budgets?.length > 0 && (
           <View style={{ marginBottom: spacing.md }}>
@@ -315,14 +324,22 @@ export default function DashboardScreen() {
           <View style={styles.detailBody}>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>{t('transactions.amount', 'Amount')}</Text>
-              <Text
-                style={[
-                  styles.detailValue,
-                  { color: detailTransaction.type === 'expense' ? theme.colors.error : theme.colors.success },
-                ]}
-              >
-                {detailTransaction.type === 'expense' ? '-' : '+'}{formatAmount(detailTransaction.amount)}
-              </Text>
+              <View style={styles.detailAmountRow}>
+                <Text
+                  style={[
+                    styles.detailValue,
+                    { color: detailTransaction.type === 'expense' ? theme.colors.error : theme.colors.success },
+                  ]}
+                >
+                  {detailTransaction.type === 'expense' ? '-' : '+'}{formatAmount(detailTransaction.amount)}
+                </Text>
+                <AddToCalculatorButton
+                  value={detailTransaction.amount}
+                  isPrivate={isPrivacyMode}
+                  size={16}
+                  onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+                />
+              </View>
             </View>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>{t('transactions.date', 'Date')}</Text>
@@ -430,6 +447,7 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.h3, marginBottom: spacing.md },
   detailBody: { paddingVertical: spacing.sm },
   detailRow: { marginBottom: spacing.md },
+  detailAmountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   detailLabel: { ...typography.caption, marginBottom: 2 },
   detailValue: { ...typography.body, fontWeight: '600' },
   detailActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },

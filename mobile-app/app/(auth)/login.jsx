@@ -67,21 +67,29 @@ export default function LoginScreen() {
   const [pending2FA, setPending2FA] = useState(null); // { email, tempToken, rememberMe }
 
   const navigateAfterLogin = async () => {
-    if (hasOnboarded) {
+    // Already completed onboarding → go to dashboard
+    if (hasOnboarded === true) {
       router.replace('/(app)/(tabs)/dashboard');
-    } else {
-      try {
-        const transactions = await transactionService.getAll({ pageSize: 1 });
-        const hasExistingData = transactions?.items?.length > 0 || (Array.isArray(transactions) && transactions.length > 0);
-        if (hasExistingData) {
-          await skipOnboarding();
-          router.replace('/(app)/(tabs)/dashboard');
-        } else {
-          router.replace('/(onboarding)');
-        }
-      } catch {
+      return;
+    }
+    // Still loading onboarding status → treat as not onboarded and show onboarding
+    if (hasOnboarded === null) {
+      router.replace('/(onboarding)');
+      return;
+    }
+    // hasOnboarded === false: check if user has existing data (then skip onboarding)
+    try {
+      const transactions = await transactionService.getAll({ pageSize: 1 });
+      const hasExistingData = transactions?.items?.length > 0 || (Array.isArray(transactions) && transactions.length > 0);
+      if (hasExistingData) {
+        await skipOnboarding();
         router.replace('/(app)/(tabs)/dashboard');
+      } else {
+        router.replace('/(onboarding)');
       }
+    } catch {
+      // API failed (network, 401, etc.) → assume new user and show onboarding so they don't miss it
+      router.replace('/(onboarding)');
     }
   };
 
@@ -105,7 +113,7 @@ export default function LoginScreen() {
 
     try {
       if (isSignUp) {
-        await authService.signUp(formData.email, formData.password);
+        await authService.signUp(formData.email, formData.password, formData.displayName ?? '', true, formData.confirmPassword);
         setSuccess(t('auth.registrationSuccess'));
         setTimeout(() => setIsSignUp(false), 2000);
       } else {

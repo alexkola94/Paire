@@ -58,6 +58,7 @@ export {
   SavingsWidget,
   QuickAccessWidget,
   InsightsWidget,
+  AnalyticsWidget,
   WIDGET_REGISTRY,
   getDefaultWidgetLayout,
   getWidgetById,
@@ -86,8 +87,9 @@ export { default as RecurringBillForm } from './RecurringBillForm';
 export { default as ShoppingListForm } from './ShoppingListForm';
 export { default as ShoppingItemForm } from './ShoppingItemForm';
 
-// Global Calculator
+// Global Calculator & Add-to-Calculator button
 export { default as GlobalCalculator } from './GlobalCalculator';
+export { default as AddToCalculatorButton } from './AddToCalculatorButton';
 
 // Chat / structured message (Financial & Travel Guide)
 export { default as StructuredMessageContent } from './StructuredMessageContent';

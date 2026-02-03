@@ -38,6 +38,7 @@ import {
   EmptyState,
   ScreenLoading,
   ScreenHeader,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -217,7 +218,7 @@ export default function BudgetsScreen() {
         </Text>
       </View>
 
-      {/* Quick Actions */}
+      {/* Quick Actions (Edit, Delete, Add to calculator) */}
       <View style={styles.quickActions}>
         <TouchableOpacity
           style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.primary}15` }]}
@@ -233,6 +234,12 @@ export default function BudgetsScreen() {
         >
           <Trash2 size={16} color={theme.colors.error} />
         </TouchableOpacity>
+        <AddToCalculatorButton
+          value={item.amount}
+          isPrivate={isPrivate}
+          size={16}
+          onAdded={() => showToast(t('calculator.added', 'Added to calculator'), 'success', 1500)}
+        />
       </View>
     </TouchableOpacity>
     </Swipeable>

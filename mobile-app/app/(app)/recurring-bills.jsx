@@ -50,6 +50,7 @@ import {
   EmptyState,
   ScreenLoading,
   ScreenHeader,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -653,6 +654,12 @@ export default function RecurringBillsScreen() {
               {/* Amount */}
               <View style={styles.amountContainer}>
                 <Text style={[styles.cardAmount, { color: theme.colors.primary }]}>{formatAmount(item.amount)}</Text>
+                <AddToCalculatorButton
+                  value={item.amount}
+                  isPrivate={isPrivate}
+                  size={16}
+                  onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+                />
                 {item.autoPay && (
                   <View style={[styles.autoPayBadge, { backgroundColor: `${theme.colors.success}15` }]}>
                     <Text style={[styles.autoPayText, { color: theme.colors.success }]}>{t('recurringBills.auto', 'Auto')}</Text>
@@ -712,6 +719,8 @@ export default function RecurringBillsScreen() {
       formatAmount,
       theme,
       t,
+      isPrivate,
+      showToast,
       renderRightActions,
       renderLeftActions,
       handleMarkPaid,
@@ -1123,7 +1132,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   amountContainer: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'flex-end',
   },
   cardAmount: {
     ...typography.body,

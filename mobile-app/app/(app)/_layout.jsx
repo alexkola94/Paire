@@ -13,9 +13,12 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { ScrollToTopProvider } from '../../context/ScrollToTopContext';
 import { LogoutProvider } from '../../context/LogoutContext';
+import { CalculatorProvider } from '../../context/CalculatorContext';
+import { OverlayProvider } from '../../context/OverlayContext';
 import { authService } from '../../services/auth';
 import AppDrawerContent from '../../components/navigation/AppDrawerContent';
 import LogoutLoadingOverlay from '../../components/LogoutLoadingOverlay';
+import GlobalCalculator from '../../components/GlobalCalculator';
 
 // Default route when opening the app group (tabs = main content)
 export const unstable_settings = {
@@ -35,20 +38,25 @@ export default function AppLayout() {
   return (
     <LogoutProvider>
       <ScrollToTopProvider>
-        <View style={styles.wrapper}>
-          <Drawer
-            screenOptions={{
-              headerShown: false,
-              drawerType: 'front',
-              drawerStyle: { width: 280, maxWidth: '85%', backgroundColor: theme.colors.background },
-              drawerActiveTintColor: theme.colors.primary,
-              drawerInactiveTintColor: theme.colors.textSecondary,
-              swipeEdgeWidth: 24,
-            }}
-            drawerContent={(props) => <AppDrawerContent {...props} />}
-          />
-          <LogoutLoadingOverlay />
-        </View>
+        <CalculatorProvider>
+          <OverlayProvider>
+            <View style={styles.wrapper}>
+              <Drawer
+                screenOptions={{
+                  headerShown: false,
+                  drawerType: 'front',
+                  drawerStyle: { width: 280, maxWidth: '85%', backgroundColor: theme.colors.background },
+                  drawerActiveTintColor: theme.colors.primary,
+                  drawerInactiveTintColor: theme.colors.textSecondary,
+                  swipeEdgeWidth: 24,
+                }}
+                drawerContent={(props) => <AppDrawerContent {...props} />}
+              />
+              <LogoutLoadingOverlay />
+              <GlobalCalculator />
+            </View>
+          </OverlayProvider>
+        </CalculatorProvider>
       </ScrollToTopProvider>
     </LogoutProvider>
   );

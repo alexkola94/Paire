@@ -566,6 +566,8 @@
     "settings": "Settings",
     "legal": "Legal",
     "manage": "Manage",
+    "developer": "Developer",
+    "viewOnboarding": "View onboarding",
     "language": "Language",
     "changePassword": "Change Password",
     "deleteAccount": "Delete Account",
@@ -697,7 +699,12 @@
     "noCategoryData": "No category data available",
     "noCategoryDataDescription": "Add expenses to see spending breakdown by category",
     "clickToViewTransactions": "Click to view transactions",
-    "noTransactionsInCategory": "No transactions in this category"
+    "noTransactionsInCategory": "No transactions in this category",
+    "openInBrowserHint": "Open the full Analytics view in your browser (charts, categories, partner comparison).",
+    "configureWebUrlHint": "Set EXPO_PUBLIC_WEB_APP_URL in .env to open Analytics in the browser.",
+    "openAnalytics": "Open Analytics",
+    "monthlyBalance": "Monthly Balance",
+    "viewDetails": "View Analytics"
   },
   "partnership": {
     "title": "Partnership",
@@ -2743,6 +2750,10 @@
     "insights": {
       "title": "Insights",
       "description": "Smart financial insights and tips"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "description": "Financial insights, categories, and partner comparison"
     }
   },
   "insights": {

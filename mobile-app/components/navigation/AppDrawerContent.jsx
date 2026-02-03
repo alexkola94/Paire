@@ -71,16 +71,17 @@ const MAIN_ITEMS = [
 const FINANCE_ITEMS = [
   { route: '/(app)/expenses', icon: TrendingDown, labelKey: 'navigation.expenses' },
   { route: '/(app)/income', icon: TrendingUp, labelKey: 'navigation.income' },
+  { route: '/(app)/analytics', icon: BarChart3, labelKey: 'navigation.analytics' },
   { route: '/(app)/budgets', icon: Wallet, labelKey: 'navigation.budgets' },
   { route: '/(app)/savings-goals', icon: PiggyBank, labelKey: 'navigation.savingsGoals' },
   { route: '/(app)/loans', icon: CreditCard, labelKey: 'navigation.loans' },
 ];
 
+// Bills is in Main (tabs); no duplicate Recurring Bills here (same content)
 const TOOLS_ITEMS = [
   { route: '/(app)/currency-calculator', icon: Calculator, labelKey: 'navigation.currencyCalculator' },
   { route: '/(app)/bank-import', icon: Upload, labelKey: 'import.title' },
   { route: '/(app)/receipts', icon: Receipt, labelKey: 'receipts.title' },
-  { route: '/(app)/recurring-bills', icon: Repeat, labelKey: 'navigation.recurringBills' },
 ];
 
 const LIFESTYLE_ITEMS = [

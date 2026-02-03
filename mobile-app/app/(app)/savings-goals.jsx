@@ -42,6 +42,7 @@ import {
   ScreenLoading,
   ScreenHeader,
   SuccessAnimation,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -307,6 +308,12 @@ export default function SavingsGoalsScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
+          <AddToCalculatorButton
+            value={item.targetAmount ?? 0}
+            isPrivate={isPrivate}
+            size={16}
+            onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+          />
           <TouchableOpacity
             style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.success}15` }]}
             onPress={() => {

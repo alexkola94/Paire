@@ -3,7 +3,7 @@
  *
  * Custom TabBarWithFAB for quick transaction entry.
  * 4 visible tabs: Dashboard, Transactions, Bills, Profile.
- * Hub sheets and GlobalCalculator remain here for tab screens.
+ * Hub sheets (Finance, Tools) for tab screens. GlobalCalculator lives in (app)/_layout.
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -15,10 +15,8 @@ import { Home, Wallet, Repeat, User } from 'lucide-react-native';
 import { authService } from '../../../services/auth';
 import { profileService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
-import { CalculatorProvider } from '../../../context/CalculatorContext';
-import { OverlayProvider } from '../../../context/OverlayContext';
 import { TabTransitionProvider } from '../../../context/TabTransitionContext';
-import { TabBarWithFAB, FinanceHubSheet, ToolsHubSheet, GlobalCalculator } from '../../../components';
+import { TabBarWithFAB, FinanceHubSheet, ToolsHubSheet } from '../../../components';
 
 const PROFILE_AVATAR_SIZE = 22;
 
@@ -52,10 +50,8 @@ export default function TabsLayout() {
   }, []);
 
   return (
-    <CalculatorProvider>
-      <OverlayProvider>
-        <TabTransitionProvider>
-          <Tabs
+    <TabTransitionProvider>
+      <Tabs
             screenOptions={{
               headerShown: false,
               tabBarStyle: {
@@ -117,17 +113,14 @@ export default function TabsLayout() {
             />
           </Tabs>
 
-          <FinanceHubSheet
-            isOpen={isFinanceHubOpen}
-            onClose={() => setIsFinanceHubOpen(false)}
-          />
-          <ToolsHubSheet
-            isOpen={isToolsHubOpen}
-            onClose={() => setIsToolsHubOpen(false)}
-          />
-          <GlobalCalculator />
-        </TabTransitionProvider>
-      </OverlayProvider>
-    </CalculatorProvider>
+      <FinanceHubSheet
+        isOpen={isFinanceHubOpen}
+        onClose={() => setIsFinanceHubOpen(false)}
+      />
+      <ToolsHubSheet
+        isOpen={isToolsHubOpen}
+        onClose={() => setIsToolsHubOpen(false)}
+      />
+    </TabTransitionProvider>
   );
 }

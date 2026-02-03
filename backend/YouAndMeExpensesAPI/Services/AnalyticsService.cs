@@ -21,6 +21,16 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         /// <summary>
+        /// Normalize DateTime to UTC for PostgreSQL (timestamp with time zone).
+        /// </summary>
+        private static DateTime ToUtc(DateTime value)
+        {
+            if (value.Kind == DateTimeKind.Utc) return value;
+            if (value.Kind == DateTimeKind.Local) return value.ToUniversalTime();
+            return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        }
+
+        /// <summary>
         /// Get financial analytics for a date range
         /// </summary>
         public async Task<FinancialAnalyticsDTO> GetFinancialAnalyticsAsync(
@@ -30,6 +40,9 @@ namespace YouAndMeExpensesAPI.Services
             {
                 _logger.LogInformation("Calculating financial analytics for user {UserId}", userId);
 
+                var startUtc = ToUtc(startDate);
+                var endUtc = ToUtc(endDate);
+
                 // Get partner IDs if partnership exists
                 var partnerIds = await GetPartnerIdsAsync(userId);
                 var allUserIds = new List<string> { userId };
@@ -38,7 +51,7 @@ namespace YouAndMeExpensesAPI.Services
                 // Fetch transactions for the period (from user and partner)
                 var transactionList = await _dbContext.Transactions
                     .Where(t => allUserIds.Contains(t.UserId))
-                    .Where(t => t.Date >= startDate && t.Date <= endDate)
+                    .Where(t => t.Date >= startUtc && t.Date <= endUtc)
                     .ToListAsync();
 
                 // Calculate totals
@@ -53,7 +66,7 @@ namespace YouAndMeExpensesAPI.Services
                 var balance = totalIncome - totalExpenses;
 
                 // Calculate average daily spending
-                var days = (endDate - startDate).Days + 1;
+                var days = (endUtc - startUtc).Days + 1;
                 var avgDailySpending = days > 0 ? totalExpenses / days : 0;
 
                 // Category breakdown
@@ -137,7 +150,9 @@ namespace YouAndMeExpensesAPI.Services
 
                 if (startDate.HasValue && endDate.HasValue)
                 {
-                    loansQuery = loansQuery.Where(l => l.Date >= startDate.Value && l.Date <= endDate.Value);
+                    var startUtc = ToUtc(startDate.Value);
+                    var endUtc = ToUtc(endDate.Value);
+                    loansQuery = loansQuery.Where(l => l.Date >= startUtc && l.Date <= endUtc);
                 }
 
                 var loanList = await loansQuery.ToListAsync();
@@ -305,6 +320,9 @@ namespace YouAndMeExpensesAPI.Services
             {
                 _logger.LogInformation("Calculating comparative analytics for user {UserId}", userId);
 
+                var startUtc = ToUtc(startDate);
+                var endUtc = ToUtc(endDate);
+
                 // Get partner IDs if partnership exists
                 var partnerIds = await GetPartnerIdsAsync(userId);
                 var allUserIds = new List<string> { userId };
@@ -313,7 +331,7 @@ namespace YouAndMeExpensesAPI.Services
                 // Fetch transactions (from user and partner)
                 var transactionList = await _dbContext.Transactions
                     .Where(t => allUserIds.Contains(t.UserId))
-                    .Where(t => t.Date >= startDate && t.Date <= endDate)
+                    .Where(t => t.Date >= startUtc && t.Date <= endUtc)
                     .ToListAsync();
 
                 // Partner comparison

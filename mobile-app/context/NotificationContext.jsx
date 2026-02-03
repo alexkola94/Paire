@@ -140,7 +140,7 @@ export function NotificationProvider({ children }) {
         router.push('/(app)/(tabs)/profile');
         break;
       case 'weekly_summary':
-        router.push('/(app)/(tabs)/analytics');
+        router.push('/(app)/analytics');
         break;
       default:
         // Default to dashboard

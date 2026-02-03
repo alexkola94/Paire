@@ -55,6 +55,8 @@ export const colors = {
     inputBorder: 'rgba(255, 255, 255, 0.18)', // Form input borders (more visible)
     overlay: 'rgba(0,0,0,0.7)',
     blurIntensity: 70,
+    // Light background for date picker modal in dark mode so native spinner text is readable
+    datePickerModalBg: '#ffffff',
   },
 };
 
@@ -124,6 +126,7 @@ export const lightTheme = {
     inputBorder: colors.inputBorder,
     overlay: colors.overlay,
     blurIntensity: colors.blurIntensity ?? 70,
+    datePickerModalBg: colors.bgSecondary,
   },
   dark: false,
 };
@@ -142,6 +145,7 @@ export const darkTheme = {
     inputBorder: colors.dark.inputBorder,
     overlay: colors.dark.overlay,
     blurIntensity: colors.dark.blurIntensity ?? 70,
+    datePickerModalBg: colors.dark.datePickerModalBg,
   },
   dark: true,
 };

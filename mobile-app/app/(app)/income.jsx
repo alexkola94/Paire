@@ -39,6 +39,7 @@ import {
   EmptyState,
   ScreenLoading,
   ScreenHeader,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -247,9 +248,17 @@ export default function IncomeScreen() {
               {t(`categories.${item.category}`, item.category)} • {new Date(item.date).toLocaleDateString()}
             </Text>
           </View>
-          <Text style={[styles.cardAmount, { color: theme.colors.success }]}>
-            +{formatAmount(item.amount)}
-          </Text>
+          <View style={styles.amountRow}>
+            <Text style={[styles.cardAmount, { color: theme.colors.success }]}>
+              +{formatAmount(item.amount)}
+            </Text>
+            <AddToCalculatorButton
+              value={item.amount}
+              isPrivate={isPrivate}
+              size={16}
+              onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+            />
+          </View>
         </View>
 
         {/* Quick Actions */}
@@ -448,6 +457,11 @@ const styles = StyleSheet.create({
   cardSub: {
     ...typography.bodySmall,
     marginTop: 2,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   cardAmount: {
     ...typography.body,

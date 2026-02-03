@@ -21,6 +21,17 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
+        /// Normalize a date to UTC for PostgreSQL (timestamp with time zone).
+        /// EF Core / Npgsql require UTC; Unspecified/Local cause errors.
+        /// </summary>
+        private static DateTime ToUtc(DateTime value)
+        {
+            if (value.Kind == DateTimeKind.Utc) return value;
+            if (value.Kind == DateTimeKind.Local) return value.ToUniversalTime();
+            return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        }
+
+        /// <summary>
         /// Get financial analytics for a date range
         /// </summary>
         /// <param name="userId">User ID from auth</param>
@@ -38,9 +49,9 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Default to current month if no dates provided
-                var start = startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-                var end = endDate ?? DateTime.Now;
+                // Default to current month if no dates provided (use UTC for PostgreSQL)
+                var start = ToUtc(startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc));
+                var end = ToUtc(endDate ?? DateTime.UtcNow);
 
                 var analytics = await _analyticsService.GetFinancialAnalyticsAsync(userId.ToString(), start, end);
                 return Ok(analytics);
@@ -70,7 +81,10 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var analytics = await _analyticsService.GetLoanAnalyticsAsync(userId.ToString(), startDate, endDate);
+                // Normalize to UTC for PostgreSQL
+                var start = startDate.HasValue ? ToUtc(startDate.Value) : (DateTime?)null;
+                var end = endDate.HasValue ? ToUtc(endDate.Value) : (DateTime?)null;
+                var analytics = await _analyticsService.GetLoanAnalyticsAsync(userId.ToString(), start, end);
                 return Ok(analytics);
             }
             catch (Exception ex)
@@ -122,9 +136,9 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                // Default to current month
-                var start = startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-                var end = endDate ?? DateTime.Now;
+                // Default to current month (use UTC for PostgreSQL)
+                var start = ToUtc(startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc));
+                var end = ToUtc(endDate ?? DateTime.UtcNow);
 
                 var analytics = await _analyticsService.GetComparativeAnalyticsAsync(userId.ToString(), start, end);
                 return Ok(analytics);
@@ -179,23 +193,21 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var start = startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-                var end = endDate ?? DateTime.Now;
-    
-                // Fetch all analytics in parallel
-                var financialTask = _analyticsService.GetFinancialAnalyticsAsync(userId.ToString(), start, end);
-                var loansTask = _analyticsService.GetLoanAnalyticsAsync(userId.ToString(), start, end);
-                var householdTask = _analyticsService.GetHouseholdAnalyticsAsync(userId.ToString());
-                var comparativeTask = _analyticsService.GetComparativeAnalyticsAsync(userId.ToString(), start, end);
+                var start = ToUtc(startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc));
+                var end = ToUtc(endDate ?? DateTime.UtcNow);
 
-                await Task.WhenAll(financialTask, loansTask, householdTask, comparativeTask);
+                // Fetch analytics sequentially — DbContext is not thread-safe; parallel calls share the same instance
+                var financial = await _analyticsService.GetFinancialAnalyticsAsync(userId.ToString(), start, end);
+                var loans = await _analyticsService.GetLoanAnalyticsAsync(userId.ToString(), start, end);
+                var household = await _analyticsService.GetHouseholdAnalyticsAsync(userId.ToString());
+                var comparative = await _analyticsService.GetComparativeAnalyticsAsync(userId.ToString(), start, end);
 
                 return Ok(new
                 {
-                    financial = await financialTask,
-                    loans = await loansTask,
-                    household = await householdTask,
-                    comparative = await comparativeTask,
+                    financial,
+                    loans,
+                    household,
+                    comparative,
                     dateRange = new { start, end }
                 });
             }

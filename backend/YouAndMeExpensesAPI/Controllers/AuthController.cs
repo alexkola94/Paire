@@ -129,18 +129,37 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
+            // Return clear 400 when model validation fails (e.g. missing confirmPassword, short password)
+            if (request == null)
+            {
+                return BadRequest(new { message = "Request body is required", errors = new[] { "Email, password and confirmPassword are required." } });
+            }
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             // Forward X-Tenant-Id if present, or default to "thepaire"
             var tenantId = Request.Headers["X-Tenant-Id"].FirstOrDefault() ?? "thepaire";
-            
+
             var payload = new
             {
                 Username = request.Email,
                 request.Email,
                 request.Password,
-                FullName = request.DisplayName
+                FullName = request.DisplayName ?? string.Empty
             };
 
             var response = await _shieldAuthService.RegisterAsync(payload, tenantId);
+
+            if (!response.IsSuccess)
+            {
+                _logger.LogWarning("Shield register returned {StatusCode}: {Content}", response.StatusCode, response.Content);
+            }
             
             if (response.IsSuccess)
             {

@@ -34,6 +34,7 @@ import {
   ConfirmationModal,
   TransactionForm,
   ScreenLoading,
+  AddToCalculatorButton,
   useToast,
 } from '../../../components';
 import CalendarView from '../../../components/CalendarView';
@@ -58,7 +59,7 @@ export default function TransactionsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const { isPrivacyMode } = usePrivacyMode();
+  const { isPrivacyMode: isPrivate } = usePrivacyMode();
   const { registerTabIndex, previousTabIndex, currentTabIndex } = useTabTransition();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -78,7 +79,7 @@ export default function TransactionsScreen() {
 
   // Format amount with privacy mode support
   const formatAmount = (amount, isExpense) => {
-    if (isPrivacyMode) return '••••';
+    if (isPrivate) return '••••';
     const prefix = isExpense ? '-' : '+';
     return `${prefix}€${Number(amount || 0).toFixed(2)}`;
   };
@@ -251,9 +252,17 @@ export default function TransactionsScreen() {
               {item.category} • {formatDate(item.date)}
             </Text>
           </View>
-          <Text style={[styles.cardAmount, { color: isExpense ? theme.colors.error : theme.colors.success }]}>
-            {formatAmount(item.amount, isExpense)}
-          </Text>
+          <View style={styles.amountRow}>
+            <Text style={[styles.cardAmount, { color: isExpense ? theme.colors.error : theme.colors.success }]}>
+              {formatAmount(item.amount, isExpense)}
+            </Text>
+            <AddToCalculatorButton
+              value={item.amount}
+              isPrivate={isPrivate}
+              size={16}
+              onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+            />
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -289,9 +298,17 @@ export default function TransactionsScreen() {
               </Text>
               <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>{item.category}</Text>
             </View>
-            <Text style={[styles.cardAmount, { color: isExpense ? theme.colors.error : theme.colors.success }]}>
-              {formatAmount(item.amount, isExpense)}
-            </Text>
+            <View style={styles.amountRow}>
+              <Text style={[styles.cardAmount, { color: isExpense ? theme.colors.error : theme.colors.success }]}>
+                {formatAmount(item.amount, isExpense)}
+              </Text>
+              <AddToCalculatorButton
+                value={item.amount}
+                isPrivate={isPrivate}
+                size={16}
+                onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+              />
+            </View>
           </View>
         </TouchableOpacity>
       </View>
@@ -603,17 +620,25 @@ export default function TransactionsScreen() {
               <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
                 {t('transaction.amount', 'Amount')}
               </Text>
-              <Text
-                style={[
-                  styles.detailValue,
-                  {
-                    color:
-                      detailTransaction.type === 'expense' ? theme.colors.error : theme.colors.success,
-                  },
-                ]}
-              >
-                {formatAmount(detailTransaction.amount, detailTransaction.type === 'expense')}
-              </Text>
+              <View style={styles.detailAmountRow}>
+                <Text
+                  style={[
+                    styles.detailValue,
+                    {
+                      color:
+                        detailTransaction.type === 'expense' ? theme.colors.error : theme.colors.success,
+                    },
+                  ]}
+                >
+                  {formatAmount(detailTransaction.amount, detailTransaction.type === 'expense')}
+                </Text>
+                <AddToCalculatorButton
+                  value={detailTransaction.amount}
+                  isPrivate={isPrivate}
+                  size={16}
+                  onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+                />
+              </View>
             </View>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>
@@ -751,6 +776,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   row: { flexDirection: 'row', alignItems: 'center' },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   cardTitle: { ...typography.body, fontWeight: '600' },
   cardSub: { ...typography.bodySmall, marginTop: 2 },
   cardAmount: { ...typography.body, fontWeight: '700' },
@@ -771,6 +797,7 @@ const styles = StyleSheet.create({
   pageInfo: { ...typography.bodySmall },
   detail: { padding: spacing.lg },
   detailRow: { marginBottom: spacing.md },
+  detailAmountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   detailLabel: { ...typography.caption, marginBottom: 2 },
   detailValue: { ...typography.body },
   timelineSectionHeader: { paddingVertical: spacing.sm, paddingHorizontal: 0, marginTop: spacing.md },

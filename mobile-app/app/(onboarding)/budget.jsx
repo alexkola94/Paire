@@ -23,7 +23,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { budgetService } from '../../services/api';
 import { impactMedium, notificationSuccess } from '../../utils/haptics';
-import { useToast } from '../../components';
+import { useToast, AddToCalculatorButton } from '../../components';
 import { spacing, borderRadius, typography } from '../../constants/theme';
 
 const QUICK_CATEGORIES = [
@@ -319,6 +319,12 @@ const styles = StyleSheet.create({
   quickAmounts: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  quickAmountRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   quickAmountBtn: {
     flex: 1,

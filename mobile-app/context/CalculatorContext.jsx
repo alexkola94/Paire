@@ -169,6 +169,9 @@ export function CalculatorProvider({ children }) {
   // Expression and result
   const [expression, setExpression] = useState('');
   
+  // Flag for "just added" feedback (pulse on FAB / toast); cleared after 600ms
+  const [justAdded, setJustAdded] = useState(false);
+  
   // Load persisted expression on mount
   useEffect(() => {
     AsyncStorage.getItem(CALCULATOR_STORAGE_KEY).then((saved) => {
@@ -207,8 +210,9 @@ export function CalculatorProvider({ children }) {
     setIsOpen((prev) => !prev);
   }, []);
   
-  // Open calculator
+  // Open calculator (clear "just added" indicator when user opens)
   const openCalculator = useCallback(() => {
+    setJustAdded(false);
     setIsOpen(true);
   }, []);
   
@@ -279,25 +283,34 @@ export function CalculatorProvider({ children }) {
     });
   }, []);
   
-  // Add a value from an expense item
+  // Add a value from an expense/income/bill item (with chosen operator)
   const addToCalculator = useCallback((value, operator = '+') => {
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return;
-    
+
+    // Format value: remove unnecessary decimals (match frontend)
+    const formattedValue = numValue % 1 === 0
+      ? String(numValue)
+      : numValue.toFixed(2);
+
     setExpression((prev) => {
-      if (!prev || prev === '0') {
-        return String(numValue);
-      }
-      // Map operator to correct symbol
       const opMap = { '+': '+', '-': '-', '*': '×', '/': '÷', '×': '×', '÷': '÷' };
       const op = opMap[operator] || '+';
-      return prev + op + numValue;
+      if (!prev || prev === '0') {
+        return op === '-' ? `-${formattedValue}` : formattedValue;
+      }
+      return prev + op + formattedValue;
     });
-    
-    // Open calculator to show the added value
-    setIsOpen(true);
+
+    // Set "just added" so the FAB/handle shows a green indicator (user opens when ready)
+    setJustAdded(true);
+    // Reveal the FAB so user can tap to open; do not open the panel
+    setIsRevealed(true);
   }, []);
-  
+
+  // Derived: whether the expression has any content (for FAB badge/state)
+  const hasExpression = expression.length > 0;
+
   const value = {
     // State
     isOpen,
@@ -306,6 +319,8 @@ export function CalculatorProvider({ children }) {
     displayValue,
     result,
     computedResult,
+    justAdded,
+    hasExpression,
     
     // Actions
     toggleCalculator,

@@ -21,8 +21,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Plus, Pencil, Trash2, DollarSign } from 'lucide-react-native';
 import { travelService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
+import { usePrivacyMode } from '../../../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
-import { Modal, Button, useToast, ConfirmationModal } from '../../../../components';
+import { Modal, Button, AddToCalculatorButton, useToast, ConfirmationModal } from '../../../../components';
 
 const BUDGET_CATEGORIES = ['accommodation', 'transport', 'food', 'activities', 'shopping', 'other'];
 
@@ -42,6 +43,7 @@ export default function TripBudgetScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { isPrivate } = usePrivacyMode();
   const { id } = useLocalSearchParams();
   const [refreshing, setRefreshing] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -157,9 +159,17 @@ export default function TripBudgetScreen() {
             {t(`travel.budget.categories.${item.category}`, item.category)} • {formatDate(item.date)}
           </Text>
         </View>
-        <Text style={[styles.amount, { color: theme.colors.error }]}>
-          -{currency === 'EUR' ? '€' : currency}{Number(item.amount || 0).toFixed(2)}
-        </Text>
+        <View style={styles.amountRow}>
+          <Text style={[styles.amount, { color: theme.colors.error }]}>
+            -{currency === 'EUR' ? '€' : currency}{Number(item.amount || 0).toFixed(2)}
+          </Text>
+          <AddToCalculatorButton
+            value={item.amount}
+            isPrivate={isPrivate}
+            size={16}
+            onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+          />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -350,6 +360,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   row: { flexDirection: 'row', alignItems: 'center' },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   cardTitle: { ...typography.body, fontWeight: '600' },
   cardSub: { ...typography.bodySmall, marginTop: 2 },
   amount: { ...typography.body, fontWeight: '700' },

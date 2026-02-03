@@ -262,19 +262,38 @@ export const authService = {
     }
   },
 
-  async signUp(email, password, displayName = '', emailNotificationsEnabled = false) {
-    return this.register({ email, password, confirmPassword: password, displayName, emailNotificationsEnabled });
+  async signUp(email, password, displayName = '', emailNotificationsEnabled = false, confirmPassword = undefined) {
+    return this.register({
+      email,
+      password,
+      confirmPassword: confirmPassword ?? password,
+      displayName: displayName ?? '',
+      emailNotificationsEnabled,
+    });
   },
 
   async register(userData) {
     try {
-      const data = await authApiRequest('/api/auth/register', {
+      // Use unauthenticated request so no stale token is sent; backend expects email, password, confirmPassword
+      const data = await anonRequest('/api/auth/register', {
         method: 'POST',
-        data: userData,
+        data: {
+          email: userData.email,
+          password: userData.password,
+          confirmPassword: userData.confirmPassword ?? userData.password,
+          displayName: userData.displayName ?? '',
+          emailNotificationsEnabled: userData.emailNotificationsEnabled ?? true,
+        },
       });
       return data;
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Registration error:', error?.response?.data ?? error);
+      // Surface API error message so user sees validation or "email already registered" etc.
+      const body = error?.response?.data;
+      const message = typeof body === 'string'
+        ? body
+        : (body?.message || (Array.isArray(body?.errors) ? body.errors[0] : body?.error));
+      if (message) throw new Error(message);
       throw error;
     }
   },
