@@ -63,7 +63,10 @@
     "budgetAlert": "Alerta de presupuesto",
     "budgetAlertBody": "Has usado {{percentage}}% de tu presupuesto de {{category}}",
     "savingsMilestone": "¡Hito de ahorro!",
-    "savingsMilestoneBody": "¡Has alcanzado {{percentage}}% de tu meta \"{{name}}\"!"
+    "savingsMilestoneBody": "¡Has alcanzado {{percentage}}% de tu meta \"{{name}}\"!",
+    "weeklySummaryTitle": "Resumen Semanal de Gastos",
+    "weeklySummaryBody": "Esta semana gastaste {{amount}}.",
+    "weeklySummaryWithChange": "Esta semana gastaste {{amount}}. Eso es {{percent}}% {{change}} que la semana pasada."
   },
   "onboarding": {
     "continue": "Continuar",

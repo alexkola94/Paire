@@ -63,7 +63,10 @@
     "budgetAlert": "Alerte budget",
     "budgetAlertBody": "Vous avez utilisé {{percentage}}% de votre budget {{category}}",
     "savingsMilestone": "Jalon d'épargne !",
-    "savingsMilestoneBody": "Vous avez atteint {{percentage}}% de votre objectif « {{name}} » !"
+    "savingsMilestoneBody": "Vous avez atteint {{percentage}}% de votre objectif « {{name}} » !",
+    "weeklySummaryTitle": "Résumé Hebdomadaire des Dépenses",
+    "weeklySummaryBody": "Cette semaine vous avez dépensé {{amount}}.",
+    "weeklySummaryWithChange": "Cette semaine vous avez dépensé {{amount}}. C'est {{percent}}% de {{change}} que la semaine dernière."
   },
   "onboarding": {
     "continue": "Continuer",

@@ -16,6 +16,7 @@ export const colors = {
   glassBg: 'rgba(255, 255, 255, 0.85)',
   glassBorder: 'rgba(0, 0, 0, 0.08)',
   glassShadowColor: 'rgba(31, 38, 135, 0.08)',
+  inputBorder: 'rgba(0, 0, 0, 0.12)', // Form input borders
   // Blur effect tokens (for BlurView / backdrop blur)
   blurIntensity: 70,
 
@@ -51,6 +52,7 @@ export const colors = {
     textLight: '#7d8ca0', // Improved: more visible on dark backgrounds
     glassBg: 'rgba(26, 26, 46, 0.88)',
     glassBorder: 'rgba(255, 255, 255, 0.14)', // Improved: more visible borders
+    inputBorder: 'rgba(255, 255, 255, 0.18)', // Form input borders (more visible)
     overlay: 'rgba(0,0,0,0.7)',
     blurIntensity: 70,
   },
@@ -119,6 +121,7 @@ export const lightTheme = {
     textLight: colors.textLight,
     glassBg: colors.glassBg,
     glassBorder: colors.glassBorder,
+    inputBorder: colors.inputBorder,
     overlay: colors.overlay,
     blurIntensity: colors.blurIntensity ?? 70,
   },
@@ -136,6 +139,7 @@ export const darkTheme = {
     textLight: colors.dark.textLight,
     glassBg: colors.dark.glassBg,
     glassBorder: colors.dark.glassBorder,
+    inputBorder: colors.dark.inputBorder,
     overlay: colors.dark.overlay,
     blurIntensity: colors.dark.blurIntensity ?? 70,
   },

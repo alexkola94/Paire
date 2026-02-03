@@ -108,7 +108,7 @@ export default function FormField({
                 ? theme.colors.error
                 : isFocused
                 ? theme.colors.primary
-                : theme.colors.surfaceSecondary,
+                : theme.colors.inputBorder ?? theme.colors.surfaceSecondary,
           },
         ]}
       >

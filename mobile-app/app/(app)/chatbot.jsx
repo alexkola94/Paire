@@ -56,7 +56,7 @@ import {
 } from 'lucide-react-native';
 import { chatbotService, aiGatewayService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
-import { useToast, ScreenHeader } from '../../components';
+import { useToast, ScreenHeader, StructuredMessageContent } from '../../components';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 
 // Default suggestion translation keys when API fails or is empty
@@ -147,10 +147,18 @@ function MessageBubble({ item, theme, isLatest, onCopy, onShare }) {
           !isUser && shadows.sm,
         ]}
       >
-        <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>
-          {content}
-        </Text>
-        
+        {isUser ? (
+          <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>
+            {content}
+          </Text>
+        ) : (
+          <StructuredMessageContent
+            text={content}
+            theme={theme}
+            textStyle={[styles.bubbleText, { color: theme.colors.text }]}
+          />
+        )}
+
         {/* Action buttons for bot messages */}
         {!isUser && isComplete && (
           <View style={styles.messageActions}>

@@ -15,7 +15,11 @@ import {
   addNotificationReceivedListener,
   cancelAllNotifications,
   DEFAULT_NOTIFICATION_PREFS,
+  shouldShowWeeklySummary,
+  calculateWeeklySpending,
+  sendWeeklySummary,
 } from '../services/notifications';
+import api from '../services/api';
 
 const NotificationContext = createContext(null);
 
@@ -53,6 +57,36 @@ export function NotificationProvider({ children }) {
     };
   }, []);
   
+  // Check and send weekly spending summary if appropriate
+  const checkWeeklySummary = useCallback(async (prefs) => {
+    try {
+      if (!prefs?.enabled) return;
+
+      const shouldShow = await shouldShowWeeklySummary();
+      if (!shouldShow) return;
+
+      // Fetch recent transactions (last 14 days for comparison)
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+      const transactions = await api.getTransactions({
+        startDate: twoWeeksAgo.toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+      });
+
+      if (!transactions?.length) return;
+
+      const { thisWeekTotal, percentChange } = calculateWeeklySpending(transactions);
+
+      // Only send summary if there was spending this week
+      if (thisWeekTotal > 0) {
+        await sendWeeklySummary(thisWeekTotal, percentChange);
+      }
+    } catch (error) {
+      console.error('Error checking weekly summary:', error);
+    }
+  }, []);
+
   // Initialize push notifications
   const initializeNotifications = useCallback(async () => {
     try {
@@ -73,7 +107,10 @@ export function NotificationProvider({ children }) {
       
       // Set up notification response listener (when user taps notification)
       responseListener.current = addNotificationResponseListener(handleNotificationResponse);
-      
+
+      // Check if weekly spending summary should be shown
+      await checkWeeklySummary(savedPrefs);
+
       setIsInitialized(true);
     } catch (error) {
       console.error('Error initializing notifications:', error);
@@ -101,6 +138,9 @@ export function NotificationProvider({ children }) {
         break;
       case 'security_alert':
         router.push('/(app)/(tabs)/profile');
+        break;
+      case 'weekly_summary':
+        router.push('/(app)/(tabs)/analytics');
         break;
       default:
         // Default to dashboard

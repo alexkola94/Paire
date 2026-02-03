@@ -88,3 +88,6 @@ export { default as ShoppingItemForm } from './ShoppingItemForm';
 
 // Global Calculator
 export { default as GlobalCalculator } from './GlobalCalculator';
+
+// Chat / structured message (Financial & Travel Guide)
+export { default as StructuredMessageContent } from './StructuredMessageContent';

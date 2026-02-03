@@ -82,7 +82,10 @@
     "budgetAlert": "Budget Alert",
     "budgetAlertBody": "You've used {{percentage}}% of your {{category}} budget",
     "savingsMilestone": "Savings Milestone!",
-    "savingsMilestoneBody": "You've reached {{percentage}}% of your \"{{name}}\" goal!"
+    "savingsMilestoneBody": "You've reached {{percentage}}% of your \"{{name}}\" goal!",
+    "weeklySummaryTitle": "Weekly Spending Summary",
+    "weeklySummaryBody": "This week you spent {{amount}}.",
+    "weeklySummaryWithChange": "This week you spent {{amount}}. That's {{percent}}% {{change}} than last week."
   },
   "onboarding": {
     "continue": "Continue",

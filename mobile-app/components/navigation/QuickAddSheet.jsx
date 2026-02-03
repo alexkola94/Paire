@@ -73,11 +73,10 @@ function ActionButton({ action, onPress, index, theme }) {
   // Staggered entrance animation - clean fade
   const enteringAnimation = FadeInDown.delay(index * 40).duration(200);
 
+  // Layout animation and transform must not share the same View (Reanimated warning).
   return (
-    <Animated.View
-      entering={enteringAnimation}
-      style={[styles.actionWrapper, animatedStyle]}
-    >
+    <Animated.View entering={enteringAnimation} style={styles.actionWrapper}>
+      <Animated.View style={animatedStyle}>
       <TouchableOpacity
         style={[
           styles.actionButton,
@@ -122,6 +121,7 @@ function ActionButton({ action, onPress, index, theme }) {
           {t(action.labelKey, action.id)}
         </Text>
       </TouchableOpacity>
+      </Animated.View>
     </Animated.View>
   );
 }

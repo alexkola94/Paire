@@ -78,7 +78,10 @@
     "budgetAlert": "Ειδοποίηση Budget",
     "budgetAlertBody": "Έχετε χρησιμοποιήσει {{percentage}}% του budget {{category}}",
     "savingsMilestone": "Ορόσημο Αποταμίευσης!",
-    "savingsMilestoneBody": "Έχετε φτάσει {{percentage}}% του στόχου «{{name}}»!"
+    "savingsMilestoneBody": "Έχετε φτάσει {{percentage}}% του στόχου «{{name}}»!",
+    "weeklySummaryTitle": "Εβδομαδιαία Περίληψη Δαπανών",
+    "weeklySummaryBody": "Αυτή την εβδομάδα ξοδέψατε {{amount}}.",
+    "weeklySummaryWithChange": "Αυτή την εβδομάδα ξοδέψατε {{amount}}. Αυτό είναι {{percent}}% {{change}} από την προηγούμενη εβδομάδα."
   },
   "onboarding": {
     "continue": "Συνέχεια",

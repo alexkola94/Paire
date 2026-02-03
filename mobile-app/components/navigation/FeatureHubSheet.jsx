@@ -61,8 +61,10 @@ function FeatureItem({ feature, onPress, index, theme }) {
     .springify()
     .damping(18);
 
+  // Layout animation and transform must not share the same View (Reanimated warning).
   return (
-    <Animated.View entering={enteringAnimation} style={animatedStyle}>
+    <Animated.View entering={enteringAnimation}>
+      <Animated.View style={animatedStyle}>
       <TouchableOpacity
         style={[
           styles.featureItem,
@@ -108,6 +110,7 @@ function FeatureItem({ feature, onPress, index, theme }) {
         {/* Arrow */}
         <ChevronRight size={18} color={theme.colors.textLight} />
       </TouchableOpacity>
+      </Animated.View>
     </Animated.View>
   );
 }

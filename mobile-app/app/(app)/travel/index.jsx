@@ -28,7 +28,7 @@ import { travelChatbotService, travelAdvisoryService, travelService, tripCitySer
 import { getStaticTravelSuggestions } from '../../../utils/travelChatbotSuggestions';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
-import { Modal, useToast, ScreenHeader } from '../../../components';
+import { Modal, useToast, ScreenHeader, StructuredMessageContent } from '../../../components';
 import { MultiCityTripWizard } from '../../../components/travel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -435,7 +435,15 @@ export default function TravelIndexScreen() {
                           item.role === 'bot' && shadows.sm,
                         ]}
                       >
-                        <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>{item.content}</Text>
+                        {item.role === 'user' ? (
+                          <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>{item.content}</Text>
+                        ) : (
+                          <StructuredMessageContent
+                            text={item.content}
+                            theme={theme}
+                            textStyle={[styles.bubbleText, { color: theme.colors.text }]}
+                          />
+                        )}
                         {item.role === 'bot' && (
                           <View style={styles.messageActions}>
                             <TouchableOpacity
