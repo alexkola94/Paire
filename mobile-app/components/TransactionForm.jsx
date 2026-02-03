@@ -312,7 +312,7 @@ export default function TransactionForm({
           value={formData.amount}
           onChange={(value) => handleChange('amount', value)}
           label={`${t('transaction.amount', 'Amount')} *`}
-          placeholder="0.00"
+          placeholder="0.00" // i18n-ignore: numeric
           disabled={loading || uploadProgress}
           quickAmounts={type === 'expense' ? [5, 10, 20, 50] : [100, 500, 1000, 5000]}
         />

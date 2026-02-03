@@ -113,7 +113,7 @@ export const PrivacyModeProvider = ({ children }) => {
 export const usePrivacyMode = () => {
     const context = useContext(PrivacyModeContext)
     if (context === undefined) {
-        throw new Error('usePrivacyMode must be used within a PrivacyModeProvider')
+        throw new Error('usePrivacyMode must be used within a PrivacyModeProvider') // i18n-ignore
     }
     return context
 }

@@ -94,7 +94,8 @@
     },
     "partner": {
       "title": "Better Together",
-      "subtitle": "Invite your partner to share finances and track expenses together."
+      "subtitle": "Invite your partner to share finances and track expenses together.",
+      "skipHint": "You can invite a partner later from Settings."
     },
     "budget": {
       "title": "Set Your First Budget",
@@ -359,6 +360,9 @@
     "loanDeleted": "Loan deleted successfully",
     "noLoans": "No loans recorded",
     "empty": "No loans yet. Tap + to add one!",
+    "emptyTitle": "No loans yet",
+    "emptyDescription": "Track money lent and borrowed to keep things clear between you.",
+    "addFirst": "Add Loan",
     "lender": "Lender",
     "borrower": "Borrower",
     "lenderName": "Lender Name",
@@ -412,6 +416,7 @@
     "selectStatus": "Select status",
     "status": {
       "active": "Active",
+      "settled": "Settled",
       "paid": "Paid",
       "overdue": "Overdue"
     }
@@ -699,6 +704,9 @@
     "noPartnershipDescription": "Create a partnership to share expenses, income, and financial data with your partner.",
     "invitePartner": "Invite Partner",
     "sendInvite": "Send Invitation",
+    "inviteSent": "Invitation sent!",
+    "invitationSent": "Invitation sent!",
+    "noPartner": "No partner yet",
     "partnerEmail": "Partner's Email",
     "emailPlaceholder": "partner@example.com",
     "emailHint": "Enter your partner's email address. They will receive an invitation email to join the partnership.",
@@ -715,6 +723,11 @@
     "disconnectError": "Failed to disconnect partnership",
     "loadError": "Failed to load partnership data",
     "invalidEmail": "Please enter a valid email address",
+    "status": {
+      "active": "Active",
+      "pending": "Pending",
+      "accepted": "Accepted"
+    },
     "userNotFound": "User not found with this email",
     "cannotInviteSelf": "You cannot invite yourself",
     "setDisplayNameFirst": "Please set your display name in Profile before creating a partnership",
@@ -1108,6 +1121,17 @@
     "errorDeleting": "Failed to delete shopping list",
     "errorDeletingItem": "Failed to delete item",
     "errorCompleting": "Failed to complete shopping list",
+    "importFromFile": "Import from file",
+    "importSuccess": "List created with {{count}} item",
+    "importSuccess_plural": "List created with {{count}} items",
+    "importError": "Failed to import list",
+    "importNoItems": "No items found in file",
+    "importFileReadError": "Could not read file",
+    "importCancelled": "Import cancelled",
+    "importPreviewTitle": "Import list",
+    "importPreviewMessage": "{{count}} item will be added",
+    "importPreviewMessage_plural": "{{count}} items will be added",
+    "importListNamePlaceholder": "Imported list",
     "addedBy": "Added by",
     "categories": {
       "groceries": "Groceries",
@@ -1480,6 +1504,8 @@
   "achievements": {
     "title": "Achievements",
     "subtitle": "Track your financial milestones and unlock rewards",
+    "emptyTitle": "No achievements yet",
+    "emptyDescription": "Keep using the app to unlock achievements and earn points!",
     "loading": "Loading achievements...",
     "noAchievements": "No achievements found",
     "points": "points",
@@ -1886,6 +1912,7 @@
       "send": "Send message",
       "placeholder": "Ask about your trip...",
       "tryAsking": "Try asking:",
+      "welcomeMessage": "Hi! I'm your travel guide. Ask me anything about your trip!",
       "clearChat": "Clear chat",
       "viewDetails": "View Details",
       "thinking": "Thinking...",

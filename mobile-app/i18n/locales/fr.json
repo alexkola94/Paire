@@ -13,6 +13,7 @@
     "confirm": "Confirmer",
     "loading": "Chargement...",
     "noData": "Pas encore de données",
+    "error": "Une erreur s'est produite",
     "back": "Retour",
     "copied": "Copié dans le presse-papiers",
     "more": "plus",
@@ -64,12 +65,57 @@
     "savingsMilestone": "Jalon d'épargne !",
     "savingsMilestoneBody": "Vous avez atteint {{percentage}}% de votre objectif « {{name}} » !"
   },
+  "onboarding": {
+    "continue": "Continuer",
+    "skip": "Passer pour l'instant",
+    "skipped": "passé",
+    "currency": {
+      "title": "Bienvenue sur Paire !",
+      "subtitle": "Choisissez votre devise par défaut pour commencer."
+    },
+    "partner": {
+      "title": "Mieux ensemble",
+      "subtitle": "Invitez votre partenaire pour partager les finances et suivre les dépenses ensemble.",
+      "skipHint": "Vous pourrez inviter un partenaire plus tard dans les Paramètres."
+    },
+    "budget": {
+      "title": "Définissez votre premier budget",
+      "subtitle": "Suivez vos dépenses par catégorie. Vous pourrez en ajouter plus tard."
+    },
+    "transaction": {
+      "title": "Ajoutez votre première dépense",
+      "subtitle": "Commencez à suivre vos dépenses tout de suite."
+    },
+    "complete": {
+      "title": "Vous êtes prêt !",
+      "subtitle": "Bienvenue sur Paire ! Votre aventure financière commence maintenant.",
+      "continue": "Aller au tableau de bord",
+      "currencySet": "Devise par défaut sélectionnée",
+      "partnerInvited": "Partenaire invité",
+      "budgetCreated": "Premier budget créé",
+      "transactionAdded": "Première dépense ajoutée"
+    }
+  },
   "partnerSync": {
     "partnerAddedExpense": "{{name}} a ajouté: {{item}} - {{amount}}",
     "partnerAddedIncome": "{{name}} a ajouté un revenu: {{item}} - {{amount}}",
     "connected": "Connecté à la synchronisation partenaire",
     "disconnected": "Synchronisation partenaire déconnectée",
     "reconnecting": "Reconnexion à la synchronisation partenaire..."
+  },
+  "partnership": {
+    "title": "Partenariat",
+    "subtitle": "Gérez votre partenariat financier",
+    "noPartnership": "Aucun partenariat",
+    "noPartnershipDescription": "Créez un partenariat pour partager dépenses, revenus et données avec votre partenaire.",
+    "invitePartner": "Inviter un partenaire",
+    "sendInvite": "Envoyer l'invitation",
+    "inviteSent": "Invitation envoyée !",
+    "partnerEmail": "Email du partenaire",
+    "emailPlaceholder": "partenaire@exemple.com",
+    "benefit1": "Partagez toutes les données financières automatiquement",
+    "benefit2": "Suivez qui a ajouté chaque transaction",
+    "benefit3": "Consultez la comparaison partenaire dans les Analyses"
   },
   "auth": {
     "login": "Connexion",
@@ -292,6 +338,17 @@
     "confirmDeleteItem": "Êtes-vous sûr de vouloir supprimer cet article?",
     "errorSaving": "Échec de l'enregistrement de la liste de courses",
     "errorSavingItem": "Échec de l'enregistrement de l'article",
+    "importFromFile": "Importer depuis un fichier",
+    "importSuccess": "Liste créée avec {{count}} article",
+    "importSuccess_plural": "Liste créée avec {{count}} articles",
+    "importError": "Échec de l'importation de la liste",
+    "importNoItems": "Aucun article trouvé dans le fichier",
+    "importFileReadError": "Impossible de lire le fichier",
+    "importCancelled": "Importation annulée",
+    "importPreviewTitle": "Importer la liste",
+    "importPreviewMessage": "{{count}} article sera ajouté",
+    "importPreviewMessage_plural": "{{count}} articles seront ajoutés",
+    "importListNamePlaceholder": "Liste importée",
     "categories": {
       "groceries": "Alimentation",
       "household": "Ménage",
@@ -668,6 +725,7 @@
       "send": "Envoyer",
       "placeholder": "Posez une question sur votre voyage...",
       "tryAsking": "Essayez de demander :",
+      "welcomeMessage": "Bonjour ! Je suis votre guide voyage. Posez-moi vos questions sur votre voyage !",
       "clearChat": "Effacer le chat",
       "viewDetails": "Voir les détails",
       "thinking": "Réflexion...",

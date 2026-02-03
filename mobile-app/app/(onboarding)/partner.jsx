@@ -146,6 +146,9 @@ export default function OnboardingPartnerScreen() {
               {t('onboarding.skip', 'Skip for now')}
             </Text>
           </TouchableOpacity>
+          <Text style={[styles.skipHint, { color: theme.colors.textSecondary }]}>
+            {t('onboarding.partner.skipHint', 'You can invite a partner later from Settings.')}
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -249,5 +252,11 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     ...typography.body,
+  },
+  skipHint: {
+    ...typography.caption,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    opacity: 0.9,
   },
 });

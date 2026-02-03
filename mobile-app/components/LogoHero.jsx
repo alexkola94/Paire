@@ -19,6 +19,10 @@ const SIGNATURE_GRADIENT = ['#6c5ce7', '#4a3f8f'];
 
 const LOGO_SIZE_DRAWER = 48;
 const LOGO_SIZE_HEADER = 28;
+/** Larger logo for auth screens (login, etc.) */
+const LOGO_SIZE_AUTH = 88;
+/** Padding around logo inside the frosted circle on auth screens */
+const AUTH_LOGO_PADDING = 14;
 
 /**
  * Inline Paire logo (geometric P forms) – matches assets/paire-logo.svg
@@ -52,31 +56,57 @@ function PaireLogoSvg({ size }) {
   );
 }
 
+// Light text colors for auth screens (e.g. login gradient background)
+const AUTH_TITLE_COLOR = '#fff';
+const AUTH_TAGLINE_COLOR = 'rgba(255,255,255,0.8)';
+
 /**
- * LogoHero – drawer (vertical, larger) or header (horizontal, compact)
- * @param { 'drawer' | 'header' } variant
+ * LogoHero – drawer (vertical, larger), header (horizontal, compact), or auth (drawer + light text, no border)
+ * @param { 'drawer' | 'header' | 'auth' } variant
  */
 export default function LogoHero({ variant = 'drawer' }) {
   const { theme } = useTheme();
   const { t } = useTranslation();
-  const isDrawer = variant === 'drawer';
-  const logoSize = isDrawer ? LOGO_SIZE_DRAWER : LOGO_SIZE_HEADER;
+  const isDrawer = variant === 'drawer' || variant === 'auth';
+  const isAuth = variant === 'auth';
+  const logoSize = isAuth ? LOGO_SIZE_AUTH : (isDrawer ? LOGO_SIZE_DRAWER : LOGO_SIZE_HEADER);
 
   if (isDrawer) {
+    const titleColor = isAuth ? AUTH_TITLE_COLOR : theme.colors.text;
+    const taglineColor = isAuth ? AUTH_TAGLINE_COLOR : theme.colors.textSecondary;
     return (
-      <View style={[styles.drawerRoot, { borderBottomColor: theme.colors.glassBorder }]}>
-        <PaireLogoSvg size={logoSize} />
-        <Text style={[styles.drawerTitle, { color: theme.colors.text }]} numberOfLines={1}>
+      <View style={[
+        styles.drawerRoot,
+        isAuth && styles.drawerRootAuth,
+        !isAuth && { borderBottomColor: theme.colors.glassBorder },
+      ]}>
+        {isAuth ? (
+          <View
+            style={[
+              styles.authLogoWrapper,
+              {
+                width: logoSize + 2 * AUTH_LOGO_PADDING,
+                height: logoSize + 2 * AUTH_LOGO_PADDING,
+                borderRadius: (logoSize + 2 * AUTH_LOGO_PADDING) / 2,
+              },
+            ]}
+          >
+            <PaireLogoSvg size={logoSize} />
+          </View>
+        ) : (
+          <PaireLogoSvg size={logoSize} />
+        )}
+        <Text style={[styles.drawerTitle, { color: titleColor }]} numberOfLines={1}>
           {t('app.name', 'Paire')}
         </Text>
-        <Text style={[styles.drawerTagline, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+        <Text style={[styles.drawerTagline, { color: taglineColor }]} numberOfLines={1}>
           {t('app.tagline', 'Finances, aligned.')}
         </Text>
         <ExpoLinearGradient
           colors={SIGNATURE_GRADIENT}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={styles.signatureUnderline}
+          style={isAuth ? styles.signatureUnderlineAuth : styles.signatureUnderline}
         />
       </View>
     );
@@ -101,6 +131,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     gap: spacing.sm,
   },
+  /** Auth variant: no border, centered content (used on gradient backgrounds) */
+  drawerRootAuth: {
+    borderBottomWidth: 0,
+    alignItems: 'center',
+  },
   drawerTitle: {
     ...typography.h2,
   },
@@ -115,6 +150,27 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
     marginTop: spacing.sm,
+  },
+  /** Auth variant: underline centered under tagline */
+  signatureUnderlineAuth: {
+    width: '80%',
+    alignSelf: 'center',
+    height: 3,
+    borderRadius: 2,
+    marginTop: spacing.sm,
+  },
+  /** Auth variant: frosted circular background so logo stands out on gradient */
+  authLogoWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   headerRoot: {
     flexDirection: 'row',

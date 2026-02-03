@@ -13,6 +13,7 @@ import { transactionService, twoFactorService } from '../../services/api';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { useBiometric } from '../../context/BiometricContext';
 import { colors, spacing, borderRadius, typography } from '../../constants/theme';
+import LogoHero from '../../components/LogoHero';
 
 const KEEP_LOGGED_IN_KEY = 'auth_keep_logged_in';
 
@@ -195,10 +196,9 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Branding */}
+          {/* Branding: hero logo (drawer variant, centered above form) */}
           <View style={styles.branding}>
-            <Text style={styles.brandTitle}>{t('app.title')}</Text>
-            <Text style={styles.brandTagline}>{t('app.tagline')}</Text>
+            <LogoHero variant="auth" />
           </View>
 
           {/* Form Card */}

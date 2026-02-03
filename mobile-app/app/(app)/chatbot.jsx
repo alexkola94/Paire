@@ -526,9 +526,10 @@ const styles = StyleSheet.create({
   
   headerAction: { padding: spacing.xs },
 
-  // Mode bar
+  // Mode bar – wraps on narrow screens to prevent overflow (e.g. Deep Think + AI Mode)
   modeBar: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
@@ -540,6 +541,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    flex: 1,
+    minWidth: 140,
   },
   modeToggleLabel: {
     flexDirection: 'row',
@@ -569,6 +572,7 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: '80%',
+    flexShrink: 1,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.lg,

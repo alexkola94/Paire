@@ -321,7 +321,7 @@ export const NotificationProvider = ({ children }) => {
 export const useNotifications = () => {
   const context = useContext(NotificationContext)
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider')
+    throw new Error('useNotifications must be used within a NotificationProvider') // i18n-ignore
   }
   return context
 }

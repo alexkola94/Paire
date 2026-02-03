@@ -95,7 +95,7 @@ const apiRequest = async (url, options = {}) => {
 
   if (token && isTokenExpired(token)) {
     handleSessionExpiration()
-    throw new Error('Session expired. Please log in again.')
+    throw new Error('Session expired. Please log in again.') // i18n-ignore
   }
 
   let backendApiUrl = getBackendApiUrl()
@@ -131,7 +131,7 @@ const apiRequest = async (url, options = {}) => {
 
     if (response.status === 401) {
       handleSessionExpiration()
-      throw new Error('Session expired. Please log in again.')
+      throw new Error('Session expired. Please log in again.') // i18n-ignore
     }
 
     if (options.method === 'DELETE' && response.status === 204) {

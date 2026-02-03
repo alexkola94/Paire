@@ -89,7 +89,7 @@ const ExplorePage = memo(({ trip }) => {
           `https://api.open-meteo.com/v1/forecast?latitude=${trip.latitude}&longitude=${trip.longitude}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`
         )
 
-        if (!response.ok) throw new Error('Weather API failed')
+        if (!response.ok) throw new Error('Weather API failed') // i18n-ignore
 
         const data = await response.json()
         setWeather(data)
@@ -227,7 +227,7 @@ const ExplorePage = memo(({ trip }) => {
         body: query
       })
 
-      if (!response.ok) throw new Error('POI API failed')
+      if (!response.ok) throw new Error('POI API failed') // i18n-ignore
 
       const data = await response.json()
       setPois(data.elements?.slice(0, 6) || []) // Limit to 6 results

@@ -107,7 +107,7 @@ export function OnboardingProvider({ children }) {
 export function useOnboarding() {
   const context = useContext(OnboardingContext);
   if (!context) {
-    throw new Error('useOnboarding must be used within an OnboardingProvider');
+    throw new Error('useOnboarding must be used within an OnboardingProvider') // i18n-ignore: dev;
   }
   return context;
 }

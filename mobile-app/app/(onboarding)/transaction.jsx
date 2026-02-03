@@ -120,7 +120,7 @@ export default function OnboardingTransactionScreen() {
               value={amount}
               onChangeText={setAmount}
               keyboardType="decimal-pad"
-              placeholder="0.00"
+              placeholder="0.00" // i18n-ignore
               placeholderTextColor={theme.colors.textLight}
             />
           </View>

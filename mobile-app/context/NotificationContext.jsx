@@ -22,7 +22,7 @@ const NotificationContext = createContext(null);
 export function useNotifications() {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within NotificationProvider');
+    throw new Error('useNotifications must be used within NotificationProvider') // i18n-ignore: dev;
   }
   return context;
 }

@@ -32,6 +32,7 @@ import { publicStatsService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import Button from '../../components/Button';
+import LogoHero from '../../components/LogoHero';
 
 // Feature row: icon key, title key
 const FEATURE_KEYS = [
@@ -92,6 +93,9 @@ export default function LandingScreen() {
       >
         {/* Hero */}
         <View style={styles.hero}>
+          <View style={styles.heroLogoWrapper}>
+            <LogoHero variant="drawer" />
+          </View>
           <View style={[styles.badge, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.glassBorder }]}>
             <Shield size={14} color={theme.colors.primary} />
             <Text style={[styles.badgeText, { color: theme.colors.textSecondary }]}>
@@ -216,6 +220,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
+  },
+  /** Wrapper to center LogoHero at top of hero section */
+  heroLogoWrapper: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   badge: {
     flexDirection: 'row',

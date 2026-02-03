@@ -1,11 +1,12 @@
 /**
  * Shopping Lists Screen (React Native)
  * Full CRUD functionality for shopping list management.
- * 
+ *
  * Features:
  * - List shopping lists with item counts
  * - Pull-to-refresh
  * - Create new list via header Add button
+ * - Import list from text file (parse lines → create list + items)
  * - Edit list on tap
  * - Delete list with confirmation
  * - Expand to see/manage items
@@ -20,7 +21,11 @@ import {
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -34,8 +39,9 @@ import {
   CheckCircle,
   Circle,
   ShoppingCart,
+  FileText,
 } from 'lucide-react-native';
-import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
+import { notificationSuccess } from '../../utils/haptics';
 import { shoppingListService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
@@ -49,7 +55,37 @@ import {
   ScreenLoading,
   ScreenHeader,
   useToast,
+  Button,
 } from '../../components';
+
+/**
+ * Parses plain text into shopping list items (one per line).
+ * Supports optional quantity prefix: "3 Milk" or "3x Milk" → quantity 3, name "Milk".
+ */
+function parseTextToItems(text) {
+  if (!text || typeof text !== 'string') return [];
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const quantityPrefix = /^(\d+)\s*x?\s*(.+)$/i;
+  return lines.map((line) => {
+    const match = line.match(quantityPrefix);
+    if (match) {
+      const qty = Math.max(1, parseInt(match[1], 10));
+      const name = match[2].trim();
+      return { name: name || line, quantity: qty };
+    }
+    return { name: line, quantity: 1 };
+  });
+}
+
+/**
+ * Derives a list name from the file name (without extension).
+ */
+function listNameFromFileName(fileName) {
+  if (!fileName || typeof fileName !== 'string') return '';
+  const lastDot = fileName.lastIndexOf('.');
+  const base = lastDot > 0 ? fileName.slice(0, lastDot) : fileName;
+  return base.trim();
+}
 
 export default function ShoppingListsScreen() {
   const { t } = useTranslation();
@@ -68,6 +104,9 @@ export default function ShoppingListsScreen() {
   const [editingItem, setEditingItem] = useState(null);
   const [itemListId, setItemListId] = useState(null);
   const [deleteItemTarget, setDeleteItemTarget] = useState(null);
+  // Import from file: loading during pick/read/import; preview { listName, items } before confirm
+  const [importLoading, setImportLoading] = useState(false);
+  const [importPreview, setImportPreview] = useState(null);
 
   const rowRefs = useRef({});
 
@@ -257,6 +296,77 @@ export default function ShoppingListsScreen() {
     toggleItemMutation.mutate({ listId, itemId });
   };
 
+  // --- Import from file ---
+  const handleImportFromFile = useCallback(async () => {
+    try {
+      setImportLoading(true);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'text/*',
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) {
+        return;
+      }
+      const asset = result.assets[0];
+      let text;
+      try {
+        text = await FileSystem.readAsStringAsync(asset.uri);
+      } catch (readErr) {
+        showToast(t('shoppingLists.importFileReadError', 'Could not read file'), 'error');
+        return;
+      }
+      const items = parseTextToItems(text);
+      if (items.length === 0) {
+        showToast(t('shoppingLists.importNoItems', 'No items found in file'), 'warning');
+        return;
+      }
+      const suggestedName = listNameFromFileName(asset.name);
+      const listName = suggestedName || t('shoppingLists.importListNamePlaceholder', 'Imported list');
+      setImportPreview({ listName, items });
+    } catch (err) {
+      showToast(err?.message || t('shoppingLists.importError', 'Failed to import list'), 'error');
+    } finally {
+      setImportLoading(false);
+    }
+  }, [t, showToast]);
+
+  const handleImportConfirm = useCallback(async () => {
+    if (!importPreview || importPreview.items.length === 0) return;
+    const { listName, items } = importPreview;
+    const name = (listName || '').trim() || t('shoppingLists.importListNamePlaceholder', 'Imported list');
+    setImportLoading(true);
+    try {
+      const created = await shoppingListService.create({ name, category: '', notes: '' });
+      const listId = created?.id ?? created?.Id;
+      if (!listId) {
+        showToast(t('shoppingLists.importError', 'Failed to import list'), 'error');
+        return;
+      }
+      for (const it of items) {
+        await shoppingListService.addItem(listId, {
+          name: it.name,
+          quantity: it.quantity,
+          unit: 'pcs',
+          estimatedPrice: null,
+          category: '',
+          notes: '',
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
+      notificationSuccess();
+      showToast(t('shoppingLists.importSuccess', { count: items.length }, 'List created with {{count}} items'), 'success');
+      setImportPreview(null);
+    } catch (err) {
+      showToast(err?.message || t('shoppingLists.importError', 'Failed to import list'), 'error');
+    } finally {
+      setImportLoading(false);
+    }
+  }, [importPreview, queryClient, t, showToast]);
+
+  const closeImportPreview = useCallback(() => {
+    setImportPreview(null);
+  }, []);
+
   // Format price
   const formatPrice = (price) => {
     if (!price) return '';
@@ -442,15 +552,32 @@ export default function ShoppingListsScreen() {
       <ScreenHeader
         title={t('shoppingLists.title', 'Shopping Lists')}
         rightElement={
-          <TouchableOpacity
-            onPress={() => setIsFormOpen(true)}
-            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
-            activeOpacity={0.7}
-            accessibilityLabel={t('shoppingLists.addNew', 'Add new list')}
-            accessibilityRole="button"
-          >
-            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
-          </TouchableOpacity>
+          <View style={styles.headerActionsRow}>
+            <TouchableOpacity
+              onPress={handleImportFromFile}
+              disabled={importLoading}
+              style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+              activeOpacity={0.7}
+              accessibilityLabel={t('shoppingLists.importFromFile', 'Import from file')}
+              accessibilityRole="button"
+            >
+              {importLoading && !importPreview ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <FileText size={24} color={theme.colors.primary} strokeWidth={2.5} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setIsFormOpen(true)}
+              disabled={importLoading}
+              style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+              activeOpacity={0.7}
+              accessibilityLabel={t('shoppingLists.addNew', 'Add new list')}
+              accessibilityRole="button"
+            >
+              <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
         }
       />
       <FlatList
@@ -533,6 +660,59 @@ export default function ShoppingListsScreen() {
         variant="danger"
         loading={deleteItemMutation.isPending}
       />
+
+      {/* Import from file: preview modal (list name + item count, then confirm) */}
+      <Modal
+        isOpen={importPreview !== null}
+        onClose={closeImportPreview}
+        title={t('shoppingLists.importPreviewTitle', 'Import list')}
+      >
+        {importPreview && (
+          <View style={[styles.importPreviewContent, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.importPreviewLabel, { color: theme.colors.text }]}>
+              {t('shoppingLists.listName', 'List Name')}
+            </Text>
+            <TextInput
+              style={[
+                styles.importPreviewInput,
+                {
+                  backgroundColor: theme.colors.surfaceSecondary,
+                  borderColor: theme.colors.glassBorder,
+                  color: theme.colors.text,
+                },
+              ]}
+              placeholder={t('shoppingLists.importListNamePlaceholder', 'Imported list')}
+              placeholderTextColor={theme.colors.textLight}
+              value={importPreview.listName}
+              onChangeText={(text) =>
+                setImportPreview((prev) => (prev ? { ...prev, listName: text } : null))
+              }
+              editable={!importLoading}
+              maxLength={100}
+            />
+            <Text style={[styles.importPreviewMessage, { color: theme.colors.textSecondary }]}>
+              {t('shoppingLists.importPreviewMessage', { count: importPreview.items.length }, '{{count}} items will be added')}
+            </Text>
+            <View style={styles.importPreviewActions}>
+              <Button
+                title={t('common.cancel', 'Cancel')}
+                variant="secondary"
+                onPress={closeImportPreview}
+                disabled={importLoading}
+                style={styles.importPreviewBtn}
+              />
+              <Button
+                title={importLoading ? t('common.loading', 'Loading...') : t('common.confirm', 'Confirm')}
+                variant="primary"
+                onPress={handleImportConfirm}
+                loading={importLoading}
+                disabled={importLoading}
+                style={styles.importPreviewBtn}
+              />
+            </View>
+          </View>
+        )}
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -540,6 +720,11 @@ export default function ShoppingListsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  headerActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   headerAddBtn: {
     width: 44,
@@ -671,5 +856,33 @@ const styles = StyleSheet.create({
   empty: {
     textAlign: 'center',
     ...typography.body,
+  },
+  // Import preview modal
+  importPreviewContent: {
+    padding: spacing.md,
+  },
+  importPreviewLabel: {
+    ...typography.label,
+    marginBottom: spacing.xs,
+  },
+  importPreviewInput: {
+    borderWidth: 2,
+    borderRadius: borderRadius.md,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    fontSize: 16,
+    minHeight: 52,
+    marginBottom: spacing.md,
+  },
+  importPreviewMessage: {
+    ...typography.bodySmall,
+    marginBottom: spacing.lg,
+  },
+  importPreviewActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  importPreviewBtn: {
+    flex: 1,
   },
 });

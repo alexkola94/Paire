@@ -13,6 +13,7 @@
     "confirm": "Confirmar",
     "loading": "Cargando...",
     "noData": "Aún no hay datos",
+    "error": "Ha ocurrido un error",
     "back": "Atrás",
     "copied": "Copiado al portapapeles",
     "more": "más",
@@ -64,12 +65,57 @@
     "savingsMilestone": "¡Hito de ahorro!",
     "savingsMilestoneBody": "¡Has alcanzado {{percentage}}% de tu meta \"{{name}}\"!"
   },
+  "onboarding": {
+    "continue": "Continuar",
+    "skip": "Omitir por ahora",
+    "skipped": "omitido",
+    "currency": {
+      "title": "¡Bienvenido a Paire!",
+      "subtitle": "Elige tu moneda predeterminada para empezar."
+    },
+    "partner": {
+      "title": "Mejor juntos",
+      "subtitle": "Invita a tu compañero para compartir finanzas y controlar gastos juntos.",
+      "skipHint": "Puedes invitar a un compañero más tarde en Ajustes."
+    },
+    "budget": {
+      "title": "Configura tu primer presupuesto",
+      "subtitle": "Controla tus gastos por categoría. Siempre puedes añadir más después."
+    },
+    "transaction": {
+      "title": "Añade tu primer gasto",
+      "subtitle": "Empieza a controlar tus gastos ahora."
+    },
+    "complete": {
+      "title": "¡Todo listo!",
+      "subtitle": "¡Bienvenido a Paire! Tu camino financiero comienza ahora.",
+      "continue": "Ir al panel",
+      "currencySet": "Moneda predeterminada seleccionada",
+      "partnerInvited": "Compañero invitado",
+      "budgetCreated": "Primer presupuesto creado",
+      "transactionAdded": "Primer gasto añadido"
+    }
+  },
   "partnerSync": {
     "partnerAddedExpense": "{{name}} agregó: {{item}} - {{amount}}",
     "partnerAddedIncome": "{{name}} agregó ingreso: {{item}} - {{amount}}",
     "connected": "Conectado a la sincronización del compañero",
     "disconnected": "Sincronización del compañero desconectada",
     "reconnecting": "Reconectando a la sincronización del compañero..."
+  },
+  "partnership": {
+    "title": "Colaboración",
+    "subtitle": "Gestiona tu colaboración financiera",
+    "noPartnership": "Sin colaboración",
+    "noPartnershipDescription": "Crea una colaboración para compartir gastos, ingresos y datos con tu compañero.",
+    "invitePartner": "Invitar compañero",
+    "sendInvite": "Enviar invitación",
+    "inviteSent": "¡Invitación enviada!",
+    "partnerEmail": "Email del compañero",
+    "emailPlaceholder": "compañero@ejemplo.com",
+    "benefit1": "Comparte todos los datos financieros automáticamente",
+    "benefit2": "Comprueba quién añadió cada transacción",
+    "benefit3": "Consulta la comparativa en Análisis"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -292,6 +338,17 @@
     "confirmDeleteItem": "¿Estás seguro de que quieres eliminar este artículo?",
     "errorSaving": "Error al guardar la lista de compras",
     "errorSavingItem": "Error al guardar el artículo",
+    "importFromFile": "Importar desde archivo",
+    "importSuccess": "Lista creada con {{count}} artículo",
+    "importSuccess_plural": "Lista creada con {{count}} artículos",
+    "importError": "Error al importar la lista",
+    "importNoItems": "No se encontraron artículos en el archivo",
+    "importFileReadError": "No se pudo leer el archivo",
+    "importCancelled": "Importación cancelada",
+    "importPreviewTitle": "Importar lista",
+    "importPreviewMessage": "Se agregará {{count}} artículo",
+    "importPreviewMessage_plural": "Se agregarán {{count}} artículos",
+    "importListNamePlaceholder": "Lista importada",
     "categories": {
       "groceries": "Comestibles",
       "household": "Hogar",
@@ -668,6 +725,7 @@
       "send": "Enviar",
       "placeholder": "Pregunta sobre tu viaje...",
       "tryAsking": "Prueba a preguntar:",
+      "welcomeMessage": "¡Hola! Soy tu guía de viajes. Pregúntame lo que quieras sobre tu viaje.",
       "clearChat": "Borrar chat",
       "viewDetails": "Ver detalles",
       "thinking": "Pensando...",

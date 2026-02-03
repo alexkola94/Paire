@@ -43,7 +43,9 @@ export default function PartnershipScreen() {
             <Heart size={24} color={theme.colors.primary} />
             <View style={{ flex: 1, marginLeft: spacing.md }}>
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>{p.partnerEmail || p.partnerName}</Text>
-              <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>{p.status}</Text>
+              <Text style={[styles.cardSub, { color: theme.colors.textSecondary }]}>
+                {p.status ? t(`partnership.status.${String(p.status).toLowerCase()}`, p.status) : p.status}
+              </Text>
             </View>
           </View>
         )) : (

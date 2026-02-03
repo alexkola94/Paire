@@ -256,13 +256,13 @@ export function ExploreHubSheet({ isOpen, onClose }) {
         contentContainerStyle={styles.scrollContent}
       >
         <CategorySection
-          title="navigation.categories.lifestyle"
+          title="navigation.categories.lifestyle" // i18n-ignore: key passed to t() in CategorySection
           features={LIFESTYLE_FEATURES}
           onItemPress={handleItemPress}
           theme={theme}
         />
         <CategorySection
-          title="navigation.categories.account"
+          title="navigation.categories.account" // i18n-ignore: key passed to t() in CategorySection
           features={ACCOUNT_FEATURES}
           onItemPress={handleItemPress}
           theme={theme}

@@ -274,7 +274,7 @@ function Login() {
         await new Promise(resolve => setTimeout(resolve, 300))
         const retryToken = sessionManager.getToken()
         if (!retryToken) {
-          throw new Error('Failed to store authentication data')
+          throw new Error('Failed to store authentication data') // i18n-ignore
         }
       }
 

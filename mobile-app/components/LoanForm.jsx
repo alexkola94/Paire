@@ -252,8 +252,8 @@ export default function LoanForm({
         value={formData.totalAmount}
         onChange={(value) => handleChange('totalAmount', value)}
         label={`${t('loans.totalAmount', 'Total Amount')} *`}
-        placeholder="0.00"
-        disabled={loading}
+          placeholder="0.00" // i18n-ignore
+          disabled={loading}
         quickAmounts={[100, 500, 1000, 5000]}
       />
 
@@ -263,7 +263,7 @@ export default function LoanForm({
           value={formData.remainingAmount}
           onChange={(value) => handleChange('remainingAmount', value)}
           label={t('loans.remainingAmount', 'Remaining Amount')}
-          placeholder="0.00"
+          placeholder="0.00" // i18n-ignore: numeric
           disabled={loading}
           quickAmounts={[]}
         />
@@ -309,7 +309,7 @@ export default function LoanForm({
             style={[styles.input, dynamicStyles.input]}
             value={String(formData.interestRate)}
             onChangeText={(text) => handleChange('interestRate', text.replace(/[^0-9.]/g, ''))}
-            placeholder="0"
+            placeholder="0" // i18n-ignore
             placeholderTextColor={dynamicStyles.placeholder}
             editable={!loading}
             keyboardType="decimal-pad"

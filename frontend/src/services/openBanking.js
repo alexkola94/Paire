@@ -75,7 +75,7 @@ export const openBankingService = {
                 headers: getHeaders()
             })
 
-            if (!response.ok) throw new Error('Failed to fetch accounts')
+            if (!response.ok) throw new Error('Failed to fetch accounts') // i18n-ignore
 
             const data = await response.json()
             return data.accounts || []

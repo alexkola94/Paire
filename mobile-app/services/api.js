@@ -25,7 +25,7 @@ const handleSessionExpiration = () => {
 const getCurrentUser = () => {
   const token = getToken();
   const user = getStoredUser();
-  if (!token || !user) throw new Error('User not authenticated');
+  if (!token || !user) throw new Error('User not authenticated') // i18n-ignore: dev, message translated in UI;
   return user;
 };
 

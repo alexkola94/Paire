@@ -142,7 +142,7 @@ export default function ReceiptsScreen() {
         };
         const uploadRes = await storageService.uploadFile(file);
         const url = uploadRes?.url || uploadRes?.path;
-        if (!url) throw new Error('No URL returned');
+        if (!url) throw new Error('No URL returned') // i18n-ignore: dev;
         await transactionService.create({
           type: 'expense',
           amount: 0,

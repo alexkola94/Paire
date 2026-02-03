@@ -80,7 +80,7 @@ const apiRequest = async (url, options = {}) => {
   if (token && isTokenExpired(token)) {
     console.warn('Token expired, clearing session')
     handleSessionExpiration()
-    throw new Error('Session expired. Please log in again.')
+    throw new Error('Session expired. Please log in again.') // i18n-ignore
   }
 
   let backendUrl = getBackendUrl()

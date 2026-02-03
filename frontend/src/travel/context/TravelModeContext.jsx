@@ -574,7 +574,7 @@ export const TravelModeProvider = ({ children }) => {
 export const useTravelMode = () => {
   const context = useContext(TravelModeContext)
   if (!context) {
-    throw new Error('useTravelMode must be used within a TravelModeProvider')
+    throw new Error('useTravelMode must be used within a TravelModeProvider') // i18n-ignore
   }
   return context
 }

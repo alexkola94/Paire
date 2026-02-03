@@ -110,7 +110,7 @@ const BankStatementImport = ({ onImportSuccess }) => {
                 if (onImportSuccess) onImportSuccess() // Trigger parent refresh if needed
                 alert(t('import.revertSuccess'))
             } else {
-                throw new Error('Revert failed')
+                throw new Error('Revert failed') // i18n-ignore
             }
         } catch (error) {
             console.error('Error reverting import:', error)

@@ -33,7 +33,7 @@ export async function getCsrfToken() {
 
   const data = await response.json()
   cachedToken = data?.token ?? data?.requestToken ?? null
-  if (!cachedToken) throw new Error('CSRF token not in response')
+  if (!cachedToken) throw new Error('CSRF token not in response') // i18n-ignore
   return cachedToken
 }
 

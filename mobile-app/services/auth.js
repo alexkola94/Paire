@@ -162,7 +162,7 @@ const authApiRequest = async (url, options = {}) => {
 
   if (token && isTokenExpired(token)) {
     await handleSessionExpiration();
-    throw new Error('Session expired. Please log in again.');
+    throw new Error('Session expired. Please log in again.') // i18n-ignore: dev, message translated in UI;
   }
 
   const headers = {
@@ -241,7 +241,7 @@ export const authService = {
         user = { email: verifyResponse.email, id: verifyResponse.sub };
       }
     }
-    if (!token || !user) throw new Error('Invalid 2FA verify response');
+    if (!token || !user) throw new Error('Invalid 2FA verify response') // i18n-ignore: dev;
     // Don't notify session start – user already passed Face ID before 2FA step (or has no biometric), so skip the lock prompt
     await storeAuthData(token, refreshToken, user, rememberMe, false);
   },

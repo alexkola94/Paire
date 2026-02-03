@@ -47,7 +47,7 @@ export default function CurrencyCalculatorScreen() {
   const convertMutation = useMutation({
     mutationFn: () => {
       const num = parseFloat(String(amount).replace(',', '.'));
-      if (isNaN(num) || num <= 0) throw new Error('Invalid amount');
+      if (isNaN(num) || num <= 0) throw new Error('Invalid amount'); // i18n-ignore: dev/validation
       return currencyService.convert(fromCurrency, toCurrency, num);
     },
     onSuccess: (data) => {
@@ -118,7 +118,7 @@ export default function CurrencyCalculatorScreen() {
               style={[styles.amountInput, { backgroundColor: theme.colors.background, color: theme.colors.text, borderColor: theme.colors.border }]}
               value={amount}
               onChangeText={setAmount}
-              placeholder="0.00"
+              placeholder="0.00" // i18n-ignore
               placeholderTextColor={theme.colors.textLight}
               keyboardType="decimal-pad"
             />

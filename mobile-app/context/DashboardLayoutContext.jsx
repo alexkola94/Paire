@@ -16,7 +16,7 @@ const DashboardLayoutContext = createContext(null);
 export function useDashboardLayout() {
   const context = useContext(DashboardLayoutContext);
   if (!context) {
-    throw new Error('useDashboardLayout must be used within DashboardLayoutProvider');
+    throw new Error('useDashboardLayout must be used within DashboardLayoutProvider') // i18n-ignore: dev;
   }
   return context;
 }

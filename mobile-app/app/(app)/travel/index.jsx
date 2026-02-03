@@ -3,7 +3,7 @@
  * Trip list + Travel Chatbot + Travel Advisory.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,16 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  KeyboardAvoidingView,
+  Clipboard,
+  Share,
+  Alert,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { MessageCircle, Send, AlertTriangle, Search, Plus, MapPin, Home } from 'lucide-react-native';
+import { MessageCircle, Send, AlertTriangle, Search, Plus, MapPin, Home, Copy, Share2, StopCircle, RefreshCw } from 'lucide-react-native';
 import { travelChatbotService, travelAdvisoryService, travelService } from '../../../services/api';
 import { getStaticTravelSuggestions } from '../../../utils/travelChatbotSuggestions';
 import { useTheme } from '../../../context/ThemeContext';
@@ -26,6 +31,10 @@ import { spacing, borderRadius, typography, shadows } from '../../../constants/t
 import { Modal, useToast, ScreenHeader } from '../../../components';
 import { MultiCityTripWizard } from '../../../components/travel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Guide section height so messages scroll inside and input stays fixed (option B from plan)
+const { height: WINDOW_HEIGHT } = Dimensions.get('window');
+const CHAT_SECTION_MIN_HEIGHT = Math.min(420, WINDOW_HEIGHT - 200);
 
 export default function TravelIndexScreen() {
   const { t, i18n } = useTranslation();
@@ -69,7 +78,8 @@ export default function TravelIndexScreen() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  // Note: chatListRef removed - using View instead of FlatList for chat messages
+  const chatScrollRef = useRef(null);
+  const chatRequestCancelledRef = useRef(false);
 
   // Advisory state
   const [advisoryCountry, setAdvisoryCountry] = useState('');
@@ -110,17 +120,47 @@ export default function TravelIndexScreen() {
     setChatInput('');
     setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
     setChatLoading(true);
+    chatRequestCancelledRef.current = false;
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
       const res = await travelChatbotService.sendQuery(trimmed, history, lang);
+      if (chatRequestCancelledRef.current) return;
       const botContent = res?.response ?? res?.message ?? (typeof res === 'string' ? res : t('travel.chatbot.thinking'));
       setMessages((prev) => [...prev, { role: 'bot', content: botContent }]);
     } catch (err) {
+      if (chatRequestCancelledRef.current) return;
       setMessages((prev) => [...prev, { role: 'bot', content: err?.message || t('common.error') }]);
     } finally {
-      setChatLoading(false);
+      if (!chatRequestCancelledRef.current) setChatLoading(false);
     }
   }, [chatInput, chatLoading, messages, lang, t]);
+
+  const stopChatRequest = useCallback(() => {
+    chatRequestCancelledRef.current = true;
+    setChatLoading(false);
+  }, []);
+
+  const handleCopyMessage = useCallback((text) => {
+    Clipboard.setString(text);
+    showToast(t('common.copied', 'Copied to clipboard'), 'success');
+  }, [showToast, t]);
+
+  const handleShareMessage = useCallback(async (text) => {
+    try {
+      await Share.share({ message: text });
+    } catch (_) {}
+  }, []);
+
+  const clearGuideChat = useCallback(() => {
+    Alert.alert(
+      t('chatbot.clearHistoryTitle', 'Clear Chat'),
+      t('chatbot.clearHistoryMessage', 'Are you sure you want to clear all messages?'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.clear', 'Clear'), style: 'destructive', onPress: () => setMessages([]) },
+      ]
+    );
+  }, [t]);
 
   const fetchAdvisory = useCallback(async () => {
     const code = advisoryCountry.trim().toUpperCase();
@@ -264,25 +304,80 @@ export default function TravelIndexScreen() {
         )}
 
         {activeSection === 'chatbot' && (
-          <View style={[styles.section, { backgroundColor: theme.colors.surface }, shadows.sm]}>
-            {/* Use View with mapped messages instead of FlatList to avoid nesting VirtualizedList in ScrollView */}
-            <View style={styles.chatList}>
-              <View style={styles.chatListContent}>
+          <View style={[styles.chatbotSection, { backgroundColor: theme.colors.surface, height: CHAT_SECTION_MIN_HEIGHT }, shadows.sm]}>
+            {/* Clear chat action when Guide is active */}
+            <View style={styles.chatbotSectionHeader}>
+              <View style={styles.chatbotSectionHeaderSpacer} />
+              <TouchableOpacity
+                onPress={clearGuideChat}
+                style={styles.clearChatBtn}
+                accessibilityLabel={t('chatbot.clearHistory', 'Clear history')}
+              >
+                <RefreshCw size={18} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <KeyboardAvoidingView
+              style={styles.chatbotKeyboardWrap}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            >
+              <ScrollView
+                ref={chatScrollRef}
+                style={styles.chatList}
+                contentContainerStyle={styles.chatListContent}
+                onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
+                keyboardShouldPersistTaps="handled"
+              >
                 {messages.length === 0 ? (
-                  <Text style={[styles.emptyChat, { color: theme.colors.textSecondary }]}>
-                    {t('travel.chatbot.placeholder', 'Ask about your trip...')}
-                  </Text>
+                  <View style={styles.emptyContainer}>
+                    <MessageCircle size={48} color={theme.colors.textLight} />
+                    <Text style={[styles.emptyChat, { color: theme.colors.textSecondary }]}>
+                      {t('travel.chatbot.welcomeMessage', "Hi! I'm your travel guide. Ask me anything about your trip!")}
+                    </Text>
+                  </View>
                 ) : (
                   messages.map((item, i) => (
                     <View key={i} style={[styles.messageRow, item.role === 'user' ? styles.messageRowUser : styles.messageRowBot]}>
-                      <View style={[styles.bubble, { backgroundColor: item.role === 'user' ? theme.colors.primary + '20' : theme.colors.background }, !(item.role === 'user') && shadows.sm]}>
+                      {item.role === 'bot' && (
+                        <View style={[styles.avatarContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+                          <MessageCircle size={16} color={theme.colors.primary} />
+                        </View>
+                      )}
+                      <View
+                        style={[
+                          styles.bubble,
+                          {
+                            backgroundColor: item.role === 'user' ? theme.colors.primary + '20' : theme.colors.surface,
+                            borderColor: theme.colors.glassBorder,
+                          },
+                          item.role === 'bot' && shadows.sm,
+                        ]}
+                      >
                         <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>{item.content}</Text>
+                        {item.role === 'bot' && (
+                          <View style={styles.messageActions}>
+                            <TouchableOpacity
+                              style={[styles.messageActionBtn, { backgroundColor: theme.colors.surfaceSecondary }]}
+                              onPress={() => handleCopyMessage(item.content)}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Copy size={12} color={theme.colors.textSecondary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.messageActionBtn, { backgroundColor: theme.colors.surfaceSecondary }]}
+                              onPress={() => handleShareMessage(item.content)}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Share2 size={12} color={theme.colors.textSecondary} />
+                            </TouchableOpacity>
+                          </View>
+                        )}
                       </View>
                     </View>
                   ))
                 )}
-                {/* Suggestion chips */}
-                {suggestions.length > 0 && (
+                {/* Suggestions only when no messages (match main chatbot) */}
+                {messages.length === 0 && suggestions.length > 0 && (
                   <View style={styles.suggestions}>
                     <Text style={[styles.suggestionsLabel, { color: theme.colors.textSecondary }]}>
                       {t('travel.chatbot.tryAsking', 'Try asking:')}
@@ -293,35 +388,59 @@ export default function TravelIndexScreen() {
                           key={i}
                           style={[styles.chip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '40' }]}
                           onPress={() => sendChatMessage(s)}
+                          activeOpacity={0.7}
                         >
-                          <Text style={[styles.chipText, { color: theme.colors.primary }]} numberOfLines={1}>{s}</Text>
+                          <Text style={[styles.chipText, { color: theme.colors.primary }]} numberOfLines={2}>{s}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
                   </View>
                 )}
+              </ScrollView>
+              <View style={[styles.inputRow, { backgroundColor: theme.colors.background, borderTopColor: theme.colors.glassBorder }]}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      color: theme.colors.text,
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.glassBorder,
+                    },
+                  ]}
+                  placeholder={t('travel.chatbot.placeholder', 'Ask about your trip...')}
+                  placeholderTextColor={theme.colors.textLight}
+                  value={chatInput}
+                  onChangeText={setChatInput}
+                  onSubmitEditing={() => sendChatMessage(chatInput)}
+                  editable={!chatLoading}
+                  multiline
+                  maxLength={2000}
+                />
+                {chatLoading ? (
+                  <TouchableOpacity
+                    style={[styles.sendBtn, { backgroundColor: theme.colors.error }]}
+                    onPress={stopChatRequest}
+                    accessibilityLabel={t('chatbot.stop', 'Stop')}
+                  >
+                    <StopCircle size={20} color="#fff" />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[
+                      styles.sendBtn,
+                      {
+                        backgroundColor: chatInput.trim() ? theme.colors.primary : theme.colors.surfaceSecondary,
+                      },
+                    ]}
+                    onPress={() => sendChatMessage(chatInput)}
+                    disabled={!chatInput.trim()}
+                    accessibilityLabel={t('chatbot.send', 'Send')}
+                  >
+                    <Send size={20} color={chatInput.trim() ? '#fff' : theme.colors.textLight} />
+                  </TouchableOpacity>
+                )}
               </View>
-            </View>
-            <View style={[styles.inputRow, { backgroundColor: theme.colors.background, borderColor: theme.colors.glassBorder }]}>
-              <TextInput
-                style={[styles.input, { color: theme.colors.text, backgroundColor: theme.colors.surface }]}
-                placeholder={t('travel.chatbot.placeholder', 'Ask about your trip...')}
-                placeholderTextColor={theme.colors.textLight}
-                value={chatInput}
-                onChangeText={setChatInput}
-                onSubmitEditing={() => sendChatMessage(chatInput)}
-                editable={!chatLoading}
-                multiline
-                maxLength={2000}
-              />
-              <TouchableOpacity
-                style={[styles.sendBtn, { backgroundColor: theme.colors.primary }]}
-                onPress={() => sendChatMessage(chatInput)}
-                disabled={!chatInput.trim() || chatLoading}
-              >
-                {chatLoading ? <ActivityIndicator size="small" color="#fff" /> : <Send size={20} color="#fff" />}
-              </TouchableOpacity>
-            </View>
+            </KeyboardAvoidingView>
           </View>
         )}
 
@@ -508,21 +627,61 @@ const styles = StyleSheet.create({
   tripCard: { padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.sm },
   tripName: { ...typography.body, fontWeight: '600' },
   tripSub: { ...typography.bodySmall, marginTop: 2 },
-  chatList: { maxHeight: 280 },
+  chatbotSection: { borderRadius: borderRadius.lg, padding: spacing.md, overflow: 'hidden' },
+  chatbotSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: spacing.xs },
+  chatbotSectionHeaderSpacer: { flex: 1 },
+  clearChatBtn: { padding: spacing.xs },
+  chatbotKeyboardWrap: { flex: 1, minHeight: 320 },
+  chatList: { flex: 1 },
   chatListContent: { paddingBottom: spacing.md },
-  emptyChat: { ...typography.bodySmall, paddingVertical: spacing.lg, textAlign: 'center' },
-  messageRow: { marginBottom: spacing.sm },
-  messageRowUser: { alignItems: 'flex-end' },
-  messageRowBot: { alignItems: 'flex-start' },
-  bubble: { maxWidth: '85%', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: borderRadius.md },
-  bubbleText: { ...typography.bodySmall },
-  suggestions: { marginTop: spacing.sm },
-  suggestionsLabel: { ...typography.caption, marginBottom: spacing.xs },
-  suggestionChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: borderRadius.full, borderWidth: 1 },
-  chipText: { ...typography.caption },
-  inputRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: spacing.sm, marginTop: spacing.md, gap: spacing.sm },
-  input: { flex: 1, ...typography.body, paddingVertical: spacing.sm, minHeight: 44 },
+  emptyContainer: { alignItems: 'center', paddingVertical: spacing.xl },
+  emptyChat: { ...typography.body, textAlign: 'center', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  messageRow: { flexDirection: 'row', marginBottom: spacing.md, alignItems: 'flex-start' },
+  messageRowUser: { justifyContent: 'flex-end' },
+  messageRowBot: { justifyContent: 'flex-start' },
+  avatarContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  bubble: {
+    maxWidth: '80%',
+    flexShrink: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+  },
+  bubbleText: { ...typography.body },
+  messageActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.xs, marginTop: spacing.xs },
+  messageActionBtn: { padding: spacing.xs, borderRadius: borderRadius.sm },
+  suggestions: { marginTop: spacing.md },
+  suggestionsLabel: { ...typography.label, marginBottom: spacing.sm },
+  suggestionChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: borderRadius.md, borderWidth: 1 },
+  chipText: { ...typography.bodySmall },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    gap: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 120,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    ...typography.body,
+  },
   sendBtn: { width: 44, height: 44, borderRadius: borderRadius.md, alignItems: 'center', justifyContent: 'center' },
   primaryButton: { paddingVertical: spacing.md, borderRadius: borderRadius.md, alignItems: 'center', marginTop: spacing.md },
   primaryButtonText: { ...typography.label, color: '#fff' },

@@ -329,7 +329,7 @@ export const CalculatorProvider = ({ children }) => {
 export const useCalculator = () => {
     const context = useContext(CalculatorContext)
     if (context === undefined) {
-        throw new Error('useCalculator must be used within a CalculatorProvider')
+        throw new Error('useCalculator must be used within a CalculatorProvider') // i18n-ignore
     }
     return context
 }

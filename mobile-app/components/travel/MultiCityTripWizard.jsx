@@ -251,7 +251,7 @@ export default function MultiCityTripWizard({ trip = null, onClose, onSave }) {
       };
       const created = await travelService.createTrip(payload);
       const tripId = created?.id;
-      if (!tripId) throw new Error('Trip created but no ID returned');
+      if (!tripId) throw new Error('Trip created but no ID returned') // i18n-ignore: dev;
 
       for (let i = 0; i < cities.length; i++) {
         const city = cities[i];

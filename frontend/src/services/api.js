@@ -23,7 +23,7 @@ const getCurrentUser = () => {
   const user = getStoredUser()
 
   if (!token || !user) {
-    throw new Error('User not authenticated')
+    throw new Error('User not authenticated') // i18n-ignore
   }
 
   return user
@@ -53,7 +53,7 @@ const apiRequest = async (url, options = {}) => {
   if (token && isTokenExpired(token)) {
     console.warn('Token expired, clearing session')
     handleSessionExpiration()
-    throw new Error('Session expired. Please log in again.')
+    throw new Error('Session expired. Please log in again.') // i18n-ignore
   }
 
   // Get URL dynamically on each request to ensure it uses current window location
@@ -294,7 +294,7 @@ export const storageService = {
 
   async deleteFile() {
     // TODO: Implement file deletion
-    throw new Error('File deletion not implemented yet')
+    throw new Error('File deletion not implemented yet') // i18n-ignore
   },
 
   getPublicUrl() {

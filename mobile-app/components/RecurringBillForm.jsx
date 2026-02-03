@@ -228,7 +228,7 @@ export default function RecurringBillForm({
         value={formData.amount}
         onChange={(value) => handleChange('amount', value)}
         label={`${t('recurringBills.amount', 'Amount')} *`}
-        placeholder="0.00"
+        placeholder="0.00" // i18n-ignore
         disabled={loading}
         quickAmounts={[10, 20, 50, 100]}
       />
@@ -324,7 +324,7 @@ export default function RecurringBillForm({
           style={[styles.input, dynamicStyles.input]}
           value={String(formData.dueDay)}
           onChangeText={(text) => handleChange('dueDay', text.replace(/[^0-9]/g, '').slice(0, 2))}
-          placeholder="1"
+          placeholder="1" // i18n-ignore
           placeholderTextColor={dynamicStyles.placeholder}
           editable={!loading}
           keyboardType="number-pad"
@@ -347,7 +347,7 @@ export default function RecurringBillForm({
             style={[styles.input, dynamicStyles.input]}
             value={String(formData.reminderDays)}
             onChangeText={(text) => handleChange('reminderDays', text.replace(/[^0-9]/g, ''))}
-            placeholder="3"
+            placeholder="3" // i18n-ignore
             placeholderTextColor={dynamicStyles.placeholder}
             editable={!loading}
             keyboardType="number-pad"

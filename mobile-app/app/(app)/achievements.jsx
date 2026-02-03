@@ -225,8 +225,8 @@ export default function AchievementsScreen() {
         {filteredAchievements.length === 0 ? (
           <EmptyState
             icon={Award}
-            title={t('achievements.emptyTitle', 'No achievements yet')}
-            description={t('achievements.emptyDescription', 'Keep using the app to unlock achievements and earn points!')}
+            title={t('achievements.emptyTitle')}
+            description={t('achievements.emptyDescription')}
           />
         ) : (
           <FlatList

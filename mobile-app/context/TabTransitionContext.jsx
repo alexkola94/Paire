@@ -36,7 +36,7 @@ export function TabTransitionProvider({ children }) {
 export function useTabTransition() {
   const ctx = useContext(TabTransitionContext);
   if (!ctx) {
-    throw new Error('useTabTransition must be used within TabTransitionProvider');
+    throw new Error('useTabTransition must be used within TabTransitionProvider') // i18n-ignore: dev;
   }
   return ctx;
 }
