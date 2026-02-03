@@ -8,6 +8,7 @@
 export { default as BottomSheetMenu } from './BottomSheetMenu';
 export { default as QuickAddSheet } from './QuickAddSheet';
 export { default as TabBarWithFAB } from './TabBarWithFAB';
+export { default as ScreenHeader } from './ScreenHeader';
 
 // Feature hub sheets
 export {

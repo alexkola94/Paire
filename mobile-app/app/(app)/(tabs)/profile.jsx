@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Image, ActivityIndicator, Switch } from 'react-native';
 import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,15 +9,18 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   User, LogOut, Users, Bell, Trophy, Shield, Moon, Globe,
   ChevronRight, CreditCard, PiggyBank, Receipt, ShoppingCart, MapPin,
-  FileText, Pencil, Lock, MessageCircle, Camera, Menu,
+  FileText, Pencil, Lock, MessageCircle, Camera, Menu, Fingerprint, ScanFace,
 } from 'lucide-react-native';
 import { profileService } from '../../../services/api';
 import { authService } from '../../../services/auth';
 import { useTheme } from '../../../context/ThemeContext';
+import { useBiometric } from '../../../context/BiometricContext';
+import { useLogout } from '../../../context/LogoutContext';
 import { useTabTransition } from '../../../context/TabTransitionContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 import { Modal, Button, FormField, useToast } from '../../../components';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { useDrawerStatus } from '@react-navigation/drawer';
 import { useScrollToTop } from '../../../context/ScrollToTopContext';
 
 // Supported locales for language picker with flags
@@ -31,13 +34,40 @@ const LOCALES = [
   { code: 'fr', labelKey: 'settings.languages.fr', flag: '🇫🇷', nativeName: 'Français' },
 ];
 
-function MenuItem({ icon: Icon, label, onPress, theme, destructive }) {
+function MenuItem({ icon: Icon, label, onPress, theme, destructive, accessibilityLabel }) {
   return (
-    <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.colors.surface }]} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.menuItem, { backgroundColor: theme.colors.surface }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+    >
       <Icon size={20} color={destructive ? '#dc2626' : theme.colors.primary} />
       <Text style={[styles.menuLabel, { color: destructive ? '#dc2626' : theme.colors.text }]}>{label}</Text>
       <ChevronRight size={18} color={theme.colors.textLight} />
     </TouchableOpacity>
+  );
+}
+
+function SwitchMenuItem({ icon: Icon, label, value, onValueChange, theme, disabled, subtitle }) {
+  return (
+    <View style={[styles.menuItem, { backgroundColor: theme.colors.surface, opacity: disabled ? 0.5 : 1 }]}>
+      <Icon size={20} color={theme.colors.primary} />
+      <View style={styles.switchMenuTextContainer}>
+        <Text style={[styles.menuLabel, { color: theme.colors.text }]}>{label}</Text>
+        {subtitle && (
+          <Text style={[styles.switchMenuSubtitle, { color: theme.colors.textSecondary }]}>{subtitle}</Text>
+        )}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        trackColor={{ false: theme.colors.glassBorder, true: theme.colors.primary + '80' }}
+        thumbColor={value ? theme.colors.primary : theme.colors.textLight}
+      />
+    </View>
   );
 }
 
@@ -49,6 +79,8 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { isSupported: biometricSupported, isEnabled: biometricEnabled, biometricType, setEnabled: setBiometricEnabled } = useBiometric();
+  const { startLogout } = useLogout();
   const user = authService.getCurrentUser();
 
   const scrollViewRef = useRef(null);
@@ -192,6 +224,20 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleBiometricToggle = async (enabled) => {
+    const success = await setBiometricEnabled(enabled);
+    if (success) {
+      showToast(
+        enabled
+          ? t('biometric.enabled', 'Biometric unlock enabled')
+          : t('biometric.disabled', 'Biometric unlock disabled'),
+        'success'
+      );
+    } else if (enabled) {
+      showToast(t('biometric.authFailed', 'Authentication failed'), 'error');
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert(t('auth.logout'), t('auth.logoutConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -199,6 +245,7 @@ export default function ProfileScreen() {
         text: t('auth.logout'),
         style: 'destructive',
         onPress: async () => {
+          startLogout();
           await authService.signOut();
           router.replace('/(auth)/login');
         },
@@ -207,6 +254,8 @@ export default function ProfileScreen() {
   };
 
   const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
+  const drawerStatus = useDrawerStatus();
+  const isDrawerOpen = drawerStatus === 'open';
 
   return (
     <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
@@ -222,7 +271,12 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{t('navigation.profile')}</Text>
       </View>
-      <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={styles.scroll}
+        scrollEnabled={!isDrawerOpen}
+        bounces={!isDrawerOpen}
+      >
         {/* User Info (Paire: soft card, glass border; avatar with change-photo) */}
         <View style={[styles.profileCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.md]}>
           <TouchableOpacity
@@ -265,11 +319,27 @@ export default function ProfileScreen() {
         <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('profile.settings')}</Text>
         <View style={[styles.menuGroup, shadows.sm]}>
           <MenuItem icon={Pencil} label={t('profile.displayName', 'Display name')} onPress={openEditProfile} theme={theme} />
-          <MenuItem icon={Moon} label={isDark ? t('theme.lightMode') : t('theme.darkMode')} onPress={() => toggleTheme()} theme={theme} />
+          <MenuItem
+            icon={Moon}
+            label={isDark ? t('theme.lightMode') : t('theme.darkMode')}
+            onPress={() => toggleTheme()}
+            theme={theme}
+            accessibilityLabel={isDark ? t('theme.switchToLight') : t('theme.switchToDark')}
+          />
           <MenuItem icon={Globe} label={t('settings.language')} onPress={() => setLanguageModalOpen(true)} theme={theme} />
           <MenuItem icon={Lock} label={t('profile.changePassword')} onPress={() => setPasswordModalOpen(true)} theme={theme} />
           <MenuItem icon={Bell} label={t('pushNotifications.title', 'Push Notifications')} onPress={() => router.push('/(app)/notification-settings')} theme={theme} />
           <MenuItem icon={Shield} label={t('auth.twoFactorSetup')} onPress={() => router.push('/(auth)/setup-2fa')} theme={theme} />
+          {biometricSupported && (
+            <SwitchMenuItem
+              icon={biometricType?.includes('Face') ? ScanFace : Fingerprint}
+              label={t('biometric.title', 'Biometric Unlock')}
+              subtitle={biometricType || t('biometric.notAvailable', 'Not available')}
+              value={biometricEnabled}
+              onValueChange={handleBiometricToggle}
+              theme={theme}
+            />
+          )}
         </View>
 
         {/* Navigation */}
@@ -480,6 +550,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   menuLabel: { flex: 1, ...typography.body },
+  switchMenuTextContainer: { flex: 1 },
+  switchMenuSubtitle: { ...typography.caption, marginTop: 2 },
   languageList: { gap: spacing.sm },
   languageItem: {
     flexDirection: 'row',

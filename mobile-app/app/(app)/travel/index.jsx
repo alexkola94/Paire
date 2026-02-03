@@ -23,7 +23,7 @@ import { travelChatbotService, travelAdvisoryService, travelService } from '../.
 import { getStaticTravelSuggestions } from '../../../utils/travelChatbotSuggestions';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
-import { Modal, useToast } from '../../../components';
+import { Modal, useToast, ScreenHeader } from '../../../components';
 import { MultiCityTripWizard } from '../../../components/travel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -188,16 +188,13 @@ export default function TravelIndexScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <ScreenHeader title={t('travel.common.enterTravelMode', 'Travel Mode')} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('travel.common.enterTravelMode', 'Travel Mode')}
-        </Text>
-
         {/* Section toggles */}
         <View style={[styles.tabs, { backgroundColor: theme.colors.surface }, shadows.sm]}>
           <TouchableOpacity

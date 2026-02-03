@@ -3,7 +3,7 @@
  *
  * Floating pill tab bar with real glassmorphism (blur + translucent tint) and
  * an opaque rounded "sub-pill" behind the active tab (reference-style).
- * Center slot is an "Add" tab (opens Quick Add sheet); 4 nav tabs (Dashboard, Transactions, Analytics, Profile).
+ * Center slot is an "Add" tab (opens Quick Add sheet); 4 nav tabs (Dashboard, Transactions, Bills, Profile).
  * Follows the Paire "Harmonious Minimalist" design system.
  */
 

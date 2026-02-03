@@ -34,7 +34,7 @@ import { transactionService, storageService, recurringBillService } from '../../
 import { useTheme } from '../../context/ThemeContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { ConfirmationModal, EmptyState, ScreenLoading, useToast } from '../../components';
+import { ConfirmationModal, EmptyState, ScreenLoading, ScreenHeader, useToast } from '../../components';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -282,24 +282,23 @@ export default function ReceiptsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('receipts.title', 'Receipts')}
-        </Text>
-        <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: theme.colors.primary }]}
-          onPress={showAddReceiptOptions}
-          disabled={uploading}
-          accessibilityLabel={t('receipts.addReceipt', 'Add receipt')}
-        >
-          {uploading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Plus size={22} color="#fff" />
-          )}
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('receipts.title', 'Receipts')}
+        rightElement={
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: theme.colors.primary }]}
+            onPress={showAddReceiptOptions}
+            disabled={uploading}
+            accessibilityLabel={t('receipts.addReceipt', 'Add receipt')}
+          >
+            {uploading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Plus size={22} color="#fff" />
+            )}
+          </TouchableOpacity>
+        }
+      />
       <FlatList
         data={items}
         keyExtractor={(i) => i.uniqueId || String(i.id)}
@@ -384,18 +383,6 @@ export default function ReceiptsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  title: {
-    ...typography.h2,
     flex: 1,
   },
   addBtn: {

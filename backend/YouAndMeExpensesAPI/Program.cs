@@ -658,6 +658,8 @@ app.UseMiddleware<YouAndMeExpensesAPI.Middleware.SessionValidationMiddleware>();
 // Map Controllers
 app.MapControllers();
 app.MapHub<MonitoringHub>("/hubs/monitoring");
+// Partnership SignalR (commented out for now)
+// app.MapHub<PartnerHub>("/hubs/partner");
 
 // CSRF token endpoint: SPA calls this with credentials to get the request token and set the antiforgery cookie
 app.MapGet("/api/antiforgery/token", (IAntiforgery antiforgery, HttpContext context) =>

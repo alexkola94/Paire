@@ -8,7 +8,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import {
   Plus, MapPin, PiggyBank, CreditCard, Receipt, Repeat,
-  ShoppingCart, Bell, BarChart3, Calculator, Newspaper, Users,
+  ShoppingCart, Bell, Calculator, Newspaper, Users,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
@@ -24,7 +24,6 @@ const DEFAULT_ITEMS = [
   { icon: Repeat, labelKey: 'navigation.recurringBills', route: '/(app)/recurring-bills' },
   { icon: ShoppingCart, labelKey: 'navigation.shoppingLists', route: '/(app)/shopping-lists' },
   { icon: Bell, labelKey: 'navigation.reminders', route: '/(app)/reminders' },
-  { icon: BarChart3, labelKey: 'navigation.analytics', route: '/(app)/(tabs)/analytics' },
   { icon: Calculator, labelKey: 'navigation.currencyCalculator', route: '/(app)/currency-calculator' },
   { icon: Newspaper, labelKey: 'navigation.economicNews', route: '/(app)/economic-news' },
   { icon: Users, labelKey: 'navigation.partnership', route: '/(app)/partnership' },

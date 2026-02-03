@@ -27,6 +27,22 @@
     "email": "Por favor introduce un email válido",
     "words": "palabras"
   },
+  "biometric": {
+    "title": "Desbloqueo biométrico",
+    "appLocked": "Aplicación bloqueada",
+    "unlockPrompt": "Desbloquear Paire",
+    "unlockDescription": "Autentícate para acceder a tus datos financieros",
+    "unlock": "Desbloquear",
+    "unlockWith": "Desbloquear con {{type}}",
+    "usePasscode": "Usar código",
+    "enabled": "Desbloqueo biométrico activado",
+    "disabled": "Desbloqueo biométrico desactivado",
+    "authFailed": "Autenticación fallida",
+    "notAvailable": "No disponible",
+    "tryAgain": "Autenticación fallida. Inténtalo de nuevo.",
+    "usePasswordInstead": "Usar contraseña",
+    "enablePrompt": "Verifica tu identidad para activar el desbloqueo biométrico"
+  },
   "notifications": {
     "channels": {
       "default": "Predeterminado",
@@ -48,6 +64,13 @@
     "savingsMilestone": "¡Hito de ahorro!",
     "savingsMilestoneBody": "¡Has alcanzado {{percentage}}% de tu meta \"{{name}}\"!"
   },
+  "partnerSync": {
+    "partnerAddedExpense": "{{name}} agregó: {{item}} - {{amount}}",
+    "partnerAddedIncome": "{{name}} agregó ingreso: {{item}} - {{amount}}",
+    "connected": "Conectado a la sincronización del compañero",
+    "disconnected": "Sincronización del compañero desconectada",
+    "reconnecting": "Reconectando a la sincronización del compañero..."
+  },
   "auth": {
     "login": "Iniciar Sesión",
     "signup": "Registrarse",
@@ -62,7 +85,7 @@
     "alreadyHaveAccount": "¿Ya tienes una cuenta?",
     "welcomeBack": "¡Bienvenido de Nuevo!",
     "createAccount": "Crea tu Cuenta",
-    "emailPlaceholder": "tu@ejemplo.com",
+    "emailPlaceholder": "Introduce tu correo electrónico",
     "passwordPlaceholder": "••••••••",
     "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Las contraseñas no coinciden",
@@ -85,7 +108,13 @@
     "agreeToTerms": "Acepto los",
     "termsRequired": "Debes aceptar los Términos de Servicio para registrarte.",
     "twoFactorSetup": "Autenticación de dos factores",
+    "setupTwoFactor": "Configurar 2FA",
+    "manualEntryKey": "Clave de entrada manual",
+    "verify": "Verificar",
+    "setupFailed": "Error de configuración",
+    "verificationFailed": "La verificación falló. Por favor inténtalo de nuevo.",
     "logoutConfirm": "¿Estás seguro de que quieres cerrar sesión?",
+    "loggingOut": "Cerrando sesión...",
     "errors": {
       "networkError": "Comprueba tu conexión e inténtalo de nuevo.",
       "invalidCredentials": "Email o contraseña incorrectos. Por favor inténtalo de nuevo.",
@@ -97,6 +126,16 @@
       "invalidCsrfToken": "Token de seguridad inválido o faltante. Actualiza la página e inténtalo de nuevo.",
       "generic": "Algo salió mal. Por favor inténtalo de nuevo."
     }
+  },
+  "twoFactor": {
+    "alreadyEnabled": "La autenticación de dos factores ya está activada en tu cuenta.",
+    "disableButton": "Desactivar 2FA",
+    "disableConfirmTitle": "¿Desactivar autenticación de dos factores?",
+    "disableConfirmDescription": "Introduce tu contraseña para desactivar la autenticación de dos factores. Tu cuenta será menos segura.",
+    "enterPassword": "Introduce tu contraseña",
+    "disableConfirm": "Sí, desactivar 2FA",
+    "disableSuccess": "Autenticación de dos factores desactivada correctamente",
+    "disableError": "Error al desactivar 2FA"
   },
   "messages": {
     "operationFailed": "La operación falló. Por favor intenta de nuevo.",
@@ -113,10 +152,17 @@
       "fr": "Français"
     }
   },
+  "theme": {
+    "lightMode": "Modo claro",
+    "darkMode": "Modo oscuro",
+    "switchToLight": "Cambiar a modo claro",
+    "switchToDark": "Cambiar a modo oscuro"
+  },
   "navigation": {
     "add": "Añadir",
     "dashboard": "Panel",
     "analytics": "Análisis",
+    "bills": "Facturas",
     "expenses": "Gastos",
     "income": "Ingresos",
     "loans": "Préstamos",

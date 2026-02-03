@@ -9,9 +9,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Path } from 'react-native-svg';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../constants/theme';
 import { useTranslation } from 'react-i18next';
+
+// Gradient colors for signature underline (match logo gradient)
+const SIGNATURE_GRADIENT = ['#6c5ce7', '#4a3f8f'];
 
 const LOGO_SIZE_DRAWER = 48;
 const LOGO_SIZE_HEADER = 28;
@@ -65,6 +69,15 @@ export default function LogoHero({ variant = 'drawer' }) {
         <Text style={[styles.drawerTitle, { color: theme.colors.text }]} numberOfLines={1}>
           {t('app.name', 'Paire')}
         </Text>
+        <Text style={[styles.drawerTagline, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+          {t('app.tagline', 'Finances, aligned.')}
+        </Text>
+        <ExpoLinearGradient
+          colors={SIGNATURE_GRADIENT}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.signatureUnderline}
+        />
       </View>
     );
   }
@@ -90,6 +103,18 @@ const styles = StyleSheet.create({
   },
   drawerTitle: {
     ...typography.h2,
+  },
+  drawerTagline: {
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  signatureUnderline: {
+    width: '80%',
+    alignSelf: 'flex-start',
+    height: 3,
+    borderRadius: 2,
+    marginTop: spacing.sm,
   },
   headerRoot: {
     flexDirection: 'row',

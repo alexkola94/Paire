@@ -15,6 +15,7 @@ export {
   BottomSheetMenu,
   QuickAddSheet,
   TabBarWithFAB,
+  ScreenHeader,
   FinanceHubSheet,
   ToolsHubSheet,
   ExploreHubSheet,
@@ -28,6 +29,8 @@ export {
 
 // Animated Components
 export { default as AnimatedCard } from './AnimatedCard';
+export { default as AnimatedPressable } from './AnimatedPressable';
+export { default as AnimatedListItem } from './AnimatedListItem';
 export { default as SuccessAnimation } from './SuccessAnimation';
 export { default as SplashScreen } from './SplashScreen';
 
@@ -47,13 +50,14 @@ export { default as CalendarView } from './CalendarView';
 
 // Widget System
 export { default as WidgetSelector } from './WidgetSelector';
-export { 
-  SummaryWidget, 
-  BudgetWidget, 
-  UpcomingBillsWidget, 
-  RecentTransactionsWidget, 
-  SavingsWidget, 
+export {
+  SummaryWidget,
+  BudgetWidget,
+  UpcomingBillsWidget,
+  RecentTransactionsWidget,
+  SavingsWidget,
   QuickAccessWidget,
+  InsightsWidget,
   WIDGET_REGISTRY,
   getDefaultWidgetLayout,
   getWidgetById,

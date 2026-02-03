@@ -9,6 +9,9 @@ import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { authService } from '../../services/auth';
+import { transactionService, twoFactorService } from '../../services/api';
+import { useOnboarding } from '../../context/OnboardingContext';
+import { useBiometric } from '../../context/BiometricContext';
 import { colors, spacing, borderRadius, typography } from '../../constants/theme';
 
 const KEEP_LOGGED_IN_KEY = 'auth_keep_logged_in';
@@ -29,6 +32,8 @@ export default function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { mode } = useLocalSearchParams();
+  const { hasOnboarded, skipOnboarding } = useOnboarding();
+  const { isSupported: biometricSupported, isEnabled: biometricEnabled, authenticate: biometricAuthenticate } = useBiometric();
   const [isSignUp, setIsSignUp] = useState(mode === 'signup');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,9 +60,29 @@ export default function LoginScreen() {
     confirmPassword: '',
   });
 
-  // Use functional updates for setFormData so that when iOS Password AutoFill fills both
-  // email and password, the password handler doesn't overwrite state with stale formData
-  // (which would have email: '') and erase the autofilled email.
+  // Step: 'credentials' | '2fa'. When 2FA is required we show code entry (Face ID already done if biometric enabled).
+  const [step, setStep] = useState('credentials');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [pending2FA, setPending2FA] = useState(null); // { email, tempToken, rememberMe }
+
+  const navigateAfterLogin = async () => {
+    if (hasOnboarded) {
+      router.replace('/(app)/(tabs)/dashboard');
+    } else {
+      try {
+        const transactions = await transactionService.getAll({ pageSize: 1 });
+        const hasExistingData = transactions?.items?.length > 0 || (Array.isArray(transactions) && transactions.length > 0);
+        if (hasExistingData) {
+          await skipOnboarding();
+          router.replace('/(app)/(tabs)/dashboard');
+        } else {
+          router.replace('/(onboarding)');
+        }
+      } catch {
+        router.replace('/(app)/(tabs)/dashboard');
+      }
+    }
+  };
 
   const handleSubmit = async () => {
     if (!formData.email || !formData.password) {
@@ -83,12 +108,46 @@ export default function LoginScreen() {
         setSuccess(t('auth.registrationSuccess'));
         setTimeout(() => setIsSignUp(false), 2000);
       } else {
-        const response = await authService.signIn(formData.email, formData.password, keepLoggedIn);
-        if (response.requiresTwoFactor) {
-          // TODO: navigate to 2FA screen
-          setError('2FA required - not yet implemented in mobile');
+        const needBiometric = biometricSupported && biometricEnabled;
+        let response;
+        if (needBiometric) {
+          response = await authService.validateLogin(formData.email, formData.password, keepLoggedIn);
+          if (!response.requiresTwoFactor) {
+            const passed = await biometricAuthenticate({ reason: 'unlock' });
+            if (!passed) {
+              setError(t('biometric.authFailed', 'Authentication failed'));
+              return;
+            }
+            await authService.completeLogin(response.token, response.refreshToken, response.user, keepLoggedIn);
+            await navigateAfterLogin();
+            return;
+          }
+          // 2FA required: Face ID first, then show 2FA step
+          const passed = await biometricAuthenticate({ reason: 'unlock' });
+          if (!passed) {
+            setError(t('biometric.authFailed', 'Authentication failed'));
+            return;
+          }
+          setPending2FA({
+            email: formData.email,
+            tempToken: response.tempToken ?? response.temp_token ?? '',
+            rememberMe: keepLoggedIn,
+          });
+          setStep('2fa');
+          setTwoFactorCode('');
         } else {
-          router.replace('/(app)/(tabs)/dashboard');
+          response = await authService.signIn(formData.email, formData.password, keepLoggedIn);
+          if (response.requiresTwoFactor) {
+            setPending2FA({
+              email: formData.email,
+              tempToken: response.tempToken ?? response.temp_token ?? '',
+              rememberMe: keepLoggedIn,
+            });
+            setStep('2fa');
+            setTwoFactorCode('');
+          } else {
+            await navigateAfterLogin();
+          }
         }
       }
     } catch (err) {
@@ -96,6 +155,31 @@ export default function LoginScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerify2FA = async () => {
+    if (!pending2FA || twoFactorCode.length !== 6) {
+      setError(t('messages.fillRequired'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const data = await twoFactorService.verify(pending2FA.email, twoFactorCode, pending2FA.tempToken);
+      await authService.completeLoginAfter2FA(data, pending2FA.rememberMe);
+      await navigateAfterLogin();
+    } catch (err) {
+      setError(err?.message || t('auth.errors.twoFactorCompleteFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackFrom2FA = () => {
+    setStep('credentials');
+    setPending2FA(null);
+    setTwoFactorCode('');
+    setError('');
   };
 
   return (
@@ -119,6 +203,37 @@ export default function LoginScreen() {
 
           {/* Form Card */}
           <View style={styles.card}>
+            {step === '2fa' ? (
+              <>
+                <Text style={styles.formTitle}>{t('twoFactor.verificationTitle')}</Text>
+                {error ? <View style={styles.alertError}><Text style={styles.alertErrorText}>{error}</Text></View> : null}
+                <View style={styles.inputGroup}>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.input, styles.twoFactorInput]}
+                      placeholder={t('auth.twoFactorCodePlaceholder')}
+                      placeholderTextColor={colors.textLight}
+                      value={twoFactorCode}
+                      onChangeText={(text) => { setTwoFactorCode(text.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      textAlign="center"
+                    />
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+                  onPress={handleVerify2FA}
+                  disabled={loading || twoFactorCode.length !== 6}
+                >
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>{t('auth.verify')}</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleBackFrom2FA} style={styles.backFrom2FA}>
+                  <Text style={styles.backFrom2FAText}>{t('auth.backToLogin')}</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
             <Text style={styles.formTitle}>
               {isSignUp ? t('auth.createAccount') : t('auth.welcomeBack')}
             </Text>
@@ -251,6 +366,8 @@ export default function LoginScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+              </>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -359,6 +476,9 @@ const styles = StyleSheet.create({
   },
   footerText: { color: colors.textSecondary, fontSize: 14 },
   toggleText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+  twoFactorInput: { fontSize: 24, letterSpacing: 8 },
+  backFrom2FA: { marginTop: spacing.md, alignSelf: 'center' },
+  backFrom2FAText: { color: colors.primary, fontSize: 14 },
   legalRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

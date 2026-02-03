@@ -29,8 +29,9 @@ namespace YouAndMeExpensesAPI.Services
 
         /// <summary>
         /// Create a new transaction from a request DTO.
+        /// Returns the created transaction along with any budget alerts triggered.
         /// </summary>
-        Task<Transaction> CreateTransactionAsync(Guid userId, CreateTransactionRequest request);
+        Task<CreateTransactionResponseDto> CreateTransactionAsync(Guid userId, CreateTransactionRequest request);
 
         /// <summary>
         /// Update an existing transaction if it belongs to the user or their partner.

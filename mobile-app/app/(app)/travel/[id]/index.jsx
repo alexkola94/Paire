@@ -37,7 +37,7 @@ import {
 import { travelService, tripCityService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
-import { Modal, Button, ConfirmationModal, useToast } from '../../../../components';
+import { Modal, Button, ConfirmationModal, useToast, ScreenHeader } from '../../../../components';
 import { TripMicrography } from '../../../../components/travel';
 
 function formatDate(d) {
@@ -199,22 +199,19 @@ export default function TripDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel={t('common.close')}>
-          <ChevronLeft size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={1}>
-          {trip.name || trip.destination || t('travel.nav.home', 'Trip')}
-        </Text>
-        <TouchableOpacity
-          onPress={() => setMenuVisible((v) => !v)}
-          style={styles.menuBtn}
-          accessibilityLabel={t('travel.trip.editTrip', 'Edit Trip')}
-        >
-          <MoreVertical size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={trip.name || trip.destination || t('travel.nav.home', 'Trip')}
+        onBack={() => router.back()}
+        rightElement={
+          <TouchableOpacity
+            onPress={() => setMenuVisible((v) => !v)}
+            style={styles.menuBtn}
+            accessibilityLabel={t('travel.trip.editTrip', 'Edit Trip')}
+          >
+            <MoreVertical size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        }
+      />
       {/* Overflow menu: Edit / Delete */}
       {menuVisible && (
         <View style={[styles.menuOverlay, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}>
@@ -468,15 +465,6 @@ export default function TripDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  backBtn: { padding: spacing.xs, marginRight: spacing.sm },
-  title: { flex: 1, ...typography.h3 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
   loadingText: { ...typography.bodySmall, marginTop: spacing.md },
   errorText: { ...typography.body, textAlign: 'center' },

@@ -41,15 +41,16 @@ export const colors = {
   overlay: 'rgba(0,0,0,0.48)',
 
   // Dark mode overrides (deep purple-tinted)
+  // Improved contrast ratios for accessibility
   dark: {
     bgPrimary: '#0F071A',
     bgSecondary: '#1a1a2e',
     bgTertiary: '#16213e',
-    textPrimary: '#e2e8f0',
-    textSecondary: '#94a3b8',
-    textLight: '#64748b',
-    glassBg: 'rgba(26, 26, 46, 0.85)',
-    glassBorder: 'rgba(255, 255, 255, 0.08)',
+    textPrimary: '#f1f5f9', // Improved: brighter for better contrast
+    textSecondary: '#a1afc4', // Improved: lighter for better readability
+    textLight: '#7d8ca0', // Improved: more visible on dark backgrounds
+    glassBg: 'rgba(26, 26, 46, 0.88)',
+    glassBorder: 'rgba(255, 255, 255, 0.14)', // Improved: more visible borders
     overlay: 'rgba(0,0,0,0.7)',
     blurIntensity: 70,
   },

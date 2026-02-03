@@ -343,12 +343,44 @@ namespace YouAndMeExpensesAPI.Controllers
         [Authorize]
         [HttpPost("2fa/enable")]
         public async Task<IActionResult> Enable2FA([FromBody] object request)
-            => HandleProxyResponse(await _shieldAuthService.Enable2FAAsync(request, GetToken()));
+        {
+            var response = await _shieldAuthService.Enable2FAAsync(request, GetToken());
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var user = await _userManager.FindByIdAsync(userId);
+                    if (user != null)
+                    {
+                        user.TwoFactorEnabled = true;
+                        await _userManager.UpdateAsync(user);
+                    }
+                }
+            }
+            return HandleProxyResponse(response);
+        }
 
         [Authorize]
         [HttpPost("2fa/disable")]
         public async Task<IActionResult> Disable2FA([FromBody] object request)
-            => HandleProxyResponse(await _shieldAuthService.Disable2FAAsync(request, GetToken()));
+        {
+            var response = await _shieldAuthService.Disable2FAAsync(request, GetToken());
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var user = await _userManager.FindByIdAsync(userId);
+                    if (user != null)
+                    {
+                        user.TwoFactorEnabled = false;
+                        await _userManager.UpdateAsync(user);
+                    }
+                }
+            }
+            return HandleProxyResponse(response);
+        }
 
         [HttpPost("2fa/verify")]
         public async Task<IActionResult> Verify2FA([FromBody] object request)

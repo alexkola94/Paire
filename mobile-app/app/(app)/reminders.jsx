@@ -25,6 +25,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reminderService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows, colors } from '../../constants/theme';
+import { ScreenHeader } from '../../components';
 import FormSection from '../../components/FormSection';
 
 // Default settings shape (matches backend)
@@ -112,13 +113,10 @@ export default function RemindersScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>{t('reminders.title')}</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-              {t('reminders.subtitle')}
-            </Text>
-          </View>
+          <ScreenHeader title={t('reminders.title')} />
+          <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+            {t('reminders.subtitle')}
+          </Text>
 
           {/* Message toast */}
           {message.text ? (
@@ -352,9 +350,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   loadingText: { ...typography.body, marginTop: spacing.md },
-  header: { marginBottom: spacing.lg },
-  title: { ...typography.h2, marginBottom: spacing.xs },
-  subtitle: { ...typography.bodySmall },
+  subtitle: { ...typography.bodySmall, marginBottom: spacing.lg },
   message: {
     padding: spacing.md,
     borderRadius: borderRadius.sm,

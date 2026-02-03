@@ -7,6 +7,7 @@ import { Heart, Send } from 'lucide-react-native';
 import { partnershipService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
+import { ScreenHeader } from '../../components';
 
 export default function PartnershipScreen() {
   const { t } = useTranslation();
@@ -34,10 +35,9 @@ export default function PartnershipScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <ScreenHeader title={t('partnership.title')} />
       <ScrollView contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>{t('partnership.title')}</Text>
-
         {partnerships.length > 0 ? partnerships.map((p) => (
           <View key={p.id} style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.sm]}>
             <Heart size={24} color={theme.colors.primary} />
@@ -71,7 +71,6 @@ export default function PartnershipScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
-  title: { ...typography.h2, marginBottom: spacing.lg },
   card: { borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center' },
   cardTitle: { ...typography.body, fontWeight: '600' },
   cardSub: { ...typography.bodySmall, marginTop: 2 },

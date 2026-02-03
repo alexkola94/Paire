@@ -27,6 +27,22 @@
     "email": "Veuillez entrer un email valide",
     "words": "mots"
   },
+  "biometric": {
+    "title": "Déverrouillage biométrique",
+    "appLocked": "Application verrouillée",
+    "unlockPrompt": "Déverrouiller Paire",
+    "unlockDescription": "Authentifiez-vous pour accéder à vos données financières",
+    "unlock": "Déverrouiller",
+    "unlockWith": "Déverrouiller avec {{type}}",
+    "usePasscode": "Utiliser le code",
+    "enabled": "Déverrouillage biométrique activé",
+    "disabled": "Déverrouillage biométrique désactivé",
+    "authFailed": "Échec de l'authentification",
+    "notAvailable": "Non disponible",
+    "tryAgain": "Échec de l'authentification. Réessayez.",
+    "usePasswordInstead": "Utiliser le mot de passe",
+    "enablePrompt": "Vérifiez votre identité pour activer le déverrouillage biométrique"
+  },
   "notifications": {
     "channels": {
       "default": "Par défaut",
@@ -48,6 +64,13 @@
     "savingsMilestone": "Jalon d'épargne !",
     "savingsMilestoneBody": "Vous avez atteint {{percentage}}% de votre objectif « {{name}} » !"
   },
+  "partnerSync": {
+    "partnerAddedExpense": "{{name}} a ajouté: {{item}} - {{amount}}",
+    "partnerAddedIncome": "{{name}} a ajouté un revenu: {{item}} - {{amount}}",
+    "connected": "Connecté à la synchronisation partenaire",
+    "disconnected": "Synchronisation partenaire déconnectée",
+    "reconnecting": "Reconnexion à la synchronisation partenaire..."
+  },
   "auth": {
     "login": "Connexion",
     "signup": "S'inscrire",
@@ -62,7 +85,7 @@
     "alreadyHaveAccount": "Vous avez déjà un compte?",
     "welcomeBack": "Bon Retour!",
     "createAccount": "Créez votre compte",
-    "emailPlaceholder": "vous@exemple.com",
+    "emailPlaceholder": "Entrez votre adresse e-mail",
     "passwordPlaceholder": "••••••••",
     "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
@@ -85,7 +108,13 @@
     "agreeToTerms": "J'accepte les",
     "termsRequired": "Vous devez accepter les Conditions d'utilisation pour vous inscrire.",
     "twoFactorSetup": "Authentification à deux facteurs",
+    "setupTwoFactor": "Configurer 2FA",
+    "manualEntryKey": "Clé d'entrée manuelle",
+    "verify": "Vérifier",
+    "setupFailed": "Échec de la configuration",
+    "verificationFailed": "La vérification a échoué. Veuillez réessayer.",
     "logoutConfirm": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "loggingOut": "Déconnexion en cours...",
     "errors": {
       "networkError": "Vérifiez votre connexion et réessayez.",
       "invalidCredentials": "Email ou mot de passe incorrect. Veuillez réessayer.",
@@ -97,6 +126,16 @@
       "invalidCsrfToken": "Jeton de sécurité invalide ou manquant. Veuillez actualiser la page et réessayer.",
       "generic": "Une erreur s'est produite. Veuillez réessayer."
     }
+  },
+  "twoFactor": {
+    "alreadyEnabled": "L'authentification à deux facteurs est déjà activée pour votre compte.",
+    "disableButton": "Désactiver 2FA",
+    "disableConfirmTitle": "Désactiver l'authentification à deux facteurs ?",
+    "disableConfirmDescription": "Entrez votre mot de passe pour désactiver l'authentification à deux facteurs. Votre compte sera moins sécurisé.",
+    "enterPassword": "Entrez votre mot de passe",
+    "disableConfirm": "Oui, désactiver 2FA",
+    "disableSuccess": "Authentification à deux facteurs désactivée avec succès",
+    "disableError": "Échec de la désactivation de 2FA"
   },
   "messages": {
     "operationFailed": "L'opération a échoué. Veuillez réessayer.",
@@ -113,10 +152,17 @@
       "fr": "Français"
     }
   },
+  "theme": {
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "switchToLight": "Passer en mode clair",
+    "switchToDark": "Passer en mode sombre"
+  },
   "navigation": {
     "add": "Ajouter",
     "dashboard": "Tableau de Bord",
     "analytics": "Analyses",
+    "bills": "Factures",
     "expenses": "Dépenses",
     "income": "Revenus",
     "loans": "Prêts",

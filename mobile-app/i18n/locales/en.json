@@ -47,6 +47,22 @@
     "email": "Please enter a valid email",
     "words": "words"
   },
+  "biometric": {
+    "title": "Biometric Unlock",
+    "appLocked": "App Locked",
+    "unlockPrompt": "Unlock Paire",
+    "unlockDescription": "Authenticate to access your financial data",
+    "unlock": "Unlock",
+    "unlockWith": "Unlock with {{type}}",
+    "usePasscode": "Use Passcode",
+    "enabled": "Biometric unlock enabled",
+    "disabled": "Biometric unlock disabled",
+    "authFailed": "Authentication failed",
+    "notAvailable": "Not available",
+    "tryAgain": "Authentication failed. Try again.",
+    "usePasswordInstead": "Use password instead",
+    "enablePrompt": "Verify your identity to enable biometric unlock"
+  },
   "notifications": {
     "channels": {
       "default": "Default",
@@ -67,6 +83,36 @@
     "budgetAlertBody": "You've used {{percentage}}% of your {{category}} budget",
     "savingsMilestone": "Savings Milestone!",
     "savingsMilestoneBody": "You've reached {{percentage}}% of your \"{{name}}\" goal!"
+  },
+  "onboarding": {
+    "continue": "Continue",
+    "skip": "Skip for now",
+    "skipped": "skipped",
+    "currency": {
+      "title": "Welcome to Paire!",
+      "subtitle": "Select your default currency to get started."
+    },
+    "partner": {
+      "title": "Better Together",
+      "subtitle": "Invite your partner to share finances and track expenses together."
+    },
+    "budget": {
+      "title": "Set Your First Budget",
+      "subtitle": "Track your spending by category. You can always add more later."
+    },
+    "transaction": {
+      "title": "Add Your First Expense",
+      "subtitle": "Start tracking your spending right away."
+    },
+    "complete": {
+      "title": "You're All Set!",
+      "subtitle": "Welcome to Paire! Your financial journey begins now.",
+      "continue": "Go to Dashboard",
+      "currencySet": "Default currency selected",
+      "partnerInvited": "Partner invited",
+      "budgetCreated": "First budget created",
+      "transactionAdded": "First expense added"
+    }
   },
   "receipts": {
     "title": "Receipts",
@@ -104,7 +150,7 @@
     "alreadyHaveAccount": "Already have an account?",
     "welcomeBack": "Welcome Back!",
     "createAccount": "Create Your Account",
-    "emailPlaceholder": "you@example.com",
+    "emailPlaceholder": "Enter your email",
     "passwordPlaceholder": "••••••••",
     "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Passwords do not match",
@@ -127,7 +173,13 @@
     "agreeToTerms": "I agree to the",
     "termsRequired": "You must accept the Terms of Service to register.",
     "twoFactorSetup": "Two-Factor Authentication",
+    "setupTwoFactor": "Set Up 2FA",
+    "manualEntryKey": "Manual entry key",
+    "verify": "Verify",
+    "setupFailed": "Setup failed",
+    "verificationFailed": "Verification failed. Please try again.",
     "logoutConfirm": "Are you sure you want to log out?",
+    "loggingOut": "Logging out...",
     "errors": {
       "networkError": "Check your connection and try again.",
       "invalidCredentials": "Incorrect email or password. Please try again.",
@@ -144,6 +196,7 @@
     "add": "Add",
     "dashboard": "Dashboard",
     "analytics": "Analytics",
+    "bills": "Bills",
     "expenses": "Expenses",
     "income": "Income",
     "loans": "Loans",
@@ -686,6 +739,13 @@
     "inviteAccepted": "Partnership invitation accepted successfully!",
     "inviteAcceptError": "Failed to accept invitation"
   },
+  "partnerSync": {
+    "partnerAddedExpense": "{{name}} added: {{item}} - {{amount}}",
+    "partnerAddedIncome": "{{name}} added income: {{item}} - {{amount}}",
+    "connected": "Connected to partner sync",
+    "disconnected": "Partner sync disconnected",
+    "reconnecting": "Reconnecting to partner sync..."
+  },
   "budgets": {
     "title": "Budgets",
     "subtitle": "Manage and track your spending budgets",
@@ -726,7 +786,12 @@
     "spent": "Spent",
     "remaining": "Remaining",
     "overBudget": "Over Budget",
-    "onTrack": "On Track"
+    "onTrack": "On Track",
+    "alertExceeded": "{{category}} budget exceeded! {{percentage}}% used",
+    "alertWarning": "{{category}} budget at {{percentage}}%",
+    "emptyTitle": "No budgets yet",
+    "emptyDescription": "Set a budget to track your spending and stay on target.",
+    "addFirst": "Create Budget"
   },
   "messages": {
     "confirmDelete": "Are you sure you want to delete this item?",
@@ -1115,6 +1180,8 @@
     "daysLeft": "days left",
     "overdue": "Overdue",
     "goalAchieved": "Goal Achieved! 🎉",
+    "goalReached": "Goal Reached!",
+    "congratulations": "Congratulations! You reached your goal for \"{{name}}\"!",
     "totalGoals": "Total Goals",
     "totalSaved": "Total Saved",
     "overallProgress": "Overall Progress",
@@ -1287,6 +1354,7 @@
     "enableError": "Failed to enable 2FA",
     "disableError": "Failed to disable 2FA",
     "enableSuccess": "Two-factor authentication enabled successfully!",
+    "alreadyEnabled": "Two-factor authentication is already enabled for your account.",
     "disableSuccess": "Two-factor authentication disabled successfully",
     "regenerateError": "Failed to regenerate backup codes",
     "regenerateSuccess": "Backup codes regenerated successfully!",
@@ -1472,6 +1540,12 @@
     "reducedMotionDesc": "Minimize animations and transitions",
     "highContrast": "High Contrast",
     "highContrastDesc": "Increase contrast for borders and text"
+  },
+  "theme": {
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
   },
   "privacy": {
     "showNumbers": "Show amounts",
@@ -2625,7 +2699,20 @@
     "quickAccess": {
       "title": "Quick Access",
       "description": "Shortcuts to common actions"
+    },
+    "insights": {
+      "title": "Insights",
+      "description": "Smart financial insights and tips"
     }
+  },
+  "insights": {
+    "title": "Insights",
+    "spendingUp": "Spending is up {{pct}}% vs last month",
+    "spendingDown": "Spending is down {{pct}}% vs last month",
+    "categoryUp": "{{category}} spending up {{pct}}% this month",
+    "billsDue": "{{count}} bill(s) due this week totaling €{{amount}}",
+    "savingsProgress": "{{pct}}% progress toward your savings goals",
+    "hidden": "Insights hidden in privacy mode"
   },
   "pushNotifications": {
     "title": "Push Notifications",

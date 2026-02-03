@@ -47,6 +47,7 @@ import {
   ShoppingItemForm,
   EmptyState,
   ScreenLoading,
+  ScreenHeader,
   useToast,
 } from '../../components';
 
@@ -438,22 +439,20 @@ export default function ShoppingListsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: title + Add button */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('shoppingLists.title', 'Shopping Lists')}
-        </Text>
-        <TouchableOpacity
-          onPress={() => setIsFormOpen(true)}
-          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
-          activeOpacity={0.7}
-          accessibilityLabel={t('shoppingLists.addNew', 'Add new list')}
-          accessibilityRole="button"
-        >
-          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('shoppingLists.title', 'Shopping Lists')}
+        rightElement={
+          <TouchableOpacity
+            onPress={() => setIsFormOpen(true)}
+            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+            activeOpacity={0.7}
+            accessibilityLabel={t('shoppingLists.addNew', 'Add new list')}
+            accessibilityRole="button"
+          >
+            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+          </TouchableOpacity>
+        }
+      />
       <FlatList
         data={items}
         keyExtractor={(i) => String(i.id)}
@@ -540,18 +539,6 @@ export default function ShoppingListsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
     flex: 1,
   },
   headerAddBtn: {

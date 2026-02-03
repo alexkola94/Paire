@@ -1,40 +1,58 @@
 /**
  * BudgetWidget Component
- * 
+ *
  * Displays budget progress bars for active budgets.
+ * Shows warning badge when any budget is at 80% or above.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Wallet, ChevronRight } from 'lucide-react-native';
+import { Wallet, ChevronRight, AlertTriangle } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import AnimatedCard from '../AnimatedCard';
 
-export default function BudgetWidget({ 
-  budgets = [], 
+const WARNING_THRESHOLD = 80;
+
+export default function BudgetWidget({
+  budgets = [],
   onPress,
   maxDisplay = 3,
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  
+
   if (!budgets?.length) {
     return null;
   }
-  
+
   const displayBudgets = budgets.slice(0, maxDisplay);
-  
+
+  // Check if any budget is at or above warning threshold
+  const hasWarning = useMemo(() => {
+    return budgets.some((budget) => {
+      const limit = Number(budget.amount ?? budget.limit ?? 0) || 0;
+      const spent = Number(budget.spentAmount ?? budget.spent_amount ?? 0) || 0;
+      const pct = limit > 0 ? (spent / limit) * 100 : 0;
+      return pct >= WARNING_THRESHOLD;
+    });
+  }, [budgets]);
+
   return (
     <AnimatedCard onPress={onPress} style={{ padding: 0 }}>
       <View style={[styles.container, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}>
         <View style={styles.header}>
           <Wallet size={18} color={theme.colors.primary} />
           <Text style={[styles.title, { color: theme.colors.text }]}>{t('budgets.title', 'Budgets')}</Text>
+          {hasWarning && (
+            <View style={[styles.warningBadge, { backgroundColor: theme.colors.warning }]}>
+              <AlertTriangle size={12} color="#fff" />
+            </View>
+          )}
           <ChevronRight size={18} color={theme.colors.textLight} />
         </View>
-        
+
         {displayBudgets.map((budget) => {
           // API may return camelCase (amount, spentAmount) or snake_case (amount, spent_amount)
           const limit = Number(budget.amount ?? budget.limit ?? 0) || 0;
@@ -121,5 +139,12 @@ const styles = StyleSheet.create({
     ...typography.caption,
     textAlign: 'center',
     marginTop: spacing.xs,
+  },
+  warningBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

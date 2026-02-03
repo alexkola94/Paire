@@ -56,7 +56,7 @@ import {
 } from 'lucide-react-native';
 import { chatbotService, aiGatewayService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
-import { useToast } from '../../components';
+import { useToast, ScreenHeader } from '../../components';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 
 // Default suggestion translation keys when API fails or is empty
@@ -357,32 +357,19 @@ export default function ChatbotScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={styles.backBtn} 
-          accessibilityLabel={t('common.back')}
-        >
-          <ChevronLeft size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        
-        <View style={styles.headerTitleRow}>
-          <MessageCircle size={22} color={theme.colors.primary} />
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-            {t('chatbot.title', 'Financial Assistant')}
-          </Text>
-        </View>
-
-        <TouchableOpacity 
-          onPress={clearHistory}
-          style={styles.headerAction}
-          accessibilityLabel={t('chatbot.clearHistory', 'Clear history')}
-        >
-          <RefreshCw size={20} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('chatbot.title', 'Financial Assistant')}
+        onBack={() => router.back()}
+        rightElement={
+          <TouchableOpacity
+            onPress={clearHistory}
+            style={styles.headerAction}
+            accessibilityLabel={t('chatbot.clearHistory', 'Clear history')}
+          >
+            <RefreshCw size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        }
+      />
       {/* Mode toggles */}
       <View style={[styles.modeBar, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.glassBorder }]}>
         {/* AI Mode Toggle */}
@@ -537,23 +524,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
   
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  backBtn: { padding: spacing.xs },
-  headerTitleRow: { 
-    flex: 1, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: spacing.sm,
-    marginLeft: spacing.sm,
-  },
-  headerTitle: { ...typography.h3 },
   headerAction: { padding: spacing.xs },
 
   // Mode bar

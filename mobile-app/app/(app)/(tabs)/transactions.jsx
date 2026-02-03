@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, X, List, Clock, Calendar, Menu } from 'lucide-react-native';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { useDrawerStatus } from '@react-navigation/drawer';
 import { transactionService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 import { usePrivacyMode } from '../../../context/PrivacyModeContext';
@@ -129,6 +130,10 @@ export default function TransactionsScreen() {
         type: typeFilter || undefined,
       }),
   });
+
+  // Must be called unconditionally (before any early return) to satisfy Rules of Hooks
+  const drawerStatus = useDrawerStatus();
+  const isDrawerOpen = drawerStatus === 'open';
 
   const createMutation = useMutation({
     mutationFn: (payload) => transactionService.create(payload),
@@ -299,7 +304,7 @@ export default function TransactionsScreen() {
     </View>
   );
 
-  // Show loading on first fetch so we don't flash empty state (after all hooks to satisfy Rules of Hooks)
+  // Show loading on first fetch so we don't flash empty state (all hooks must be called above)
   if (isLoading && (data === undefined || data === null)) {
     return <ScreenLoading />;
   }
@@ -429,6 +434,8 @@ export default function TransactionsScreen() {
               tintColor={theme.colors.primary}
             />
           }
+          scrollEnabled={!isDrawerOpen}
+          bounces={!isDrawerOpen}
         >
           <CalendarView
             transactions={items}
@@ -481,6 +488,8 @@ export default function TransactionsScreen() {
               tintColor={theme.colors.primary}
             />
           }
+          scrollEnabled={!isDrawerOpen}
+          bounces={!isDrawerOpen}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={[styles.empty, { color: theme.colors.textLight }]}>
@@ -531,6 +540,8 @@ export default function TransactionsScreen() {
               tintColor={theme.colors.primary}
             />
           }
+          scrollEnabled={!isDrawerOpen}
+          bounces={!isDrawerOpen}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={[styles.empty, { color: theme.colors.textLight }]}>

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
+using YouAndMeExpensesAPI.DTOs;
 using YouAndMeExpensesAPI.Models;
 
 namespace YouAndMeExpensesAPI.Services
@@ -9,14 +10,20 @@ namespace YouAndMeExpensesAPI.Services
         private readonly AppDbContext _dbContext;
         private readonly ILogger<BudgetService> _logger;
 
+        // Threshold percentages for alerts
+        private const int WarningThreshold = 80;
+        private const int ExceededThreshold = 100;
+
         public BudgetService(AppDbContext dbContext, ILogger<BudgetService> logger)
         {
             _dbContext = dbContext;
             _logger = logger;
         }
 
-        public async Task UpdateSpentAmountAsync(string userId, string category, decimal amount, DateTime transactionDate)
+        public async Task<List<BudgetAlertDto>> UpdateSpentAmountAsync(string userId, string category, decimal amount, DateTime transactionDate)
         {
+            var alerts = new List<BudgetAlertDto>();
+
             try
             {
                 // Ensure transaction date is UTC
@@ -98,9 +105,53 @@ namespace YouAndMeExpensesAPI.Services
 
                     if (isWithinPeriod)
                     {
+                        // Track previous percentage to detect threshold crossings
+                        var previousPercentage = budget.Amount > 0
+                            ? (int)Math.Round((budget.SpentAmount / budget.Amount) * 100)
+                            : 0;
+
                         budget.SpentAmount += amount;
                         budget.UpdatedAt = DateTime.UtcNow;
-                        _logger.LogInformation($"Updated budget {budget.Id} ({budget.Category}): Added {amount}. New Spent: {budget.SpentAmount}");
+
+                        // Calculate new percentage
+                        var newPercentage = budget.Amount > 0
+                            ? (int)Math.Round((budget.SpentAmount / budget.Amount) * 100)
+                            : 0;
+
+                        _logger.LogInformation($"Updated budget {budget.Id} ({budget.Category}): Added {amount}. New Spent: {budget.SpentAmount} ({newPercentage}%)");
+
+                        // Check if we crossed a threshold (only alert on increases, not decreases)
+                        if (amount > 0)
+                        {
+                            // Check if we crossed the exceeded threshold (100%)
+                            if (previousPercentage < ExceededThreshold && newPercentage >= ExceededThreshold)
+                            {
+                                alerts.Add(new BudgetAlertDto
+                                {
+                                    BudgetId = budget.Id,
+                                    Category = budget.Category,
+                                    BudgetAmount = budget.Amount,
+                                    SpentAmount = budget.SpentAmount,
+                                    PercentageUsed = newPercentage,
+                                    AlertType = "exceeded"
+                                });
+                                _logger.LogWarning($"Budget {budget.Id} ({budget.Category}) EXCEEDED: {newPercentage}%");
+                            }
+                            // Check if we crossed the warning threshold (80%)
+                            else if (previousPercentage < WarningThreshold && newPercentage >= WarningThreshold)
+                            {
+                                alerts.Add(new BudgetAlertDto
+                                {
+                                    BudgetId = budget.Id,
+                                    Category = budget.Category,
+                                    BudgetAmount = budget.Amount,
+                                    SpentAmount = budget.SpentAmount,
+                                    PercentageUsed = newPercentage,
+                                    AlertType = "warning"
+                                });
+                                _logger.LogWarning($"Budget {budget.Id} ({budget.Category}) WARNING: {newPercentage}%");
+                            }
+                        }
                     }
                 }
 
@@ -108,11 +159,14 @@ namespace YouAndMeExpensesAPI.Services
                 {
                     await _dbContext.SaveChangesAsync();
                 }
+
+                return alerts;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating budget spent amount for User {UserId}, Category {Category}", userId, category);
                 // We don't throw here to avoid failing the transaction creation if budget update fails
+                return alerts;
             }
         }
 

@@ -23,7 +23,7 @@ import { ArrowRight, RefreshCw, Info, TrendingUp } from 'lucide-react-native';
 import { currencyService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { Dropdown, Button } from '../../components';
+import { Dropdown, Button, ScreenHeader } from '../../components';
 
 export default function CurrencyCalculatorScreen() {
   const { t } = useTranslation();
@@ -99,6 +99,7 @@ export default function CurrencyCalculatorScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <ScreenHeader title={t('currencyCalculator.title')} />
       <KeyboardAvoidingView
         style={styles.keyboard}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -109,7 +110,6 @@ export default function CurrencyCalculatorScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.title, { color: theme.colors.text }]}>{t('currencyCalculator.title')}</Text>
           <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{t('currencyCalculator.subtitle')}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.md]}>

@@ -20,6 +20,7 @@ import { ChevronLeft, Activity, Database, Users } from 'lucide-react-native';
 import { adminService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../../../constants/theme';
+import { ScreenHeader } from '../../../components';
 
 export default function AdminMonitoringScreen() {
   const { t } = useTranslation();
@@ -56,13 +57,7 @@ export default function AdminMonitoringScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>{t('admin.monitoring', 'Monitoring')}</Text>
-      </View>
-
+      <ScreenHeader title={t('admin.monitoring', 'Monitoring')} onBack={() => router.back()} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={
@@ -99,15 +94,6 @@ export default function AdminMonitoringScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  backBtn: { padding: spacing.xs, marginRight: spacing.sm },
-  title: { flex: 1, ...typography.h3 },
   scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   card: {
     padding: spacing.md,
