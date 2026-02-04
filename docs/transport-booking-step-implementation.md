@@ -91,12 +91,53 @@ Keys added: `title`, `description`, `multiCityDescription`, `selectType`, `fligh
 
 | Type | Provider | URL Pattern |
 |------|----------|-------------|
-| Flight | Skyscanner | `skyscanner.com/transport/flights/{origin}/{dest}/{YYMMDD}/` (city slugs; IATA/entity lookup may improve pre-fill for some cities) |
-| Flight | Kiwi.com | `kiwi.com/en/search/tiles/{origin}/{dest}/{YYYY-MM-DD}/` |
+| Flight | Skyscanner | `skyscanner.com/transport/flights/{origin}/{dest}/{YYMMDD}/{retYYMMDD}/` — origin/dest use IATA-style codes from a map; when a city has no code we use `anywhere` so the link never 404s and the user can refine the search. |
+| Flight | Kiwi.com | `kiwi.com/en/search/results/{origin}/{dest}/{YYYY-MM-DD}/no-return/` — path uses **city-country** format (e.g. `athens-greece`, `naxos-greece`) for pre-fill; unmapped cities use slug only (link opens, may not pre-fill). |
 | Bus | FlixBus | `shop.flixbus.com/search?departureCity=...&arrivalCity=...&rideDate={DD.MM.YYYY}` (city names; some regions may require city ID for full pre-fill) |
 | Bus | Omio | `omio.com/search/{origin}/{dest}/{YYYY-MM-DD}/` |
-| Ferry | Ferryhopper | Route pre-fill: `ferryhopper.com/en/ferry-routes/direct/{origin}-{dest}?date={YYYY-MM-DD}`. When both origin and destination match a known port code and a date is set: `ferryhopper.com/en/booking/results?itinerary=ORIGIN_CODE,DEST_CODE&dates=YYYYMMDD` for route + date pre-fill. |
-| Ferry | Direct Ferries | `directferries.com/routes/{origin}_{dest}.htm` |
+| Ferry | Ferryhopper | When both origin and destination match a known port code: `ferryhopper.com/en/booking/results?itinerary=...&dates=...&pax=1`. When a city has no port code we link to the Ferryhopper homepage so the link never 404s. |
+| Ferry | Direct Ferries | We link to `directferries.com/` (homepage) so the user can search; `/routes/slug` URLs often 404 for our slugs. |
+
+### Cities without airport or port
+
+- **Skyscanner:** If we have no IATA-style code for origin or destination, we use `anywhere` for that segment so the URL is always valid and the user gets a search page they can edit.
+- **Kiwi:** Unmapped cities use slug-only in the path; the link still opens but may not pre-fill. Mapped cities use `city-country` for full pre-fill.
+- **Ferryhopper / Direct Ferries:** When we cannot build a valid route/booking URL (e.g. no port codes), we link to the provider homepage so links never 404.
+
+---
+
+## Debugging transport links
+
+When links don’t pre-fill or open the wrong page, use the built-in logs to see what’s being generated and why.
+
+### Enable logging
+
+- **Frontend:** `frontend/src/travel/utils/transportLinks.js` — set `TRANSPORT_LINKS_DEBUG = true` (set to `false` when done).
+- **Mobile:** `mobile-app/utils/transportLinks.js` — set `TRANSPORT_LINKS_DEBUG = true`. Call-site logs in `TransportLegCard.jsx` run only in `__DEV__`.
+
+### What appears in the console
+
+1. **`[transportLinks] generateTransportLink`** — Raw input: `type`, `origin`, `destination`, `startDate`, `endDate`. Confirms what the UI passed in.
+2. **`[transportLinks] normalized`** — After slugify and date normalization: `originSlug`, `destSlug`, `isoDate`, `isoEndDate`. If dates are empty here, the step isn’t passing dates (e.g. trip start/end or leg dates).
+3. **Per-type resolved values:**
+   - **Flight:** `flight resolved` (Skyscanner: `originKey`, `destKey`, `skyscannerOrigin`, `skyscannerDest`, `outYYMMDD`, `retYYMMDD`); `flight kiwi` (`kiwiOriginPart`, `kiwiDestPart`, `kiwiDate`). If you see `anywhere` or slug-only, that segment isn’t in our maps.
+   - **Ferry:** `ferry resolved` — `originCode` / `destCode` or `(no code – homepage fallback)`, `hasPortCodes`, `startYYYYMMDD`, `endYYYYMMDD`. If either code is missing, we intentionally send the user to the Ferryhopper homepage.
+4. **Final URLs:** Each provider logs its final `url`. This is the exact URL that opens in the new tab or in the device browser.
+
+### Call-site logs
+
+- **Frontend:** `TransportBookingStep.jsx` logs `[TransportBookingStep] single-destination` / `multi-city leg` with the same data passed to `generateTransportLink`, and `[TransportBookingStep] opening` when a CTA is clicked (provider + url).
+- **Mobile:** `TransportLegCard.jsx` logs `[TransportLegCard] leg data passed to generateTransportLink`, `generated links`, and `[TransportLegCard] opening URL` on tap.
+
+### How to use this
+
+1. Reproduce the issue (e.g. select Flight, click Skyscanner).
+2. In the console, find the latest `[transportLinks]` sequence for that type. Check:
+   - Are `origin` / `destination` / dates what you expect?
+   - For flights: are `skyscannerOrigin` / `skyscannerDest` real codes or `anywhere`? Are Kiwi parts `city-country` or slug-only?
+   - For ferry: are both `originCode` and `destCode` set, or do you see “no code – homepage fallback”?
+3. Copy the **exact URL** from the log and open it in a desktop browser. If it 404s or redirects there too, the problem is the URL format or provider changes; if it works in the browser but not from the app, the issue is how the link is opened (e.g. target, app intent).
+4. If the URL format is wrong: provider sites change over time. Look up the current deep-link or search URL format for that provider and then update the pattern and/or code maps in `transportLinks.js` (and the doc table above).
 
 ---
 

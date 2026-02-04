@@ -543,14 +543,14 @@ const CitySelectionMap = memo(({
         </AnimatePresence>
       </div>
 
-      {/* Map uses Streets style for consistent native colors regardless of app dark/light theme */}
+      {/* Map uses full-color Streets so the wizard has native map colors (not muted light-v11) */}
       <Map
         ref={mapRef}
         {...viewState}
         onMove={handleMove}
         onClick={handleMapClick}
         mapboxAccessToken={MAPBOX_TOKEN}
-        mapStyle={MAP_STYLES.streets}
+        mapStyle={MAP_STYLES.streetsNative}
         style={{ width: '100%', height: '100%' }}
         minZoom={DISCOVERY_MAP_CONFIG.minZoom}
         maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}

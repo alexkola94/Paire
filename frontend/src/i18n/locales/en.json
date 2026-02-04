@@ -1280,7 +1280,13 @@
       "noBookingLink": "No booking link for this transport mode",
       "legFrom": "Leg",
       "outbound": "Outbound",
-      "return": "Return"
+      "return": "Return",
+      "searchPrices": "Search prices",
+      "book": "Book",
+      "noResults": "No results. Try different dates or open in new tab.",
+      "searchUnavailable": "Search unavailable; open in new tab instead.",
+      "searching": "Searching...",
+      "errorOriginDest": "Could not resolve origin or destination for Skyscanner."
     },
     "distance": {
       "from": "from",

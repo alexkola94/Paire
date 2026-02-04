@@ -94,8 +94,8 @@ const TravelBackgroundMap = ({ trip, availableCities = [] }) => {
     // Only render map if token exists
     if (!MAPBOX_TOKEN || !mounted) return null
 
-    // Theme-based map style: dark = night style; light = native Mapbox Streets (full color)
-    const mapStyle = theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.streets
+    // Theme-based map style: dark = night style; light = full-color Streets (streetsNative for native look)
+    const mapStyle = theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.streetsNative
 
     const mapContent = (
         <div

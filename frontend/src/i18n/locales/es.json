@@ -442,7 +442,13 @@
       "noBookingLink": "No hay enlace de reserva para este modo de transporte",
       "legFrom": "Tramo",
       "outbound": "Ida",
-      "return": "Vuelta"
+      "return": "Vuelta",
+      "searchPrices": "Buscar precios",
+      "book": "Reservar",
+      "noResults": "Sin resultados. Prueba otras fechas o abre en nueva pestaña.",
+      "searchUnavailable": "Búsqueda no disponible; abre en nueva pestaña.",
+      "searching": "Buscando...",
+      "errorOriginDest": "No se pudo resolver origen o destino para Skyscanner."
     },
     "chatbot": {
       "title": "Guía de Viaje",

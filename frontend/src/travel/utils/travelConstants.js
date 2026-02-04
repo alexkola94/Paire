@@ -348,16 +348,19 @@ export const DISCOVERY_POI_CATEGORIES = [
 ]
 
 // Mapbox map style options
-// streets-v12 = default Mapbox Streets (native full color, theme-independent)
-// Use MAP_STYLES.streets when the map should look the same in dark/light app theme
+// Use styles that do NOT include the deprecated mapbox-incidents-v1 layer (avoids 404s).
+// streets-v12 / navigation-guidance-* reference incidents and return 404 for those tiles.
 export const MAP_STYLES = {
   muted: 'mapbox://styles/mapbox/dark-v11',
   detailed: 'mapbox://styles/mapbox/light-v11',
-  /** Native Mapbox Streets – full-color style; use for maps that ignore app theme */
-  streets: 'mapbox://styles/mapbox/streets-v12',
+  /** Light streets-style without deprecated incidents layer (use for background / global maps) */
+  streets: 'mapbox://styles/mapbox/light-v11',
+  /** Full-color Mapbox Streets for wizards/modals; may log 404s for deprecated incidents tiles but map works and looks native */
+  streetsNative: 'mapbox://styles/mapbox/streets-v12',
   satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
   outdoors: 'mapbox://styles/mapbox/outdoors-v12',
-  midnight: 'mapbox://styles/mapbox/navigation-guidance-night-v4',
+  /** Dark style without deprecated incidents layer (navigation-guidance-night-v4 causes 404s) */
+  midnight: 'mapbox://styles/mapbox/dark-v11',
   twilight: 'mapbox://styles/mapbox/dark-v11'
 }
 

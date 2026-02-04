@@ -442,7 +442,13 @@
       "noBookingLink": "Pas de lien de réservation pour ce mode de transport",
       "legFrom": "Étape",
       "outbound": "Aller",
-      "return": "Retour"
+      "return": "Retour",
+      "searchPrices": "Rechercher les prix",
+      "book": "Réserver",
+      "noResults": "Aucun résultat. Essayez d'autres dates ou ouvrez dans un nouvel onglet.",
+      "searchUnavailable": "Recherche indisponible ; ouvrez dans un nouvel onglet.",
+      "searching": "Recherche...",
+      "errorOriginDest": "Impossible d'identifier l'origine ou la destination pour Skyscanner."
     },
     "chatbot": {
       "title": "Guide Voyage",
