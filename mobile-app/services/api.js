@@ -757,6 +757,16 @@ export const travelAdvisoryService = {
 };
 
 // ========================================
+// Transport Booking (Kiwi, Skyscanner, TripGo via backend)
+// ========================================
+
+export const transportBookingService = {
+  async getProviders() { return request('get', '/api/transport/providers'); },
+  async searchFlights(body) { return request('post', '/api/transport/search-flights', body); },
+  async searchRoutes(body) { return request('post', '/api/transport/search-routes', body); },
+};
+
+// ========================================
 // Discovery
 // ========================================
 

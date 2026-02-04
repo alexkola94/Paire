@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiNavigation, FiExternalLink } from 'react-icons/fi'
 import { generateTransportLink } from '../utils/transportLinks'
-import { isKiwiTequilaEnabled, searchFlights as kiwiSearchFlights } from '../services/kiwiTequilaService'
-import { isSkyscannerEnabled, searchFlights as skyscannerSearchFlights, resolveToIata } from '../services/skyscannerService'
-import { isTripGoEnabled, searchRoutesByPlaces } from '../services/tripGoService'
+import { transportBookingService } from '../../services/api'
+import { searchFlights as kiwiSearchFlights } from '../services/kiwiTequilaService'
+import { searchFlights as skyscannerSearchFlights, resolveToIata } from '../services/skyscannerService'
+import { searchRoutesByPlaces } from '../services/tripGoService'
 import TransportSearchResults from './TransportSearchResults'
 import '../styles/TransportBookingStep.css'
 
@@ -39,6 +40,8 @@ const TransportBookingStep = ({
 }) => {
   const { t } = useTranslation()
   const [selectedType, setSelectedType] = useState(null)
+  // Which transport APIs are configured on the backend (controls "Search prices" visibility)
+  const [providers, setProviders] = useState({ kiwi: false, skyscanner: false, tripGo: false })
   // In-app search: which provider's results we show, and data
   const [searchProvider, setSearchProvider] = useState(null)
   const [searchResults, setSearchResults] = useState([])
@@ -46,6 +49,11 @@ const TransportBookingStep = ({
   const [searchError, setSearchError] = useState('')
 
   const isMultiCity = Array.isArray(legs) && legs.length > 0
+
+  // Fetch which providers are configured so we can show/hide "Search prices" buttons
+  useEffect(() => {
+    transportBookingService.getProviders().then(setProviders).catch(() => setProviders({ kiwi: false, skyscanner: false, tripGo: false }))
+  }, [])
 
   const runFlightSearch = useCallback(async (provider) => {
     setSearchProvider(provider)
@@ -164,7 +172,7 @@ const TransportBookingStep = ({
         {providerLinks.length > 0 && (
           <div className="transport-cta-list">
             {providerLinks.map((link) => {
-              const canSearchPrices = selectedType === 'flight' && ((link.provider === 'kiwi' && isKiwiTequilaEnabled()) || (link.provider === 'skyscanner' && isSkyscannerEnabled()))
+              const canSearchPrices = selectedType === 'flight' && ((link.provider === 'kiwi' && providers.kiwi) || (link.provider === 'skyscanner' && providers.skyscanner))
               return (
                 <div key={link.provider} className="transport-cta-card">
                   <div className="transport-cta-card-info">
@@ -200,7 +208,7 @@ const TransportBookingStep = ({
                 </div>
               )
             })}
-            {selectedType === 'bus' && isTripGoEnabled() && !providerLinks.some((l) => l.provider === 'tripgo') && (
+            {selectedType === 'bus' && providers.tripGo && !providerLinks.some((l) => l.provider === 'tripgo') && (
               <div className="transport-cta-card">
                 <div className="transport-cta-card-info">
                   <span className="transport-cta-provider">TripGo</span>
@@ -358,7 +366,7 @@ const TransportBookingStep = ({
               {isBookable && links.length > 0 ? (
                 <>
                   <div className="transport-leg-ctas">
-                    {isFlight && links.find((l) => l.provider === 'kiwi') && isKiwiTequilaEnabled() && (
+                    {isFlight && links.find((l) => l.provider === 'kiwi') && providers.kiwi && (
                       <button
                         type="button"
                         className="transport-cta-link transport-cta-search-prices"
@@ -368,7 +376,7 @@ const TransportBookingStep = ({
                         {t('travel.transportBooking.searchPrices', 'Search prices')} – Kiwi
                       </button>
                     )}
-                    {isFlight && links.find((l) => l.provider === 'skyscanner') && isSkyscannerEnabled() && (
+                    {isFlight && links.find((l) => l.provider === 'skyscanner') && providers.skyscanner && (
                       <button
                         type="button"
                         className="transport-cta-link transport-cta-search-prices"
@@ -378,7 +386,7 @@ const TransportBookingStep = ({
                         {t('travel.transportBooking.searchPrices', 'Search prices')} – Skyscanner
                       </button>
                     )}
-                    {isBus && isTripGoEnabled() && (
+                    {isBus && providers.tripGo && (
                       <button
                         type="button"
                         className="transport-cta-link transport-cta-search-prices"

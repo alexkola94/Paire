@@ -545,6 +545,8 @@ builder.Services.AddHttpClient<ITravelAdvisoryService, TravelAdvisoryService>(cl
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
+// Transport booking: Kiwi, Skyscanner, TripGo (API keys in TransportBooking:* config)
+builder.Services.AddScoped<ITransportBookingService, TransportBookingService>();
 
 // =====================================================
 // Register Greece Economic Data Service

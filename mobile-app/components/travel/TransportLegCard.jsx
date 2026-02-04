@@ -3,15 +3,16 @@
  * Used by MultiCityTripWizard and single-destination Add Trip wizard.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Linking, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../../constants/theme';
 import { generateTransportLink } from '../../utils/transportLinks';
-import { isKiwiTequilaEnabled, searchFlights as kiwiSearchFlights } from '../../services/kiwiTequilaService';
-import { isSkyscannerEnabled, searchFlights as skyscannerSearchFlights, resolveToIata } from '../../services/skyscannerService';
-import { isTripGoEnabled, searchRoutesByPlaces } from '../../services/tripGoService';
+import { transportBookingService } from '../../services/api';
+import { searchFlights as kiwiSearchFlights } from '../../services/kiwiTequilaService';
+import { searchFlights as skyscannerSearchFlights, resolveToIata } from '../../services/skyscannerService';
+import { searchRoutesByPlaces } from '../../services/tripGoService';
 
 const BOOKABLE_MODES = ['flight', 'bus', 'ferry'];
 
@@ -48,9 +49,14 @@ const styles = StyleSheet.create({
 export default function TransportLegCard({ leg }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const [providers, setProviders] = useState({ kiwi: false, skyscanner: false, tripGo: false });
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
+
+  useEffect(() => {
+    transportBookingService.getProviders().then(setProviders).catch(() => setProviders({ kiwi: false, skyscanner: false, tripGo: false }));
+  }, []);
 
   const isBookable = leg.transportMode && BOOKABLE_MODES.includes(leg.transportMode);
   const linkData = {
@@ -135,7 +141,7 @@ export default function TransportLegCard({ leg }) {
       {isBookable && links.length > 0 ? (
         <>
           <View style={styles.linksRow}>
-            {isFlight && isKiwiTequilaEnabled() && (
+            {isFlight && providers.kiwi && (
               <TouchableOpacity
                 style={[styles.linkBtn, { backgroundColor: theme.colors.primary, opacity: searchLoading ? 0.7 : 1 }]}
                 onPress={() => runFlightSearch('kiwi')}
@@ -145,7 +151,7 @@ export default function TransportLegCard({ leg }) {
                 <Text style={styles.linkBtnText}>{t('travel.transportBooking.searchPrices', 'Search prices')} – Kiwi</Text>
               </TouchableOpacity>
             )}
-            {isFlight && isSkyscannerEnabled() && (
+            {isFlight && providers.skyscanner && (
               <TouchableOpacity
                 style={[styles.linkBtn, { backgroundColor: theme.colors.primary, opacity: searchLoading ? 0.7 : 1 }]}
                 onPress={() => runFlightSearch('skyscanner')}
@@ -155,7 +161,7 @@ export default function TransportLegCard({ leg }) {
                 <Text style={styles.linkBtnText}>{t('travel.transportBooking.searchPrices', 'Search prices')} – Skyscanner</Text>
               </TouchableOpacity>
             )}
-            {isBus && isTripGoEnabled() && (
+            {isBus && providers.tripGo && (
               <TouchableOpacity
                 style={[styles.linkBtn, { backgroundColor: theme.colors.primary, opacity: searchLoading ? 0.7 : 1 }]}
                 onPress={runBusSearch}
