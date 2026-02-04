@@ -16,6 +16,7 @@ import { authService } from '../../../services/auth';
 import { useTheme } from '../../../context/ThemeContext';
 import { useBiometric } from '../../../context/BiometricContext';
 import { useLogout } from '../../../context/LogoutContext';
+import { useOnboarding } from '../../../context/OnboardingContext';
 import { useTabTransition } from '../../../context/TabTransitionContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 import { Modal, Button, FormField, useToast } from '../../../components';
@@ -81,6 +82,7 @@ export default function ProfileScreen() {
   const { showToast } = useToast();
   const { isSupported: biometricSupported, isEnabled: biometricEnabled, biometricType, setEnabled: setBiometricEnabled } = useBiometric();
   const { startLogout } = useLogout();
+  const { resetOnboarding } = useOnboarding();
   const user = authService.getCurrentUser();
 
   const scrollViewRef = useRef(null);
@@ -246,6 +248,7 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           startLogout();
+          await resetOnboarding(); // so next account gets onboarding
           await authService.signOut();
           router.replace('/(auth)/login');
         },

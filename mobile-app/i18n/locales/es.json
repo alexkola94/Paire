@@ -809,6 +809,18 @@
       "loadingTripView": "Cargando la vista de tu viaje...",
       "saveFailed": "No se pudo guardar. Inténtalo de nuevo."
     },
+    "transportBooking": {
+      "title": "Reservar Transporte",
+      "description": "Elige tipo de transporte y encuentra billetes de los mejores proveedores",
+      "multiCityDescription": "Encuentra enlaces de reserva para cada tramo de tu viaje",
+      "singleDestinationDescription": "Encuentra enlaces de reserva para la ida y la vuelta.",
+      "originDetecting": "Detectando tu ubicación...",
+      "openInNewTab": "Buscar",
+      "noBookingLink": "No hay enlace de reserva para este medio de transporte",
+      "skipHint": "Este paso es opcional — puedes reservar transporte más tarde",
+      "outbound": "Ida",
+      "return": "Vuelta"
+    },
     "trip": {
       "createTrip": "Crear Viaje",
       "editTrip": "Editar Viaje",

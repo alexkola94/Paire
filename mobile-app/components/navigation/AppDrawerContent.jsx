@@ -36,6 +36,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { useScrollToTop } from '../../context/ScrollToTopContext';
 import { useLogout } from '../../context/LogoutContext';
+import { useOnboarding } from '../../context/OnboardingContext';
 import { authService } from '../../services/auth';
 import { profileService } from '../../services/api';
 import { spacing, borderRadius, typography } from '../../constants/theme';
@@ -154,6 +155,7 @@ export default function AppDrawerContent(props) {
   };
 
   const { startLogout } = useLogout();
+  const { resetOnboarding } = useOnboarding();
 
   const handleLogout = () => {
     Alert.alert(t('auth.logout'), t('auth.logoutConfirm'), [
@@ -164,6 +166,7 @@ export default function AppDrawerContent(props) {
         onPress: async () => {
           startLogout();
           navigation.closeDrawer();
+          await resetOnboarding(); // so next account gets onboarding
           await authService.signOut();
           router.replace('/(auth)/login');
         },

@@ -417,6 +417,33 @@
     "scrollToEnd": "Aller à la fin"
   },
   "travel": {
+    "transportBooking": {
+      "title": "Réserver un Transport",
+      "description": "Choisissez un type de transport et trouvez des billets auprès des meilleurs fournisseurs",
+      "multiCityDescription": "Trouvez des liens de réservation pour chaque étape de votre voyage",
+      "selectType": "Sélectionnez le type de transport",
+      "flight": "Vol",
+      "bus": "Bus",
+      "ferry": "Ferry",
+      "findFlights": "Trouver des Vols",
+      "searchBusTickets": "Chercher des Billets de Bus",
+      "searchFerryRoutes": "Chercher des Trajets Ferry",
+      "skyscanner": "Skyscanner",
+      "kiwi": "Kiwi.com",
+      "flixbus": "FlixBus",
+      "omio": "Omio",
+      "ferryhopper": "Ferryhopper",
+      "directFerries": "Direct Ferries",
+      "originDetecting": "Détection de votre position...",
+      "originUnknown": "Origine non détectée — les fournisseurs afficheront la recherche",
+      "originFrom": "De",
+      "skipHint": "Cette étape est facultative — vous pouvez réserver un transport plus tard",
+      "openInNewTab": "Rechercher",
+      "noBookingLink": "Pas de lien de réservation pour ce mode de transport",
+      "legFrom": "Étape",
+      "outbound": "Aller",
+      "return": "Retour"
+    },
     "chatbot": {
       "title": "Guide Voyage",
       "online": "En ligne",

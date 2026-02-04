@@ -809,6 +809,18 @@
       "loadingTripView": "Chargement de la vue de votre voyage...",
       "saveFailed": "Impossible d'enregistrer. Veuillez réessayer."
     },
+    "transportBooking": {
+      "title": "Réserver un transport",
+      "description": "Choisissez un type de transport et trouvez des billets chez les meilleurs fournisseurs",
+      "multiCityDescription": "Trouvez des liens de réservation pour chaque tronçon de votre voyage",
+      "singleDestinationDescription": "Trouvez des liens de réservation pour l'aller et le retour.",
+      "originDetecting": "Détection de votre position...",
+      "openInNewTab": "Rechercher",
+      "noBookingLink": "Aucun lien de réservation pour ce mode de transport",
+      "skipHint": "Cette étape est facultative — vous pouvez réserver plus tard",
+      "outbound": "Aller",
+      "return": "Retour"
+    },
     "trip": {
       "createTrip": "Créer un voyage",
       "editTrip": "Modifier le voyage",

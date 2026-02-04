@@ -1255,6 +1255,33 @@
       "gate": "Gate",
       "terminal": "Terminal"
     },
+    "transportBooking": {
+      "title": "Book Transport",
+      "description": "Choose a transport type and find tickets from top providers",
+      "multiCityDescription": "Find booking links for each leg of your trip",
+      "selectType": "Select transport type",
+      "flight": "Flight",
+      "bus": "Bus",
+      "ferry": "Ferry",
+      "findFlights": "Find Flights",
+      "searchBusTickets": "Search Bus Tickets",
+      "searchFerryRoutes": "Search Ferry Routes",
+      "skyscanner": "Skyscanner",
+      "kiwi": "Kiwi.com",
+      "flixbus": "FlixBus",
+      "omio": "Omio",
+      "ferryhopper": "Ferryhopper",
+      "directFerries": "Direct Ferries",
+      "originDetecting": "Detecting your location...",
+      "originUnknown": "Origin not detected — providers will show search",
+      "originFrom": "From",
+      "skipHint": "This step is optional — you can book transport later",
+      "openInNewTab": "Search",
+      "noBookingLink": "No booking link for this transport mode",
+      "legFrom": "Leg",
+      "outbound": "Outbound",
+      "return": "Return"
+    },
     "distance": {
       "from": "from",
       "tripCenter": "trip center"

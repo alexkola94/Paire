@@ -1260,6 +1260,33 @@
       "gate": "Πύλη",
       "terminal": "Τερματικός"
     },
+    "transportBooking": {
+      "title": "Κράτηση Μεταφοράς",
+      "description": "Επιλέξτε τύπο μεταφοράς και βρείτε εισιτήρια από κορυφαίους παρόχους",
+      "multiCityDescription": "Βρείτε συνδέσμους κράτησης για κάθε σκέλος του ταξιδιού σας",
+      "selectType": "Επιλέξτε τύπο μεταφοράς",
+      "flight": "Πτήση",
+      "bus": "Λεωφορείο",
+      "ferry": "Πλοίο",
+      "findFlights": "Βρείτε Πτήσεις",
+      "searchBusTickets": "Αναζήτηση Εισιτηρίων Λεωφορείου",
+      "searchFerryRoutes": "Αναζήτηση Δρομολογίων Πλοίων",
+      "skyscanner": "Skyscanner",
+      "kiwi": "Kiwi.com",
+      "flixbus": "FlixBus",
+      "omio": "Omio",
+      "ferryhopper": "Ferryhopper",
+      "directFerries": "Direct Ferries",
+      "originDetecting": "Εντοπισμός τοποθεσίας σας...",
+      "originUnknown": "Η αφετηρία δεν εντοπίστηκε — οι πάροχοι θα εμφανίσουν αναζήτηση",
+      "originFrom": "Από",
+      "skipHint": "Αυτό το βήμα είναι προαιρετικό — μπορείτε να κρατήσετε μεταφορά αργότερα",
+      "openInNewTab": "Αναζήτηση",
+      "noBookingLink": "Δεν υπάρχει σύνδεσμος κράτησης για αυτόν τον τρόπο μεταφοράς",
+      "legFrom": "Σκέλος",
+      "outbound": "Αναχώρηση",
+      "return": "Επιστροφή"
+    },
     "distance": {
       "from": "από",
       "tripCenter": "κέντρο ταξιδιού"

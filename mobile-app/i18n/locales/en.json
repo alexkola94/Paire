@@ -1760,6 +1760,18 @@
       "gate": "Gate",
       "terminal": "Terminal"
     },
+    "transportBooking": {
+      "title": "Book Transport",
+      "description": "Choose a transport type and find tickets from top providers",
+      "multiCityDescription": "Find booking links for each leg of your trip",
+      "singleDestinationDescription": "Find booking links for your outbound and return trip.",
+      "originDetecting": "Detecting your location...",
+      "openInNewTab": "Search",
+      "noBookingLink": "No booking link for this transport mode",
+      "skipHint": "This step is optional — you can book transport later",
+      "outbound": "Outbound",
+      "return": "Return"
+    },
     "distance": {
       "from": "from",
       "tripCenter": "trip center"

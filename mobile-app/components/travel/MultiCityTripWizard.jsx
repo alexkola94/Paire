@@ -24,15 +24,18 @@ import { useTheme } from '../../context/ThemeContext';
 import { useOverlay } from '../../context/OverlayContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { travelService, tripCityService } from '../../services/api';
-import { calculateDistance } from '../../services/discoveryService';
+import { calculateDistance, reverseGeocode } from '../../services/discoveryService';
 import { getTransportSuggestions, TRANSPORT_MODES } from '../../utils/transportSuggestion';
+import { buildTransportLegs } from '../../utils/buildTransportLegs';
 import CitySelectionMap from './CitySelectionMap';
+import TransportLegCard from './TransportLegCard';
 import { Modal, DateRangePicker } from '../index';
 
 const STEPS = [
   { key: 'details', titleKey: 'travel.wizard.step1Title', descKey: 'travel.trip.step1Description' },
   { key: 'cities', titleKey: 'travel.wizard.step2Title', descKey: 'travel.home.multiCityTripSubtitle' },
   { key: 'review', titleKey: 'travel.multiCity.step2.manageRoute', descKey: 'travel.multiCity.step2.manageDescription' },
+  { key: 'transport', titleKey: 'travel.transportBooking.title', descKey: 'travel.transportBooking.multiCityDescription' },
   { key: 'budget', titleKey: 'travel.wizard.step3Title', descKey: 'travel.trip.step3Description' },
 ];
 
@@ -71,6 +74,8 @@ export default function MultiCityTripWizard({ trip = null, onClose, onSave }) {
 
   /** Home location (lat/lng) for "getting there" and "return home" legs; set when entering review step */
   const [homeLocation, setHomeLocation] = useState(null);
+  /** Home city name (from reverse geocode) for transport booking labels */
+  const [homeCityName, setHomeCityName] = useState(null);
   /** Transport for Home → first city and Last city → Home */
   const [homeToFirstTransport, setHomeToFirstTransport] = useState(null);
   const [returnTransportMode, setReturnTransportMode] = useState(null);
@@ -128,7 +133,7 @@ export default function MultiCityTripWizard({ trip = null, onClose, onSave }) {
     return calculateDistance(lat, lon, homeLocation.latitude, homeLocation.longitude);
   }, [homeLocation, orderedCities]);
 
-  /** Request and store home location when entering review step */
+  /** Request and store home location and reverse-geocode home city name when entering review step */
   useEffect(() => {
     if (step !== 2 || orderedCities.length === 0) return;
     let cancelled = false;
@@ -142,6 +147,8 @@ export default function MultiCityTripWizard({ trip = null, onClose, onSave }) {
         });
         if (cancelled) return;
         setHomeLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        const result = await reverseGeocode(loc.coords.latitude, loc.coords.longitude);
+        if (!cancelled && result?.name) setHomeCityName(result.name);
       } catch (err) {
         if (!cancelled) console.warn('Home location error:', err);
       }
@@ -473,7 +480,35 @@ export default function MultiCityTripWizard({ trip = null, onClose, onSave }) {
           </ScrollView>
         )}
 
-        {step === 3 && (
+        {/* Book transport step: legs list with booking links (home→first, city-to-city, last→home) */}
+        {step === 3 && (() => {
+          const tripStart = startDate ? String(startDate).split('T')[0] : null;
+          const tripEnd = endDate ? String(endDate).split('T')[0] : null;
+          const legs = buildTransportLegs({
+            orderedCities,
+            homeLocation,
+            homeCityName,
+            returnTransportMode,
+            homeToFirstTransport,
+            tripStartDate: tripStart,
+            tripEndDate: tripEnd,
+          });
+          return (
+            <ScrollView contentContainerStyle={styles.formScroll}>
+              <Text style={[styles.reviewHint, { color: theme.colors.textSecondary, marginBottom: spacing.md }]}>
+                {t('travel.transportBooking.multiCityDescription', 'Find booking links for each leg of your trip')}
+              </Text>
+              {legs.map((leg, index) => (
+                <TransportLegCard key={index} leg={leg} />
+              ))}
+              <Text style={[styles.reviewHint, { color: theme.colors.textSecondary, marginTop: spacing.md }]}>
+                {t('travel.transportBooking.skipHint', 'This step is optional — you can book transport later')}
+              </Text>
+            </ScrollView>
+          );
+        })()}
+
+        {step === 4 && (
           <ScrollView
             contentContainerStyle={styles.formScroll}
             keyboardShouldPersistTaps="handled"

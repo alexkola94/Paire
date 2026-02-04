@@ -22,8 +22,10 @@ import { budgetService, savingsGoalService } from '../../services/api'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import CitySelectionMap from './CitySelectionMap'
 import MultiCityDistanceSummary from './MultiCityDistanceSummary'
-import { getRouteDirections, calculateDistance } from '../services/discoveryService'
+import { getRouteDirections, calculateDistance, reverseGeocode } from '../services/discoveryService'
 import { getTransportSuggestions, getBestTransportModes, TRANSPORT_MODES } from '../utils/transportSuggestion'
+import { buildTransportLegs } from '../utils/buildTransportLegs'
+import TransportBookingStep from './TransportBookingStep'
 import DatePicker from './DatePicker'
 import DateRangePicker from './DateRangePicker'
 import '../styles/TripSetupWizard.css'
@@ -72,6 +74,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   // This mirrors the behaviour in TravelHome and TripMicrography so users see
   // a consistent \"door-to-door\" distance picture.
   const [homeLocation, setHomeLocation] = useState(null)
+  const [homeCityName, setHomeCityName] = useState(null)
   const [homeToFirstDistance, setHomeToFirstDistance] = useState(0)
   const [lastToHomeDistance, setLastToHomeDistance] = useState(0)
   // Transport selection for the return leg (Last City → Home)
@@ -92,9 +95,18 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
     if (!('geolocation' in navigator)) return
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords
         setHomeLocation({ latitude, longitude })
+        // Reverse geocode to get city name for transport booking links
+        try {
+          const result = await reverseGeocode(latitude, longitude)
+          if (result?.name) {
+            setHomeCityName(result.name)
+          }
+        } catch (err) {
+          console.warn('Home city name detection failed:', err)
+        }
       },
       (error) => {
         // Keep logic simple and fail silently to avoid blocking the flow.
@@ -478,9 +490,9 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
   }, [])
 
   // Step configuration
-  // Desktop: 1 (Map+List), 2 (Dates), 3 (Budget)
-  // Mobile: 1 (Map Only), 2 (List/Transport), 3 (Dates), 4 (Budget)
-  const MAX_STEPS = isMobile ? 4 : 3
+  // Desktop: 1 (Map+List), 2 (Dates), 3 (Transport Booking), 4 (Budget)
+  // Mobile: 1 (Map Only), 2 (List/Transport), 3 (Dates), 4 (Transport Booking), 5 (Budget)
+  const MAX_STEPS = isMobile ? 5 : 4
 
   // Validate current step
   const validateStep = (currentStep = step) => {
@@ -498,14 +510,12 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           }
           break
         case 2: // Mobile List/Review
-          // Same validation as map (min cities) + Name check if needed
           if (cities.length < 2) {
             setError(t('travel.multiCity.errors.minCities', 'Please select at least 2 cities'))
             return false
           }
           break
         case 3: // Dates
-          // Validate dates for each city (Same as Desktop Step 2)
           for (let i = 0; i < cities.length; i++) {
             const city = cities[i]
             if (!city.startDate) {
@@ -521,7 +531,9 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
             }
           }
           break
-        case 4: // Budget
+        case 4: // Transport Booking - optional, no validation
+          break
+        case 5: // Budget
           if (budgetMode === 'new' && formData.budget && !formData.budgetCategory) {
             setError(t('travel.setup.errors.budgetCategoryRequired', 'Please name your budget'))
             return false
@@ -533,7 +545,7 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
           break
       }
     } else {
-      // Desktop Validation (Original)
+      // Desktop Validation
       switch (currentStep) {
         case 1:
           if (cities.length < 2) {
@@ -558,7 +570,9 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
             }
           }
           break
-        case 3:
+        case 3: // Transport Booking - optional, no validation
+          break
+        case 4: // Budget
           if (budgetMode === 'new' && formData.budget && !formData.budgetCategory) {
             setError(t('travel.setup.errors.budgetCategoryRequired', 'Please name your budget'))
             return false
@@ -891,16 +905,16 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
               {renderListSection(orderedCities, startCity, endCity, advisoriesList)}
             </div>
           )
-        // Cases 3 & 4 map to standard logic below via shared variable or direct return
+        // Cases 3, 4, 5 fall through to shared step renderers below
         case 3: // Dates
-          // Fall through to shared logic? No, easier to copy standard logic for clarity or extract it.
-          // Let's extract the Date/Budget steps as they are identical.
           break
-        case 4: // Budget
+        case 4: // Transport Booking
+          break
+        case 5: // Budget
           break
       }
     } else {
-      // Desktop Logic (3 Steps)
+      // Desktop Logic (4 Steps)
       if (step === 1) {
         return (
           <div className="wizard-step wizard-step-split">
@@ -911,11 +925,13 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
       }
     }
 
-    // Shared Step renderers (Dates & Budget)
+    // Shared Step renderers (Dates, Transport, Budget)
     // Mobile Step 3 = Desktop Step 2 (Dates)
-    // Mobile Step 4 = Desktop Step 3 (Budget)
+    // Mobile Step 4 = Desktop Step 3 (Transport Booking)
+    // Mobile Step 5 = Desktop Step 4 (Budget)
     const isDateStep = (isMobile && step === 3) || (!isMobile && step === 2)
-    const isBudgetStep = (isMobile && step === 4) || (!isMobile && step === 3)
+    const isTransportStep = (isMobile && step === 4) || (!isMobile && step === 3)
+    const isBudgetStep = (isMobile && step === 5) || (!isMobile && step === 4)
 
     if (isDateStep) {
       return (
@@ -984,6 +1000,18 @@ const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
             )
           }
         </div >
+      )
+    }
+
+    if (isTransportStep) {
+      const legs = buildTransportLegs({
+        orderedCities,
+        homeLocation,
+        homeCityName,
+        returnTransportMode
+      })
+      return (
+        <TransportBookingStep legs={legs} />
       )
     }
 

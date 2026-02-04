@@ -23,13 +23,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { MessageCircle, Send, AlertTriangle, Search, Plus, MapPin, Home, Copy, Share2, StopCircle, RefreshCw, Sparkles, Brain } from 'lucide-react-native';
+import { MessageCircle, Send, AlertTriangle, Search, Plus, MapPin, Home, Copy, Share2, StopCircle, RefreshCw, Sparkles, Brain, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import * as Location from 'expo-location';
 import { travelChatbotService, travelAdvisoryService, travelService, tripCityService, aiGatewayService } from '../../../services/api';
+import { reverseGeocode } from '../../../services/discoveryService';
 import { getStaticTravelSuggestions } from '../../../utils/travelChatbotSuggestions';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 import { Modal, useToast, ScreenHeader, StructuredMessageContent } from '../../../components';
-import { MultiCityTripWizard } from '../../../components/travel';
+import { MultiCityTripWizard, TransportLegCard } from '../../../components/travel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function TravelIndexScreen() {
@@ -68,6 +70,9 @@ export default function TravelIndexScreen() {
     [contextTripCities]
   );
   const [addTripOpen, setAddTripOpen] = useState(false);
+  const [addTripStep, setAddTripStep] = useState(1); // 1: details, 2: budget, 3: transport
+  const [singleOriginCityName, setSingleOriginCityName] = useState(null);
+  const [singleOriginLoading, setSingleOriginLoading] = useState(false);
   const [showTripTypePicker, setShowTripTypePicker] = useState(false);
   const [showMultiCityWizard, setShowMultiCityWizard] = useState(false);
   const [newTripName, setNewTripName] = useState('');
@@ -81,6 +86,7 @@ export default function TravelIndexScreen() {
       queryClient.invalidateQueries({ queryKey: ['travel-trips'] });
       showToast(t('travel.common.createTrip', 'Trip created'), 'success');
       setAddTripOpen(false);
+      setAddTripStep(1);
       setNewTripName('');
       setNewTripDestination('');
       setNewTripStart('');
@@ -237,6 +243,32 @@ export default function TravelIndexScreen() {
       setAdvisoryLoading(false);
     }
   }, [advisoryCountry, advisoryLoading, t]);
+
+  // Origin (home) detection for single-destination transport step; run when modal opens
+  useEffect(() => {
+    if (!addTripOpen) return;
+    let cancelled = false;
+    setSingleOriginLoading(true);
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (cancelled) return;
+        if (status !== 'granted') {
+          setSingleOriginLoading(false);
+          return;
+        }
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (cancelled) return;
+        const result = await reverseGeocode(loc.coords.latitude, loc.coords.longitude);
+        if (!cancelled && result?.name) setSingleOriginCityName(result.name);
+      } catch (err) {
+        if (!cancelled) console.warn('Single-destination origin detection failed:', err);
+      } finally {
+        if (!cancelled) setSingleOriginLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [addTripOpen]);
 
   const handleCreateTrip = () => {
     const name = newTripName.trim();
@@ -704,62 +736,134 @@ export default function TravelIndexScreen() {
         </View>
       )}
 
-      {/* Add Trip Modal */}
+      {/* Add Trip Modal – 3-step wizard: details → budget → transport */}
       <Modal
         isOpen={addTripOpen}
-        onClose={() => setAddTripOpen(false)}
-        title={t('travel.common.createTrip', 'Create Trip')}
+        onClose={() => { setAddTripOpen(false); setAddTripStep(1); }}
+        title={addTripStep === 1 ? t('travel.common.createTrip', 'Create Trip') : addTripStep === 2 ? t('travel.budget.amount', 'Budget') : t('travel.transportBooking.title', 'Book Transport')}
       >
         <View style={styles.form}>
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.name', 'Name')}</Text>
-          <TextInput
-            style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder={t('travel.itinerary.eventNamePlaceholder', 'e.g. Paris 2025')}
-            placeholderTextColor={theme.colors.textLight}
-            value={newTripName}
-            onChangeText={setNewTripName}
-          />
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.destination', 'Destination')}</Text>
-          <TextInput
-            style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder={t('travel.trip.destinationPlaceholder', 'e.g. Paris')}
-            placeholderTextColor={theme.colors.textLight}
-            value={newTripDestination}
-            onChangeText={setNewTripDestination}
-          />
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.startDate', 'Start Date')} / {t('travel.trip.endDate', 'End Date')}</Text>
-          <View style={styles.formRow}>
-            <TextInput
-              style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-              placeholder={t('travel.trip.startDatePlaceholder', 'Start YYYY-MM-DD')}
-              placeholderTextColor={theme.colors.textLight}
-              value={newTripStart}
-              onChangeText={setNewTripStart}
-            />
-            <TextInput
-              style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-              placeholder={t('travel.trip.endDatePlaceholder', 'End YYYY-MM-DD')}
-              placeholderTextColor={theme.colors.textLight}
-              value={newTripEnd}
-              onChangeText={setNewTripEnd}
-            />
+          {addTripStep === 1 && (
+            <>
+              <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.name', 'Name')}</Text>
+              <TextInput
+                style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                placeholder={t('travel.itinerary.eventNamePlaceholder', 'e.g. Paris 2025')}
+                placeholderTextColor={theme.colors.textLight}
+                value={newTripName}
+                onChangeText={setNewTripName}
+              />
+              <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.destination', 'Destination')}</Text>
+              <TextInput
+                style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                placeholder={t('travel.trip.destinationPlaceholder', 'e.g. Paris')}
+                placeholderTextColor={theme.colors.textLight}
+                value={newTripDestination}
+                onChangeText={setNewTripDestination}
+              />
+              <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.startDate', 'Start Date')} / {t('travel.trip.endDate', 'End Date')}</Text>
+              <View style={styles.formRow}>
+                <TextInput
+                  style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                  placeholder={t('travel.trip.startDatePlaceholder', 'Start YYYY-MM-DD')}
+                  placeholderTextColor={theme.colors.textLight}
+                  value={newTripStart}
+                  onChangeText={setNewTripStart}
+                />
+                <TextInput
+                  style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                  placeholder={t('travel.trip.endDatePlaceholder', 'End YYYY-MM-DD')}
+                  placeholderTextColor={theme.colors.textLight}
+                  value={newTripEnd}
+                  onChangeText={setNewTripEnd}
+                />
+              </View>
+            </>
+          )}
+          {addTripStep === 2 && (
+            <>
+              <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.budget.amount', 'Budget')} ({t('common.optional', 'optional')})</Text>
+              <TextInput
+                style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                placeholder={t('travel.trip.budgetPlaceholder', '0')}
+                placeholderTextColor={theme.colors.textLight}
+                value={newTripBudget}
+                onChangeText={setNewTripBudget}
+                keyboardType="decimal-pad"
+              />
+            </>
+          )}
+          {addTripStep === 3 && (() => {
+            const origin = singleOriginCityName || t('travel.multiCity.home', 'Home');
+            const dest = newTripDestination?.trim() || '';
+            const legs = dest
+              ? [
+                  { from: origin, to: dest, startDate: newTripStart || null, endDate: newTripEnd || null, transportMode: 'flight' },
+                  { from: dest, to: origin, startDate: newTripEnd || null, endDate: null, transportMode: 'flight' },
+                ]
+              : [];
+            return (
+              <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={{ paddingBottom: spacing.md }}>
+                {singleOriginLoading ? (
+                  <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <Text style={[typography.caption, { color: theme.colors.textSecondary, marginTop: spacing.sm }]}>
+                      {t('travel.transportBooking.originDetecting', 'Detecting your location...')}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={[typography.bodySmall, { color: theme.colors.textSecondary, marginBottom: spacing.md }]}>
+                      {t('travel.transportBooking.singleDestinationDescription', 'Find booking links for your outbound and return trip.')}
+                    </Text>
+                    {legs.map((leg, index) => (
+                      <TransportLegCard key={index} leg={leg} />
+                    ))}
+                    <Text style={[typography.caption, { color: theme.colors.textSecondary, marginTop: spacing.md }]}>
+                      {t('travel.transportBooking.skipHint', 'This step is optional — you can book transport later')}
+                    </Text>
+                  </>
+                )}
+              </ScrollView>
+            );
+          })()}
+
+          {/* Wizard footer: Back / Next or Create trip */}
+          <View style={[styles.wizardFooter, { borderTopColor: theme.colors.glassBorder }]}>
+            {addTripStep > 1 ? (
+              <TouchableOpacity
+                style={[styles.wizardFooterBtn, { borderColor: theme.colors.glassBorder }]}
+                onPress={() => setAddTripStep(addTripStep - 1)}
+              >
+                <ChevronLeft size={18} color={theme.colors.text} />
+                <Text style={[styles.wizardFooterBtnText, { color: theme.colors.text }]}>{t('common.back', 'Back')}</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.wizardFooterBtn} />
+            )}
+            {addTripStep < 3 ? (
+              <TouchableOpacity
+                style={[styles.wizardFooterBtn, styles.wizardFooterBtnPrimary, { backgroundColor: theme.colors.primary }]}
+                onPress={() => setAddTripStep(addTripStep + 1)}
+                disabled={addTripStep === 1 && !newTripName.trim()}
+              >
+                <Text style={styles.primaryButtonText}>{t('common.next', 'Next')}</Text>
+                <ChevronRight size={18} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.wizardFooterBtn, styles.wizardFooterBtnPrimary, { backgroundColor: theme.colors.primary }]}
+                onPress={handleCreateTrip}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>{t('travel.common.createTrip', 'Create Trip')}</Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.budget.amount', 'Budget')} (optional)</Text>
-          <TextInput
-            style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder={t('travel.trip.budgetPlaceholder', '0')}
-            placeholderTextColor={theme.colors.textLight}
-            value={newTripBudget}
-            onChangeText={setNewTripBudget}
-            keyboardType="decimal-pad"
-          />
-          <TouchableOpacity
-            style={[styles.primaryButton, { backgroundColor: theme.colors.primary }]}
-            onPress={handleCreateTrip}
-            disabled={createMutation.isPending}
-          >
-            {createMutation.isPending ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.primaryButtonText}>{t('travel.common.save', 'Save')}</Text>}
-          </TouchableOpacity>
         </View>
       </Modal>
     </SafeAreaView>
@@ -874,6 +978,10 @@ const styles = StyleSheet.create({
   formInput: { ...typography.body, borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md },
   formInputSmall: { flex: 1, ...typography.bodySmall, borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, marginBottom: spacing.md },
   formRow: { flexDirection: 'row', gap: spacing.sm },
+  wizardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: spacing.md, marginTop: spacing.md, borderTopWidth: 1 },
+  wizardFooterBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: borderRadius.md, borderWidth: 1 },
+  wizardFooterBtnText: { ...typography.label },
+  wizardFooterBtnPrimary: { borderWidth: 0 },
   typePicker: { padding: spacing.md, gap: spacing.md },
   typeOption: {
     flexDirection: 'row',

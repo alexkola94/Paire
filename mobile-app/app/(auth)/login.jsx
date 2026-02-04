@@ -33,7 +33,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { mode } = useLocalSearchParams();
-  const { hasOnboarded, skipOnboarding } = useOnboarding();
+  const { skipOnboarding, resetOnboarding } = useOnboarding();
   const { isSupported: biometricSupported, isEnabled: biometricEnabled, authenticate: biometricAuthenticate } = useBiometric();
   const [isSignUp, setIsSignUp] = useState(mode === 'signup');
   const [loading, setLoading] = useState(false);
@@ -67,20 +67,13 @@ export default function LoginScreen() {
   const [pending2FA, setPending2FA] = useState(null); // { email, tempToken, rememberMe }
 
   const navigateAfterLogin = async () => {
-    // Already completed onboarding → go to dashboard
-    if (hasOnboarded === true) {
-      router.replace('/(app)/(tabs)/dashboard');
-      return;
-    }
-    // Still loading onboarding status → treat as not onboarded and show onboarding
-    if (hasOnboarded === null) {
-      router.replace('/(onboarding)');
-      return;
-    }
-    // hasOnboarded === false: check if user has existing data (then skip onboarding)
+    // Always decide by current user's data (not device flag) so new users always get onboarding
+    // Brief delay so token is attached and backend has session ready (avoids 401 race)
+    await new Promise((r) => setTimeout(r, 150));
     try {
-      const transactions = await transactionService.getAll({ pageSize: 1 });
-      const hasExistingData = transactions?.items?.length > 0 || (Array.isArray(transactions) && transactions.length > 0);
+      const transactions = await transactionService.getAll({ page: 1, pageSize: 1 });
+      const items = transactions?.items ?? (Array.isArray(transactions) ? transactions : []);
+      const hasExistingData = items.length > 0;
       if (hasExistingData) {
         await skipOnboarding();
         router.replace('/(app)/(tabs)/dashboard');
@@ -88,7 +81,7 @@ export default function LoginScreen() {
         router.replace('/(onboarding)');
       }
     } catch {
-      // API failed (network, 401, etc.) → assume new user and show onboarding so they don't miss it
+      // API failed (e.g. 401 race) → show onboarding so new users don't miss it
       router.replace('/(onboarding)');
     }
   };
@@ -114,6 +107,7 @@ export default function LoginScreen() {
     try {
       if (isSignUp) {
         await authService.signUp(formData.email, formData.password, formData.displayName ?? '', true, formData.confirmPassword);
+        await resetOnboarding(); // so when they log in they get onboarding
         setSuccess(t('auth.registrationSuccess'));
         setTimeout(() => setIsSignUp(false), 2000);
       } else {
