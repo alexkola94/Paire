@@ -47,6 +47,22 @@
     "email": "Please enter a valid email",
     "words": "words"
   },
+  "biometric": {
+    "title": "Biometric Unlock",
+    "appLocked": "App Locked",
+    "unlockPrompt": "Unlock Paire",
+    "unlockDescription": "Authenticate to access your financial data",
+    "unlock": "Unlock",
+    "unlockWith": "Unlock with {{type}}",
+    "usePasscode": "Use Passcode",
+    "enabled": "Biometric unlock enabled",
+    "disabled": "Biometric unlock disabled",
+    "authFailed": "Authentication failed",
+    "notAvailable": "Not available",
+    "tryAgain": "Authentication failed. Try again.",
+    "usePasswordInstead": "Use password instead",
+    "enablePrompt": "Verify your identity to enable biometric unlock"
+  },
   "notifications": {
     "channels": {
       "default": "Default",
@@ -66,7 +82,41 @@
     "budgetAlert": "Budget Alert",
     "budgetAlertBody": "You've used {{percentage}}% of your {{category}} budget",
     "savingsMilestone": "Savings Milestone!",
-    "savingsMilestoneBody": "You've reached {{percentage}}% of your \"{{name}}\" goal!"
+    "savingsMilestoneBody": "You've reached {{percentage}}% of your \"{{name}}\" goal!",
+    "weeklySummaryTitle": "Weekly Spending Summary",
+    "weeklySummaryBody": "This week you spent {{amount}}.",
+    "weeklySummaryWithChange": "This week you spent {{amount}}. That's {{percent}}% {{change}} than last week."
+  },
+  "onboarding": {
+    "continue": "Continue",
+    "skip": "Skip for now",
+    "skipped": "skipped",
+    "currency": {
+      "title": "Welcome to Paire!",
+      "subtitle": "Select your default currency to get started."
+    },
+    "partner": {
+      "title": "Better Together",
+      "subtitle": "Invite your partner to share finances and track expenses together.",
+      "skipHint": "You can invite a partner later from Settings."
+    },
+    "budget": {
+      "title": "Set Your First Budget",
+      "subtitle": "Track your spending by category. You can always add more later."
+    },
+    "transaction": {
+      "title": "Add Your First Expense",
+      "subtitle": "Start tracking your spending right away."
+    },
+    "complete": {
+      "title": "You're All Set!",
+      "subtitle": "Welcome to Paire! Your financial journey begins now.",
+      "continue": "Go to Dashboard",
+      "currencySet": "Default currency selected",
+      "partnerInvited": "Partner invited",
+      "budgetCreated": "First budget created",
+      "transactionAdded": "First expense added"
+    }
   },
   "receipts": {
     "title": "Receipts",
@@ -104,7 +154,7 @@
     "alreadyHaveAccount": "Already have an account?",
     "welcomeBack": "Welcome Back!",
     "createAccount": "Create Your Account",
-    "emailPlaceholder": "you@example.com",
+    "emailPlaceholder": "Enter your email",
     "passwordPlaceholder": "••••••••",
     "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Passwords do not match",
@@ -127,7 +177,13 @@
     "agreeToTerms": "I agree to the",
     "termsRequired": "You must accept the Terms of Service to register.",
     "twoFactorSetup": "Two-Factor Authentication",
+    "setupTwoFactor": "Set Up 2FA",
+    "manualEntryKey": "Manual entry key",
+    "verify": "Verify",
+    "setupFailed": "Setup failed",
+    "verificationFailed": "Verification failed. Please try again.",
     "logoutConfirm": "Are you sure you want to log out?",
+    "loggingOut": "Logging out...",
     "errors": {
       "networkError": "Check your connection and try again.",
       "invalidCredentials": "Incorrect email or password. Please try again.",
@@ -144,6 +200,7 @@
     "add": "Add",
     "dashboard": "Dashboard",
     "analytics": "Analytics",
+    "bills": "Bills",
     "expenses": "Expenses",
     "income": "Income",
     "loans": "Loans",
@@ -306,6 +363,9 @@
     "loanDeleted": "Loan deleted successfully",
     "noLoans": "No loans recorded",
     "empty": "No loans yet. Tap + to add one!",
+    "emptyTitle": "No loans yet",
+    "emptyDescription": "Track money lent and borrowed to keep things clear between you.",
+    "addFirst": "Add Loan",
     "lender": "Lender",
     "borrower": "Borrower",
     "lenderName": "Lender Name",
@@ -359,6 +419,7 @@
     "selectStatus": "Select status",
     "status": {
       "active": "Active",
+      "settled": "Settled",
       "paid": "Paid",
       "overdue": "Overdue"
     }
@@ -505,6 +566,8 @@
     "settings": "Settings",
     "legal": "Legal",
     "manage": "Manage",
+    "developer": "Developer",
+    "viewOnboarding": "View onboarding",
     "language": "Language",
     "changePassword": "Change Password",
     "deleteAccount": "Delete Account",
@@ -636,7 +699,12 @@
     "noCategoryData": "No category data available",
     "noCategoryDataDescription": "Add expenses to see spending breakdown by category",
     "clickToViewTransactions": "Click to view transactions",
-    "noTransactionsInCategory": "No transactions in this category"
+    "noTransactionsInCategory": "No transactions in this category",
+    "openInBrowserHint": "Open the full Analytics view in your browser (charts, categories, partner comparison).",
+    "configureWebUrlHint": "Set EXPO_PUBLIC_WEB_APP_URL in .env to open Analytics in the browser.",
+    "openAnalytics": "Open Analytics",
+    "monthlyBalance": "Monthly Balance",
+    "viewDetails": "View Analytics"
   },
   "partnership": {
     "title": "Partnership",
@@ -646,6 +714,9 @@
     "noPartnershipDescription": "Create a partnership to share expenses, income, and financial data with your partner.",
     "invitePartner": "Invite Partner",
     "sendInvite": "Send Invitation",
+    "inviteSent": "Invitation sent!",
+    "invitationSent": "Invitation sent!",
+    "noPartner": "No partner yet",
     "partnerEmail": "Partner's Email",
     "emailPlaceholder": "partner@example.com",
     "emailHint": "Enter your partner's email address. They will receive an invitation email to join the partnership.",
@@ -662,6 +733,11 @@
     "disconnectError": "Failed to disconnect partnership",
     "loadError": "Failed to load partnership data",
     "invalidEmail": "Please enter a valid email address",
+    "status": {
+      "active": "Active",
+      "pending": "Pending",
+      "accepted": "Accepted"
+    },
     "userNotFound": "User not found with this email",
     "cannotInviteSelf": "You cannot invite yourself",
     "setDisplayNameFirst": "Please set your display name in Profile before creating a partnership",
@@ -685,6 +761,13 @@
     "acceptInvitation": "Accept Invitation",
     "inviteAccepted": "Partnership invitation accepted successfully!",
     "inviteAcceptError": "Failed to accept invitation"
+  },
+  "partnerSync": {
+    "partnerAddedExpense": "{{name}} added: {{item}} - {{amount}}",
+    "partnerAddedIncome": "{{name}} added income: {{item}} - {{amount}}",
+    "connected": "Connected to partner sync",
+    "disconnected": "Partner sync disconnected",
+    "reconnecting": "Reconnecting to partner sync..."
   },
   "budgets": {
     "title": "Budgets",
@@ -726,7 +809,12 @@
     "spent": "Spent",
     "remaining": "Remaining",
     "overBudget": "Over Budget",
-    "onTrack": "On Track"
+    "onTrack": "On Track",
+    "alertExceeded": "{{category}} budget exceeded! {{percentage}}% used",
+    "alertWarning": "{{category}} budget at {{percentage}}%",
+    "emptyTitle": "No budgets yet",
+    "emptyDescription": "Set a budget to track your spending and stay on target.",
+    "addFirst": "Create Budget"
   },
   "messages": {
     "confirmDelete": "Are you sure you want to delete this item?",
@@ -773,6 +861,13 @@
     "aiModeDisabled": "Rule-based mode enabled! I'm using predefined responses for quick assistance.",
     "aiWelcome": "Hi! 🤖 I'm your AI-powered financial assistant. I can help with more complex questions and have natural conversations!",
     "aiUnavailable": "AI service is not available right now. Try switching to rule-based mode.",
+    "aiNotAvailable": "AI mode is not available",
+    "thinkingMode": "Deep Think",
+    "thinkingModeActive": "Deep thinking mode active",
+    "clearHistory": "Clear history",
+    "clearHistoryTitle": "Clear Chat",
+    "clearHistoryMessage": "Are you sure you want to clear all messages?",
+    "stop": "Stop",
     "stopResponse": "Stop",
     "stopping": "Stopping...",
     "responseStopped": "Response stopped",
@@ -1043,6 +1138,17 @@
     "errorDeleting": "Failed to delete shopping list",
     "errorDeletingItem": "Failed to delete item",
     "errorCompleting": "Failed to complete shopping list",
+    "importFromFile": "Import from file",
+    "importSuccess": "List created with {{count}} item",
+    "importSuccess_plural": "List created with {{count}} items",
+    "importError": "Failed to import list",
+    "importNoItems": "No items found in file",
+    "importFileReadError": "Could not read file",
+    "importCancelled": "Import cancelled",
+    "importPreviewTitle": "Import list",
+    "importPreviewMessage": "{{count}} item will be added",
+    "importPreviewMessage_plural": "{{count}} items will be added",
+    "importListNamePlaceholder": "Imported list",
     "addedBy": "Added by",
     "categories": {
       "groceries": "Groceries",
@@ -1115,6 +1221,8 @@
     "daysLeft": "days left",
     "overdue": "Overdue",
     "goalAchieved": "Goal Achieved! 🎉",
+    "goalReached": "Goal Reached!",
+    "congratulations": "Congratulations! You reached your goal for \"{{name}}\"!",
     "totalGoals": "Total Goals",
     "totalSaved": "Total Saved",
     "overallProgress": "Overall Progress",
@@ -1287,6 +1395,7 @@
     "enableError": "Failed to enable 2FA",
     "disableError": "Failed to disable 2FA",
     "enableSuccess": "Two-factor authentication enabled successfully!",
+    "alreadyEnabled": "Two-factor authentication is already enabled for your account.",
     "disableSuccess": "Two-factor authentication disabled successfully",
     "regenerateError": "Failed to regenerate backup codes",
     "regenerateSuccess": "Backup codes regenerated successfully!",
@@ -1412,6 +1521,8 @@
   "achievements": {
     "title": "Achievements",
     "subtitle": "Track your financial milestones and unlock rewards",
+    "emptyTitle": "No achievements yet",
+    "emptyDescription": "Keep using the app to unlock achievements and earn points!",
     "loading": "Loading achievements...",
     "noAchievements": "No achievements found",
     "points": "points",
@@ -1472,6 +1583,12 @@
     "reducedMotionDesc": "Minimize animations and transitions",
     "highContrast": "High Contrast",
     "highContrastDesc": "Increase contrast for borders and text"
+  },
+  "theme": {
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
   },
   "privacy": {
     "showNumbers": "Show amounts",
@@ -1605,6 +1722,7 @@
   },
   "import": {
     "title": "Import Statements",
+    "importFromFile": "Import from file",
     "dragDrop": "Click or drag file to upload statement",
     "formats": "Supports CSV, Excel, and PDF from major banks",
     "invalidFileType": "Invalid file type. Please upload a .csv, .xlsx, or .pdf file.",
@@ -1641,6 +1759,33 @@
       "delayed": "Delayed",
       "gate": "Gate",
       "terminal": "Terminal"
+    },
+    "transportBooking": {
+      "title": "Book Transport",
+      "description": "Choose a transport type and find tickets from top providers",
+      "multiCityDescription": "Find booking links for each leg of your trip",
+      "singleDestinationDescription": "Find booking links for your outbound and return trip.",
+      "originDetecting": "Detecting your location...",
+      "openInNewTab": "Search",
+      "openOn": "Open on",
+      "noBookingLink": "No booking link for this transport mode",
+      "skipHint": "This step is optional — you can book transport later",
+      "outbound": "Outbound",
+      "return": "Return",
+      "searchPrices": "Search prices",
+      "searching": "Searching...",
+      "book": "Book",
+      "errorOriginDest": "Could not resolve origin or destination.",
+      "apiSearching": "Searching prices...",
+      "fromPrice": "from {{price}}",
+      "bestPrices": "Best prices found",
+      "bookNow": "Book",
+      "direct": "Direct",
+      "stops": "{{count}} stop",
+      "stops_plural": "{{count}} stops",
+      "poweredBy": "Prices by {{provider}}",
+      "flightOffer": "{{airline}} \u00b7 {{duration}}",
+      "busOffer": "{{operator}} \u00b7 {{duration}}"
     },
     "distance": {
       "from": "from",
@@ -1812,6 +1957,7 @@
       "send": "Send message",
       "placeholder": "Ask about your trip...",
       "tryAsking": "Try asking:",
+      "welcomeMessage": "Hi! I'm your travel guide. Ask me anything about your trip!",
       "clearChat": "Clear chat",
       "viewDetails": "View Details",
       "thinking": "Thinking...",
@@ -2220,6 +2366,8 @@
       "title": "Explore",
       "subtitle": "Map and nearby places",
       "essentials": "Travel Essentials",
+      "noPlaces": "No places saved yet",
+      "noPlacesHint": "Save places from the map to see them here",
       "noTrip": "No Trip Selected",
       "createTripFirst": "Create a trip to explore your destination",
       "noLocation": "Location Not Set",
@@ -2625,7 +2773,24 @@
     "quickAccess": {
       "title": "Quick Access",
       "description": "Shortcuts to common actions"
+    },
+    "insights": {
+      "title": "Insights",
+      "description": "Smart financial insights and tips"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "description": "Financial insights, categories, and partner comparison"
     }
+  },
+  "insights": {
+    "title": "Insights",
+    "spendingUp": "Spending is up {{pct}}% vs last month",
+    "spendingDown": "Spending is down {{pct}}% vs last month",
+    "categoryUp": "{{category}} spending up {{pct}}% this month",
+    "billsDue": "{{count}} bill(s) due this week totaling €{{amount}}",
+    "savingsProgress": "{{pct}}% progress toward your savings goals",
+    "hidden": "Insights hidden in privacy mode"
   },
   "pushNotifications": {
     "title": "Push Notifications",

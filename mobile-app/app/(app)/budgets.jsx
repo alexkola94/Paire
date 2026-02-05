@@ -37,6 +37,8 @@ import {
   BudgetForm,
   EmptyState,
   ScreenLoading,
+  ScreenHeader,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -216,7 +218,7 @@ export default function BudgetsScreen() {
         </Text>
       </View>
 
-      {/* Quick Actions */}
+      {/* Quick Actions (Edit, Delete, Add to calculator) */}
       <View style={styles.quickActions}>
         <TouchableOpacity
           style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.primary}15` }]}
@@ -232,6 +234,12 @@ export default function BudgetsScreen() {
         >
           <Trash2 size={16} color={theme.colors.error} />
         </TouchableOpacity>
+        <AddToCalculatorButton
+          value={item.amount}
+          isPrivate={isPrivate}
+          size={16}
+          onAdded={() => showToast(t('calculator.added', 'Added to calculator'), 'success', 1500)}
+        />
       </View>
     </TouchableOpacity>
     </Swipeable>
@@ -246,22 +254,20 @@ export default function BudgetsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: title + Add button */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('budgets.title', 'Budgets')}
-        </Text>
-        <TouchableOpacity
-          onPress={() => { impactMedium(); setIsFormOpen(true); }}
-          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
-          activeOpacity={0.7}
-          accessibilityLabel={t('budgets.addNew', 'Add new budget')}
-          accessibilityRole="button"
-        >
-          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('budgets.title', 'Budgets')}
+        rightElement={
+          <TouchableOpacity
+            onPress={() => { impactMedium(); setIsFormOpen(true); }}
+            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+            activeOpacity={0.7}
+            accessibilityLabel={t('budgets.addNew', 'Add new budget')}
+            accessibilityRole="button"
+          >
+            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+          </TouchableOpacity>
+        }
+      />
       <FlatList
         data={items}
         keyExtractor={(i) => String(i.id)}
@@ -319,18 +325,6 @@ export default function BudgetsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
     flex: 1,
   },
   headerAddBtn: {

@@ -11,13 +11,18 @@ import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/auth';
+import { useTheme } from '../context/ThemeContext';
 import SplashScreen from '../components/SplashScreen';
+import { colors } from '../constants/theme';
 
 // Storage key for first-time detection
 const HAS_LAUNCHED_KEY = '@paire_has_launched';
 
 export default function Index() {
   const router = useRouter();
+  const themeContext = useTheme();
+  const theme = themeContext?.theme;
+  const backgroundColor = theme?.colors?.background ?? colors.bgPrimary;
   const [showSplash, setShowSplash] = useState(true);
   const [isReady, setIsReady] = useState(false);
   const [navigationTarget, setNavigationTarget] = useState(null);
@@ -73,8 +78,10 @@ export default function Index() {
     return <SplashScreen onFinish={handleSplashFinish} minDuration={2000} />;
   }
 
-  // Show empty view while navigating
-  return <View style={styles.container} />;
+  // Themed empty view while navigating (avoids white flash)
+  return (
+    <View style={[styles.container, { backgroundColor }]} />
+  );
 }
 
 const styles = StyleSheet.create({

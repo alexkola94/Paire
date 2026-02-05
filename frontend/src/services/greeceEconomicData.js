@@ -60,7 +60,7 @@ const apiRequest = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error('Authentication required. Please log in again.')
+        throw new Error('Authentication required. Please log in again.') // i18n-ignore
       }
       const errorText = await response.text().catch(() => '')
       throw new Error(`API error: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`)

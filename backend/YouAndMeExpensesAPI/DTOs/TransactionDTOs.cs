@@ -167,5 +167,27 @@ namespace YouAndMeExpensesAPI.DTOs
         public string Url { get; set; } = string.Empty;
         public string Path { get; set; } = string.Empty;
     }
+
+    /// <summary>
+    /// Budget alert information returned when a budget threshold is crossed.
+    /// </summary>
+    public class BudgetAlertDto
+    {
+        public Guid BudgetId { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public decimal BudgetAmount { get; set; }
+        public decimal SpentAmount { get; set; }
+        public int PercentageUsed { get; set; }
+        public string AlertType { get; set; } = string.Empty; // "warning" (80%) or "exceeded" (100%)
+    }
+
+    /// <summary>
+    /// Response for transaction creation including any budget alerts.
+    /// </summary>
+    public class CreateTransactionResponseDto
+    {
+        public TransactionWithProfileDto Transaction { get; set; } = null!;
+        public List<BudgetAlertDto> BudgetAlerts { get; set; } = new();
+    }
 }
 

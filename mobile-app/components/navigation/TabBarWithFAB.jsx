@@ -3,7 +3,7 @@
  *
  * Floating pill tab bar with real glassmorphism (blur + translucent tint) and
  * an opaque rounded "sub-pill" behind the active tab (reference-style).
- * Center slot is an "Add" tab (opens Quick Add sheet); 4 nav tabs (Dashboard, Transactions, Analytics, Profile).
+ * Center slot is an "Add" tab (opens Quick Add sheet); 4 nav tabs (Dashboard, Transactions, Bills, Profile).
  * Follows the Paire "Harmonious Minimalist" design system.
  */
 
@@ -32,7 +32,8 @@ import QuickAddSheet from './QuickAddSheet';
 const FLOATING_PILL_RADIUS = 28;
 const FLOATING_PILL_VERTICAL_PADDING = 8;
 const FLOATING_PILL_MARGIN_H = 20;
-const FLOATING_PILL_MARGIN_BOTTOM = 8;
+// Distance from bottom edge; increase to sit bar higher, decrease to sit lower (closer to edge)
+const FLOATING_PILL_MARGIN_BOTTOM = -5;
 // Active tab sub-pill: rounded background behind selected tab
 const ACTIVE_SUB_PILL_PADDING_H = 12;
 const ACTIVE_SUB_PILL_PADDING_V = 6;

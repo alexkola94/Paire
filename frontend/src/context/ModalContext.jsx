@@ -36,7 +36,7 @@ export const ModalProvider = ({ children }) => {
 export const useModal = () => {
   const context = useContext(ModalContext)
   if (context === undefined) {
-    throw new Error('useModal must be used within a ModalProvider')
+    throw new Error('useModal must be used within a ModalProvider') // i18n-ignore
   }
   return context
 }

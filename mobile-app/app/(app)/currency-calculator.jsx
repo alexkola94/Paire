@@ -23,7 +23,7 @@ import { ArrowRight, RefreshCw, Info, TrendingUp } from 'lucide-react-native';
 import { currencyService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { Dropdown, Button } from '../../components';
+import { Dropdown, Button, ScreenHeader } from '../../components';
 
 export default function CurrencyCalculatorScreen() {
   const { t } = useTranslation();
@@ -47,7 +47,7 @@ export default function CurrencyCalculatorScreen() {
   const convertMutation = useMutation({
     mutationFn: () => {
       const num = parseFloat(String(amount).replace(',', '.'));
-      if (isNaN(num) || num <= 0) throw new Error('Invalid amount');
+      if (isNaN(num) || num <= 0) throw new Error('Invalid amount'); // i18n-ignore: dev/validation
       return currencyService.convert(fromCurrency, toCurrency, num);
     },
     onSuccess: (data) => {
@@ -99,6 +99,7 @@ export default function CurrencyCalculatorScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <ScreenHeader title={t('currencyCalculator.title')} />
       <KeyboardAvoidingView
         style={styles.keyboard}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -109,7 +110,6 @@ export default function CurrencyCalculatorScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.title, { color: theme.colors.text }]}>{t('currencyCalculator.title')}</Text>
           <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{t('currencyCalculator.subtitle')}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.colors.surface }, shadows.md]}>
@@ -118,7 +118,7 @@ export default function CurrencyCalculatorScreen() {
               style={[styles.amountInput, { backgroundColor: theme.colors.background, color: theme.colors.text, borderColor: theme.colors.border }]}
               value={amount}
               onChangeText={setAmount}
-              placeholder="0.00"
+              placeholder="0.00" // i18n-ignore
               placeholderTextColor={theme.colors.textLight}
               keyboardType="decimal-pad"
             />

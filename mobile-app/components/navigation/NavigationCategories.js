@@ -7,10 +7,10 @@
 
 import {
   TrendingDown, TrendingUp, Wallet, PiggyBank, CreditCard,
-  BarChart3, Calculator, Receipt, Repeat,
+  Calculator, Receipt, Repeat, BarChart3,
   MapPin, ShoppingCart, Bell, Newspaper,
   Users, Link2, Trophy,
-  Plus, Camera,
+  Plus, Camera, Upload,
 } from 'lucide-react-native';
 
 /**
@@ -57,16 +57,9 @@ export const FINANCE_FEATURES = [
 
 /**
  * Tools Hub Features
- * Utilities and analytics
+ * Utilities
  */
 export const TOOLS_FEATURES = [
-  {
-    id: 'analytics',
-    icon: BarChart3,
-    labelKey: 'navigation.analytics',
-    descriptionKey: 'navigation.descriptions.financialInsights',
-    route: '/(app)/(tabs)/analytics',
-  },
   {
     id: 'calculator',
     icon: Calculator,
@@ -178,6 +171,13 @@ export const QUICK_ADD_ACTIONS = [
     icon: Camera,
     labelKey: 'quickAdd.scanReceipt',
     action: 'scan-receipt',
+    color: 'primary',
+  },
+  {
+    id: 'import',
+    icon: Upload,
+    labelKey: 'import.importFromFile',
+    action: 'import-from-file',
     color: 'primary',
   },
 ];

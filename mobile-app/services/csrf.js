@@ -23,7 +23,7 @@ export async function getCsrfToken() {
   });
 
   cachedToken = response.data?.token ?? response.data?.requestToken ?? null;
-  if (!cachedToken) throw new Error('CSRF token not in response');
+  if (!cachedToken) throw new Error('CSRF token not in response') // i18n-ignore: dev;
   return cachedToken;
 }
 

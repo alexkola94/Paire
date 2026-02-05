@@ -40,6 +40,9 @@ import {
   Button,
   EmptyState,
   ScreenLoading,
+  ScreenHeader,
+  SuccessAnimation,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -58,6 +61,7 @@ export default function SavingsGoalsScreen() {
   const [depositTarget, setDepositTarget] = useState(null);
   const [withdrawTarget, setWithdrawTarget] = useState(null);
   const [actionAmount, setActionAmount] = useState('');
+  const [celebrationGoal, setCelebrationGoal] = useState(null);
 
   const rowRefs = useRef({});
 
@@ -114,12 +118,25 @@ export default function SavingsGoalsScreen() {
     mutationFn: async ({ id, amount }) => {
       const goal = items.find(g => g.id === id);
       const newAmount = (goal?.currentAmount || 0) + amount;
-      return savingsGoalService.update(id, { currentAmount: newAmount });
+      return { goal, newAmount, result: await savingsGoalService.update(id, { currentAmount: newAmount }) };
     },
-    onSuccess: () => {
+    onSuccess: ({ goal, newAmount }) => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
       notificationSuccess();
-      showToast(t('savingsGoals.depositSuccess', 'Deposit successful'), 'success');
+
+      // Check if goal is now complete (reached 100%)
+      const targetAmount = goal?.targetAmount || 0;
+      const previousAmount = goal?.currentAmount || 0;
+      const wasComplete = previousAmount >= targetAmount;
+      const isNowComplete = newAmount >= targetAmount;
+
+      if (!wasComplete && isNowComplete && targetAmount > 0) {
+        // Goal just reached 100% - show celebration!
+        setCelebrationGoal({ ...goal, currentAmount: newAmount });
+      } else {
+        showToast(t('savingsGoals.depositSuccess', 'Deposit successful'), 'success');
+      }
+
       setDepositTarget(null);
       setActionAmount('');
     },
@@ -291,6 +308,12 @@ export default function SavingsGoalsScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
+          <AddToCalculatorButton
+            value={item.targetAmount ?? 0}
+            isPrivate={isPrivate}
+            size={16}
+            onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+          />
           <TouchableOpacity
             style={[styles.quickActionBtn, { backgroundColor: `${theme.colors.success}15` }]}
             onPress={() => {
@@ -340,22 +363,20 @@ export default function SavingsGoalsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: title + Add button */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('savingsGoals.title', 'Savings Goals')}
-        </Text>
-        <TouchableOpacity
-          onPress={() => { impactMedium(); setIsFormOpen(true); }}
-          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
-          activeOpacity={0.7}
-          accessibilityLabel={t('savingsGoals.addNew', 'Add new goal')}
-          accessibilityRole="button"
-        >
-          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('savingsGoals.title', 'Savings Goals')}
+        rightElement={
+          <TouchableOpacity
+            onPress={() => { impactMedium(); setIsFormOpen(true); }}
+            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+            activeOpacity={0.7}
+            accessibilityLabel={t('savingsGoals.addNew', 'Add new goal')}
+            accessibilityRole="button"
+          >
+            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+          </TouchableOpacity>
+        }
+      />
       <FlatList
         data={items}
         keyExtractor={(i) => String(i.id)}
@@ -492,24 +513,33 @@ export default function SavingsGoalsScreen() {
         variant="danger"
         loading={deleteMutation.isPending}
       />
+
+      {/* Goal Completed Celebration */}
+      <Modal
+        isOpen={celebrationGoal !== null}
+        onClose={() => setCelebrationGoal(null)}
+        title={t('savingsGoals.goalReached', 'Goal Reached!')}
+      >
+        <View style={styles.celebrationContent}>
+          <SuccessAnimation
+            size={100}
+            showConfetti={true}
+            message={t('savingsGoals.congratulations', 'Congratulations! You reached your goal for "{{name}}"!', { name: celebrationGoal?.name })}
+          />
+          <Button
+            title={t('common.close', 'Close')}
+            variant="primary"
+            onPress={() => setCelebrationGoal(null)}
+            style={styles.celebrationButton}
+          />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
     flex: 1,
   },
   headerAddBtn: {
@@ -617,5 +647,13 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
+  },
+  celebrationContent: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  celebrationButton: {
+    marginTop: spacing.lg,
+    minWidth: 150,
   },
 });

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
@@ -18,6 +19,21 @@ namespace YouAndMeExpensesAPI.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<BankTransactionImportService> _logger;
+
+        /// <summary>Days tolerance for matching manual transactions (bank posting delay).</summary>
+        private const int ManualDuplicateDateToleranceDays = 3;
+
+        /// <summary>Amount tolerance for matching manual transactions (rounding).</summary>
+        private static readonly decimal ManualDuplicateAmountTolerance = 0.01m;
+
+        /// <summary>Relative amount tolerance (e.g. 1%) when matching manual transactions.</summary>
+        private static readonly decimal ManualDuplicateAmountRelativeTolerance = 0.01m;
+
+        // Regex patterns for normalizing descriptions (strip bank boilerplate)
+        private static readonly Regex BankNoisePattern = new(@"(?i)\b(DEBIT|CREDIT|SEPA|REF\s*:?\s*\S+)\b", RegexOptions.Compiled);
+        private static readonly Regex DatePattern = new(@"\d{1,2}/\d{1,2}(/\d{2,4})?", RegexOptions.Compiled);
+        private static readonly Regex NonAlphanumericPattern = new(@"[^\p{L}\p{N}\s]", RegexOptions.Compiled);
+        private static readonly Regex MultipleSpacesPattern = new(@"\s+", RegexOptions.Compiled);
 
         // Category mapping from bank categories to app categories
         private readonly Dictionary<string, string> _categoryMapping = new()
@@ -177,9 +193,18 @@ namespace YouAndMeExpensesAPI.Services
 
             foreach (var dto in transactions)
             {
+                // Skip if already imported (re-import of same statement)
                 if (existingIdsSet.Contains(dto.TransactionId))
                 {
                     result.DuplicatesSkipped++;
+                    continue;
+                }
+
+                // Skip if a manual transaction already exists with same date/amount (avoid end-of-month duplicate)
+                if (await ExistsMatchingManualTransactionAsync(userId, dto, cancellationToken))
+                {
+                    result.DuplicatesSkipped++;
+                    result.ManualDuplicatesSkipped++;
                     continue;
                 }
 
@@ -271,6 +296,84 @@ namespace YouAndMeExpensesAPI.Services
             // Fuzzy check for CSVs that might not have stable IDs? 
             // For now, rely on caller providing a deterministic ID (e.g. hash of date+amount+desc)
             return false; 
+        }
+
+        /// <summary>
+        /// Normalizes a description for comparison: lowercase, strip bank noise (DEBIT/CREDIT/REF/dates), collapse spaces.
+        /// </summary>
+        private static string NormalizeDescriptionForMatch(string? description)
+        {
+            if (string.IsNullOrWhiteSpace(description)) return string.Empty;
+            var s = description.Trim().ToLowerInvariant();
+            s = BankNoisePattern.Replace(s, " ");
+            s = DatePattern.Replace(s, " ");
+            s = NonAlphanumericPattern.Replace(s, " ");
+            s = MultipleSpacesPattern.Replace(s, " ").Trim();
+            return s;
+        }
+
+        /// <summary>
+        /// Returns true if the two descriptions match for duplicate detection: one contains the other,
+        /// or they share at least one meaningful word (length > 2). If both normalize to empty, we consider it a match (date+amount only).
+        /// </summary>
+        private static bool DescriptionsMatch(string? manualDesc, string? bankDesc)
+        {
+            var normManual = NormalizeDescriptionForMatch(manualDesc);
+            var normBank = NormalizeDescriptionForMatch(bankDesc);
+            if (string.IsNullOrEmpty(normManual) && string.IsNullOrEmpty(normBank))
+                return true;
+            if (string.IsNullOrEmpty(normManual) || string.IsNullOrEmpty(normBank))
+                return true;
+            if (normManual.Contains(normBank, StringComparison.Ordinal) || normBank.Contains(normManual, StringComparison.Ordinal))
+                return true;
+            var manualWords = normManual.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(w => w.Length > 2).ToHashSet();
+            var bankWords = normBank.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(w => w.Length > 2).ToHashSet();
+            return manualWords.Overlaps(bankWords);
+        }
+
+        /// <summary>
+        /// Returns true if a manual transaction already exists that matches this imported row
+        /// (same user, date within tolerance, amount within tolerance, description match). Used to avoid
+        /// duplicating manually entered bills/income when importing the end-of-month statement.
+        /// </summary>
+        private async Task<bool> ExistsMatchingManualTransactionAsync(
+            string userId,
+            ImportedTransactionDTO dto,
+            CancellationToken cancellationToken)
+        {
+            var absAmount = Math.Abs(dto.Amount);
+            var dtoDateUtc = DateTime.SpecifyKind(dto.Date, DateTimeKind.Utc);
+            var dateMin = dtoDateUtc.AddDays(-ManualDuplicateDateToleranceDays);
+            var dateMax = dtoDateUtc.AddDays(ManualDuplicateDateToleranceDays);
+            // Widen amount window for candidate fetch: absolute 0.01 or 1% of amount, whichever is larger
+            var amountTolerance = absAmount >= 1 ? absAmount * ManualDuplicateAmountRelativeTolerance : ManualDuplicateAmountTolerance;
+            if (amountTolerance < ManualDuplicateAmountTolerance) amountTolerance = ManualDuplicateAmountTolerance;
+            var amountMin = absAmount - amountTolerance;
+            var amountMax = absAmount + amountTolerance;
+
+            var candidates = await _context.Transactions
+                .Where(t =>
+                    t.UserId == userId
+                    && t.BankTransactionId == null
+                    && t.ImportHistoryId == null
+                    && t.Date >= dateMin
+                    && t.Date <= dateMax
+                    && t.Amount >= amountMin
+                    && t.Amount <= amountMax)
+                .Select(t => new { t.Description, t.Amount })
+                .ToListAsync(cancellationToken);
+
+            // In-memory: apply exact amount rule (absolute or relative) and description match
+            foreach (var c in candidates)
+            {
+                var amountMatch = Math.Abs(c.Amount - absAmount) < ManualDuplicateAmountTolerance
+                    || (absAmount > 0 && Math.Abs(c.Amount - absAmount) / Math.Max(c.Amount, absAmount) <= ManualDuplicateAmountRelativeTolerance);
+                if (!amountMatch) continue;
+                if (DescriptionsMatch(c.Description, dto.Description))
+                    return true;
+            }
+
+            return false;
         }
 
         private string MapCategory(string? bankCategory, string? description)

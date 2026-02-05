@@ -225,13 +225,14 @@ const TripMicrography = ({ trip, onNavigate }) => {
         <div className={`micrography-map-container ${expanded ? 'expanded' : ''}`}>
           {/* Inner container to isolate Mapbox from flex/grid layout shifts */}
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+            {/* Light mode: streetsNative (streets-v12) for full-color map; dark: midnight */}
             <Map
               initialViewState={initialViewState}
               // Force re-mount if trip changes to reset view
               key={trip?.id}
               ref={mapRef}
               mapboxAccessToken={MAPBOX_TOKEN}
-              mapStyle={theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.streets}
+              mapStyle={theme === 'dark' ? MAP_STYLES.midnight : MAP_STYLES.streetsNative}
               style={{ width: '100%', height: '100%' }}
               minZoom={DISCOVERY_MAP_CONFIG.minZoom}
               maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}

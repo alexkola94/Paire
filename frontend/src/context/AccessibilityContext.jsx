@@ -60,7 +60,7 @@ export const AccessibilityProvider = ({ children }) => {
 export const useAccessibility = () => {
     const context = useContext(AccessibilityContext)
     if (context === undefined) {
-        throw new Error('useAccessibility must be used within an AccessibilityProvider')
+        throw new Error('useAccessibility must be used within an AccessibilityProvider') // i18n-ignore
     }
     return context
 }

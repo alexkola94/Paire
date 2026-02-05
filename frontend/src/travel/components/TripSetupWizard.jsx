@@ -17,7 +17,9 @@ import { budgetService, savingsGoalService } from '../../services/api'
 import { createTrip } from '../services/travelDb'
 import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
 import { getAdvisory } from '../services/travelAdvisoryService'
+import { reverseGeocode } from '../services/discoveryService'
 import TravelAdvisoryCard from './TravelAdvisoryCard'
+import TransportBookingStep from './TransportBookingStep'
 import DatePicker from './DatePicker'
 import DateRangePicker from './DateRangePicker'
 import '../styles/TripSetupWizard.css'
@@ -74,11 +76,41 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
     budgetCurrency: trip?.budgetCurrency || 'EUR'
   })
 
+  // Origin city detection state (for transport booking step)
+  const [originCity, setOriginCity] = useState(null)
+  const [originLoading, setOriginLoading] = useState(false)
+
   // Destination search state
   const [searchQuery, setSearchQuery] = useState(trip?.destination || '')
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [advisory, setAdvisory] = useState(null)
+
+  // Detect user origin city via browser geolocation + reverse geocoding
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return
+
+    setOriginLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords
+          const result = await reverseGeocode(latitude, longitude)
+          if (result?.name) {
+            setOriginCity(result.name)
+          }
+        } catch (err) {
+          console.warn('Origin city detection failed:', err)
+        } finally {
+          setOriginLoading(false)
+        }
+      },
+      () => {
+        // Permission denied or unavailable - fail silently
+        setOriginLoading(false)
+      }
+    )
+  }, [])
 
   // Load existing budgets and saving goals on mount
   // Uses the same fetching pattern as SavingsGoals.jsx
@@ -216,8 +248,7 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
           setError(t('travel.setup.errors.invalidDates', 'End date must be after start date'))
           return false
         }
-        break
-      case 3:
+        // Budget validation (budget UI is rendered in step 2)
         if (budgetMode === 'new' && formData.budget && !formData.budgetCategory) {
           setError(t('travel.setup.errors.budgetCategoryRequired', 'Please name your budget'))
           return false
@@ -226,6 +257,9 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
           setError(t('travel.wizard.selectBudget', 'Please select a budget'))
           return false
         }
+        break
+      case 3:
+        // Transport step is optional - no validation needed
         break
       default:
         break
@@ -502,6 +536,27 @@ const TripSetupWizard = ({ trip, onClose, onSave }) => {
             </div>
           </div>
         )
+
+      case 3: {
+        // When we have origin (home) and destination, show both outbound and return legs
+        const hasOriginAndDestination = originCity && formData.destination && formData.startDate && formData.endDate
+        const legs = hasOriginAndDestination
+          ? [
+              { from: originCity, to: formData.destination, startDate: formData.startDate, endDate: formData.endDate, transportMode: null },
+              { from: formData.destination, to: originCity, startDate: formData.endDate, endDate: null, transportMode: null }
+            ]
+          : null
+        return (
+          <TransportBookingStep
+            origin={originCity}
+            destination={formData.destination}
+            startDate={formData.startDate}
+            endDate={formData.endDate}
+            originLoading={originLoading}
+            legs={legs}
+          />
+        )
+      }
 
       default:
         return null

@@ -20,6 +20,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { adminService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../../../constants/theme';
+import { ScreenHeader } from '../../../components';
 
 export default function AdminLogsScreen() {
   const { t } = useTranslation();
@@ -58,13 +59,7 @@ export default function AdminLogsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>{t('admin.logs', 'System logs')}</Text>
-      </View>
-
+      <ScreenHeader title={t('admin.logs', 'System logs')} onBack={() => router.back()} />
       <FlatList
         data={list}
         keyExtractor={(_, i) => String(i)}
@@ -83,15 +78,6 @@ export default function AdminLogsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  backBtn: { padding: spacing.xs, marginRight: spacing.sm },
-  title: { flex: 1, ...typography.h3 },
   list: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   card: {
     padding: spacing.md,

@@ -10,3 +10,4 @@ export { default as DiscoveryMap } from './DiscoveryMap';
 export { default as POISheet } from './POISheet';
 export { default as WeatherCard } from './WeatherCard';
 export { default as TripMicrography } from './TripMicrography';
+export { default as TransportLegCard } from './TransportLegCard';

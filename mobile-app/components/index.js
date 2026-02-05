@@ -15,6 +15,7 @@ export {
   BottomSheetMenu,
   QuickAddSheet,
   TabBarWithFAB,
+  ScreenHeader,
   FinanceHubSheet,
   ToolsHubSheet,
   ExploreHubSheet,
@@ -28,6 +29,8 @@ export {
 
 // Animated Components
 export { default as AnimatedCard } from './AnimatedCard';
+export { default as AnimatedPressable } from './AnimatedPressable';
+export { default as AnimatedListItem } from './AnimatedListItem';
 export { default as SuccessAnimation } from './SuccessAnimation';
 export { default as SplashScreen } from './SplashScreen';
 
@@ -47,13 +50,15 @@ export { default as CalendarView } from './CalendarView';
 
 // Widget System
 export { default as WidgetSelector } from './WidgetSelector';
-export { 
-  SummaryWidget, 
-  BudgetWidget, 
-  UpcomingBillsWidget, 
-  RecentTransactionsWidget, 
-  SavingsWidget, 
+export {
+  SummaryWidget,
+  BudgetWidget,
+  UpcomingBillsWidget,
+  RecentTransactionsWidget,
+  SavingsWidget,
   QuickAccessWidget,
+  InsightsWidget,
+  AnalyticsWidget,
   WIDGET_REGISTRY,
   getDefaultWidgetLayout,
   getWidgetById,
@@ -82,5 +87,9 @@ export { default as RecurringBillForm } from './RecurringBillForm';
 export { default as ShoppingListForm } from './ShoppingListForm';
 export { default as ShoppingItemForm } from './ShoppingItemForm';
 
-// Global Calculator
+// Global Calculator & Add-to-Calculator button
 export { default as GlobalCalculator } from './GlobalCalculator';
+export { default as AddToCalculatorButton } from './AddToCalculatorButton';
+
+// Chat / structured message (Financial & Travel Guide)
+export { default as StructuredMessageContent } from './StructuredMessageContent';

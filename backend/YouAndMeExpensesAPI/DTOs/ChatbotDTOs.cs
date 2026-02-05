@@ -41,6 +41,8 @@ namespace YouAndMeExpensesAPI.DTOs
         public string? StartDate { get; set; }
         public string? EndDate { get; set; }
         public decimal? Budget { get; set; }
+        /// <summary>Optional list of city names for multi-city trips (e.g. Paris, Lyon).</summary>
+        public List<string>? CityNames { get; set; }
     }
 
     /// <summary>

@@ -3,7 +3,7 @@
  * Trip list + Travel Chatbot + Travel Advisory.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,17 +14,24 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  KeyboardAvoidingView,
+  Clipboard,
+  Share,
+  Alert,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { MessageCircle, Send, AlertTriangle, Search, Plus, MapPin, Home } from 'lucide-react-native';
-import { travelChatbotService, travelAdvisoryService, travelService } from '../../../services/api';
+import { MessageCircle, Send, AlertTriangle, Search, Plus, MapPin, Home, Copy, Share2, StopCircle, RefreshCw, Sparkles, Brain, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import * as Location from 'expo-location';
+import { travelChatbotService, travelAdvisoryService, travelService, tripCityService, aiGatewayService } from '../../../services/api';
+import { reverseGeocode } from '../../../services/discoveryService';
 import { getStaticTravelSuggestions } from '../../../utils/travelChatbotSuggestions';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
-import { Modal, useToast } from '../../../components';
-import { MultiCityTripWizard } from '../../../components/travel';
+import { Modal, useToast, ScreenHeader, StructuredMessageContent } from '../../../components';
+import { MultiCityTripWizard, TransportLegCard } from '../../../components/travel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function TravelIndexScreen() {
@@ -41,7 +48,31 @@ export default function TravelIndexScreen() {
     queryKey: ['travel-trips'],
     queryFn: () => travelService.getTrips(),
   });
+  const tripList = Array.isArray(trips) ? trips : [];
+  // Context trip for Guide: most recent by start date (so answers are for current/upcoming trip)
+  const contextTrip = useMemo(() => {
+    if (tripList.length === 0) return null;
+    const sorted = [...tripList].sort((a, b) => {
+      const aDate = a.startDate || a.start_date || '';
+      const bDate = b.startDate || b.start_date || '';
+      return bDate.localeCompare(aDate);
+    });
+    return sorted[0] ?? null;
+  }, [tripList]);
+  // Cities for context trip (multi-city)
+  const { data: contextTripCities = [] } = useQuery({
+    queryKey: ['travel-trip-cities', contextTrip?.id],
+    queryFn: () => tripCityService.getByTrip(contextTrip.id),
+    enabled: !!contextTrip?.id,
+  });
+  const contextCityNames = useMemo(
+    () => (Array.isArray(contextTripCities) ? contextTripCities.map((c) => c.name || c.Name).filter(Boolean) : []),
+    [contextTripCities]
+  );
   const [addTripOpen, setAddTripOpen] = useState(false);
+  const [addTripStep, setAddTripStep] = useState(1); // 1: details, 2: budget, 3: transport
+  const [singleOriginCityName, setSingleOriginCityName] = useState(null);
+  const [singleOriginLoading, setSingleOriginLoading] = useState(false);
   const [showTripTypePicker, setShowTripTypePicker] = useState(false);
   const [showMultiCityWizard, setShowMultiCityWizard] = useState(false);
   const [newTripName, setNewTripName] = useState('');
@@ -55,6 +86,7 @@ export default function TravelIndexScreen() {
       queryClient.invalidateQueries({ queryKey: ['travel-trips'] });
       showToast(t('travel.common.createTrip', 'Trip created'), 'success');
       setAddTripOpen(false);
+      setAddTripStep(1);
       setNewTripName('');
       setNewTripDestination('');
       setNewTripStart('');
@@ -69,7 +101,11 @@ export default function TravelIndexScreen() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  // Note: chatListRef removed - using View instead of FlatList for chat messages
+  const [isAiMode, setIsAiMode] = useState(false);
+  const [isThinkingMode, setIsThinkingMode] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState(false);
+  const chatScrollRef = useRef(null);
+  const chatRequestCancelledRef = useRef(false);
 
   // Advisory state
   const [advisoryCountry, setAdvisoryCountry] = useState('');
@@ -96,6 +132,15 @@ export default function TravelIndexScreen() {
     return () => { cancelled = true; };
   }, [lang]);
 
+  // Check if AI gateway is available for Guide AI / Deep Think modes
+  useEffect(() => {
+    let cancelled = false;
+    aiGatewayService.isAvailable().then((ok) => {
+      if (!cancelled) setAiAvailable(ok);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetchTrips();
@@ -110,17 +155,76 @@ export default function TravelIndexScreen() {
     setChatInput('');
     setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
     setChatLoading(true);
+    chatRequestCancelledRef.current = false;
     try {
+      let botContent = '';
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const res = await travelChatbotService.sendQuery(trimmed, history, lang);
-      const botContent = res?.response ?? res?.message ?? (typeof res === 'string' ? res : t('travel.chatbot.thinking'));
+
+      if (isAiMode && aiAvailable) {
+        // AI Mode: inject trip context so answers are for current trip locations
+        const queryWithContext = travelContextString ? travelContextString + trimmed : trimmed;
+        const aiHistory = history.map((m) => ({ role: m.role, message: m.content }));
+        if (isThinkingMode) {
+          const res = await aiGatewayService.ragQuery(queryWithContext, { history: aiHistory });
+          if (chatRequestCancelledRef.current) return;
+          botContent = res?.response || res?.answer || res?.message || t('travel.chatbot.thinking', 'Let me think about that...');
+        } else {
+          const formattedHistory = [...aiHistory, { role: 'user', message: queryWithContext }];
+          const res = await aiGatewayService.chat(formattedHistory);
+          if (chatRequestCancelledRef.current) return;
+          botContent = res?.response || res?.content || res?.message || t('chatbot.aiResponse', "Here's what I found...");
+        }
+      } else {
+        // Rule-based: travel chatbot service with trip context for personalization
+        const res = await travelChatbotService.sendQuery(trimmed, history, lang, tripContext ?? undefined);
+        if (chatRequestCancelledRef.current) return;
+        botContent = res?.response ?? res?.message ?? (typeof res === 'string' ? res : t('travel.chatbot.thinking'));
+      }
+
       setMessages((prev) => [...prev, { role: 'bot', content: botContent }]);
     } catch (err) {
+      if (chatRequestCancelledRef.current) return;
       setMessages((prev) => [...prev, { role: 'bot', content: err?.message || t('common.error') }]);
     } finally {
-      setChatLoading(false);
+      if (!chatRequestCancelledRef.current) setChatLoading(false);
     }
-  }, [chatInput, chatLoading, messages, lang, t]);
+  }, [chatInput, chatLoading, messages, lang, isAiMode, isThinkingMode, aiAvailable, travelContextString, tripContext, t]);
+
+  const stopChatRequest = useCallback(() => {
+    chatRequestCancelledRef.current = true;
+    setChatLoading(false);
+  }, []);
+
+  const handleCopyMessage = useCallback((text) => {
+    Clipboard.setString(text);
+    showToast(t('common.copied', 'Copied to clipboard'), 'success');
+  }, [showToast, t]);
+
+  const handleShareMessage = useCallback(async (text) => {
+    try {
+      await Share.share({ message: text });
+    } catch (_) {}
+  }, []);
+
+  const clearGuideChat = useCallback(() => {
+    Alert.alert(
+      t('chatbot.clearHistoryTitle', 'Clear Chat'),
+      t('chatbot.clearHistoryMessage', 'Are you sure you want to clear all messages?'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.clear', 'Clear'), style: 'destructive', onPress: () => setMessages([]) },
+      ]
+    );
+  }, [t]);
+
+  const toggleAiMode = useCallback((value) => {
+    if (value && !aiAvailable) {
+      showToast(t('chatbot.aiNotAvailable', 'AI mode is not available'), 'warning');
+      return;
+    }
+    setIsAiMode(value);
+    if (!value) setIsThinkingMode(false);
+  }, [aiAvailable, showToast, t]);
 
   const fetchAdvisory = useCallback(async () => {
     const code = advisoryCountry.trim().toUpperCase();
@@ -139,6 +243,32 @@ export default function TravelIndexScreen() {
       setAdvisoryLoading(false);
     }
   }, [advisoryCountry, advisoryLoading, t]);
+
+  // Origin (home) detection for single-destination transport step; run when modal opens
+  useEffect(() => {
+    if (!addTripOpen) return;
+    let cancelled = false;
+    setSingleOriginLoading(true);
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (cancelled) return;
+        if (status !== 'granted') {
+          setSingleOriginLoading(false);
+          return;
+        }
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (cancelled) return;
+        const result = await reverseGeocode(loc.coords.latitude, loc.coords.longitude);
+        if (!cancelled && result?.name) setSingleOriginCityName(result.name);
+      } catch (err) {
+        if (!cancelled) console.warn('Single-destination origin detection failed:', err);
+      } finally {
+        if (!cancelled) setSingleOriginLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [addTripOpen]);
 
   const handleCreateTrip = () => {
     const name = newTripName.trim();
@@ -184,51 +314,285 @@ export default function TravelIndexScreen() {
     return 'critical';
   };
 
-  const tripList = Array.isArray(trips) ? trips : [];
+  // Trip context for Guide: rule-based backend and AI prompt injection
+  const tripContext = useMemo(() => {
+    if (!contextTrip) return null;
+    const dest = contextTrip.destination || contextTrip.Destination || contextTrip.name || contextTrip.Name || '';
+    const startStr = contextTrip.startDate || contextTrip.StartDate;
+    const endStr = contextTrip.endDate || contextTrip.EndDate;
+    const dateRange = [startStr, endStr].filter(Boolean).map((d) => (typeof d === 'string' && d.includes('T') ? d.split('T')[0] : d)).join('–');
+    return {
+      name: contextTrip.name || contextTrip.Name || undefined,
+      destination: dest || undefined,
+      country: contextTrip.country || contextTrip.Country || undefined,
+      startDate: startStr || undefined,
+      endDate: endStr || undefined,
+      budget: contextTrip.budget ?? contextTrip.Budget ?? undefined,
+      cityNames: contextCityNames.length > 0 ? contextCityNames : undefined,
+    };
+  }, [contextTrip, contextCityNames]);
+
+  // Context string to prepend to user message for AI/Deep Think (so answers are trip-location aware)
+  const travelContextString = useMemo(() => {
+    if (!tripContext?.destination) return '';
+    const parts = ["Context: You are the Travel Guide. The user's current trip:", tripContext.destination];
+    if (tripContext.country) parts.push(`, ${tripContext.country}`);
+    if (tripContext.cityNames?.length) parts.push(`. Cities: ${tripContext.cityNames.join(', ')}`);
+    const startStr = tripContext.startDate;
+    const endStr = tripContext.endDate;
+    if (startStr || endStr) {
+      const start = typeof startStr === 'string' && startStr.includes('T') ? startStr.split('T')[0] : startStr;
+      const end = typeof endStr === 'string' && endStr.includes('T') ? endStr.split('T')[0] : endStr;
+      parts.push(`. Dates: ${[start, end].filter(Boolean).join('–')}`);
+    }
+    parts.push(". Answer only about travel and this trip's locations.\n\nUser question: ");
+    return parts.join('');
+  }, [tripContext]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
-        }
-      >
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('travel.common.enterTravelMode', 'Travel Mode')}
-        </Text>
+      <ScreenHeader title={t('travel.common.enterTravelMode', 'Travel Mode')} />
+      {/* Section toggles – fixed at top */}
+      <View style={[styles.tabs, { backgroundColor: theme.colors.surface }, shadows.sm]}>
+        <TouchableOpacity
+          style={[styles.tab, activeSection === 'trips' && { borderBottomColor: theme.colors.primary, borderBottomWidth: 2 }]}
+          onPress={() => setActiveSection('trips')}
+        >
+          <MapPin size={18} color={activeSection === 'trips' ? theme.colors.primary : theme.colors.textSecondary} />
+          <Text style={[styles.tabLabel, { color: activeSection === 'trips' ? theme.colors.primary : theme.colors.textSecondary }]}>
+            {t('travel.nav.home', 'Trips')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeSection === 'chatbot' && { borderBottomColor: theme.colors.primary, borderBottomWidth: 2 }]}
+          onPress={() => setActiveSection('chatbot')}
+        >
+          <MessageCircle size={18} color={activeSection === 'chatbot' ? theme.colors.primary : theme.colors.textSecondary} />
+          <Text style={[styles.tabLabel, { color: activeSection === 'chatbot' ? theme.colors.primary : theme.colors.textSecondary }]}>
+            {t('travel.chatbot.title', 'Guide')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeSection === 'advisory' && { borderBottomColor: theme.colors.primary, borderBottomWidth: 2 }]}
+          onPress={() => setActiveSection('advisory')}
+        >
+          <AlertTriangle size={18} color={activeSection === 'advisory' ? theme.colors.primary : theme.colors.textSecondary} />
+          <Text style={[styles.tabLabel, { color: activeSection === 'advisory' ? theme.colors.primary : theme.colors.textSecondary }]}>
+            {t('travel.advisory.riskLevel.unknown', 'Advisory')}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* Section toggles */}
-        <View style={[styles.tabs, { backgroundColor: theme.colors.surface }, shadows.sm]}>
-          <TouchableOpacity
-            style={[styles.tab, activeSection === 'trips' && { borderBottomColor: theme.colors.primary, borderBottomWidth: 2 }]}
-            onPress={() => setActiveSection('trips')}
+      {/* Full-height Guide chat (input sticks to bottom) or scrollable Trips/Advisory */}
+      {activeSection === 'chatbot' ? (
+        <View style={[styles.chatbotSection, styles.chatbotSectionFullHeight, { backgroundColor: theme.colors.surface }, shadows.sm]}>
+          <View style={styles.chatbotSectionHeader}>
+            <View style={styles.chatbotSectionHeaderSpacer} />
+            <TouchableOpacity
+              onPress={clearGuideChat}
+              style={styles.clearChatBtn}
+              accessibilityLabel={t('chatbot.clearHistory', 'Clear history')}
+            >
+              <RefreshCw size={18} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          {/* AI Mode and Deep Think toggles – stacked so they don't overlap on small screens */}
+          <View style={[styles.modeBar, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.glassBorder }]}>
+            <View style={styles.modeToggleRow}>
+              <View style={styles.modeToggleLabel}>
+                <Sparkles size={16} color={isAiMode ? theme.colors.primary : theme.colors.textSecondary} />
+                <Text style={[styles.modeToggleText, { color: theme.colors.text }]} numberOfLines={1}>
+                  {t('chatbot.aiMode', 'AI Mode')}
+                </Text>
+              </View>
+              <Switch
+                value={isAiMode}
+                onValueChange={toggleAiMode}
+                trackColor={{ false: theme.colors.surfaceSecondary, true: theme.colors.primary + '50' }}
+                thumbColor={isAiMode ? theme.colors.primary : theme.colors.textLight}
+              />
+            </View>
+            {isAiMode && (
+              <View style={styles.modeToggleRow}>
+                <View style={styles.modeToggleLabel}>
+                  <Brain size={16} color={isThinkingMode ? theme.colors.success : theme.colors.textSecondary} />
+                  <Text style={[styles.modeToggleText, { color: theme.colors.text }]} numberOfLines={1}>
+                    {t('chatbot.thinkingMode', 'Deep Think')}
+                  </Text>
+                </View>
+                <Switch
+                  value={isThinkingMode}
+                  onValueChange={setIsThinkingMode}
+                  trackColor={{ false: theme.colors.surfaceSecondary, true: theme.colors.success + '50' }}
+                  thumbColor={isThinkingMode ? theme.colors.success : theme.colors.textLight}
+                />
+              </View>
+            )}
+          </View>
+          <KeyboardAvoidingView
+            style={styles.chatbotKeyboardWrap}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
           >
-            <MapPin size={18} color={activeSection === 'trips' ? theme.colors.primary : theme.colors.textSecondary} />
-            <Text style={[styles.tabLabel, { color: activeSection === 'trips' ? theme.colors.primary : theme.colors.textSecondary }]}>
-              {t('travel.nav.home', 'Trips')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeSection === 'chatbot' && { borderBottomColor: theme.colors.primary, borderBottomWidth: 2 }]}
-            onPress={() => setActiveSection('chatbot')}
-          >
-            <MessageCircle size={18} color={activeSection === 'chatbot' ? theme.colors.primary : theme.colors.textSecondary} />
-            <Text style={[styles.tabLabel, { color: activeSection === 'chatbot' ? theme.colors.primary : theme.colors.textSecondary }]}>
-              {t('travel.chatbot.title', 'Guide')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeSection === 'advisory' && { borderBottomColor: theme.colors.primary, borderBottomWidth: 2 }]}
-            onPress={() => setActiveSection('advisory')}
-          >
-            <AlertTriangle size={18} color={activeSection === 'advisory' ? theme.colors.primary : theme.colors.textSecondary} />
-            <Text style={[styles.tabLabel, { color: activeSection === 'advisory' ? theme.colors.primary : theme.colors.textSecondary }]}>
-              {t('travel.advisory.riskLevel.unknown', 'Advisory')}
-            </Text>
-          </TouchableOpacity>
+            <ScrollView
+              ref={chatScrollRef}
+              style={styles.chatList}
+              contentContainerStyle={styles.chatListContent}
+              onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
+              keyboardShouldPersistTaps="handled"
+            >
+              {messages.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <MessageCircle size={48} color={theme.colors.textLight} />
+                  <Text style={[styles.emptyChat, { color: theme.colors.textSecondary }]}>
+                    {t('travel.chatbot.welcomeMessage', "Hi! I'm your travel guide. Ask me anything about your trip!")}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {messages.map((item, i) => (
+                    <View key={i} style={[styles.messageRow, item.role === 'user' ? styles.messageRowUser : styles.messageRowBot]}>
+                      {item.role === 'bot' && (
+                        <View style={[styles.avatarContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+                          <MessageCircle size={16} color={theme.colors.primary} />
+                        </View>
+                      )}
+                      <View
+                        style={[
+                          styles.bubble,
+                          {
+                            backgroundColor: item.role === 'user' ? theme.colors.primary + '20' : theme.colors.surface,
+                            borderColor: theme.colors.glassBorder,
+                          },
+                          item.role === 'bot' && shadows.sm,
+                        ]}
+                      >
+                        {item.role === 'user' ? (
+                          <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>{item.content}</Text>
+                        ) : (
+                          <StructuredMessageContent
+                            text={item.content}
+                            theme={theme}
+                            textStyle={[styles.bubbleText, { color: theme.colors.text }]}
+                          />
+                        )}
+                        {item.role === 'bot' && (
+                          <View style={styles.messageActions}>
+                            <TouchableOpacity
+                              style={[styles.messageActionBtn, { backgroundColor: theme.colors.surfaceSecondary }]}
+                              onPress={() => handleCopyMessage(item.content)}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Copy size={12} color={theme.colors.textSecondary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.messageActionBtn, { backgroundColor: theme.colors.surfaceSecondary }]}
+                              onPress={() => handleShareMessage(item.content)}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Share2 size={12} color={theme.colors.textSecondary} />
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                  {/* Loading indicator: show that the agent is working */}
+                  {chatLoading && (
+                    <View style={[styles.messageRow, styles.messageRowBot]}>
+                      <View style={[styles.avatarContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+                        <MessageCircle size={16} color={theme.colors.primary} />
+                      </View>
+                      <View
+                        style={[
+                          styles.bubble,
+                          styles.thinkingBubble,
+                          { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder },
+                          shadows.sm,
+                        ]}
+                      >
+                        <ActivityIndicator size="small" color={theme.colors.primary} style={styles.thinkingSpinner} />
+                        <Text style={[styles.bubbleText, { color: theme.colors.textSecondary }]}>
+                          {t('travel.chatbot.thinking', t('chatbot.thinking', 'Thinking...'))}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </>
+              )}
+              {messages.length === 0 && suggestions.length > 0 && (
+                <View style={styles.suggestions}>
+                  <Text style={[styles.suggestionsLabel, { color: theme.colors.textSecondary }]}>
+                    {t('travel.chatbot.tryAsking', 'Try asking:')}
+                  </Text>
+                  <View style={styles.suggestionChips}>
+                    {suggestions.map((s, i) => (
+                      <TouchableOpacity
+                        key={i}
+                        style={[styles.chip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '40' }]}
+                        onPress={() => sendChatMessage(s)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.chipText, { color: theme.colors.primary }]} numberOfLines={2}>{s}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+            <View style={[styles.inputRow, { backgroundColor: theme.colors.background, borderTopColor: theme.colors.glassBorder }]}>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: theme.colors.text,
+                    backgroundColor: theme.colors.surface,
+                    borderColor: theme.colors.glassBorder,
+                  },
+                ]}
+                placeholder={t('travel.chatbot.placeholder', 'Ask about your trip...')}
+                placeholderTextColor={theme.colors.textLight}
+                value={chatInput}
+                onChangeText={setChatInput}
+                onSubmitEditing={() => sendChatMessage(chatInput)}
+                editable={!chatLoading}
+                multiline
+                maxLength={2000}
+              />
+              {chatLoading ? (
+                <TouchableOpacity
+                  style={[styles.sendBtn, { backgroundColor: theme.colors.error }]}
+                  onPress={stopChatRequest}
+                  accessibilityLabel={t('chatbot.stop', 'Stop')}
+                >
+                  <StopCircle size={20} color="#fff" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.sendBtn,
+                    {
+                      backgroundColor: chatInput.trim() ? theme.colors.primary : theme.colors.surfaceSecondary,
+                    },
+                  ]}
+                  onPress={() => sendChatMessage(chatInput)}
+                  disabled={!chatInput.trim()}
+                  accessibilityLabel={t('chatbot.send', 'Send')}
+                >
+                  <Send size={20} color={chatInput.trim() ? '#fff' : theme.colors.textLight} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </KeyboardAvoidingView>
         </View>
-
+      ) : (
+        <ScrollView
+          style={styles.scrollViewFlex}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+          }
+        >
         {activeSection === 'trips' && (
           <View style={[styles.section, { backgroundColor: theme.colors.surface }, shadows.sm]}>
             <View style={styles.tripHeader}>
@@ -263,68 +627,6 @@ export default function TravelIndexScreen() {
                 </TouchableOpacity>
               ))
             )}
-          </View>
-        )}
-
-        {activeSection === 'chatbot' && (
-          <View style={[styles.section, { backgroundColor: theme.colors.surface }, shadows.sm]}>
-            {/* Use View with mapped messages instead of FlatList to avoid nesting VirtualizedList in ScrollView */}
-            <View style={styles.chatList}>
-              <View style={styles.chatListContent}>
-                {messages.length === 0 ? (
-                  <Text style={[styles.emptyChat, { color: theme.colors.textSecondary }]}>
-                    {t('travel.chatbot.placeholder', 'Ask about your trip...')}
-                  </Text>
-                ) : (
-                  messages.map((item, i) => (
-                    <View key={i} style={[styles.messageRow, item.role === 'user' ? styles.messageRowUser : styles.messageRowBot]}>
-                      <View style={[styles.bubble, { backgroundColor: item.role === 'user' ? theme.colors.primary + '20' : theme.colors.background }, !(item.role === 'user') && shadows.sm]}>
-                        <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>{item.content}</Text>
-                      </View>
-                    </View>
-                  ))
-                )}
-                {/* Suggestion chips */}
-                {suggestions.length > 0 && (
-                  <View style={styles.suggestions}>
-                    <Text style={[styles.suggestionsLabel, { color: theme.colors.textSecondary }]}>
-                      {t('travel.chatbot.tryAsking', 'Try asking:')}
-                    </Text>
-                    <View style={styles.suggestionChips}>
-                      {suggestions.map((s, i) => (
-                        <TouchableOpacity
-                          key={i}
-                          style={[styles.chip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '40' }]}
-                          onPress={() => sendChatMessage(s)}
-                        >
-                          <Text style={[styles.chipText, { color: theme.colors.primary }]} numberOfLines={1}>{s}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </View>
-            </View>
-            <View style={[styles.inputRow, { backgroundColor: theme.colors.background, borderColor: theme.colors.glassBorder }]}>
-              <TextInput
-                style={[styles.input, { color: theme.colors.text, backgroundColor: theme.colors.surface }]}
-                placeholder={t('travel.chatbot.placeholder', 'Ask about your trip...')}
-                placeholderTextColor={theme.colors.textLight}
-                value={chatInput}
-                onChangeText={setChatInput}
-                onSubmitEditing={() => sendChatMessage(chatInput)}
-                editable={!chatLoading}
-                multiline
-                maxLength={2000}
-              />
-              <TouchableOpacity
-                style={[styles.sendBtn, { backgroundColor: theme.colors.primary }]}
-                onPress={() => sendChatMessage(chatInput)}
-                disabled={!chatInput.trim() || chatLoading}
-              >
-                {chatLoading ? <ActivityIndicator size="small" color="#fff" /> : <Send size={20} color="#fff" />}
-              </TouchableOpacity>
-            </View>
           </View>
         )}
 
@@ -374,7 +676,8 @@ export default function TravelIndexScreen() {
             )}
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      )}
 
       {/* Trip type picker: Single vs Multi-city */}
       <Modal
@@ -433,62 +736,134 @@ export default function TravelIndexScreen() {
         </View>
       )}
 
-      {/* Add Trip Modal */}
+      {/* Add Trip Modal – 3-step wizard: details → budget → transport */}
       <Modal
         isOpen={addTripOpen}
-        onClose={() => setAddTripOpen(false)}
-        title={t('travel.common.createTrip', 'Create Trip')}
+        onClose={() => { setAddTripOpen(false); setAddTripStep(1); }}
+        title={addTripStep === 1 ? t('travel.common.createTrip', 'Create Trip') : addTripStep === 2 ? t('travel.budget.amount', 'Budget') : t('travel.transportBooking.title', 'Book Transport')}
       >
         <View style={styles.form}>
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.name', 'Name')}</Text>
-          <TextInput
-            style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder={t('travel.itinerary.eventNamePlaceholder', 'e.g. Paris 2025')}
-            placeholderTextColor={theme.colors.textLight}
-            value={newTripName}
-            onChangeText={setNewTripName}
-          />
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.destination', 'Destination')}</Text>
-          <TextInput
-            style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder={t('travel.trip.destinationPlaceholder', 'e.g. Paris')}
-            placeholderTextColor={theme.colors.textLight}
-            value={newTripDestination}
-            onChangeText={setNewTripDestination}
-          />
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.startDate', 'Start Date')} / {t('travel.trip.endDate', 'End Date')}</Text>
-          <View style={styles.formRow}>
-            <TextInput
-              style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-              placeholder={t('travel.trip.startDatePlaceholder', 'Start YYYY-MM-DD')}
-              placeholderTextColor={theme.colors.textLight}
-              value={newTripStart}
-              onChangeText={setNewTripStart}
-            />
-            <TextInput
-              style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-              placeholder={t('travel.trip.endDatePlaceholder', 'End YYYY-MM-DD')}
-              placeholderTextColor={theme.colors.textLight}
-              value={newTripEnd}
-              onChangeText={setNewTripEnd}
-            />
+          {addTripStep === 1 && (
+            <>
+              <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.name', 'Name')}</Text>
+              <TextInput
+                style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                placeholder={t('travel.itinerary.eventNamePlaceholder', 'e.g. Paris 2025')}
+                placeholderTextColor={theme.colors.textLight}
+                value={newTripName}
+                onChangeText={setNewTripName}
+              />
+              <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.destination', 'Destination')}</Text>
+              <TextInput
+                style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                placeholder={t('travel.trip.destinationPlaceholder', 'e.g. Paris')}
+                placeholderTextColor={theme.colors.textLight}
+                value={newTripDestination}
+                onChangeText={setNewTripDestination}
+              />
+              <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.trip.startDate', 'Start Date')} / {t('travel.trip.endDate', 'End Date')}</Text>
+              <View style={styles.formRow}>
+                <TextInput
+                  style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                  placeholder={t('travel.trip.startDatePlaceholder', 'Start YYYY-MM-DD')}
+                  placeholderTextColor={theme.colors.textLight}
+                  value={newTripStart}
+                  onChangeText={setNewTripStart}
+                />
+                <TextInput
+                  style={[styles.formInputSmall, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                  placeholder={t('travel.trip.endDatePlaceholder', 'End YYYY-MM-DD')}
+                  placeholderTextColor={theme.colors.textLight}
+                  value={newTripEnd}
+                  onChangeText={setNewTripEnd}
+                />
+              </View>
+            </>
+          )}
+          {addTripStep === 2 && (
+            <>
+              <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.budget.amount', 'Budget')} ({t('common.optional', 'optional')})</Text>
+              <TextInput
+                style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
+                placeholder={t('travel.trip.budgetPlaceholder', '0')}
+                placeholderTextColor={theme.colors.textLight}
+                value={newTripBudget}
+                onChangeText={setNewTripBudget}
+                keyboardType="decimal-pad"
+              />
+            </>
+          )}
+          {addTripStep === 3 && (() => {
+            const origin = singleOriginCityName || t('travel.multiCity.home', 'Home');
+            const dest = newTripDestination?.trim() || '';
+            const legs = dest
+              ? [
+                  { from: origin, to: dest, startDate: newTripStart || null, endDate: newTripEnd || null, transportMode: 'flight' },
+                  { from: dest, to: origin, startDate: newTripEnd || null, endDate: null, transportMode: 'flight' },
+                ]
+              : [];
+            return (
+              <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={{ paddingBottom: spacing.md }}>
+                {singleOriginLoading ? (
+                  <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <Text style={[typography.caption, { color: theme.colors.textSecondary, marginTop: spacing.sm }]}>
+                      {t('travel.transportBooking.originDetecting', 'Detecting your location...')}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={[typography.bodySmall, { color: theme.colors.textSecondary, marginBottom: spacing.md }]}>
+                      {t('travel.transportBooking.singleDestinationDescription', 'Find booking links for your outbound and return trip.')}
+                    </Text>
+                    {legs.map((leg, index) => (
+                      <TransportLegCard key={index} leg={leg} />
+                    ))}
+                    <Text style={[typography.caption, { color: theme.colors.textSecondary, marginTop: spacing.md }]}>
+                      {t('travel.transportBooking.skipHint', 'This step is optional — you can book transport later')}
+                    </Text>
+                  </>
+                )}
+              </ScrollView>
+            );
+          })()}
+
+          {/* Wizard footer: Back / Next or Create trip */}
+          <View style={[styles.wizardFooter, { borderTopColor: theme.colors.glassBorder }]}>
+            {addTripStep > 1 ? (
+              <TouchableOpacity
+                style={[styles.wizardFooterBtn, { borderColor: theme.colors.glassBorder }]}
+                onPress={() => setAddTripStep(addTripStep - 1)}
+              >
+                <ChevronLeft size={18} color={theme.colors.text} />
+                <Text style={[styles.wizardFooterBtnText, { color: theme.colors.text }]}>{t('common.back', 'Back')}</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.wizardFooterBtn} />
+            )}
+            {addTripStep < 3 ? (
+              <TouchableOpacity
+                style={[styles.wizardFooterBtn, styles.wizardFooterBtnPrimary, { backgroundColor: theme.colors.primary }]}
+                onPress={() => setAddTripStep(addTripStep + 1)}
+                disabled={addTripStep === 1 && !newTripName.trim()}
+              >
+                <Text style={styles.primaryButtonText}>{t('common.next', 'Next')}</Text>
+                <ChevronRight size={18} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.wizardFooterBtn, styles.wizardFooterBtnPrimary, { backgroundColor: theme.colors.primary }]}
+                onPress={handleCreateTrip}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>{t('travel.common.createTrip', 'Create Trip')}</Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
-          <Text style={[styles.formLabel, { color: theme.colors.textSecondary }]}>{t('travel.budget.amount', 'Budget')} (optional)</Text>
-          <TextInput
-            style={[styles.formInput, { color: theme.colors.text, borderColor: theme.colors.glassBorder }]}
-            placeholder={t('travel.trip.budgetPlaceholder', '0')}
-            placeholderTextColor={theme.colors.textLight}
-            value={newTripBudget}
-            onChangeText={setNewTripBudget}
-            keyboardType="decimal-pad"
-          />
-          <TouchableOpacity
-            style={[styles.primaryButton, { backgroundColor: theme.colors.primary }]}
-            onPress={handleCreateTrip}
-            disabled={createMutation.isPending}
-          >
-            {createMutation.isPending ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.primaryButtonText}>{t('travel.common.save', 'Save')}</Text>}
-          </TouchableOpacity>
         </View>
       </Modal>
     </SafeAreaView>
@@ -511,21 +886,86 @@ const styles = StyleSheet.create({
   tripCard: { padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.sm },
   tripName: { ...typography.body, fontWeight: '600' },
   tripSub: { ...typography.bodySmall, marginTop: 2 },
-  chatList: { maxHeight: 280 },
+  scrollViewFlex: { flex: 1 },
+  chatbotSection: { borderRadius: borderRadius.lg, padding: spacing.md, overflow: 'hidden' },
+  chatbotSectionFullHeight: { flex: 1 },
+  chatbotSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: spacing.xs },
+  chatbotSectionHeaderSpacer: { flex: 1 },
+  clearChatBtn: { padding: spacing.xs },
+  modeBar: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    gap: spacing.sm,
+  },
+  modeToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    minHeight: 36,
+  },
+  modeToggleLabel: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flex: 1, minWidth: 0 },
+  modeToggleText: { ...typography.bodySmall, fontWeight: '500', flex: 1 },
+  thinkingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  thinkingSpinner: { marginRight: 0 },
+  chatbotKeyboardWrap: { flex: 1 },
+  chatList: { flex: 1 },
   chatListContent: { paddingBottom: spacing.md },
-  emptyChat: { ...typography.bodySmall, paddingVertical: spacing.lg, textAlign: 'center' },
-  messageRow: { marginBottom: spacing.sm },
-  messageRowUser: { alignItems: 'flex-end' },
-  messageRowBot: { alignItems: 'flex-start' },
-  bubble: { maxWidth: '85%', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: borderRadius.md },
-  bubbleText: { ...typography.bodySmall },
-  suggestions: { marginTop: spacing.sm },
-  suggestionsLabel: { ...typography.caption, marginBottom: spacing.xs },
-  suggestionChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: borderRadius.full, borderWidth: 1 },
-  chipText: { ...typography.caption },
-  inputRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: spacing.sm, marginTop: spacing.md, gap: spacing.sm },
-  input: { flex: 1, ...typography.body, paddingVertical: spacing.sm, minHeight: 44 },
+  emptyContainer: { alignItems: 'center', paddingVertical: spacing.xl },
+  emptyChat: { ...typography.body, textAlign: 'center', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  messageRow: { flexDirection: 'row', marginBottom: spacing.md, alignItems: 'flex-start' },
+  messageRowUser: { justifyContent: 'flex-end' },
+  messageRowBot: { justifyContent: 'flex-start' },
+  avatarContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  bubble: {
+    maxWidth: '80%',
+    flexShrink: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+  },
+  bubbleText: { ...typography.body },
+  messageActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.xs, marginTop: spacing.xs },
+  messageActionBtn: { padding: spacing.xs, borderRadius: borderRadius.sm },
+  suggestions: { marginTop: spacing.md },
+  suggestionsLabel: { ...typography.label, marginBottom: spacing.sm },
+  suggestionChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: borderRadius.md, borderWidth: 1 },
+  chipText: { ...typography.bodySmall },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    gap: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    minHeight: 52,
+    maxHeight: 140,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    ...typography.body,
+  },
   sendBtn: { width: 44, height: 44, borderRadius: borderRadius.md, alignItems: 'center', justifyContent: 'center' },
   primaryButton: { paddingVertical: spacing.md, borderRadius: borderRadius.md, alignItems: 'center', marginTop: spacing.md },
   primaryButtonText: { ...typography.label, color: '#fff' },
@@ -538,6 +978,10 @@ const styles = StyleSheet.create({
   formInput: { ...typography.body, borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md },
   formInputSmall: { flex: 1, ...typography.bodySmall, borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, marginBottom: spacing.md },
   formRow: { flexDirection: 'row', gap: spacing.sm },
+  wizardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: spacing.md, marginTop: spacing.md, borderTopWidth: 1 },
+  wizardFooterBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: borderRadius.md, borderWidth: 1 },
+  wizardFooterBtnText: { ...typography.label },
+  wizardFooterBtnPrimary: { borderWidth: 0 },
   typePicker: { padding: spacing.md, gap: spacing.md },
   typeOption: {
     flexDirection: 'row',

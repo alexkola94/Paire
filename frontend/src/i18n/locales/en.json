@@ -881,7 +881,8 @@
     "remove": "Remove",
     "confirmDelete": "Confirm delete",
     "deleting": "Deleting...",
-    "searching": "Searching..."
+    "searching": "Searching...",
+    "noResults": "No transactions found matching your search."
   },
   "notifications": {
     "title": "Notifications",
@@ -1237,6 +1238,7 @@
     "revert": "Revert",
     "total": "Imported",
     "skipped": "Skipped (Duplicates)",
+    "matchedManual": "Matched manual entries",
     "errors": "Errors"
   },
   "travel": {
@@ -1253,6 +1255,39 @@
       "delayed": "Delayed",
       "gate": "Gate",
       "terminal": "Terminal"
+    },
+    "transportBooking": {
+      "title": "Book Transport",
+      "description": "Choose a transport type and find tickets from top providers",
+      "multiCityDescription": "Find booking links for each leg of your trip",
+      "selectType": "Select transport type",
+      "flight": "Flight",
+      "bus": "Bus",
+      "ferry": "Ferry",
+      "findFlights": "Find Flights",
+      "searchBusTickets": "Search Bus Tickets",
+      "searchFerryRoutes": "Search Ferry Routes",
+      "skyscanner": "Skyscanner",
+      "kiwi": "Kiwi.com",
+      "flixbus": "FlixBus",
+      "omio": "Omio",
+      "ferryhopper": "Ferryhopper",
+      "directFerries": "Direct Ferries",
+      "originDetecting": "Detecting your location...",
+      "originUnknown": "Origin not detected — providers will show search",
+      "originFrom": "From",
+      "skipHint": "This step is optional — you can book transport later",
+      "openInNewTab": "Search",
+      "noBookingLink": "No booking link for this transport mode",
+      "legFrom": "Leg",
+      "outbound": "Outbound",
+      "return": "Return",
+      "searchPrices": "Search prices",
+      "book": "Book",
+      "noResults": "No results. Try different dates or open in new tab.",
+      "searchUnavailable": "Search unavailable; open in new tab instead.",
+      "searching": "Searching...",
+      "errorOriginDest": "Could not resolve origin or destination for Skyscanner."
     },
     "distance": {
       "from": "from",

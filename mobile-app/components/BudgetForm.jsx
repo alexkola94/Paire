@@ -160,7 +160,7 @@ export default function BudgetForm({
         value={formData.amount}
         onChange={(value) => handleChange('amount', value)}
         label={`${t('budgets.budgetAmount', 'Budget Amount')} *`}
-        placeholder="0.00"
+        placeholder="0.00" // i18n-ignore
         disabled={loading}
         quickAmounts={[100, 200, 500, 1000]}
       />

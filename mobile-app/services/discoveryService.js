@@ -245,12 +245,14 @@ export async function reverseGeocode(lat, lng) {
     lon: String(lng),
     format: 'json',
     addressdetails: '1',
+    zoom: '10', // city-level (not district/neighbourhood) for trip destination names
   });
   try {
     const res = await fetch(`${NOMINATIM_REVERSE}?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'Accept-Language': 'en',
         'User-Agent': 'YouAndMeExpenses-Mobile/1.0',
       },
     });

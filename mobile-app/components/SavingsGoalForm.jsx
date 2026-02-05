@@ -193,7 +193,7 @@ export default function SavingsGoalForm({
         value={formData.targetAmount}
         onChange={(value) => handleChange('targetAmount', value)}
         label={`${t('savingsGoals.targetAmount', 'Target Amount')} *`}
-        placeholder="0.00"
+        placeholder="0.00" // i18n-ignore: numeric
         disabled={loading}
         quickAmounts={[500, 1000, 5000, 10000]}
       />
@@ -204,7 +204,7 @@ export default function SavingsGoalForm({
           value={formData.currentAmount}
           onChange={(value) => handleChange('currentAmount', value)}
           label={t('savingsGoals.currentAmount', 'Current Amount')}
-          placeholder="0.00"
+          placeholder="0.00" // i18n-ignore: numeric
           disabled={loading}
           quickAmounts={[50, 100, 500, 1000]}
         />

@@ -129,18 +129,37 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
+            // Return clear 400 when model validation fails (e.g. missing confirmPassword, short password)
+            if (request == null)
+            {
+                return BadRequest(new { message = "Request body is required", errors = new[] { "Email, password and confirmPassword are required." } });
+            }
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
             // Forward X-Tenant-Id if present, or default to "thepaire"
             var tenantId = Request.Headers["X-Tenant-Id"].FirstOrDefault() ?? "thepaire";
-            
+
             var payload = new
             {
                 Username = request.Email,
                 request.Email,
                 request.Password,
-                FullName = request.DisplayName
+                FullName = request.DisplayName ?? string.Empty
             };
 
             var response = await _shieldAuthService.RegisterAsync(payload, tenantId);
+
+            if (!response.IsSuccess)
+            {
+                _logger.LogWarning("Shield register returned {StatusCode}: {Content}", response.StatusCode, response.Content);
+            }
             
             if (response.IsSuccess)
             {
@@ -343,12 +362,44 @@ namespace YouAndMeExpensesAPI.Controllers
         [Authorize]
         [HttpPost("2fa/enable")]
         public async Task<IActionResult> Enable2FA([FromBody] object request)
-            => HandleProxyResponse(await _shieldAuthService.Enable2FAAsync(request, GetToken()));
+        {
+            var response = await _shieldAuthService.Enable2FAAsync(request, GetToken());
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var user = await _userManager.FindByIdAsync(userId);
+                    if (user != null)
+                    {
+                        user.TwoFactorEnabled = true;
+                        await _userManager.UpdateAsync(user);
+                    }
+                }
+            }
+            return HandleProxyResponse(response);
+        }
 
         [Authorize]
         [HttpPost("2fa/disable")]
         public async Task<IActionResult> Disable2FA([FromBody] object request)
-            => HandleProxyResponse(await _shieldAuthService.Disable2FAAsync(request, GetToken()));
+        {
+            var response = await _shieldAuthService.Disable2FAAsync(request, GetToken());
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var user = await _userManager.FindByIdAsync(userId);
+                    if (user != null)
+                    {
+                        user.TwoFactorEnabled = false;
+                        await _userManager.UpdateAsync(user);
+                    }
+                }
+            }
+            return HandleProxyResponse(response);
+        }
 
         [HttpPost("2fa/verify")]
         public async Task<IActionResult> Verify2FA([FromBody] object request)

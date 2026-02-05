@@ -13,6 +13,7 @@
     "confirm": "Confirmer",
     "loading": "Chargement...",
     "noData": "Pas encore de données",
+    "error": "Une erreur s'est produite",
     "back": "Retour",
     "copied": "Copié dans le presse-papiers",
     "more": "plus",
@@ -26,6 +27,22 @@
     "maxLength": "{{field}} ne doit pas dépasser {{max}} caractères",
     "email": "Veuillez entrer un email valide",
     "words": "mots"
+  },
+  "biometric": {
+    "title": "Déverrouillage biométrique",
+    "appLocked": "Application verrouillée",
+    "unlockPrompt": "Déverrouiller Paire",
+    "unlockDescription": "Authentifiez-vous pour accéder à vos données financières",
+    "unlock": "Déverrouiller",
+    "unlockWith": "Déverrouiller avec {{type}}",
+    "usePasscode": "Utiliser le code",
+    "enabled": "Déverrouillage biométrique activé",
+    "disabled": "Déverrouillage biométrique désactivé",
+    "authFailed": "Échec de l'authentification",
+    "notAvailable": "Non disponible",
+    "tryAgain": "Échec de l'authentification. Réessayez.",
+    "usePasswordInstead": "Utiliser le mot de passe",
+    "enablePrompt": "Vérifiez votre identité pour activer le déverrouillage biométrique"
   },
   "notifications": {
     "channels": {
@@ -46,7 +63,62 @@
     "budgetAlert": "Alerte budget",
     "budgetAlertBody": "Vous avez utilisé {{percentage}}% de votre budget {{category}}",
     "savingsMilestone": "Jalon d'épargne !",
-    "savingsMilestoneBody": "Vous avez atteint {{percentage}}% de votre objectif « {{name}} » !"
+    "savingsMilestoneBody": "Vous avez atteint {{percentage}}% de votre objectif « {{name}} » !",
+    "weeklySummaryTitle": "Résumé Hebdomadaire des Dépenses",
+    "weeklySummaryBody": "Cette semaine vous avez dépensé {{amount}}.",
+    "weeklySummaryWithChange": "Cette semaine vous avez dépensé {{amount}}. C'est {{percent}}% de {{change}} que la semaine dernière."
+  },
+  "onboarding": {
+    "continue": "Continuer",
+    "skip": "Passer pour l'instant",
+    "skipped": "passé",
+    "currency": {
+      "title": "Bienvenue sur Paire !",
+      "subtitle": "Choisissez votre devise par défaut pour commencer."
+    },
+    "partner": {
+      "title": "Mieux ensemble",
+      "subtitle": "Invitez votre partenaire pour partager les finances et suivre les dépenses ensemble.",
+      "skipHint": "Vous pourrez inviter un partenaire plus tard dans les Paramètres."
+    },
+    "budget": {
+      "title": "Définissez votre premier budget",
+      "subtitle": "Suivez vos dépenses par catégorie. Vous pourrez en ajouter plus tard."
+    },
+    "transaction": {
+      "title": "Ajoutez votre première dépense",
+      "subtitle": "Commencez à suivre vos dépenses tout de suite."
+    },
+    "complete": {
+      "title": "Vous êtes prêt !",
+      "subtitle": "Bienvenue sur Paire ! Votre aventure financière commence maintenant.",
+      "continue": "Aller au tableau de bord",
+      "currencySet": "Devise par défaut sélectionnée",
+      "partnerInvited": "Partenaire invité",
+      "budgetCreated": "Premier budget créé",
+      "transactionAdded": "Première dépense ajoutée"
+    }
+  },
+  "partnerSync": {
+    "partnerAddedExpense": "{{name}} a ajouté: {{item}} - {{amount}}",
+    "partnerAddedIncome": "{{name}} a ajouté un revenu: {{item}} - {{amount}}",
+    "connected": "Connecté à la synchronisation partenaire",
+    "disconnected": "Synchronisation partenaire déconnectée",
+    "reconnecting": "Reconnexion à la synchronisation partenaire..."
+  },
+  "partnership": {
+    "title": "Partenariat",
+    "subtitle": "Gérez votre partenariat financier",
+    "noPartnership": "Aucun partenariat",
+    "noPartnershipDescription": "Créez un partenariat pour partager dépenses, revenus et données avec votre partenaire.",
+    "invitePartner": "Inviter un partenaire",
+    "sendInvite": "Envoyer l'invitation",
+    "inviteSent": "Invitation envoyée !",
+    "partnerEmail": "Email du partenaire",
+    "emailPlaceholder": "partenaire@exemple.com",
+    "benefit1": "Partagez toutes les données financières automatiquement",
+    "benefit2": "Suivez qui a ajouté chaque transaction",
+    "benefit3": "Consultez la comparaison partenaire dans les Analyses"
   },
   "auth": {
     "login": "Connexion",
@@ -62,7 +134,7 @@
     "alreadyHaveAccount": "Vous avez déjà un compte?",
     "welcomeBack": "Bon Retour!",
     "createAccount": "Créez votre compte",
-    "emailPlaceholder": "vous@exemple.com",
+    "emailPlaceholder": "Entrez votre adresse e-mail",
     "passwordPlaceholder": "••••••••",
     "twoFactorCodePlaceholder": "000000",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
@@ -85,7 +157,13 @@
     "agreeToTerms": "J'accepte les",
     "termsRequired": "Vous devez accepter les Conditions d'utilisation pour vous inscrire.",
     "twoFactorSetup": "Authentification à deux facteurs",
+    "setupTwoFactor": "Configurer 2FA",
+    "manualEntryKey": "Clé d'entrée manuelle",
+    "verify": "Vérifier",
+    "setupFailed": "Échec de la configuration",
+    "verificationFailed": "La vérification a échoué. Veuillez réessayer.",
     "logoutConfirm": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "loggingOut": "Déconnexion en cours...",
     "errors": {
       "networkError": "Vérifiez votre connexion et réessayez.",
       "invalidCredentials": "Email ou mot de passe incorrect. Veuillez réessayer.",
@@ -97,6 +175,16 @@
       "invalidCsrfToken": "Jeton de sécurité invalide ou manquant. Veuillez actualiser la page et réessayer.",
       "generic": "Une erreur s'est produite. Veuillez réessayer."
     }
+  },
+  "twoFactor": {
+    "alreadyEnabled": "L'authentification à deux facteurs est déjà activée pour votre compte.",
+    "disableButton": "Désactiver 2FA",
+    "disableConfirmTitle": "Désactiver l'authentification à deux facteurs ?",
+    "disableConfirmDescription": "Entrez votre mot de passe pour désactiver l'authentification à deux facteurs. Votre compte sera moins sécurisé.",
+    "enterPassword": "Entrez votre mot de passe",
+    "disableConfirm": "Oui, désactiver 2FA",
+    "disableSuccess": "Authentification à deux facteurs désactivée avec succès",
+    "disableError": "Échec de la désactivation de 2FA"
   },
   "messages": {
     "operationFailed": "L'opération a échoué. Veuillez réessayer.",
@@ -113,10 +201,17 @@
       "fr": "Français"
     }
   },
+  "theme": {
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "switchToLight": "Passer en mode clair",
+    "switchToDark": "Passer en mode sombre"
+  },
   "navigation": {
     "add": "Ajouter",
     "dashboard": "Tableau de Bord",
     "analytics": "Analyses",
+    "bills": "Factures",
     "expenses": "Dépenses",
     "income": "Revenus",
     "loans": "Prêts",
@@ -246,6 +341,17 @@
     "confirmDeleteItem": "Êtes-vous sûr de vouloir supprimer cet article?",
     "errorSaving": "Échec de l'enregistrement de la liste de courses",
     "errorSavingItem": "Échec de l'enregistrement de l'article",
+    "importFromFile": "Importer depuis un fichier",
+    "importSuccess": "Liste créée avec {{count}} article",
+    "importSuccess_plural": "Liste créée avec {{count}} articles",
+    "importError": "Échec de l'importation de la liste",
+    "importNoItems": "Aucun article trouvé dans le fichier",
+    "importFileReadError": "Impossible de lire le fichier",
+    "importCancelled": "Importation annulée",
+    "importPreviewTitle": "Importer la liste",
+    "importPreviewMessage": "{{count}} article sera ajouté",
+    "importPreviewMessage_plural": "{{count}} articles seront ajoutés",
+    "importListNamePlaceholder": "Liste importée",
     "categories": {
       "groceries": "Alimentation",
       "household": "Ménage",
@@ -402,6 +508,8 @@
     "settings": "Paramètres",
     "legal": "Mentions légales",
     "manage": "Gérer",
+    "developer": "Développeur",
+    "viewOnboarding": "Voir l'intégration",
     "language": "Langue",
     "changePassword": "Changer le mot de passe",
     "deleteAccount": "Supprimer le compte",
@@ -601,6 +709,13 @@
     "aiModeDisabled": "Mode règles activé! J'utilise des réponses prédéfinies pour une assistance rapide.",
     "aiWelcome": "Bonjour! 🤖 Je suis votre assistant financier alimenté par l'IA. Je peux vous aider avec des questions plus complexes et avoir des conversations naturelles!",
     "aiUnavailable": "Le service IA n'est pas disponible pour le moment. Essayez de passer en mode règles.",
+    "aiNotAvailable": "Le mode IA n'est pas disponible",
+    "thinkingMode": "Réflexion approfondie",
+    "thinkingModeActive": "Mode réflexion approfondie actif",
+    "clearHistory": "Effacer l'historique",
+    "clearHistoryTitle": "Effacer le chat",
+    "clearHistoryMessage": "Voulez-vous vraiment effacer tous les messages ?",
+    "stop": "Arrêter",
     "stopResponse": "Arrêter",
     "stopping": "Arrêt en cours...",
     "responseStopped": "Réponse arrêtée",
@@ -610,6 +725,31 @@
     "normalChatLabel": "Chat normal",
     "sources": "Sources",
     "scrollToEnd": "Aller à la fin"
+  },
+  "import": {
+    "title": "Importer des relevés",
+    "importFromFile": "Importer depuis un fichier",
+    "dragDrop": "Appuyez ou glissez un fichier pour importer le relevé",
+    "formats": "Prise en charge CSV, Excel et PDF des grandes banques",
+    "invalidFileType": "Type de fichier invalide. Téléchargez un fichier .csv, .xlsx ou .pdf.",
+    "fileTooLarge": "Le fichier est trop volumineux. Taille max. 5 Mo.",
+    "uploadFailed": "Échec du téléchargement",
+    "success": "Importation réussie !",
+    "genericError": "Une erreur s'est produite lors de l'importation.",
+    "uploadBtn": "Importer les transactions",
+    "instructionsTitle": "Comment importer votre relevé",
+    "step1": "Connectez-vous à votre banque en ligne.",
+    "step2": "Téléchargez votre historique de transactions en CSV, Excel ou PDF.",
+    "step3": "Téléchargez le fichier ici pour synchroniser vos transactions.",
+    "historyTitle": "Historique des importations",
+    "revertConfirm": "Voulez-vous vraiment annuler cette importation ? Toutes les transactions associées seront supprimées.",
+    "revertSuccess": "Importation annulée avec succès.",
+    "revertError": "Échec de l'annulation de l'importation.",
+    "revertTitle": "Annuler cette importation",
+    "revert": "Annuler",
+    "total": "Importées",
+    "skipped": "Ignorées (doublons)",
+    "errors": "Erreurs"
   },
   "travel": {
     "chatbot": {
@@ -622,6 +762,7 @@
       "send": "Envoyer",
       "placeholder": "Posez une question sur votre voyage...",
       "tryAsking": "Essayez de demander :",
+      "welcomeMessage": "Bonjour ! Je suis votre guide voyage. Posez-moi vos questions sur votre voyage !",
       "clearChat": "Effacer le chat",
       "viewDetails": "Voir les détails",
       "thinking": "Réflexion...",
@@ -668,6 +809,33 @@
       "loadingTripView": "Chargement de la vue de votre voyage...",
       "saveFailed": "Impossible d'enregistrer. Veuillez réessayer."
     },
+    "transportBooking": {
+      "title": "Réserver un transport",
+      "description": "Choisissez un type de transport et trouvez des billets chez les meilleurs fournisseurs",
+      "multiCityDescription": "Trouvez des liens de réservation pour chaque tronçon de votre voyage",
+      "singleDestinationDescription": "Trouvez des liens de réservation pour l'aller et le retour.",
+      "originDetecting": "Détection de votre position...",
+      "openInNewTab": "Rechercher",
+      "openOn": "Ouvrir sur",
+      "noBookingLink": "Aucun lien de réservation pour ce mode de transport",
+      "skipHint": "Cette étape est facultative — vous pouvez réserver plus tard",
+      "outbound": "Aller",
+      "return": "Retour",
+      "searchPrices": "Rechercher les prix",
+      "searching": "Recherche...",
+      "book": "Réserver",
+      "errorOriginDest": "Impossible d'identifier l'origine ou la destination.",
+      "apiSearching": "Recherche de prix...",
+      "fromPrice": "à partir de {{price}}",
+      "bestPrices": "Meilleurs prix trouvés",
+      "bookNow": "Réserver",
+      "direct": "Direct",
+      "stops": "{{count}} escale",
+      "stops_plural": "{{count}} escales",
+      "poweredBy": "Prix par {{provider}}",
+      "flightOffer": "{{airline}} · {{duration}}",
+      "busOffer": "{{operator}} · {{duration}}"
+    },
     "trip": {
       "createTrip": "Créer un voyage",
       "editTrip": "Modifier le voyage",
@@ -705,7 +873,7 @@
       "recentExpenses": "Dépenses Récentes",
       "addExpense": "Ajouter une Dépense",
       "editExpense": "Modifier la Dépense",
-      "noExpenses": "Aucune dépense pour le moment",
+      "noExpenses": "Aucune dépense pour le moment. Appuyez sur + pour ajouter.",
       "category": "Catégorie",
       "amount": "Montant",
       "currency": "Devise",
@@ -731,7 +899,7 @@
       "editEvent": "Modifier l'Événement",
       "day": "Jour",
       "today": "Aujourd'hui",
-      "noEvents": "Aucun événement planifié",
+      "noEvents": "Aucun événement pour l'instant. Appuyez sur + pour ajouter.",
       "eventType": "Type d'Événement",
       "eventName": "Nom",
       "eventNamePlaceholder": "ex., Visiter le Louvre",
@@ -770,6 +938,7 @@
       "addItem": "Ajouter un Article",
       "editItem": "Modifier l'Article",
       "addSuggestions": "Suggestions Intelligentes",
+      "noItems": "Aucun article pour l'instant. Appuyez sur + pour ajouter.",
       "emptyTitle": "Votre liste de bagages est vide",
       "emptyDescription": "Ajoutez des articles manuellement ou utilisez des suggestions intelligentes",
       "itemName": "Nom de l'Article",
@@ -799,6 +968,7 @@
       "deleteMessage": "Êtes-vous sûr de vouloir supprimer ce document ?",
       "noTrip": "Aucun Voyage Sélectionné",
       "createTripFirst": "Créez un voyage pour stocker vos documents",
+      "noDocs": "Aucun document pour l'instant. Appuyez sur + pour ajouter.",
       "emptyTitle": "Aucun document pour le moment",
       "emptyDescription": "Stockez votre passeport, visa et détails de réservation en toute sécurité",
       "addDocument": "Ajouter un Document",
@@ -875,6 +1045,8 @@
       "title": "Explorer",
       "subtitle": "Carte et lieux à proximité",
       "essentials": "Essentiels de voyage",
+      "noPlaces": "Aucun lieu enregistré pour l'instant",
+      "noPlacesHint": "Enregistrez des lieux depuis la carte pour les voir ici",
       "noTrip": "Aucun Voyage Sélectionné",
       "createTripFirst": "Créez un voyage pour explorer votre destination",
       "noLocation": "Localisation non définie",

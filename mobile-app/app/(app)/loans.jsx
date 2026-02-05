@@ -40,6 +40,7 @@ import {
   FormField,
   EmptyState,
   ScreenLoading,
+  ScreenHeader,
   useToast,
 } from '../../components';
 
@@ -81,7 +82,7 @@ export default function LoansScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loans'] });
       notificationSuccess();
-      showToast(t('loans.createSuccess', 'Loan created successfully'), 'success');
+      showToast(t('loans.createSuccess'), 'success');
       setIsFormOpen(false);
     },
     onError: (error) => {
@@ -95,7 +96,7 @@ export default function LoansScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loans'] });
       notificationSuccess();
-      showToast(t('loans.updateSuccess', 'Loan updated successfully'), 'success');
+      showToast(t('loans.updateSuccess'), 'success');
       setEditingLoan(null);
     },
     onError: (error) => {
@@ -109,7 +110,7 @@ export default function LoansScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loans'] });
       notificationWarning();
-      showToast(t('loans.deleteSuccess', 'Loan deleted successfully'), 'success');
+      showToast(t('loans.deleteSuccess'), 'success');
       setDeleteTarget(null);
     },
     onError: (error) => {
@@ -132,7 +133,7 @@ export default function LoansScreen() {
       queryClient.invalidateQueries({ queryKey: ['loan-payments', variables.loanId] });
       queryClient.invalidateQueries({ queryKey: ['loans'] });
       notificationSuccess();
-      showToast(t('loans.paymentAdded', 'Payment added'), 'success');
+      showToast(t('loans.paymentAdded'), 'success');
       setPaymentFormOpen(false);
       setPaymentFormData({
         amount: '',
@@ -143,7 +144,7 @@ export default function LoansScreen() {
       });
     },
     onError: (error) => {
-      showToast(error.message || t('loans.paymentError', 'Failed to add payment'), 'error');
+      showToast(error.message || t('loans.paymentError'), 'error');
     },
   });
 
@@ -157,11 +158,11 @@ export default function LoansScreen() {
         queryClient.invalidateQueries({ queryKey: ['loans'] });
       }
       notificationWarning();
-      showToast(t('loans.paymentDeleted', 'Payment deleted'), 'success');
+      showToast(t('loans.paymentDeleted'), 'success');
       setDeletePaymentTarget(null);
     },
     onError: (error) => {
-      showToast(error.message || t('loans.paymentError', 'Failed to delete payment'), 'error');
+      showToast(error.message || t('loans.paymentError'), 'error');
     },
   });
 
@@ -402,22 +403,20 @@ export default function LoansScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: title + Add button */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('loans.title', 'Loans')}
-        </Text>
-        <TouchableOpacity
-          onPress={() => { impactMedium(); setIsFormOpen(true); }}
-          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
-          activeOpacity={0.7}
-          accessibilityLabel={t('loans.addNew', 'Add new loan')}
-          accessibilityRole="button"
-        >
-          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('loans.title')}
+        rightElement={
+          <TouchableOpacity
+            onPress={() => { impactMedium(); setIsFormOpen(true); }}
+            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+            activeOpacity={0.7}
+            accessibilityLabel={t('loans.addNew')}
+            accessibilityRole="button"
+          >
+            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+          </TouchableOpacity>
+        }
+      />
       <FlatList
         data={items}
         keyExtractor={(i) => String(i.id)}
@@ -433,9 +432,9 @@ export default function LoansScreen() {
         ListEmptyComponent={
           <EmptyState
             icon={HandCoins}
-            title={t('loans.emptyTitle', 'No loans yet')}
-            description={t('loans.emptyDescription', 'Track money lent and borrowed to keep things clear between you.')}
-            ctaLabel={t('loans.addFirst', 'Add Loan')}
+            title={t('loans.emptyTitle')}
+            description={t('loans.emptyDescription')}
+            ctaLabel={t('loans.addFirst')}
             onPress={() => setIsFormOpen(true)}
           />
         }
@@ -445,9 +444,7 @@ export default function LoansScreen() {
       <Modal
         isOpen={isFormOpen || editingLoan !== null}
         onClose={closeForm}
-        title={editingLoan
-          ? t('loans.editTitle', 'Edit Loan')
-          : t('loans.addTitle', 'Add Loan')}
+        title={editingLoan ? t('loans.editTitle') : t('loans.addTitle')}
       >
         <LoanForm
           loan={editingLoan}
@@ -462,8 +459,8 @@ export default function LoansScreen() {
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
-        title={t('loans.deleteTitle', 'Delete Loan')}
-        message={t('loans.deleteMessage', 'Are you sure you want to delete this loan?')}
+        title={t('loans.deleteTitle')}
+        message={t('loans.deleteMessage')}
         confirmText={t('common.delete', 'Delete')}
         cancelText={t('common.cancel', 'Cancel')}
         variant="danger"
@@ -474,7 +471,7 @@ export default function LoansScreen() {
       <Modal
         isOpen={paymentsModalLoan !== null}
         onClose={closePaymentsModal}
-        title={`${paymentsModalLoan?.name || paymentsModalLoan?.borrowerName || paymentsModalLoan?.lenderName || t('loans.title', 'Loan')} – ${t('loans.paymentHistory', 'Payment History')}`}
+        title={`${paymentsModalLoan?.name || paymentsModalLoan?.borrowerName || paymentsModalLoan?.lenderName || t('loans.title')} – ${t('loans.paymentHistory')}`}
       >
         <View style={styles.paymentsModalContent}>
           {/* Payments list */}
@@ -609,18 +606,6 @@ export default function LoansScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
     flex: 1,
   },
   headerAddBtn: {

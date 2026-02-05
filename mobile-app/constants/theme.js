@@ -16,6 +16,7 @@ export const colors = {
   glassBg: 'rgba(255, 255, 255, 0.85)',
   glassBorder: 'rgba(0, 0, 0, 0.08)',
   glassShadowColor: 'rgba(31, 38, 135, 0.08)',
+  inputBorder: 'rgba(0, 0, 0, 0.12)', // Form input borders
   // Blur effect tokens (for BlurView / backdrop blur)
   blurIntensity: 70,
 
@@ -41,17 +42,21 @@ export const colors = {
   overlay: 'rgba(0,0,0,0.48)',
 
   // Dark mode overrides (deep purple-tinted)
+  // Improved contrast ratios for accessibility
   dark: {
     bgPrimary: '#0F071A',
     bgSecondary: '#1a1a2e',
     bgTertiary: '#16213e',
-    textPrimary: '#e2e8f0',
-    textSecondary: '#94a3b8',
-    textLight: '#64748b',
-    glassBg: 'rgba(26, 26, 46, 0.85)',
-    glassBorder: 'rgba(255, 255, 255, 0.08)',
+    textPrimary: '#f1f5f9', // Improved: brighter for better contrast
+    textSecondary: '#a1afc4', // Improved: lighter for better readability
+    textLight: '#7d8ca0', // Improved: more visible on dark backgrounds
+    glassBg: 'rgba(26, 26, 46, 0.88)',
+    glassBorder: 'rgba(255, 255, 255, 0.14)', // Improved: more visible borders
+    inputBorder: 'rgba(255, 255, 255, 0.18)', // Form input borders (more visible)
     overlay: 'rgba(0,0,0,0.7)',
     blurIntensity: 70,
+    // Light background for date picker modal in dark mode so native spinner text is readable
+    datePickerModalBg: '#ffffff',
   },
 };
 
@@ -118,8 +123,10 @@ export const lightTheme = {
     textLight: colors.textLight,
     glassBg: colors.glassBg,
     glassBorder: colors.glassBorder,
+    inputBorder: colors.inputBorder,
     overlay: colors.overlay,
     blurIntensity: colors.blurIntensity ?? 70,
+    datePickerModalBg: colors.bgSecondary,
   },
   dark: false,
 };
@@ -135,8 +142,10 @@ export const darkTheme = {
     textLight: colors.dark.textLight,
     glassBg: colors.dark.glassBg,
     glassBorder: colors.dark.glassBorder,
+    inputBorder: colors.dark.inputBorder,
     overlay: colors.dark.overlay,
     blurIntensity: colors.dark.blurIntensity ?? 70,
+    datePickerModalBg: colors.dark.datePickerModalBg,
   },
   dark: true,
 };

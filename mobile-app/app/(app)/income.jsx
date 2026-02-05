@@ -38,6 +38,8 @@ import {
   TransactionForm,
   EmptyState,
   ScreenLoading,
+  ScreenHeader,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -246,9 +248,17 @@ export default function IncomeScreen() {
               {t(`categories.${item.category}`, item.category)} • {new Date(item.date).toLocaleDateString()}
             </Text>
           </View>
-          <Text style={[styles.cardAmount, { color: theme.colors.success }]}>
-            +{formatAmount(item.amount)}
-          </Text>
+          <View style={styles.amountRow}>
+            <Text style={[styles.cardAmount, { color: theme.colors.success }]}>
+              +{formatAmount(item.amount)}
+            </Text>
+            <AddToCalculatorButton
+              value={item.amount}
+              isPrivate={isPrivate}
+              size={16}
+              onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+            />
+          </View>
         </View>
 
         {/* Quick Actions */}
@@ -284,22 +294,20 @@ export default function IncomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: title + Add button */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('income.title', 'Income')}
-        </Text>
-        <TouchableOpacity
-          onPress={() => { impactMedium(); setIsFormOpen(true); }}
-          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
-          activeOpacity={0.7}
-          accessibilityLabel={t('income.addNew', 'Add new income')}
-          accessibilityRole="button"
-        >
-          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('income.title', 'Income')}
+        rightElement={
+          <TouchableOpacity
+            onPress={() => { impactMedium(); setIsFormOpen(true); }}
+            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+            activeOpacity={0.7}
+            accessibilityLabel={t('income.addNew', 'Add new income')}
+            accessibilityRole="button"
+          >
+            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+          </TouchableOpacity>
+        }
+      />
       {/* Filters: search + date range */}
       <View style={styles.searchContainer}>
         <SearchInput
@@ -413,18 +421,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
-    flex: 1,
-  },
   headerAddBtn: {
     width: 44,
     height: 44,
@@ -461,6 +457,11 @@ const styles = StyleSheet.create({
   cardSub: {
     ...typography.bodySmall,
     marginTop: 2,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   cardAmount: {
     ...typography.body,

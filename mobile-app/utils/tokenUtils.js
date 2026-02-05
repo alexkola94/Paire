@@ -10,7 +10,7 @@ function base64Decode(str) {
   if (typeof global !== 'undefined' && global.Buffer) {
     return global.Buffer.from(str, 'base64').toString('utf-8');
   }
-  throw new Error('No base64 decode available');
+  throw new Error('No base64 decode available') // i18n-ignore: dev;
 }
 
 /**

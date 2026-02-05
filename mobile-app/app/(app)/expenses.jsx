@@ -39,6 +39,8 @@ import {
   TransactionForm,
   EmptyState,
   ScreenLoading,
+  ScreenHeader,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -80,12 +82,39 @@ export default function ExpensesScreen() {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (newTransaction) => transactionService.create(newTransaction),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
       notificationSuccess();
       showToast(t('expenses.createSuccess', 'Expense added successfully'), 'success');
       setIsFormOpen(false);
+
+      // Handle budget alerts
+      const alerts = response?.budgetAlerts || [];
+      if (alerts.length > 0) {
+        alerts.forEach((alert) => {
+          const categoryName = t(`categories.${alert.category}`, alert.category);
+          if (alert.alertType === 'exceeded') {
+            notificationWarning();
+            showToast(
+              t('budgets.alertExceeded', '{{category}} budget exceeded! {{percentage}}% used', {
+                category: categoryName,
+                percentage: alert.percentageUsed,
+              }),
+              'error'
+            );
+          } else if (alert.alertType === 'warning') {
+            showToast(
+              t('budgets.alertWarning', '{{category}} budget at {{percentage}}%', {
+                category: categoryName,
+                percentage: alert.percentageUsed,
+              }),
+              'warning'
+            );
+          }
+        });
+      }
     },
     onError: (error) => {
       showToast(error.message || t('common.error', 'An error occurred'), 'error');
@@ -251,9 +280,17 @@ export default function ExpensesScreen() {
               {t(`categories.${item.category}`, item.category)} • {new Date(item.date).toLocaleDateString()}
             </Text>
           </View>
-          <Text style={[styles.cardAmount, { color: theme.colors.error }]}>
-            -{formatAmount(item.amount)}
-          </Text>
+          <View style={styles.amountRow}>
+            <Text style={[styles.cardAmount, { color: theme.colors.error }]}>
+              -{formatAmount(item.amount)}
+            </Text>
+            <AddToCalculatorButton
+              value={item.amount}
+              isPrivate={isPrivate}
+              size={16}
+              onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+            />
+          </View>
         </View>
 
         {/* Quick Actions */}
@@ -289,22 +326,20 @@ export default function ExpensesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: title + Add button */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('expenses.title', 'Expenses')}
-        </Text>
-        <TouchableOpacity
-          onPress={() => { impactMedium(); setIsFormOpen(true); }}
-          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
-          activeOpacity={0.7}
-          accessibilityLabel={t('expenses.addNew', 'Add new expense')}
-          accessibilityRole="button"
-        >
-          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('expenses.title', 'Expenses')}
+        rightElement={
+          <TouchableOpacity
+            onPress={() => { impactMedium(); setIsFormOpen(true); }}
+            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+            activeOpacity={0.7}
+            accessibilityLabel={t('expenses.addNew', 'Add new expense')}
+            accessibilityRole="button"
+          >
+            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+          </TouchableOpacity>
+        }
+      />
       {/* Filters: search + date range */}
       <View style={styles.searchContainer}>
         <SearchInput
@@ -418,18 +453,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
-    flex: 1,
-  },
   headerAddBtn: {
     width: 44,
     height: 44,
@@ -466,6 +489,11 @@ const styles = StyleSheet.create({
   cardSub: {
     ...typography.bodySmall,
     marginTop: 2,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   cardAmount: {
     ...typography.body,

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Http;
+// using Microsoft.AspNetCore.SignalR; // Partnership SignalR (commented out for now)
 using Microsoft.EntityFrameworkCore;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.DTOs;
+// using YouAndMeExpensesAPI.Hubs; // Partnership SignalR (commented out for now)
 using YouAndMeExpensesAPI.Models;
 
 namespace YouAndMeExpensesAPI.Services
@@ -17,6 +19,7 @@ namespace YouAndMeExpensesAPI.Services
         private readonly IAchievementService _achievementService;
         private readonly IBudgetService _budgetService;
         private readonly IBankStatementImportService _importService;
+        // private readonly IHubContext<PartnerHub> _partnerHub; // Partnership SignalR (commented out for now)
         private readonly ILogger<TransactionsService> _logger;
 
         public TransactionsService(
@@ -25,6 +28,7 @@ namespace YouAndMeExpensesAPI.Services
             IAchievementService achievementService,
             IBudgetService budgetService,
             IBankStatementImportService importService,
+            // IHubContext<PartnerHub> partnerHub, // Partnership SignalR (commented out for now)
             ILogger<TransactionsService> logger)
         {
             _dbContext = dbContext;
@@ -32,6 +36,7 @@ namespace YouAndMeExpensesAPI.Services
             _achievementService = achievementService;
             _budgetService = budgetService;
             _importService = importService;
+            // _partnerHub = partnerHub;
             _logger = logger;
         }
 
@@ -236,7 +241,7 @@ namespace YouAndMeExpensesAPI.Services
                 .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId.ToString());
         }
 
-        public async Task<Transaction> CreateTransactionAsync(Guid userId, CreateTransactionRequest request)
+        public async Task<CreateTransactionResponseDto> CreateTransactionAsync(Guid userId, CreateTransactionRequest request)
         {
             var transaction = request.ToTransaction();
 
@@ -258,16 +263,96 @@ namespace YouAndMeExpensesAPI.Services
                 _logger.LogWarning(ex, "Error checking achievements after transaction creation");
             }
 
+            var budgetAlerts = new List<BudgetAlertDto>();
+
             if (transaction.Type.ToLower() == "expense")
             {
-                await _budgetService.UpdateSpentAmountAsync(
+                budgetAlerts = await _budgetService.UpdateSpentAmountAsync(
                     userId.ToString(),
                     transaction.Category,
                     transaction.Amount,
                     transaction.Date);
             }
 
-            return transaction;
+            // Get user profile for the response
+            var userProfile = await _dbContext.UserProfiles
+                .AsNoTracking()
+                .Where(p => p.Id == userId)
+                .Select(p => new UserProfileSlimDto
+                {
+                    Id = p.Id,
+                    Email = p.Email,
+                    DisplayName = p.DisplayName,
+                    AvatarUrl = p.AvatarUrl
+                })
+                .FirstOrDefaultAsync();
+
+            var transactionDto = new TransactionWithProfileDto
+            {
+                Id = transaction.Id,
+                UserId = transaction.UserId,
+                Type = transaction.Type,
+                Amount = transaction.Amount,
+                Category = transaction.Category,
+                Description = transaction.Description,
+                Date = transaction.Date,
+                AttachmentUrl = transaction.AttachmentUrl,
+                AttachmentPath = transaction.AttachmentPath,
+                IsRecurring = transaction.IsRecurring,
+                RecurrencePattern = transaction.RecurrencePattern,
+                RecurrenceEndDate = transaction.RecurrenceEndDate,
+                PaidBy = transaction.PaidBy,
+                SplitType = transaction.SplitType,
+                SplitPercentage = transaction.SplitPercentage,
+                Tags = transaction.Tags,
+                Notes = transaction.Notes,
+                CreatedAt = transaction.CreatedAt,
+                UpdatedAt = transaction.UpdatedAt,
+                UserProfile = userProfile
+            };
+
+            // Partnership SignalR (commented out for now): notify partner via SignalR
+            // try
+            // {
+            //     var partnership = await _dbContext.Partnerships
+            //         .AsNoTracking()
+            //         .FirstOrDefaultAsync(p =>
+            //             (p.User1Id == userId || p.User2Id == userId) &&
+            //             p.Status == "active");
+            //     if (partnership != null)
+            //     {
+            //         var partnerId = partnership.User1Id == userId
+            //             ? partnership.User2Id.ToString()
+            //             : partnership.User1Id.ToString();
+            //         var partnerConnectionId = PartnerHub.GetConnectionId(partnerId);
+            //         if (partnerConnectionId != null)
+            //         {
+            //             await _partnerHub.Clients.Client(partnerConnectionId).SendAsync("PartnerTransactionAdded", new
+            //             {
+            //                 transactionId = transaction.Id,
+            //                 type = transaction.Type,
+            //                 amount = transaction.Amount,
+            //                 category = transaction.Category,
+            //                 description = transaction.Description,
+            //                 date = transaction.Date,
+            //                 partnerName = userProfile?.DisplayName ?? "Partner"
+            //             });
+            //             _logger.LogInformation("Sent SignalR notification to partner {PartnerId} for transaction {TransactionId}",
+            //                 partnerId, transaction.Id);
+            //         }
+            //     }
+            // }
+            // catch (Exception ex)
+            // {
+            //     _logger.LogWarning(ex, "Error sending SignalR notification to partner for transaction {TransactionId}",
+            //         transaction.Id);
+            // }
+
+            return new CreateTransactionResponseDto
+            {
+                Transaction = transactionDto,
+                BudgetAlerts = budgetAlerts
+            };
         }
 
         public async Task<Transaction?> UpdateTransactionAsync(Guid userId, Guid id, Transaction transaction)

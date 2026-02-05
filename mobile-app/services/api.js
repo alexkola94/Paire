@@ -25,7 +25,7 @@ const handleSessionExpiration = () => {
 const getCurrentUser = () => {
   const token = getToken();
   const user = getStoredUser();
-  if (!token || !user) throw new Error('User not authenticated');
+  if (!token || !user) throw new Error('User not authenticated') // i18n-ignore: dev, message translated in UI;
   return user;
 };
 
@@ -197,6 +197,60 @@ export const storageService = {
 };
 
 // ========================================
+// Bank Statement Import
+// ========================================
+
+/**
+ * Normalize import history item from backend (PascalCase or snake_case) to camelCase.
+ */
+function normalizeImportHistoryItem(item) {
+  if (!item) return null;
+  return {
+    id: item.id ?? item.Id,
+    fileName: item.fileName ?? item.FileName,
+    importDate: item.importDate ?? item.ImportDate,
+    transactionCount: item.transactionCount ?? item.TransactionCount ?? 0,
+    totalAmount: item.totalAmount ?? item.TotalAmount ?? 0,
+  };
+}
+
+export const importService = {
+  /**
+   * Get list of past bank statement imports for the current user.
+   * Returns array of { id, fileName, importDate, transactionCount, totalAmount }.
+   */
+  async getImportHistory() {
+    const data = await request('get', '/api/imports');
+    const list = Array.isArray(data) ? data : [];
+    return list.map(normalizeImportHistoryItem).filter(Boolean);
+  },
+
+  /**
+   * Revert an import: delete all transactions from that import batch.
+   * @param {string} id - Import history record ID (UUID).
+   */
+  async revertImport(id) {
+    await request('delete', `/api/imports/${id}`);
+  },
+
+  /**
+   * Upload a bank statement file (CSV, Excel, or PDF).
+   * @param {object} fileAsset - From expo-document-picker: { uri, name, mimeType }.
+   *   Pass as FormData file: { uri, name, type: mimeType } for React Native.
+   * @returns {Promise<{ message, result }>} result has totalImported, duplicatesSkipped, errors, errorMessages.
+   */
+  async importTransactions(fileAsset) {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: fileAsset.uri,
+      name: fileAsset.name || 'statement.csv',
+      type: fileAsset.mimeType || 'text/csv',
+    });
+    return request('post', '/api/transactions/import', formData);
+  },
+};
+
+// ========================================
 // Profile
 // ========================================
 
@@ -362,9 +416,11 @@ export const chatbotService = {
 // ========================================
 
 export const travelChatbotService = {
-  async sendQuery(query, history = [], language) {
+  async sendQuery(query, history = [], language, tripContext = null) {
     const lang = language || (await AsyncStorage.getItem('language')) || 'en';
-    return request('post', '/api/travel-chatbot/query', { query, history, language: lang });
+    const body = { query, history, language: lang };
+    if (tripContext) body.tripContext = tripContext;
+    return request('post', '/api/travel-chatbot/query', body);
   },
   async getSuggestions(language) {
     const lang = language || (await AsyncStorage.getItem('language')) || 'en';
@@ -698,6 +754,86 @@ export const aiGatewayService = {
 
 export const travelAdvisoryService = {
   async getAdvisory(country) { return request('get', `/api/travel/advisory/${encodeURIComponent(country)}`); },
+};
+
+// ========================================
+// Travel Notifications (backend: document expiry, budget, itinerary, packing, push)
+// ========================================
+
+export const travelNotificationsService = {
+  /** GET /api/travel/notifications?tripId=&unreadOnly=&limit= */
+  async getNotifications(params = {}) {
+    getCurrentUser();
+    const q = new URLSearchParams();
+    if (params.tripId != null) q.set('tripId', params.tripId);
+    if (params.unreadOnly != null) q.set('unreadOnly', params.unreadOnly);
+    if (params.limit != null) q.set('limit', params.limit);
+    const query = q.toString();
+    return request('get', `/api/travel/notifications${query ? `?${query}` : ''}`);
+  },
+  /** GET /api/travel/notifications/unread?tripId= */
+  async getUnreadCount(tripId = null) {
+    getCurrentUser();
+    const q = tripId != null ? `?tripId=${tripId}` : '';
+    return request('get', `/api/travel/notifications/unread${q}`);
+  },
+  /** PUT /api/travel/notifications/:id/read */
+  async markAsRead(id) {
+    getCurrentUser();
+    return request('put', `/api/travel/notifications/${id}/read`);
+  },
+  /** POST /api/travel/notifications/mark-all-read?tripId= */
+  async markAllAsRead(tripId = null) {
+    getCurrentUser();
+    const q = tripId != null ? `?tripId=${tripId}` : '';
+    return request('post', `/api/travel/notifications/mark-all-read${q}`);
+  },
+  /** DELETE /api/travel/notifications/:id */
+  async deleteNotification(id) {
+    getCurrentUser();
+    return request('delete', `/api/travel/notifications/${id}`);
+  },
+  /** GET /api/travel/notifications/preferences?tripId= */
+  async getPreferences(tripId = null) {
+    getCurrentUser();
+    const q = tripId != null ? `?tripId=${tripId}` : '';
+    return request('get', `/api/travel/notifications/preferences${q}`);
+  },
+  /** PUT /api/travel/notifications/preferences */
+  async updatePreferences(dto) {
+    getCurrentUser();
+    return request('put', '/api/travel/notifications/preferences', dto);
+  },
+  /** POST /api/travel/notifications/push-subscription */
+  async registerPushSubscription(dto) {
+    getCurrentUser();
+    return request('post', '/api/travel/notifications/push-subscription', dto);
+  },
+  /** DELETE /api/travel/notifications/push-subscription?endpoint= */
+  async unregisterPushSubscription(endpoint) {
+    getCurrentUser();
+    return request('delete', `/api/travel/notifications/push-subscription?endpoint=${encodeURIComponent(endpoint)}`);
+  },
+  /** POST /api/travel/notifications/check?tripId= */
+  async checkNotifications(tripId) {
+    getCurrentUser();
+    return request('post', `/api/travel/notifications/check?tripId=${tripId}`);
+  },
+  /** POST /api/travel/notifications/check-documents?tripId= */
+  async checkDocumentNotifications(tripId) {
+    getCurrentUser();
+    return request('post', `/api/travel/notifications/check-documents?tripId=${tripId}`);
+  },
+  /** POST /api/travel/notifications/check-budget?tripId= */
+  async checkBudgetNotifications(tripId) {
+    getCurrentUser();
+    return request('post', `/api/travel/notifications/check-budget?tripId=${tripId}`);
+  },
+  /** POST /api/travel/notifications/check-itinerary?tripId= */
+  async checkItineraryNotifications(tripId) {
+    getCurrentUser();
+    return request('post', `/api/travel/notifications/check-itinerary?tripId=${tripId}`);
+  },
 };
 
 // ========================================

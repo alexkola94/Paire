@@ -23,6 +23,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSequence,
   interpolate,
   Extrapolation,
   Easing,
@@ -100,6 +101,8 @@ export default function GlobalCalculator() {
     isRevealed,
     displayValue,
     computedResult,
+    justAdded,
+    hasExpression,
     openCalculator,
     closeCalculator,
     appendToExpression,
@@ -123,7 +126,7 @@ export default function GlobalCalculator() {
 
   // Animation values
   const fabSlide = useSharedValue(0); // 0 = hidden, 1 = visible
-  const handlePulse = useSharedValue(1);
+  const fabPulse = useSharedValue(0); // 0 = idle, 1 = peak (for "just added" feedback)
 
   // Clear auto-hide timer
   const clearHideTimer = useCallback(() => {
@@ -200,13 +203,26 @@ export default function GlobalCalculator() {
     return () => clearHideTimer();
   }, [clearHideTimer]);
 
-  // Animated styles for FAB (slides in from LEFT)
-  const fabAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(fabSlide.value, [0, 1], [-70, 0], Extrapolation.CLAMP) },
-    ],
-    opacity: interpolate(fabSlide.value, [0, 0.5, 1], [0, 0.5, 1], Extrapolation.CLAMP),
-  }));
+  // Pulse FAB when a value was just added (green feedback)
+  useEffect(() => {
+    if (!justAdded) return;
+    fabPulse.value = withSequence(
+      withTiming(1, { duration: 150, easing: Easing.out(Easing.cubic) }),
+      withTiming(0, { duration: 450, easing: Easing.inOut(Easing.cubic) })
+    );
+  }, [justAdded, fabPulse]);
+
+  // Animated styles for FAB (slides in from LEFT; pulse scale when justAdded)
+  const fabAnimatedStyle = useAnimatedStyle(() => {
+    const scale = 1 + interpolate(fabPulse.value, [0, 1], [0, 0.08], Extrapolation.CLAMP);
+    return {
+      transform: [
+        { translateX: interpolate(fabSlide.value, [0, 1], [-70, 0], Extrapolation.CLAMP) },
+        { scale },
+      ],
+      opacity: interpolate(fabSlide.value, [0, 0.5, 1], [0, 0.5, 1], Extrapolation.CLAMP),
+    };
+  });
 
   // Animated style for edge handle (on LEFT side)
   const handleAnimatedStyle = useAnimatedStyle(() => ({
@@ -293,6 +309,15 @@ export default function GlobalCalculator() {
             >
               <ChevronRight size={16} color="#ffffff" />
             </TouchableOpacity>
+            {/* Green "something added" indicator */}
+            {justAdded && (
+              <View
+                style={[
+                  styles.justAddedBadge,
+                  { backgroundColor: theme.colors.success },
+                ]}
+              />
+            )}
           </Animated.View>
 
           {/* FAB Button - slides in from LEFT; swipe left to force-hide */}
@@ -313,6 +338,15 @@ export default function GlobalCalculator() {
               >
                 <Calculator size={22} color="#ffffff" />
               </TouchableOpacity>
+              {/* Green "something added" indicator */}
+              {justAdded && (
+                <View
+                  style={[
+                    styles.justAddedBadge,
+                    { backgroundColor: theme.colors.success },
+                  ]}
+                />
+              )}
             </Animated.View>
           </GestureDetector>
         </>
@@ -405,12 +439,25 @@ const styles = StyleSheet.create({
     zIndex: 999,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'visible',
   },
   edgeHandleTouchable: {
     flex: 1,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  // Green "something added" badge (FAB and edge handle)
+  justAddedBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
   },
 
   // FAB styles - positioned on LEFT side
@@ -421,6 +468,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     zIndex: 1000,
+    overflow: 'visible',
   },
   fabTouchable: {
     flex: 1,

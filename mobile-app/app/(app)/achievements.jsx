@@ -32,7 +32,7 @@ import {
 import { achievementService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { Dropdown, EmptyState } from '../../components';
+import { Dropdown, EmptyState, ScreenHeader } from '../../components';
 
 // Map backend icon names to Lucide components
 const iconMap = {
@@ -171,13 +171,13 @@ export default function AchievementsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <ScreenHeader title={t('achievements.title')} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
       >
-        <Text style={[styles.title, { color: theme.colors.text }]}>{t('achievements.title')}</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{t('achievements.subtitle')}</Text>
 
         {stats && (
@@ -225,8 +225,8 @@ export default function AchievementsScreen() {
         {filteredAchievements.length === 0 ? (
           <EmptyState
             icon={Award}
-            title={t('achievements.emptyTitle', 'No achievements yet')}
-            description={t('achievements.emptyDescription', 'Keep using the app to unlock achievements and earn points!')}
+            title={t('achievements.emptyTitle')}
+            description={t('achievements.emptyDescription')}
           />
         ) : (
           <FlatList
@@ -247,7 +247,6 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md },
   loadingText: { ...typography.body },
-  title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.bodySmall, marginBottom: spacing.lg },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
   statCard: {

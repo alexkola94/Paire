@@ -1,3 +1,4 @@
+using YouAndMeExpensesAPI.DTOs;
 using YouAndMeExpensesAPI.Models;
 
 namespace YouAndMeExpensesAPI.Services
@@ -11,8 +12,8 @@ namespace YouAndMeExpensesAPI.Services
         /// <param name="category">The transaction category.</param>
         /// <param name="amount">The transaction amount (positive to add, negative to subtract).</param>
         /// <param name="transactionDate">The date of the transaction.</param>
-        /// <returns>Task</returns>
-        Task UpdateSpentAmountAsync(string userId, string category, decimal amount, DateTime transactionDate);
+        /// <returns>List of budget alerts if any thresholds were crossed (80% warning, 100% exceeded)</returns>
+        Task<List<BudgetAlertDto>> UpdateSpentAmountAsync(string userId, string category, decimal amount, DateTime transactionDate);
 
         /// <summary>
         /// Recalculates the spent amount for a specific budget based on existing transactions.

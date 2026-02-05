@@ -101,9 +101,10 @@ namespace YouAndMeExpensesAPI.Controllers
 
         /// <summary>
         /// Creates a new transaction.
+        /// Returns the created transaction along with any budget alerts triggered.
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<Transaction>> CreateTransaction([FromBody] CreateTransactionRequest request)
+        public async Task<ActionResult<CreateTransactionResponseDto>> CreateTransaction([FromBody] CreateTransactionRequest request)
         {
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return Unauthorized(new { error = "User not authenticated" });
@@ -125,12 +126,19 @@ namespace YouAndMeExpensesAPI.Controllers
 
             try
             {
-                var transaction = await _transactionsService.CreateTransactionAsync(userId, request);
+                var response = await _transactionsService.CreateTransactionAsync(userId, request);
+
+                if (response.BudgetAlerts.Count > 0)
+                {
+                    _logger.LogInformation(
+                        "Transaction created with {AlertCount} budget alert(s) for user {UserId}",
+                        response.BudgetAlerts.Count, userId);
+                }
 
                 return CreatedAtAction(
                     nameof(GetTransaction),
-                    new { id = transaction.Id },
-                    transaction);
+                    new { id = response.Transaction.Id },
+                    response);
             }
             catch (Exception ex)
             {

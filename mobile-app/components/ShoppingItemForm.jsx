@@ -175,7 +175,7 @@ export default function ShoppingItemForm({
             style={[styles.input, dynamicStyles.input]}
             value={String(formData.quantity)}
             onChangeText={(text) => handleChange('quantity', text.replace(/[^0-9]/g, ''))}
-            placeholder="1"
+            placeholder="1" // i18n-ignore: numeric
             placeholderTextColor={dynamicStyles.placeholder}
             editable={!loading}
             keyboardType="number-pad"

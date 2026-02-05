@@ -56,7 +56,7 @@ import {
 } from 'lucide-react-native';
 import { chatbotService, aiGatewayService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
-import { useToast } from '../../components';
+import { useToast, ScreenHeader, StructuredMessageContent } from '../../components';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 
 // Default suggestion translation keys when API fails or is empty
@@ -147,10 +147,18 @@ function MessageBubble({ item, theme, isLatest, onCopy, onShare }) {
           !isUser && shadows.sm,
         ]}
       >
-        <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>
-          {content}
-        </Text>
-        
+        {isUser ? (
+          <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>
+            {content}
+          </Text>
+        ) : (
+          <StructuredMessageContent
+            text={content}
+            theme={theme}
+            textStyle={[styles.bubbleText, { color: theme.colors.text }]}
+          />
+        )}
+
         {/* Action buttons for bot messages */}
         {!isUser && isComplete && (
           <View style={styles.messageActions}>
@@ -357,226 +365,218 @@ export default function ChatbotScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={styles.backBtn} 
-          accessibilityLabel={t('common.back')}
-        >
-          <ChevronLeft size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        
-        <View style={styles.headerTitleRow}>
-          <MessageCircle size={22} color={theme.colors.primary} />
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-            {t('chatbot.title', 'Financial Assistant')}
-          </Text>
+      <ScreenHeader title={t('chatbot.title', 'Financial Assistant')} onBack={() => router.back()} />
+      {/* Chat area: same UI/UX as Travel Mode chat – clear button, stacked AI/Deep Think toggles, welcome icon, suggestion chips, large input */}
+      <View style={[styles.chatbotSection, { backgroundColor: theme.colors.surface }, shadows.sm]}>
+        <View style={styles.chatbotSectionHeader}>
+          <View style={styles.chatbotSectionHeaderSpacer} />
+          <TouchableOpacity
+            onPress={clearHistory}
+            style={styles.clearChatBtn}
+            accessibilityLabel={t('chatbot.clearHistory', 'Clear history')}
+          >
+            <RefreshCw size={18} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity 
-          onPress={clearHistory}
-          style={styles.headerAction}
-          accessibilityLabel={t('chatbot.clearHistory', 'Clear history')}
-        >
-          <RefreshCw size={20} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Mode toggles */}
-      <View style={[styles.modeBar, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.glassBorder }]}>
-        {/* AI Mode Toggle */}
-        <View style={styles.modeToggle}>
-          <View style={styles.modeToggleLabel}>
-            <Sparkles size={16} color={isAiMode ? theme.colors.primary : theme.colors.textSecondary} />
-            <Text style={[styles.modeToggleText, { color: theme.colors.text }]}>
-              {t('chatbot.aiMode', 'AI Mode')}
-            </Text>
-          </View>
-          <Switch
-            value={isAiMode}
-            onValueChange={toggleAiMode}
-            trackColor={{ false: theme.colors.surfaceSecondary, true: theme.colors.primary + '50' }}
-            thumbColor={isAiMode ? theme.colors.primary : theme.colors.textLight}
-          />
-        </View>
-
-        {/* Thinking Mode Toggle (only when AI mode is on) */}
-        {isAiMode && (
-          <View style={styles.modeToggle}>
+        {/* AI Mode and Deep Think toggles – stacked like Travel Guide (no overlap) */}
+        <View style={[styles.modeBar, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.glassBorder }]}>
+          <View style={styles.modeToggleRow}>
             <View style={styles.modeToggleLabel}>
-              <Brain size={16} color={isThinkingMode ? theme.colors.success : theme.colors.textSecondary} />
-              <Text style={[styles.modeToggleText, { color: theme.colors.text }]}>
-                {t('chatbot.thinkingMode', 'Deep Think')}
+              <Sparkles size={16} color={isAiMode ? theme.colors.primary : theme.colors.textSecondary} />
+              <Text style={[styles.modeToggleText, { color: theme.colors.text }]} numberOfLines={1}>
+                {t('chatbot.aiMode', 'AI Mode')}
               </Text>
             </View>
             <Switch
-              value={isThinkingMode}
-              onValueChange={setIsThinkingMode}
-              trackColor={{ false: theme.colors.surfaceSecondary, true: theme.colors.success + '50' }}
-              thumbColor={isThinkingMode ? theme.colors.success : theme.colors.textLight}
+              value={isAiMode}
+              onValueChange={toggleAiMode}
+              trackColor={{ false: theme.colors.surfaceSecondary, true: theme.colors.primary + '50' }}
+              thumbColor={isAiMode ? theme.colors.primary : theme.colors.textLight}
             />
           </View>
-        )}
-      </View>
-
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-      >
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(_, i) => String(i)}
-          renderItem={({ item, index }) => (
-            <MessageBubble
-              item={item}
-              theme={theme}
-              isLatest={index === messages.length - 1}
-              onCopy={handleCopy}
-              onShare={handleShare}
-            />
-          )}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Bot size={48} color={theme.colors.textLight} />
-              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                {t('chatbot.welcomeMessage', "Hi! I'm your financial assistant. Ask me anything about your expenses, income, or insights!")}
-              </Text>
-              {isAiMode && (
-                <View style={[styles.aiModeBadge, { backgroundColor: theme.colors.primary + '15' }]}>
-                  <Sparkles size={14} color={theme.colors.primary} />
-                  <Text style={[styles.aiModeText, { color: theme.colors.primary }]}>
-                    {isThinkingMode 
-                      ? t('chatbot.thinkingModeActive', 'Deep thinking mode active') 
-                      : t('chatbot.aiModeActive', 'AI-powered mode active')}
-                  </Text>
-                </View>
-              )}
-            </View>
-          }
-          ListFooterComponent={
-            messages.length === 0 && suggestions.length > 0 ? (
-              <View style={styles.suggestions}>
-                <Text style={[styles.suggestionsLabel, { color: theme.colors.textSecondary }]}>
-                  {t('chatbot.tryAsking', 'Try asking:')}
+          {isAiMode && (
+            <View style={styles.modeToggleRow}>
+              <View style={styles.modeToggleLabel}>
+                <Brain size={16} color={isThinkingMode ? theme.colors.success : theme.colors.textSecondary} />
+                <Text style={[styles.modeToggleText, { color: theme.colors.text }]} numberOfLines={1}>
+                  {t('chatbot.thinkingMode', 'Deep Think')}
                 </Text>
-                <View style={styles.chips}>
-                  {suggestions.map((s, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={[styles.chip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '40' }]}
-                      onPress={() => sendMessage(s)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.chipText, { color: theme.colors.primary }]} numberOfLines={2}>
-                        {s}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
               </View>
-            ) : null
-          }
-        />
-
-        {/* Input area */}
-        <View style={[styles.inputRow, { backgroundColor: theme.colors.background, borderColor: theme.colors.glassBorder }]}>
-          <TextInput
-            style={[
-              styles.input, 
-              { 
-                color: theme.colors.text, 
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.glassBorder,
-              }
-            ]}
-            placeholder={t('chatbot.placeholder', 'Ask me anything...')}
-            placeholderTextColor={theme.colors.textLight}
-            value={input}
-            onChangeText={setInput}
-            onSubmitEditing={() => sendMessage(input)}
-            editable={!loading}
-            multiline
-            maxLength={2000}
-          />
-          
-          {loading ? (
-            <TouchableOpacity
-              style={[styles.sendBtn, { backgroundColor: theme.colors.error }]}
-              onPress={stopRequest}
-              accessibilityLabel={t('chatbot.stop', 'Stop')}
-            >
-              <StopCircle size={20} color="#fff" />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.sendBtn, 
-                { 
-                  backgroundColor: input.trim() ? theme.colors.primary : theme.colors.surfaceSecondary,
-                }
-              ]}
-              onPress={() => sendMessage(input)}
-              disabled={!input.trim()}
-              accessibilityLabel={t('chatbot.send', 'Send')}
-            >
-              <Send size={20} color={input.trim() ? '#fff' : theme.colors.textLight} />
-            </TouchableOpacity>
+              <Switch
+                value={isThinkingMode}
+                onValueChange={setIsThinkingMode}
+                trackColor={{ false: theme.colors.surfaceSecondary, true: theme.colors.success + '50' }}
+                thumbColor={isThinkingMode ? theme.colors.success : theme.colors.textLight}
+              />
+            </View>
           )}
         </View>
-      </KeyboardAvoidingView>
+
+        <KeyboardAvoidingView
+          style={styles.chatbotKeyboardWrap}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(_, i) => String(i)}
+            renderItem={({ item, index }) => (
+              <MessageBubble
+                item={item}
+                theme={theme}
+                isLatest={index === messages.length - 1}
+                onCopy={handleCopy}
+                onShare={handleShare}
+              />
+            )}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <MessageCircle size={48} color={theme.colors.textLight} />
+                <Text style={[styles.emptyChat, { color: theme.colors.textSecondary }]}>
+                  {t('chatbot.welcomeMessage', "Hi! I'm your financial assistant. Ask me anything about your expenses, income, or insights!")}
+                </Text>
+                {isAiMode && (
+                  <View style={[styles.aiModeBadge, { backgroundColor: theme.colors.primary + '15' }]}>
+                    <Sparkles size={14} color={theme.colors.primary} />
+                    <Text style={[styles.aiModeText, { color: theme.colors.primary }]}>
+                      {isThinkingMode
+                        ? t('chatbot.thinkingModeActive', 'Deep thinking mode active')
+                        : t('chatbot.aiModeActive', 'AI-powered mode active')}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            }
+            ListFooterComponent={
+              <>
+                {loading && (
+                  <View style={[styles.messageRow, styles.messageRowBot]}>
+                    <View style={[styles.avatarContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+                      <Bot size={16} color={theme.colors.primary} />
+                    </View>
+                    <View style={[styles.bubble, styles.thinkingBubble, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }, shadows.sm]}>
+                      <ActivityIndicator size="small" color={theme.colors.primary} style={styles.thinkingSpinner} />
+                      <Text style={[styles.bubbleText, { color: theme.colors.textSecondary }]}>
+                        {t('chatbot.thinking', 'Thinking...')}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                {messages.length === 0 && suggestions.length > 0 && (
+                  <View style={styles.suggestions}>
+                    <Text style={[styles.suggestionsLabel, { color: theme.colors.textSecondary }]}>
+                      {t('chatbot.tryAsking', 'Try asking:')}
+                    </Text>
+                    <View style={styles.suggestionChips}>
+                      {suggestions.map((s, i) => (
+                        <TouchableOpacity
+                          key={i}
+                          style={[styles.chip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '40' }]}
+                          onPress={() => sendMessage(s)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.chipText, { color: theme.colors.text }]} numberOfLines={2}>
+                            {s}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </>
+            }
+          />
+
+          {/* Input area – same as Travel Guide */}
+          <View style={[styles.inputRow, { backgroundColor: theme.colors.background, borderTopColor: theme.colors.glassBorder }]}>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  color: theme.colors.text,
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.glassBorder,
+                },
+              ]}
+              placeholder={t('chatbot.placeholder', 'Ask me anything...')}
+              placeholderTextColor={theme.colors.textLight}
+              value={input}
+              onChangeText={setInput}
+              onSubmitEditing={() => sendMessage(input)}
+              editable={!loading}
+              multiline
+              maxLength={2000}
+            />
+            {loading ? (
+              <TouchableOpacity
+                style={[styles.sendBtn, { backgroundColor: theme.colors.error }]}
+                onPress={stopRequest}
+                accessibilityLabel={t('chatbot.stop', 'Stop')}
+              >
+                <StopCircle size={20} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.sendBtn,
+                  { backgroundColor: input.trim() ? theme.colors.primary : theme.colors.surfaceSecondary },
+                ]}
+                onPress={() => sendMessage(input)}
+                disabled={!input.trim()}
+                accessibilityLabel={t('chatbot.send', 'Send')}
+              >
+                <Send size={20} color={input.trim() ? '#fff' : theme.colors.textLight} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  flex: { flex: 1 },
-  
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  backBtn: { padding: spacing.xs },
-  headerTitleRow: { 
-    flex: 1, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: spacing.sm,
-    marginLeft: spacing.sm,
-  },
-  headerTitle: { ...typography.h3 },
-  headerAction: { padding: spacing.xs },
 
-  // Mode bar
-  modeBar: {
+  // Same as Travel Guide: section container, header with clear, then mode bar
+  chatbotSection: {
+    flex: 1,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    overflow: 'hidden',
+  },
+  chatbotSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
+    marginBottom: spacing.xs,
+  },
+  chatbotSectionHeaderSpacer: { flex: 1 },
+  clearChatBtn: { padding: spacing.xs },
+
+  // Mode bar – stacked like Travel Guide (no overlap)
+  modeBar: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    gap: spacing.lg,
-  },
-  modeToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.sm,
   },
-  modeToggleLabel: {
+  modeToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    minHeight: 36,
   },
-  modeToggleText: { ...typography.bodySmall, fontWeight: '500' },
+  modeToggleLabel: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flex: 1, minWidth: 0 },
+  modeToggleText: { ...typography.bodySmall, fontWeight: '500', flex: 1 },
+  chatbotKeyboardWrap: { flex: 1 },
 
   // Messages
   list: { flex: 1 },
@@ -599,6 +599,7 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: '80%',
+    flexShrink: 1,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.lg,
@@ -616,17 +617,23 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
 
-  // Empty state
+  // Empty state – same as Travel Guide (centered icon + welcome text)
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: spacing.xl,
   },
-  emptyText: { 
-    ...typography.body, 
-    textAlign: 'center', 
+  emptyChat: {
+    ...typography.body,
+    textAlign: 'center',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
+  thinkingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  thinkingSpinner: { marginRight: 0 },
   aiModeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -638,10 +645,10 @@ const styles = StyleSheet.create({
   },
   aiModeText: { ...typography.caption, fontWeight: '500' },
 
-  // Suggestions
+  // Suggestions – same pill/chip layout as Travel Guide
   suggestions: { marginTop: spacing.md },
   suggestionsLabel: { ...typography.label, marginBottom: spacing.sm },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  suggestionChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -650,7 +657,7 @@ const styles = StyleSheet.create({
   },
   chipText: { ...typography.bodySmall },
 
-  // Input
+  // Input – same as Travel Guide (larger touch target)
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -661,8 +668,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 44,
-    maxHeight: 120,
+    minHeight: 52,
+    maxHeight: 140,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,

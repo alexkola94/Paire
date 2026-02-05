@@ -212,8 +212,9 @@ export default function DateInput({
       backgroundColor: theme.colors.surfaceSecondary,
       borderColor: theme.colors.glassBorder,
     },
+    // Dark mode: use textSecondary for placeholder for better contrast on dark surfaces
     inputText: {
-      color: value ? theme.colors.text : theme.colors.textLight,
+      color: value ? theme.colors.text : (theme.dark ? theme.colors.textSecondary : theme.colors.textLight),
     },
     label: {
       color: theme.colors.text,
@@ -232,12 +233,12 @@ export default function DateInput({
     quickBtnTextActive: {
       color: '#ffffff',
     },
-    // iOS date picker modal: theme-aware overlay and sheet
+    // iOS date picker modal: light sheet in dark mode so native spinner text is readable
     iosPickerOverlay: {
       backgroundColor: theme.colors.overlay,
     },
     iosPickerContainer: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.datePickerModalBg,
       borderTopWidth: 1,
       borderLeftWidth: 1,
       borderRightWidth: 1,
@@ -360,6 +361,8 @@ export default function DateInput({
           onChange={handleDateChange}
           minimumDate={resolvedMinDate}
           maximumDate={resolvedMaxDate}
+          themeVariant={theme.dark ? 'light' : undefined}
+          accentColor={theme.colors.primary}
         />
       )}
 
@@ -377,6 +380,7 @@ export default function DateInput({
                 minimumDate={resolvedMinDate}
                 maximumDate={resolvedMaxDate}
                 themeVariant={theme.dark ? 'light' : undefined}
+                accentColor={theme.colors.primary}
               />
               <TouchableOpacity
                 style={[styles.iosDoneBtn, dynamicStyles.iosDoneBtn]}

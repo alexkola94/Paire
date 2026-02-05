@@ -27,7 +27,7 @@ import {
   Package,
   MapPin,
 } from 'lucide-react-native';
-import { travelService } from '../../../services/api';
+import { travelNotificationsService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 import { useToast } from '../../../components';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
@@ -122,36 +122,64 @@ export default function TravelNotificationsScreen() {
     return defaults;
   });
 
-  // Fetch preferences from API (if available)
+  // Map backend preference DTO to local UI keys (backend uses travelNotificationsService)
+  const backendToLocal = (dto) => {
+    if (!dto) return {};
+    return {
+      flightReminders: dto.tripApproachingEnabled ?? true,
+      eventReminders: dto.itineraryRemindersEnabled ?? true,
+      budgetAlerts: dto.budgetAlertsEnabled ?? true,
+      packingReminders: dto.packingProgressEnabled ?? true,
+      // advisoryAlerts, locationUpdates stay local-only; keep defaults
+    };
+  };
+
+  // Map local UI state to backend preference DTO (only fields we control from this screen)
+  const localToBackend = (localPrefs, existingDto = {}) => ({
+    tripId: existingDto.tripId ?? null,
+    documentExpiryEnabled: existingDto.documentExpiryEnabled ?? true,
+    documentExpiryDays: existingDto.documentExpiryDays ?? [30, 14, 7, 1],
+    budgetAlertsEnabled: localPrefs.budgetAlerts ?? true,
+    budgetThreshold75Enabled: existingDto.budgetThreshold75Enabled ?? true,
+    budgetThreshold90Enabled: existingDto.budgetThreshold90Enabled ?? true,
+    budgetExceededEnabled: existingDto.budgetExceededEnabled ?? true,
+    itineraryRemindersEnabled: localPrefs.eventReminders ?? true,
+    itineraryReminderHours: existingDto.itineraryReminderHours ?? [24, 6, 1],
+    packingProgressEnabled: localPrefs.packingReminders ?? true,
+    tripApproachingEnabled: localPrefs.flightReminders ?? true,
+    tripApproachingDays: existingDto.tripApproachingDays ?? 7,
+    emailEnabled: existingDto.emailEnabled ?? true,
+    pushEnabled: existingDto.pushEnabled ?? true,
+    inAppEnabled: existingDto.inAppEnabled ?? true,
+  });
+
+  const [lastFetchedDto, setLastFetchedDto] = useState(null);
+
+  // Fetch preferences from backend
   const { isLoading } = useQuery({
     queryKey: ['travel-notification-preferences'],
     queryFn: async () => {
       try {
-        // Try to fetch from API if endpoint exists
-        if (travelService.getNotificationPreferences) {
-          const prefs = await travelService.getNotificationPreferences();
-          if (prefs) {
-            setPreferences((prev) => ({ ...prev, ...prefs }));
-          }
-          return prefs;
-        }
-        return null;
+        const dto = await travelNotificationsService.getPreferences(null);
+        setLastFetchedDto(dto);
+        const local = backendToLocal(dto);
+        setPreferences((prev) => ({ ...prev, ...local }));
+        return dto;
       } catch {
+        setLastFetchedDto(null);
         return null;
       }
     },
   });
 
-  // Save preferences mutation
+  // Save preferences mutation (sends full DTO to backend)
   const saveMutation = useMutation({
     mutationFn: async (newPrefs) => {
-      if (travelService.updateNotificationPreferences) {
-        return travelService.updateNotificationPreferences(newPrefs);
-      }
-      // Simulate save if no API endpoint
-      return newPrefs;
+      const dto = localToBackend(newPrefs, lastFetchedDto ?? {});
+      return travelNotificationsService.updatePreferences(dto);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data) setLastFetchedDto(data);
       queryClient.invalidateQueries({ queryKey: ['travel-notification-preferences'] });
       showToast(t('travel.notifications.saved', 'Preferences saved'), 'success');
     },

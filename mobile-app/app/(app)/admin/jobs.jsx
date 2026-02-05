@@ -20,7 +20,7 @@ import { ChevronLeft, Play } from 'lucide-react-native';
 import { adminService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../../../constants/theme';
-import { useToast, ConfirmationModal } from '../../../components';
+import { useToast, ConfirmationModal, ScreenHeader } from '../../../components';
 
 export default function AdminJobsScreen() {
   const { t } = useTranslation();
@@ -73,13 +73,7 @@ export default function AdminJobsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>{t('admin.jobs', 'Background jobs')}</Text>
-      </View>
-
+      <ScreenHeader title={t('admin.jobs', 'Background jobs')} onBack={() => router.back()} />
       <FlatList
         data={list}
         keyExtractor={(item, i) => String(item?.name ?? item?.id ?? i)}
@@ -108,15 +102,6 @@ export default function AdminJobsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  backBtn: { padding: spacing.xs, marginRight: spacing.sm },
-  title: { flex: 1, ...typography.h3 },
   list: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   card: {
     flexDirection: 'row',

@@ -49,6 +49,8 @@ import {
   RecurringBillForm,
   EmptyState,
   ScreenLoading,
+  ScreenHeader,
+  AddToCalculatorButton,
   useToast,
 } from '../../components';
 
@@ -99,9 +101,9 @@ export default function RecurringBillsScreen() {
     },
   });
 
-  // Update mutation
+  // Update mutation — backend expects request body to include id (validates route id == body.Id)
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }) => recurringBillService.update(id, data),
+    mutationFn: ({ id, ...data }) => recurringBillService.update(id, { id, ...data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring-bills'] });
       queryClient.invalidateQueries({ queryKey: ['recurringBillsSummary'] });
@@ -652,6 +654,12 @@ export default function RecurringBillsScreen() {
               {/* Amount */}
               <View style={styles.amountContainer}>
                 <Text style={[styles.cardAmount, { color: theme.colors.primary }]}>{formatAmount(item.amount)}</Text>
+                <AddToCalculatorButton
+                  value={item.amount}
+                  isPrivate={isPrivate}
+                  size={16}
+                  onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+                />
                 {item.autoPay && (
                   <View style={[styles.autoPayBadge, { backgroundColor: `${theme.colors.success}15` }]}>
                     <Text style={[styles.autoPayText, { color: theme.colors.success }]}>{t('recurringBills.auto', 'Auto')}</Text>
@@ -711,6 +719,8 @@ export default function RecurringBillsScreen() {
       formatAmount,
       theme,
       t,
+      isPrivate,
+      showToast,
       renderRightActions,
       renderLeftActions,
       handleMarkPaid,
@@ -732,22 +742,20 @@ export default function RecurringBillsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: title + Add button */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('recurringBills.title', 'Recurring Bills')}
-        </Text>
-        <TouchableOpacity
-          onPress={() => { impactMedium(); setIsFormOpen(true); }}
-          style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
-          activeOpacity={0.7}
-          accessibilityLabel={t('recurringBills.addNew', 'Add new bill')}
-          accessibilityRole="button"
-        >
-          <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-
+      <ScreenHeader
+        title={t('recurringBills.title', 'Recurring Bills')}
+        rightElement={
+          <TouchableOpacity
+            onPress={() => { impactMedium(); setIsFormOpen(true); }}
+            style={[styles.headerAddBtn, { backgroundColor: theme.colors.surface }]}
+            activeOpacity={0.7}
+            accessibilityLabel={t('recurringBills.addNew', 'Add new bill')}
+            accessibilityRole="button"
+          >
+            <Plus size={24} color={theme.colors.primary} strokeWidth={2.5} />
+          </TouchableOpacity>
+        }
+      />
       {/* Summary cards (desktop parity) */}
       {summary != null && (
         <ScrollView
@@ -978,18 +986,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
-    flex: 1,
-  },
   headerAddBtn: {
     width: 44,
     height: 44,
@@ -1136,7 +1132,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   amountContainer: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'flex-end',
   },
   cardAmount: {
     ...typography.body,

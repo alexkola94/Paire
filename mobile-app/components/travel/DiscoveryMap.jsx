@@ -18,6 +18,7 @@ import {
 import MapView, { Marker } from 'react-native-maps';
 import { useTranslation } from 'react-i18next';
 import { Search, MapPin, X } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { searchPOIs } from '../../services/discoveryService';
@@ -44,6 +45,7 @@ const DEFAULT_REGION = {
 export default function DiscoveryMap({ trip, tripId, savedPlaceIds = [], onSavePlace, onClose }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [category, setCategory] = useState('restaurant');
   const [pois, setPois] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -98,8 +100,8 @@ export default function DiscoveryMap({ trip, tripId, savedPlaceIds = [], onSaveP
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Header with search and close */}
-      <View style={[styles.header, { backgroundColor: theme.colors.surface }, shadows.sm]}>
+      {/* Header with search and close – respect safe area so search bar is below status bar */}
+      <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingTop: insets.top }, shadows.sm]}>
         <View style={[styles.searchRow, { backgroundColor: theme.colors.background }]}>
           <Search size={20} color={theme.colors.textLight} />
           <TextInput

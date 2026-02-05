@@ -20,7 +20,7 @@ import { ChevronLeft, Search, Lock, Unlock, ShieldOff } from 'lucide-react-nativ
 import { adminService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
-import { SearchInput, useToast, ConfirmationModal } from '../../../components';
+import { SearchInput, useToast, ConfirmationModal, ScreenHeader } from '../../../components';
 
 export default function AdminUsersScreen() {
   const { t } = useTranslation();
@@ -127,13 +127,7 @@ export default function AdminUsersScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={[styles.header, { borderBottomColor: theme.colors.glassBorder }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>{t('admin.users', 'User lookup')}</Text>
-      </View>
-
+      <ScreenHeader title={t('admin.users', 'User lookup')} onBack={() => router.back()} />
       <View style={styles.filters}>
         <SearchInput
           initialValue={search}
@@ -200,15 +194,6 @@ export default function AdminUsersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  backBtn: { padding: spacing.xs, marginRight: spacing.sm },
-  title: { flex: 1, ...typography.h3 },
   filters: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   list: { padding: spacing.md, paddingBottom: spacing.tabBarBottomClearance },
   card: {

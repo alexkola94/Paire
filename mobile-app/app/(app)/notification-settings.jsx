@@ -29,13 +29,12 @@ import {
   PiggyBank,
   Users,
   Shield,
-  ChevronLeft,
   Send,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
-import { Button, useToast } from '../../components';
+import { Button, useToast, ScreenHeader } from '../../components';
 import { scheduleLocalNotification } from '../../services/notifications';
 
 // Notification category configuration
@@ -138,21 +137,10 @@ export default function NotificationSettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={[styles.backBtn, { backgroundColor: theme.colors.surface }]}
-          activeOpacity={0.7}
-        >
-          <ChevronLeft size={20} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {t('pushNotifications.title', 'Push Notifications')}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
-
+      <ScreenHeader
+        title={t('pushNotifications.title', 'Push Notifications')}
+        onBack={() => router.back()}
+      />
       <ScrollView 
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -338,25 +326,6 @@ export default function NotificationSettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    ...typography.h2,
-    flex: 1,
-    textAlign: 'center',
-  },
   scroll: {
     padding: spacing.lg,
     paddingBottom: spacing.tabBarBottomClearance,

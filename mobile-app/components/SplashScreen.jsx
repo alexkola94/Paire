@@ -33,14 +33,16 @@ import { spacing, borderRadius, typography, colors } from '../constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Logo dimensions
-const LOGO_SIZE = 120;
+// Logo dimensions (exported for LogoutLoadingOverlay)
+export const SPLASH_LOGO_SIZE = 120;
+const LOGO_SIZE = SPLASH_LOGO_SIZE;
 
 /**
  * Paire Logo Component
- * Renders the interlocking P shapes with gradients
+ * Renders the interlocking P shapes with gradients.
+ * Exported for reuse in LogoutLoadingOverlay.
  */
-function PaireLogo({ size = LOGO_SIZE }) {
+export function PaireLogo({ size = LOGO_SIZE }) {
   return (
     <Svg
       width={size}
@@ -240,9 +242,10 @@ export default function SplashScreen({ onFinish, minDuration = 2000 }) {
 }
 
 /**
- * Loading dot with staggered animation
+ * Loading dot with staggered animation.
+ * Exported for reuse in LogoutLoadingOverlay.
  */
-function LoadingDot({ delay, theme }) {
+export function LoadingDot({ delay, theme }) {
   const opacity = useSharedValue(0.3);
   const reducedMotion = useReducedMotion();
 

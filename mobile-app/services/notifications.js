@@ -16,6 +16,7 @@ import i18n from '../i18n/config';
 // Storage keys
 const PUSH_TOKEN_KEY = 'paire_push_token';
 const NOTIFICATION_PREFS_KEY = 'paire_notification_prefs';
+const LAST_WEEKLY_SUMMARY_KEY = 'paire_last_weekly_summary';
 
 // Default notification preferences
 export const DEFAULT_NOTIFICATION_PREFS = {
@@ -267,6 +268,120 @@ export async function cancelAllNotifications() {
 }
 
 /**
+ * Check if weekly spending summary should be shown (once per week on Sunday/Monday)
+ * @returns {Promise<boolean>}
+ */
+export async function shouldShowWeeklySummary() {
+  try {
+    const prefs = await getNotificationPreferences();
+    if (!prefs.enabled) return false;
+
+    const lastSummary = await AsyncStorage.getItem(LAST_WEEKLY_SUMMARY_KEY);
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday
+
+    // Only show on Sunday (0) or Monday (1)
+    if (dayOfWeek !== 0 && dayOfWeek !== 1) return false;
+
+    if (lastSummary) {
+      const lastDate = new Date(lastSummary);
+      const daysSinceLastSummary = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+      // Don't show if already shown within last 6 days
+      if (daysSinceLastSummary < 6) return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Mark weekly summary as shown
+ */
+export async function markWeeklySummaryShown() {
+  try {
+    await AsyncStorage.setItem(LAST_WEEKLY_SUMMARY_KEY, new Date().toISOString());
+  } catch (error) {
+    console.error('Error marking weekly summary shown:', error);
+  }
+}
+
+/**
+ * Calculate weekly spending from transactions
+ * @param {Array} transactions - Array of transaction objects
+ * @returns {object} { thisWeekTotal, lastWeekTotal, percentChange }
+ */
+export function calculateWeeklySpending(transactions) {
+  const now = new Date();
+  const startOfThisWeek = new Date(now);
+  startOfThisWeek.setDate(now.getDate() - now.getDay()); // Start of this week (Sunday)
+  startOfThisWeek.setHours(0, 0, 0, 0);
+
+  const startOfLastWeek = new Date(startOfThisWeek);
+  startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+  const endOfLastWeek = new Date(startOfThisWeek);
+  endOfLastWeek.setMilliseconds(-1);
+
+  let thisWeekTotal = 0;
+  let lastWeekTotal = 0;
+
+  (transactions || []).forEach((tx) => {
+    if (tx.type?.toLowerCase() !== 'expense') return;
+    const txDate = new Date(tx.date);
+    const amount = Number(tx.amount) || 0;
+
+    if (txDate >= startOfThisWeek) {
+      thisWeekTotal += amount;
+    } else if (txDate >= startOfLastWeek && txDate < startOfThisWeek) {
+      lastWeekTotal += amount;
+    }
+  });
+
+  let percentChange = 0;
+  if (lastWeekTotal > 0) {
+    percentChange = Math.round(((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100);
+  }
+
+  return { thisWeekTotal, lastWeekTotal, percentChange };
+}
+
+/**
+ * Send weekly spending summary notification
+ * @param {number} totalSpent - Total spent this week
+ * @param {number} percentChange - Percent change vs last week
+ */
+export async function sendWeeklySummary(totalSpent, percentChange) {
+  const formattedAmount = `€${totalSpent.toFixed(2)}`;
+  let body;
+
+  if (percentChange === 0 || isNaN(percentChange)) {
+    body = i18n.t('notifications.weeklySummaryBody', {
+      amount: formattedAmount,
+      defaultValue: `This week you spent ${formattedAmount}.`,
+    });
+  } else {
+    const changeText = percentChange > 0 ? 'more' : 'less';
+    body = i18n.t('notifications.weeklySummaryWithChange', {
+      amount: formattedAmount,
+      percent: Math.abs(percentChange),
+      change: changeText,
+      defaultValue: `This week you spent ${formattedAmount}. That's ${Math.abs(percentChange)}% ${changeText} than last week.`,
+    });
+  }
+
+  await markWeeklySummaryShown();
+
+  return await scheduleLocalNotification({
+    title: i18n.t('notifications.weeklySummaryTitle', 'Weekly Spending Summary'),
+    body,
+    data: { type: 'weekly_summary' },
+    channelId: 'default',
+  });
+}
+
+/**
  * Get notification preferences from storage
  * @returns {Promise<object>}
  */
@@ -345,4 +460,9 @@ export default {
   getBadgeCount,
   setBadgeCount,
   DEFAULT_NOTIFICATION_PREFS,
+  // Weekly spending summary
+  shouldShowWeeklySummary,
+  markWeeklySummaryShown,
+  calculateWeeklySpending,
+  sendWeeklySummary,
 };

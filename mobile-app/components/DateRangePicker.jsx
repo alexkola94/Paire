@@ -114,14 +114,15 @@ export default function DateRangePicker({
     label: { color: theme.colors.text },
     trigger: { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.glassBorder },
     triggerText: { color: theme.colors.text },
-    triggerPlaceholder: { color: theme.colors.textLight },
+    // Dark mode: use textSecondary for better placeholder contrast on dark surfaces
+    triggerPlaceholder: { color: theme.dark ? theme.colors.textSecondary : theme.colors.textLight },
     presetBtn: { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.glassBorder },
-    // iOS date range modal: theme-aware overlay and sheet
+    // iOS date range modal: light sheet in dark mode so native spinner text is readable
     iosOverlay: {
       backgroundColor: theme.colors.overlay,
     },
     iosPickerBox: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.datePickerModalBg,
       borderTopWidth: 1,
       borderLeftWidth: 1,
       borderRightWidth: 1,
@@ -252,6 +253,8 @@ export default function DateRangePicker({
             onChange={handleStartChange}
             minimumDate={minDateObj}
             maximumDate={maxDateObj}
+            themeVariant={theme.dark ? 'light' : undefined}
+            accentColor={theme.colors.primary}
           />
         )
       )}
@@ -287,6 +290,8 @@ export default function DateRangePicker({
             onChange={handleEndChange}
             minimumDate={startDate ? startDateObj : minDateObj}
             maximumDate={maxDateObj}
+            themeVariant={theme.dark ? 'light' : undefined}
+            accentColor={theme.colors.primary}
           />
         )
       )}

@@ -6,6 +6,7 @@ import {
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import Animated, { FadeIn, SlideInRight, SlideInLeft, useReducedMotion } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -15,9 +16,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Wallet, TrendingDown, TrendingUp, PiggyBank, CreditCard, ShoppingCart,
   Bell, BarChart3, Calculator, Newspaper, Users, MapPin, Plus, MessageCircle,
-  Eye, EyeOff, ChevronRight, Pencil, Trash2, Receipt, Repeat, Settings, Menu,
+  Eye, EyeOff, ChevronRight, Pencil, Trash2, Receipt, Repeat, Settings, Menu, User,
 } from 'lucide-react-native';
-import { analyticsService, budgetService, recurringBillService, transactionService, savingsGoalService } from '../../../services/api';
+import { analyticsService, budgetService, recurringBillService, transactionService, savingsGoalService, profileService } from '../../../services/api';
 import { authService } from '../../../services/auth';
 import { useTheme } from '../../../context/ThemeContext';
 import { usePrivacyMode } from '../../../context/PrivacyModeContext';
@@ -27,9 +28,10 @@ import { spacing, borderRadius, typography, shadows } from '../../../constants/t
 import {
   Modal, Button, ConfirmationModal, ScreenLoading, useToast, WidgetSelector,
   SummaryWidget, BudgetWidget, UpcomingBillsWidget, RecentTransactionsWidget,
-  SavingsWidget, QuickAccessWidget,
+  SavingsWidget, QuickAccessWidget, InsightsWidget, AnalyticsWidget, AddToCalculatorButton,
 } from '../../../components';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { useDrawerStatus } from '@react-navigation/drawer';
 import { useScrollToTop } from '../../../context/ScrollToTopContext';
 
 const RECENT_PAGE_SIZE = 10;
@@ -59,6 +61,8 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const scrollViewRef = useRef(null);
   const { register } = useScrollToTop();
+  const drawerStatus = useDrawerStatus();
+  const isDrawerOpen = drawerStatus === 'open';
 
   // Scroll-to-top helper (used by drawer and tab bar)
   const scrollToTop = useCallback(() => {
@@ -101,25 +105,40 @@ export default function DashboardScreen() {
     queryFn: () => analyticsService.getDashboardAnalytics(),
   });
 
-  const { data: budgets } = useQuery({
+  const { data: budgets, isLoading: budgetsLoading } = useQuery({
     queryKey: ['budgets'],
     queryFn: () => budgetService.getAll(),
   });
 
-  const { data: upcomingBills } = useQuery({
+  const { data: upcomingBills, isLoading: upcomingBillsLoading } = useQuery({
     queryKey: ['upcoming-bills'],
     queryFn: () => recurringBillService.getUpcoming(7),
   });
 
-  const { data: recentData, refetch: refetchRecent } = useQuery({
+  const { data: recentData, refetch: refetchRecent, isLoading: recentLoading } = useQuery({
     queryKey: ['transactions', 'recent', 1, RECENT_PAGE_SIZE],
     queryFn: () => transactionService.getAll({ page: 1, pageSize: RECENT_PAGE_SIZE }),
   });
 
-  const { data: savingsGoals } = useQuery({
+  const { data: savingsGoals, isLoading: savingsLoading } = useQuery({
     queryKey: ['savings-goals'],
     queryFn: () => savingsGoalService.getAll(),
   });
+
+  const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useQuery({
+    queryKey: ['my-profile'],
+    queryFn: () => profileService.getMyProfile(),
+  });
+  const avatarUrl = profile?.avatar_url ?? profile?.avatarUrl;
+
+  // Lazy load: show full-screen loading until all data (including profile/avatars) has loaded
+  const isInitialLoading =
+    dashLoading ||
+    budgetsLoading ||
+    upcomingBillsLoading ||
+    recentLoading ||
+    savingsLoading ||
+    profileLoading;
 
   const deleteMutation = useMutation({
     mutationFn: (id) => transactionService.delete(id),
@@ -135,9 +154,9 @@ export default function DashboardScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), refetchRecent()]);
+    await Promise.all([refetch(), refetchRecent(), refetchProfile()]);
     setRefreshing(false);
-  }, [refetch, refetchRecent]);
+  }, [refetch, refetchRecent, refetchProfile]);
 
   const summary = dashData || {};
   const totalExpenses = summary.totalExpenses || 0;
@@ -147,11 +166,11 @@ export default function DashboardScreen() {
   const recentList = Array.isArray(recentData) ? recentData : recentData?.items ?? [];
   const formatAmount = (n) => (isPrivacyMode ? '••••' : `€${Number(n).toFixed(2)}`);
 
-  if (dashLoading && (dashData === undefined || dashData === null)) {
+  const openDrawer = useCallback(() => navigation.dispatch(DrawerActions.openDrawer()), [navigation]);
+
+  if (isInitialLoading) {
     return <ScreenLoading />;
   }
-
-  const openDrawer = () => navigation.dispatch(DrawerActions.openDrawer());
 
   return (
     <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
@@ -160,6 +179,8 @@ export default function DashboardScreen() {
         ref={scrollViewRef}
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        scrollEnabled={!isDrawerOpen}
+        bounces={!isDrawerOpen}
       >
         {/* Header: menu + greeting + privacy toggle + customize */}
         <View style={styles.header}>
@@ -171,6 +192,14 @@ export default function DashboardScreen() {
             >
               <Menu size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
+            {/* Small rounded avatar next to welcome message; fallback to profile icon */}
+            <View style={[styles.headerAvatarWrap, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}>
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.headerAvatarImage} resizeMode="cover" />
+              ) : (
+                <User size={20} color={theme.colors.primary} />
+              )}
+            </View>
             <View>
               <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
                 {t('dashboard.welcome')}
@@ -221,6 +250,15 @@ export default function DashboardScreen() {
           <QuickAccessWidget onItemPress={(route) => router.push(route)} />
         )}
 
+        {/* Analytics Widget */}
+        {isWidgetVisible('analytics') && (
+          <AnalyticsWidget
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            onPress={() => router.push('/(app)/analytics')}
+          />
+        )}
+
         {/* Budget Progress Widget */}
         {isWidgetVisible('budgets') && budgets?.length > 0 && (
           <View style={{ marginBottom: spacing.md }}>
@@ -261,6 +299,19 @@ export default function DashboardScreen() {
             />
           </View>
         )}
+
+        {/* Insights Widget */}
+        {isWidgetVisible('insights') && (
+          <View style={{ marginBottom: spacing.md }}>
+            <InsightsWidget
+              transactions={recentList || []}
+              budgets={budgets || []}
+              bills={upcomingBills || []}
+              savingsGoals={savingsGoals || []}
+              onPress={() => router.push('/(app)/(tabs)/bills')}
+            />
+          </View>
+        )}
       </ScrollView>
 
       {/* Transaction detail modal */}
@@ -273,14 +324,22 @@ export default function DashboardScreen() {
           <View style={styles.detailBody}>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>{t('transactions.amount', 'Amount')}</Text>
-              <Text
-                style={[
-                  styles.detailValue,
-                  { color: detailTransaction.type === 'expense' ? theme.colors.error : theme.colors.success },
-                ]}
-              >
-                {detailTransaction.type === 'expense' ? '-' : '+'}{formatAmount(detailTransaction.amount)}
-              </Text>
+              <View style={styles.detailAmountRow}>
+                <Text
+                  style={[
+                    styles.detailValue,
+                    { color: detailTransaction.type === 'expense' ? theme.colors.error : theme.colors.success },
+                  ]}
+                >
+                  {detailTransaction.type === 'expense' ? '-' : '+'}{formatAmount(detailTransaction.amount)}
+                </Text>
+                <AddToCalculatorButton
+                  value={detailTransaction.amount}
+                  isPrivate={isPrivacyMode}
+                  size={16}
+                  onAdded={() => showToast(t('calculator.added'), 'success', 1500)}
+                />
+              </View>
             </View>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>{t('transactions.date', 'Date')}</Text>
@@ -360,6 +419,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerAvatarWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  headerAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
   askPaireCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -374,6 +447,7 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.h3, marginBottom: spacing.md },
   detailBody: { paddingVertical: spacing.sm },
   detailRow: { marginBottom: spacing.md },
+  detailAmountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   detailLabel: { ...typography.caption, marginBottom: 2 },
   detailValue: { ...typography.body, fontWeight: '600' },
   detailActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },

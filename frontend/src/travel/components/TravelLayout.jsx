@@ -24,11 +24,10 @@ const StayDetailsSheet = lazy(() => import('./discovery/StayDetailsSheet'))
 const DistanceOverlay = lazy(() => import('./discovery/DistanceOverlay'))
 
 // Mapbox configuration for static map fallback
-// Dark theme keeps the original dark style, light theme uses a neutral streets style
-// so the map appears in its native colors without extra tint.
+// Use styles without deprecated incidents layer (streets-v12 causes 404s for incidents tiles).
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 const MAPBOX_STYLE_DARK = 'dark-v11'
-const MAPBOX_STYLE_LIGHT = 'streets-v12'
+const MAPBOX_STYLE_LIGHT = 'light-v11'
 
 const getMapboxStaticUrl = (lat, lon, zoom = 10, style = MAPBOX_STYLE_DARK) => {
   if (!MAPBOX_TOKEN || !lat || !lon) return null

@@ -5,13 +5,15 @@
  * Each widget has metadata: id, name, icon, description, defaultVisible.
  */
 
-import { 
-  Wallet, 
-  PiggyBank, 
-  Bell, 
-  CreditCard, 
+import {
+  Wallet,
+  PiggyBank,
+  Bell,
+  CreditCard,
   Target,
   Zap,
+  Lightbulb,
+  BarChart3,
 } from 'lucide-react-native';
 
 // Widget Components
@@ -21,6 +23,8 @@ export { default as UpcomingBillsWidget } from './UpcomingBillsWidget';
 export { default as RecentTransactionsWidget } from './RecentTransactionsWidget';
 export { default as SavingsWidget } from './SavingsWidget';
 export { default as QuickAccessWidget } from './QuickAccessWidget';
+export { default as InsightsWidget } from './InsightsWidget';
+export { default as AnalyticsWidget } from './AnalyticsWidget';
 
 // Widget Registry - defines all available widgets
 export const WIDGET_REGISTRY = [
@@ -71,6 +75,22 @@ export const WIDGET_REGISTRY = [
     icon: PiggyBank,
     defaultVisible: false, // Hidden by default
     defaultOrder: 5,
+  },
+  {
+    id: 'insights',
+    name: 'widgets.insights.title',
+    description: 'widgets.insights.description',
+    icon: Lightbulb,
+    defaultVisible: true,
+    defaultOrder: 6,
+  },
+  {
+    id: 'analytics',
+    name: 'widgets.analytics.title',
+    description: 'widgets.analytics.description',
+    icon: BarChart3,
+    defaultVisible: true,
+    defaultOrder: 7,
   },
 ];
 

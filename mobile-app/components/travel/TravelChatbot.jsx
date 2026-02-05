@@ -28,6 +28,7 @@ import {
 import { travelChatbotService, aiGatewayService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
+import StructuredMessageContent from '../StructuredMessageContent';
 
 // Travel-specific suggestions
 const TRAVEL_SUGGESTIONS = [
@@ -59,9 +60,17 @@ function MessageBubble({ item, theme }) {
           !isUser && shadows.sm,
         ]}
       >
-        <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>
-          {item.content}
-        </Text>
+        {isUser ? (
+          <Text style={[styles.bubbleText, { color: theme.colors.text }]} selectable>
+            {item.content}
+          </Text>
+        ) : (
+          <StructuredMessageContent
+            text={item.content}
+            theme={theme}
+            textStyle={[styles.bubbleText, { color: theme.colors.text }]}
+          />
+        )}
       </View>
     </View>
   );

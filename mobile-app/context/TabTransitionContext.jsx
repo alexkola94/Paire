@@ -1,9 +1,9 @@
 /**
  * TabTransitionContext
  *
- * Tracks tab order so the four main tab screens (Dashboard, Transactions, Analytics, Profile)
+ * Tracks tab order so the four main tab screens (Dashboard, Transactions, Bills, Profile)
  * can run directional slide animations when switching tabs (microscope-slide style).
- * Tab indices: Dashboard=0, Transactions=1, Analytics=2, Profile=3.
+ * Tab indices: Dashboard=0, Transactions=1, Bills=2, Profile=3.
  */
 
 import { createContext, useContext, useState, useCallback } from 'react';
@@ -36,7 +36,7 @@ export function TabTransitionProvider({ children }) {
 export function useTabTransition() {
   const ctx = useContext(TabTransitionContext);
   if (!ctx) {
-    throw new Error('useTabTransition must be used within TabTransitionProvider');
+    throw new Error('useTabTransition must be used within TabTransitionProvider') // i18n-ignore: dev;
   }
   return ctx;
 }

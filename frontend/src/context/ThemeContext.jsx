@@ -31,7 +31,7 @@ export const ThemeProvider = ({ children }) => {
 export const useTheme = () => {
     const context = useContext(ThemeContext)
     if (context === undefined) {
-        throw new Error('useTheme must be used within a ThemeProvider')
+        throw new Error('useTheme must be used within a ThemeProvider') // i18n-ignore
     }
     return context
 }

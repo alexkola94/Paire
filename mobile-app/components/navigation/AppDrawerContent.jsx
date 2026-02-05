@@ -6,14 +6,14 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import {
   Home,
   Wallet,
-  Wrench,
   User,
   TrendingDown,
   TrendingUp,
@@ -31,10 +31,14 @@ import {
   Moon,
   LogOut,
   ChevronRight,
+  Upload,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useScrollToTop } from '../../context/ScrollToTopContext';
+import { useLogout } from '../../context/LogoutContext';
+import { useOnboarding } from '../../context/OnboardingContext';
 import { authService } from '../../services/auth';
+import { profileService } from '../../services/api';
 import { spacing, borderRadius, typography } from '../../constants/theme';
 import LogoHero from '../LogoHero';
 
@@ -50,7 +54,7 @@ function isCurrentlyOnRoute(state, route) {
     const tabName = active.state.routes[active.state.index].name;
     if (route === '/(app)/(tabs)/dashboard' && tabName === 'dashboard') return true;
     if (route === '/(app)/(tabs)/transactions' && tabName === 'transactions') return true;
-    if (route === '/(app)/(tabs)/analytics' && tabName === 'analytics') return true;
+    if (route === '/(app)/(tabs)/bills' && tabName === 'bills') return true;
     if (route === '/(app)/(tabs)/profile' && tabName === 'profile') return true;
   }
   return false;
@@ -60,7 +64,7 @@ function isCurrentlyOnRoute(state, route) {
 const MAIN_ITEMS = [
   { route: '/(app)/(tabs)/dashboard', icon: Home, labelKey: 'navigation.dashboard' },
   { route: '/(app)/(tabs)/transactions', icon: Wallet, labelKey: 'navigation.transactions' },
-  { route: '/(app)/(tabs)/analytics', icon: Wrench, labelKey: 'navigation.analytics' },
+  { route: '/(app)/(tabs)/bills', icon: Repeat, labelKey: 'navigation.bills' },
   { route: '/(app)/(tabs)/profile', icon: User, labelKey: 'navigation.profile' },
 ];
 
@@ -68,15 +72,17 @@ const MAIN_ITEMS = [
 const FINANCE_ITEMS = [
   { route: '/(app)/expenses', icon: TrendingDown, labelKey: 'navigation.expenses' },
   { route: '/(app)/income', icon: TrendingUp, labelKey: 'navigation.income' },
+  { route: '/(app)/analytics', icon: BarChart3, labelKey: 'navigation.analytics' },
   { route: '/(app)/budgets', icon: Wallet, labelKey: 'navigation.budgets' },
   { route: '/(app)/savings-goals', icon: PiggyBank, labelKey: 'navigation.savingsGoals' },
   { route: '/(app)/loans', icon: CreditCard, labelKey: 'navigation.loans' },
 ];
 
+// Bills is in Main (tabs); no duplicate Recurring Bills here (same content)
 const TOOLS_ITEMS = [
   { route: '/(app)/currency-calculator', icon: Calculator, labelKey: 'navigation.currencyCalculator' },
+  { route: '/(app)/bank-import', icon: Upload, labelKey: 'import.title' },
   { route: '/(app)/receipts', icon: Receipt, labelKey: 'receipts.title' },
-  { route: '/(app)/recurring-bills', icon: Repeat, labelKey: 'navigation.recurringBills' },
 ];
 
 const LIFESTYLE_ITEMS = [
@@ -87,16 +93,24 @@ const LIFESTYLE_ITEMS = [
   { route: '/(app)/partnership', icon: Users, labelKey: 'navigation.partnership' },
 ];
 
-function DrawerItemRow({ icon: Icon, label, onPress, theme, destructive }) {
+function DrawerItemRow({ icon: Icon, label, onPress, theme, destructive, accessibilityLabel, avatarUrl }) {
+  const iconSize = 20;
+  const avatarSize = 24;
   return (
     <TouchableOpacity
       style={[styles.itemRow, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.glassBorder }]}
       onPress={onPress}
       activeOpacity={0.7}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
     >
-      <Icon size={20} color={destructive ? '#dc2626' : theme.colors.primary} />
+      {avatarUrl ? (
+        <View style={[styles.drawerAvatarWrap, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]}>
+          <Image source={{ uri: avatarUrl }} style={[styles.drawerAvatar, { width: avatarSize, height: avatarSize }]} resizeMode="cover" />
+        </View>
+      ) : (
+        <Icon size={iconSize} color={destructive ? '#dc2626' : theme.colors.primary} />
+      )}
       <Text style={[styles.itemLabel, { color: destructive ? '#dc2626' : theme.colors.text }]} numberOfLines={1}>
         {label}
       </Text>
@@ -119,6 +133,11 @@ export default function AppDrawerContent(props) {
   const { t } = useTranslation();
   const { theme, isDark, toggleTheme } = useTheme();
   const { scrollToTop } = useScrollToTop();
+  const { data: profile } = useQuery({
+    queryKey: ['my-profile'],
+    queryFn: () => profileService.getMyProfile(),
+  });
+  const profileAvatarUrl = profile?.avatar_url ?? profile?.avatarUrl;
 
   const navigateAndClose = (route) => {
     navigation.closeDrawer();
@@ -135,6 +154,9 @@ export default function AppDrawerContent(props) {
     navigateAndClose(route);
   };
 
+  const { startLogout } = useLogout();
+  const { resetOnboarding } = useOnboarding();
+
   const handleLogout = () => {
     Alert.alert(t('auth.logout'), t('auth.logoutConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -142,7 +164,9 @@ export default function AppDrawerContent(props) {
         text: t('auth.logout'),
         style: 'destructive',
         onPress: async () => {
+          startLogout();
           navigation.closeDrawer();
+          await resetOnboarding(); // so next account gets onboarding
           await authService.signOut();
           router.replace('/(auth)/login');
         },
@@ -155,6 +179,8 @@ export default function AppDrawerContent(props) {
       {...props}
       contentContainerStyle={[styles.scrollContent, { backgroundColor: theme.colors.background }]}
       showsVerticalScrollIndicator={false}
+      bounces={false}
+      overScrollMode="never"
     >
       <View style={styles.heroWrap}>
         <LogoHero variant="drawer" />
@@ -168,6 +194,7 @@ export default function AppDrawerContent(props) {
           label={t(labelKey)}
           onPress={() => handleMainItemPress(route)}
           theme={theme}
+          avatarUrl={route === '/(app)/(tabs)/profile' ? profileAvatarUrl : undefined}
         />
       ))}
 
@@ -212,6 +239,7 @@ export default function AppDrawerContent(props) {
             toggleTheme();
           }}
           theme={theme}
+          accessibilityLabel={isDark ? t('theme.switchToLight') : t('theme.switchToDark')}
         />
         <DrawerItemRow
           icon={LogOut}
@@ -247,6 +275,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     minHeight: 44,
+  },
+  drawerAvatarWrap: {
+    overflow: 'hidden',
+  },
+  drawerAvatar: {
+    borderRadius: 9999,
   },
   itemLabel: {
     flex: 1,
