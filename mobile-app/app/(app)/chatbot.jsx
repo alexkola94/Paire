@@ -56,6 +56,7 @@ import {
 } from 'lucide-react-native';
 import { chatbotService, aiGatewayService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { useToast, ScreenHeader, StructuredMessageContent } from '../../components';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 
@@ -188,7 +189,8 @@ export default function ChatbotScreen() {
   const { theme } = useTheme();
   const { showToast } = useToast();
   const router = useRouter();
-  
+  useBackGesture();
+
   // Chat state
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');

@@ -29,6 +29,7 @@ import { travelChatbotService, travelAdvisoryService, travelService, tripCitySer
 import { reverseGeocode } from '../../../services/discoveryService';
 import { getStaticTravelSuggestions } from '../../../utils/travelChatbotSuggestions';
 import { useTheme } from '../../../context/ThemeContext';
+import { useBackGesture } from '../../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 import { Modal, useToast, ScreenHeader, StructuredMessageContent } from '../../../components';
 import { MultiCityTripWizard, TransportLegCard } from '../../../components/travel';
@@ -38,6 +39,7 @@ export default function TravelIndexScreen() {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [activeSection, setActiveSection] = useState('trips'); // 'trips' | 'chatbot' | 'advisory'
@@ -351,7 +353,7 @@ export default function TravelIndexScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScreenHeader title={t('travel.common.enterTravelMode', 'Travel Mode')} />
+      <ScreenHeader title={t('travel.common.enterTravelMode', 'Travel Mode')} onBack={() => router.back()} />
       {/* Section toggles – fixed at top */}
       <View style={[styles.tabs, { backgroundColor: theme.colors.surface }, shadows.sm]}>
         <TouchableOpacity

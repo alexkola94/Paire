@@ -21,6 +21,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Plus, Pencil, Trash2, DollarSign } from 'lucide-react-native';
 import { travelService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
+import { useBackGesture } from '../../../../context/BackGestureContext';
 import { usePrivacyMode } from '../../../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
 import { Modal, Button, AddToCalculatorButton, useToast, ConfirmationModal } from '../../../../components';
@@ -41,6 +42,7 @@ export default function TripBudgetScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { isPrivate } = usePrivacyMode();

@@ -22,6 +22,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Plus, FileText, Trash2, ExternalLink } from 'lucide-react-native';
 import { travelService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
+import { useBackGesture } from '../../../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
 import { Modal, Button, useToast, ConfirmationModal } from '../../../../components';
 
@@ -29,6 +30,7 @@ export default function TripDocumentsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { id } = useLocalSearchParams();

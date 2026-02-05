@@ -26,12 +26,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { FileText, Trash2, X, ZoomIn, Plus } from 'lucide-react-native';
 import { transactionService, storageService, recurringBillService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { ConfirmationModal, EmptyState, ScreenLoading, ScreenHeader, useToast } from '../../components';
@@ -41,6 +43,8 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 export default function ReceiptsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const { isPrivate } = usePrivacyMode();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -284,6 +288,7 @@ export default function ReceiptsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScreenHeader
         title={t('receipts.title', 'Receipts')}
+        onBack={() => router.back()}
         rightElement={
           <TouchableOpacity
             style={[styles.addBtn, { backgroundColor: theme.colors.primary }]}

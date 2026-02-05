@@ -20,20 +20,33 @@ export default function BudgetProgressBar({
   const { theme } = useTheme();
   const { isPrivate } = usePrivacyMode();
 
-  const percentage = useMemo(() => {
-    if (!total || total === 0) return 0;
-    return Math.min(100, Math.max(0, (spent / total) * 100));
-  }, [spent, total]);
+  // Coerce to numbers (API may return snake_case or string values)
+  const spentNum = Number(spent) || 0;
+  const totalNum = Number(total) || 0;
 
-  const isOverBudget = spent > total;
+  // Percentage 0–100 from actual data; cap at 100 for bar width, but we still show over-budget color
+  const percentage = useMemo(() => {
+    if (totalNum === 0 || !Number.isFinite(totalNum)) return 0;
+    const pct = (spentNum / totalNum) * 100;
+    return Math.min(100, Math.max(0, pct));
+  }, [spentNum, totalNum]);
+
+  // Flex fraction for fill (0–1) so the bar width is based on data and works in RN flex layout
+  const fillFlex = useMemo(() => {
+    if (!Number.isFinite(percentage)) return 0;
+    return percentage / 100;
+  }, [percentage]);
+
+  const isOverBudget = spentNum > totalNum;
   const progressColor = useMemo(() => {
     if (isOverBudget) return theme.colors.error;
     if (percentage > 85) return theme.colors.warning;
     return color || theme.colors.primary;
   }, [isOverBudget, percentage, color, theme]);
 
-  const displaySpent = isPrivate ? '••••' : (currencyFormatter ? currencyFormatter(spent) : String(spent));
-  const displayTotal = isPrivate ? '••••' : (currencyFormatter ? currencyFormatter(total) : String(total));
+  // Always render strings so numbers display reliably on React Native
+  const displaySpent = isPrivate ? '••••' : (currencyFormatter ? currencyFormatter(spentNum) : String(spentNum));
+  const displayTotal = isPrivate ? '••••' : (currencyFormatter ? currencyFormatter(totalNum) : String(totalNum));
 
   return (
     <View style={styles.container}>
@@ -54,8 +67,7 @@ export default function BudgetProgressBar({
             {displaySpent}
           </Text>
           <Text style={[styles.total, { color: theme.colors.textSecondary }]}>
-            {' / '}
-            {displayTotal}
+            {` / ${displayTotal}`}
           </Text>
         </View>
       </View>
@@ -64,11 +76,12 @@ export default function BudgetProgressBar({
           style={[
             styles.fill,
             {
-              width: `${percentage}%`,
+              flex: fillFlex,
               backgroundColor: progressColor,
             },
           ]}
         />
+        <View style={[styles.fillSpacer, { flex: Math.max(0, 1 - fillFlex) }]} />
       </View>
     </View>
   );
@@ -110,9 +123,16 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: borderRadius.sm,
     overflow: 'hidden',
+    flexDirection: 'row',
+    alignSelf: 'stretch',
   },
   fill: {
     height: '100%',
     borderRadius: borderRadius.sm,
+    minWidth: 0,
+  },
+  fillSpacer: {
+    height: '100%',
+    minWidth: 0,
   },
 });

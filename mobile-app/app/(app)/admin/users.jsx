@@ -19,6 +19,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Search, Lock, Unlock, ShieldOff } from 'lucide-react-native';
 import { adminService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
+import { useBackGesture } from '../../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 import { SearchInput, useToast, ConfirmationModal, ScreenHeader } from '../../../components';
 
@@ -26,6 +27,7 @@ export default function AdminUsersScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [refreshing, setRefreshing] = useState(false);

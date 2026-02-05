@@ -79,9 +79,12 @@ export default function OnboardingBudgetScreen() {
     router.push('/(onboarding)/transaction');
   };
 
-  const currencySymbol = onboardingData.currency === 'USD' ? '$' :
-    onboardingData.currency === 'GBP' ? '£' :
-    onboardingData.currency === 'EUR' ? '€' : onboardingData.currency;
+  // Safe fallback so numbers/currency always render (onboardingData may load async)
+  const currencySymbol =
+    onboardingData?.currency === 'USD' ? '$' :
+    onboardingData?.currency === 'GBP' ? '£' :
+    onboardingData?.currency === 'EUR' ? '€' :
+    (onboardingData?.currency || '€');
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -179,7 +182,7 @@ export default function OnboardingBudgetScreen() {
                     { color: theme.colors.text },
                     amount === String(amt) && { color: '#fff' },
                   ]}>
-                    {currencySymbol}{amt}
+                    {`${currencySymbol}${String(amt)}`}
                   </Text>
                 </TouchableOpacity>
               ))}

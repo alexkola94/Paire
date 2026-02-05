@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
-    "start": "node node_modules/expo/bin/cli start",
-    "start:tunnel": "node node_modules/expo/bin/cli start --tunnel",
+    "start": "node scripts/start-expo.js",
+    "start:lan": "node scripts/start-expo.js",
+    "start:tunnel": "node scripts/start-expo.js --tunnel",
     "env:local": "node scripts/set-api-url.js",
-    "android": "node node_modules/expo/bin/cli start --android",
-    "ios": "node node_modules/expo/bin/cli start --ios",
-    "web": "node node_modules/expo/bin/cli start --web",
+    "android": "node scripts/start-expo.js --android",
+    "ios": "node scripts/start-expo.js --ios",
+    "web": "node scripts/start-expo.js --web",
     "build:ios": "eas build --platform ios --profile preview",
     "build:android": "eas build --platform android --profile preview"
   },

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react-native';
 import { travelNotificationsService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
+import { useBackGesture } from '../../../context/BackGestureContext';
 import { useToast } from '../../../components';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 
@@ -110,6 +111,7 @@ export default function TravelNotificationsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 

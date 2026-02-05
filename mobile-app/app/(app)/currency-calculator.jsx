@@ -17,17 +17,21 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ArrowRight, RefreshCw, Info, TrendingUp } from 'lucide-react-native';
 import { currencyService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { Dropdown, Button, ScreenHeader } from '../../components';
 
 export default function CurrencyCalculatorScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const [amount, setAmount] = useState('1');
   const [fromCurrency, setFromCurrency] = useState('EUR');
   const [toCurrency, setToCurrency] = useState('USD');
@@ -99,7 +103,7 @@ export default function CurrencyCalculatorScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScreenHeader title={t('currencyCalculator.title')} />
+      <ScreenHeader title={t('currencyCalculator.title')} onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.keyboard}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

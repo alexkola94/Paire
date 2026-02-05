@@ -19,6 +19,8 @@ export default function BudgetWidget({
   budgets = [],
   onPress,
   maxDisplay = 3,
+  /** When provided, used for progress (current-month spent per category); otherwise fallback to API spent_amount */
+  spentByCategory = {},
 }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
@@ -29,15 +31,22 @@ export default function BudgetWidget({
 
   const displayBudgets = budgets.slice(0, maxDisplay);
 
+  // Resolve spent: computed from current-month expenses when spentByCategory provided, else API
+  const getSpent = (budget) => {
+    const fromMap = spentByCategory[budget.category];
+    if (fromMap != null) return Number(fromMap) || 0;
+    return Number(budget.spent_amount ?? budget.spentAmount ?? 0) || 0;
+  };
+
   // Check if any budget is at or above warning threshold
   const hasWarning = useMemo(() => {
     return budgets.some((budget) => {
       const limit = Number(budget.amount ?? budget.limit ?? 0) || 0;
-      const spent = Number(budget.spentAmount ?? budget.spent_amount ?? 0) || 0;
+      const spent = getSpent(budget);
       const pct = limit > 0 ? (spent / limit) * 100 : 0;
       return pct >= WARNING_THRESHOLD;
     });
-  }, [budgets]);
+  }, [budgets, spentByCategory]);
 
   return (
     <AnimatedCard onPress={onPress} style={{ padding: 0 }}>
@@ -54,12 +63,12 @@ export default function BudgetWidget({
         </View>
 
         {displayBudgets.map((budget) => {
-          // API may return camelCase (amount, spentAmount) or snake_case (amount, spent_amount)
           const limit = Number(budget.amount ?? budget.limit ?? 0) || 0;
-          const spent = Number(budget.spentAmount ?? budget.spent_amount ?? 0) || 0;
+          const spent = getSpent(budget);
           const pct = limit > 0 ? Math.min(100, Math.max(0, (spent / limit) * 100)) : 0;
-          const isOverBudget = pct > 90;
-          const pctDisplay = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : '0%';
+          const fillFlex = Number.isFinite(pct) ? pct / 100 : 0;
+          const isOverBudget = spent > limit;
+          const pctDisplay = Number.isFinite(pct) ? `${Math.round(pct)}%` : '0%';
 
           return (
             <View key={budget.id} style={styles.budgetRow}>
@@ -67,15 +76,16 @@ export default function BudgetWidget({
                 {t(`categories.${budget.category}`, budget.category)}
               </Text>
               <View style={[styles.progressBg, { backgroundColor: theme.colors.surfaceSecondary }]}>
-                <View 
+                <View
                   style={[
-                    styles.progressFill, 
-                    { 
-                      width: `${pct}%`, 
-                      backgroundColor: isOverBudget ? theme.colors.error : theme.colors.primary 
-                    }
-                  ]} 
+                    styles.progressFill,
+                    {
+                      flex: fillFlex,
+                      backgroundColor: isOverBudget ? theme.colors.error : theme.colors.primary,
+                    },
+                  ]}
                 />
+                <View style={[styles.progressSpacer, { flex: Math.max(0, 1 - fillFlex) }]} />
               </View>
               <Text style={[styles.budgetPct, { color: theme.colors.textSecondary }]}>
                 {pctDisplay}
@@ -125,10 +135,17 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     overflow: 'hidden',
+    flexDirection: 'row',
+    alignSelf: 'stretch',
   },
   progressFill: {
     height: '100%',
     borderRadius: 4,
+    minWidth: 0,
+  },
+  progressSpacer: {
+    height: '100%',
+    minWidth: 0,
   },
   budgetPct: {
     width: 35,

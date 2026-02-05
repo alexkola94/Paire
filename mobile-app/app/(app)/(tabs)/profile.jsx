@@ -8,12 +8,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import {
   User, LogOut, Users, Bell, Trophy, Shield, Moon, Globe,
-  ChevronRight, CreditCard, PiggyBank, Receipt, ShoppingCart, MapPin,
+  ChevronRight, ChevronLeft, CreditCard, PiggyBank, Receipt, ShoppingCart, MapPin,
   FileText, Pencil, Lock, MessageCircle, Camera, Menu, Fingerprint, ScanFace,
 } from 'lucide-react-native';
 import { profileService } from '../../../services/api';
 import { authService } from '../../../services/auth';
 import { useTheme } from '../../../context/ThemeContext';
+import { useBackGesture } from '../../../context/BackGestureContext';
 import { useBiometric } from '../../../context/BiometricContext';
 import { useLogout } from '../../../context/LogoutContext';
 import { useOnboarding } from '../../../context/OnboardingContext';
@@ -85,6 +86,7 @@ export default function ProfileScreen() {
   const { resetOnboarding } = useOnboarding();
   const user = authService.getCurrentUser();
 
+  useBackGesture();
   const scrollViewRef = useRef(null);
   const { register } = useScrollToTop();
 
@@ -111,8 +113,8 @@ export default function ProfileScreen() {
   const reducedMotion = useReducedMotion();
   const entering = useMemo(() => {
     if (reducedMotion) return FadeIn.duration(0);
-    if (previousTabIndex === null) return FadeIn.duration(200);
-    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(280);
+    if (previousTabIndex === null) return FadeIn.duration(100);
+    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(120);
   }, [previousTabIndex, currentTabIndex, reducedMotion]);
 
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
@@ -263,8 +265,18 @@ export default function ProfileScreen() {
   return (
     <Animated.View entering={entering} style={[styles.tabTransitionWrapper, { backgroundColor: theme.colors.background }]}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header: menu + Profile */}
+      {/* Header: back (when can go back) + menu + Profile */}
       <View style={[styles.headerRow, { borderBottomColor: theme.colors.glassBorder }]}>
+        {router.canGoBack() && (
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.headerMenuBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}
+            accessibilityLabel={t('common.back', 'Back')}
+            accessibilityRole="button"
+          >
+            <ChevronLeft size={22} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           onPress={openDrawer}
           style={[styles.headerMenuBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}

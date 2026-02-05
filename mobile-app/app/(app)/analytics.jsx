@@ -15,6 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
@@ -34,6 +35,7 @@ import {
 } from '../../services/api';
 import { getStoredUser } from '../../services/auth';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography } from '../../constants/theme';
 import {
@@ -173,6 +175,8 @@ const DATE_RANGE_OPTIONS = [
 export default function AnalyticsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const { isPrivate } = usePrivacyMode();
   const { showToast } = useToast();
   const [dateRangeKey, setDateRangeKey] = useState('month');
@@ -293,7 +297,7 @@ export default function AnalyticsScreen() {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       edges={['top']}
     >
-      <ScreenHeader title={t('analytics.title', 'Analytics')} />
+      <ScreenHeader title={t('analytics.title', 'Analytics')} onBack={() => router.back()} />
 
       {/* Filters row */}
       <View style={[styles.filtersRow, { borderBottomColor: theme.colors.glassBorder }]}>

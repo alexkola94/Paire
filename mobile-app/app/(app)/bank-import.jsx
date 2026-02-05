@@ -28,6 +28,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Upload, FileText, X, CheckCircle, AlertCircle, Clock, Trash2, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { importService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { spacing, borderRadius, typography } from '../../constants/theme';
 import { Button, ConfirmationModal, ScreenHeader, useToast } from '../../components';
 
@@ -72,6 +73,7 @@ function formatImportDate(dateStr) {
 export default function BankImportScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  useBackGesture();
   const { theme } = useTheme();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -190,7 +192,6 @@ export default function BankImportScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
       <ScreenHeader
         title={t('import.title')}
-        showMenuButton={false}
         onBack={() => router.back()}
       />
 

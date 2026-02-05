@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, Users, FileText, Cpu, Activity, ChevronRight } from 'lucide-react-native';
 import { adminService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
+import { useBackGesture } from '../../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../../constants/theme';
 import { ScreenHeader } from '../../../components';
 
@@ -52,6 +53,7 @@ export default function AdminDashboardScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: stats, refetch, isLoading, error } = useQuery({

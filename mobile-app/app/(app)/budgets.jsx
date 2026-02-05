@@ -22,12 +22,15 @@ import {
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, PieChart } from 'lucide-react-native';
 import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
 import { budgetService } from '../../services/api';
+import { useCurrentMonthExpenses } from '../../hooks/useCurrentMonthExpenses';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import {
@@ -48,6 +51,8 @@ const formatCurrency = (n) => (n != null ? `€${Number(n).toFixed(2)}` : '€0.
 export default function BudgetsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const { isPrivate } = usePrivacyMode();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -65,6 +70,9 @@ export default function BudgetsScreen() {
     queryKey: ['budgets'],
     queryFn: () => budgetService.getAll(),
   });
+
+  // Current-month expenses: compute spent per category (same logic as web)
+  const { spentByCategory, refetch: refetchExpenses } = useCurrentMonthExpenses();
 
   // Create mutation
   const createMutation = useMutation({
@@ -108,12 +116,12 @@ export default function BudgetsScreen() {
     },
   });
 
-  // Pull-to-refresh
+  // Pull-to-refresh (budgets + current-month expenses for progress)
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([refetch(), refetchExpenses()]);
     setRefreshing(false);
-  }, [refetch]);
+  }, [refetch, refetchExpenses]);
 
   const items = Array.isArray(data) ? data : [];
 
@@ -206,8 +214,8 @@ export default function BudgetsScreen() {
     >
       <BudgetProgressBar
         label={t(`categories.${item.category}`, item.category)}
-        spent={item.spentAmount ?? 0}
-        total={item.amount ?? 0}
+        spent={spentByCategory[item.category] ?? item.spent_amount ?? item.spentAmount ?? 0}
+        total={item.amount ?? item.limit ?? 0}
         currencyFormatter={privateCurrencyFormatter}
       />
       
@@ -235,7 +243,7 @@ export default function BudgetsScreen() {
           <Trash2 size={16} color={theme.colors.error} />
         </TouchableOpacity>
         <AddToCalculatorButton
-          value={item.amount}
+          value={item.amount ?? item.limit}
           isPrivate={isPrivate}
           size={16}
           onAdded={() => showToast(t('calculator.added', 'Added to calculator'), 'success', 1500)}
@@ -256,6 +264,7 @@ export default function BudgetsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScreenHeader
         title={t('budgets.title', 'Budgets')}
+        onBack={() => router.back()}
         rightElement={
           <TouchableOpacity
             onPress={() => { impactMedium(); setIsFormOpen(true); }}

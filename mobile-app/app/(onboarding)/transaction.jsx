@@ -18,7 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Receipt, ChevronRight, Check } from 'lucide-react-native';
+import { Receipt, ChevronRight, Check, ChevronLeft } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { transactionService } from '../../services/api';
@@ -77,16 +77,32 @@ export default function OnboardingTransactionScreen() {
     router.push('/(onboarding)/complete');
   };
 
-  const currencySymbol = onboardingData.currency === 'USD' ? '$' :
-    onboardingData.currency === 'GBP' ? '£' :
-    onboardingData.currency === 'EUR' ? '€' : onboardingData.currency;
+  // Safe fallback so numbers/currency always render (onboardingData may load async)
+  const currencySymbol =
+    onboardingData?.currency === 'USD' ? '$' :
+    onboardingData?.currency === 'GBP' ? '£' :
+    onboardingData?.currency === 'EUR' ? '€' :
+    (onboardingData?.currency || '€');
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        {/* Back button – show when there is history */}
+        {router.canGoBack() && (
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}
+            accessibilityLabel={t('common.back', 'Back')}
+            accessibilityRole="button"
+            activeOpacity={0.7}
+          >
+            <ChevronLeft size={22} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        )}
+
         {/* Progress indicator */}
         <View style={styles.progressContainer}>
           <View style={[styles.progressDot, { backgroundColor: theme.colors.primary }]} />
@@ -207,6 +223,17 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
   },
   progressContainer: {
     flexDirection: 'row',

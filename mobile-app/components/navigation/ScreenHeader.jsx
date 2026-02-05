@@ -58,7 +58,7 @@ export default function ScreenHeader({
             <Menu size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         )}
-        {onBack != null && (
+        {onBack != null && router.canGoBack() && (
           <TouchableOpacity
             onPress={() => (typeof onBack === 'function' ? onBack() : router.back())}
             style={[

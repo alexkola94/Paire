@@ -313,7 +313,7 @@ export default function TabBarWithFAB({ state, descriptors, navigation }) {
                   });
 
                   if (!isFocused && !event.defaultPrevented) {
-                    navigation.navigate(route.name);
+                    navigation.jumpTo(route.name);
                   }
                 };
 
@@ -352,7 +352,7 @@ export default function TabBarWithFAB({ state, descriptors, navigation }) {
                   });
 
                   if (!isFocused && !event.defaultPrevented) {
-                    navigation.navigate(route.name);
+                    navigation.jumpTo(route.name);
                   }
                 };
 

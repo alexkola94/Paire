@@ -73,8 +73,8 @@ export default function TransactionsScreen() {
   const reducedMotion = useReducedMotion();
   const entering = useMemo(() => {
     if (reducedMotion) return FadeIn.duration(0);
-    if (previousTabIndex === null) return FadeIn.duration(200);
-    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(280);
+    if (previousTabIndex === null) return FadeIn.duration(100);
+    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(120);
   }, [previousTabIndex, currentTabIndex, reducedMotion]);
 
   // Format amount with privacy mode support

@@ -19,6 +19,7 @@ import {
   Eye, EyeOff, ChevronRight, Pencil, Trash2, Receipt, Repeat, Settings, Menu, User,
 } from 'lucide-react-native';
 import { analyticsService, budgetService, recurringBillService, transactionService, savingsGoalService, profileService } from '../../../services/api';
+import { useCurrentMonthExpenses } from '../../../hooks/useCurrentMonthExpenses';
 import { authService } from '../../../services/auth';
 import { useTheme } from '../../../context/ThemeContext';
 import { usePrivacyMode } from '../../../context/PrivacyModeContext';
@@ -92,8 +93,8 @@ export default function DashboardScreen() {
   const reducedMotion = useReducedMotion();
   const entering = useMemo(() => {
     if (reducedMotion) return FadeIn.duration(0);
-    if (previousTabIndex === null) return FadeIn.duration(200);
-    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(280);
+    if (previousTabIndex === null) return FadeIn.duration(100);
+    return (currentTabIndex > previousTabIndex ? SlideInRight : SlideInLeft).duration(120);
   }, [previousTabIndex, currentTabIndex, reducedMotion]);
   const [detailTransaction, setDetailTransaction] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -131,6 +132,9 @@ export default function DashboardScreen() {
   });
   const avatarUrl = profile?.avatar_url ?? profile?.avatarUrl;
 
+  // Current-month expenses for budget progress (same source of truth as web)
+  const { spentByCategory, refetch: refetchCurrentMonthExpenses } = useCurrentMonthExpenses();
+
   // Lazy load: show full-screen loading until all data (including profile/avatars) has loaded
   const isInitialLoading =
     dashLoading ||
@@ -145,6 +149,7 @@ export default function DashboardScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', 'current-month-expenses'] });
       showToast(t('transactions.deleteSuccess', 'Transaction deleted'), 'success');
       setDeleteTarget(null);
       setDetailTransaction(null);
@@ -154,17 +159,22 @@ export default function DashboardScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), refetchRecent(), refetchProfile()]);
+    await Promise.all([refetch(), refetchRecent(), refetchProfile(), refetchCurrentMonthExpenses()]);
     setRefreshing(false);
-  }, [refetch, refetchRecent, refetchProfile]);
+  }, [refetch, refetchRecent, refetchProfile, refetchCurrentMonthExpenses]);
 
+  // API returns currentMonthIncome/currentMonthExpenses (DashboardAnalyticsDTO); support both for compatibility
   const summary = dashData || {};
-  const totalExpenses = summary.totalExpenses || 0;
-  const totalIncome = summary.totalIncome || 0;
-  const balance = totalIncome - totalExpenses;
+  const totalExpenses = Number(summary.currentMonthExpenses ?? summary.totalExpenses ?? 0) || 0;
+  const totalIncome = Number(summary.currentMonthIncome ?? summary.totalIncome ?? 0) || 0;
+  const balance =
+    (summary.currentMonthBalance != null
+      ? Number(summary.currentMonthBalance) || 0
+      : totalIncome - totalExpenses);
 
   const recentList = Array.isArray(recentData) ? recentData : recentData?.items ?? [];
-  const formatAmount = (n) => (isPrivacyMode ? '••••' : `€${Number(n).toFixed(2)}`);
+  // Ensure numbers always render (avoid NaN)
+  const formatAmount = (n) => (isPrivacyMode ? '••••' : `€${(Number(n) || 0).toFixed(2)}`);
 
   const openDrawer = useCallback(() => navigation.dispatch(DrawerActions.openDrawer()), [navigation]);
 
@@ -264,6 +274,7 @@ export default function DashboardScreen() {
           <View style={{ marginBottom: spacing.md }}>
             <BudgetWidget
               budgets={budgets}
+              spentByCategory={spentByCategory}
               onPress={() => router.push('/(app)/budgets')}
             />
           </View>

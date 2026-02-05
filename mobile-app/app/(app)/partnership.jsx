@@ -1,17 +1,21 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Heart, Send } from 'lucide-react-native';
 import { partnershipService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { ScreenHeader } from '../../components';
 
 export default function PartnershipScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const [refreshing, setRefreshing] = useState(false);
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
@@ -35,7 +39,7 @@ export default function PartnershipScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScreenHeader title={t('partnership.title')} />
+      <ScreenHeader title={t('partnership.title')} onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}>
         {partnerships.length > 0 ? partnerships.map((p) => (

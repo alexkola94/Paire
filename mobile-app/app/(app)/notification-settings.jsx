@@ -32,6 +32,7 @@ import {
   Send,
 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { Button, useToast, ScreenHeader } from '../../components';
@@ -79,6 +80,7 @@ export default function NotificationSettingsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const { showToast } = useToast();
   const {
     preferences,

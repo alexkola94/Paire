@@ -50,9 +50,9 @@ export default function QuickAccessWidget({
             <TouchableOpacity
               key={index}
               style={[
-                styles.item, 
-                { 
-                  backgroundColor: theme.colors.surface, 
+                styles.item,
+                {
+                  backgroundColor: theme.colors.surface,
                   borderColor: theme.colors.glassBorder,
                   width: `${100 / columns - 2}%`,
                 },
@@ -62,7 +62,8 @@ export default function QuickAccessWidget({
               activeOpacity={0.7}
             >
               <IconComponent size={22} color={theme.colors.primary} />
-              <Text style={[styles.itemLabel, { color: theme.colors.text }]} numberOfLines={1}>
+              {/* Label always visible: wrap so no language is hidden */}
+              <Text style={[styles.itemLabel, { color: theme.colors.text }]}>
                 {t(item.labelKey, item.labelKey.split('.').pop())}
               </Text>
             </TouchableOpacity>
@@ -91,9 +92,11 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
     borderWidth: 1,
     marginBottom: spacing.xs,
+    minHeight: 56,
   },
   itemLabel: {
     fontSize: 10,

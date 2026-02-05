@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -31,6 +32,7 @@ import {
 } from 'lucide-react-native';
 import { achievementService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { Dropdown, EmptyState, ScreenHeader } from '../../components';
 
@@ -66,6 +68,8 @@ function getRarityColor(rarity, theme) {
 export default function AchievementsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -171,7 +175,7 @@ export default function AchievementsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScreenHeader title={t('achievements.title')} />
+      <ScreenHeader title={t('achievements.title')} onBack={() => router.back()} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={

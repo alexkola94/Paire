@@ -20,7 +20,7 @@ export default function OnboardingLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            gestureEnabled: false, // Prevent back swipe during onboarding
+            gestureEnabled: false, // Prevent back swipe on first steps
             animation: 'slide_from_right',
             contentStyle: { backgroundColor: theme.colors.background },
           }}
@@ -28,7 +28,7 @@ export default function OnboardingLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="partner" />
           <Stack.Screen name="budget" />
-          <Stack.Screen name="transaction" />
+          <Stack.Screen name="transaction" options={{ gestureEnabled: true }} />
           <Stack.Screen name="complete" />
         </Stack>
       </OverlayProvider>

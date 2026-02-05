@@ -21,12 +21,14 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, AlertTriangle } from 'lucide-react-native';
 import { travelService, travelAdvisoryService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
+import { useBackGesture } from '../../../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
 
 export default function TripAdvisoryScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const { id } = useLocalSearchParams();
 
   const { data: trip, isLoading: tripLoading } = useQuery({

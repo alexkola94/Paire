@@ -36,6 +36,7 @@ import {
 } from 'lucide-react-native';
 import { travelService, tripCityService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
+import { useBackGesture } from '../../../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
 import { Modal, Button, ConfirmationModal, useToast, ScreenHeader } from '../../../../components';
 import { TripMicrography } from '../../../../components/travel';
@@ -73,6 +74,7 @@ export default function TripDetailScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { id } = useLocalSearchParams();

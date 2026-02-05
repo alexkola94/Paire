@@ -23,12 +23,14 @@ import {
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Receipt } from 'lucide-react-native';
 import { transactionService } from '../../services/api';
 import { impactMedium, impactLight, notificationSuccess, notificationWarning } from '../../utils/haptics';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { usePrivacyMode } from '../../context/PrivacyModeContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import {
@@ -47,6 +49,8 @@ import {
 export default function ExpensesScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const { isPrivate } = usePrivacyMode();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -328,6 +332,7 @@ export default function ExpensesScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScreenHeader
         title={t('expenses.title', 'Expenses')}
+        onBack={() => router.back()}
         rightElement={
           <TouchableOpacity
             onPress={() => { impactMedium(); setIsFormOpen(true); }}

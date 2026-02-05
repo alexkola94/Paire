@@ -20,10 +20,12 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reminderService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows, colors } from '../../constants/theme';
 import { ScreenHeader } from '../../components';
 import FormSection from '../../components/FormSection';
@@ -43,6 +45,8 @@ const defaultSettings = {
 export default function RemindersScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState({ type: null, text: '' });
 
@@ -113,7 +117,7 @@ export default function RemindersScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <ScreenHeader title={t('reminders.title')} />
+          <ScreenHeader title={t('reminders.title')} onBack={() => router.back()} />
           <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
             {t('reminders.subtitle')}
           </Text>

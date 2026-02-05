@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft } from 'lucide-react-native';
 import { adminService } from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
+import { useBackGesture } from '../../../context/BackGestureContext';
 import { spacing, borderRadius, typography } from '../../../constants/theme';
 import { ScreenHeader } from '../../../components';
 
@@ -26,6 +27,7 @@ export default function AdminLogsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: logs = [], refetch, isFetching } = useQuery({

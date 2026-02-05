@@ -23,8 +23,9 @@ export default function AnalyticsWidget({
   const { theme } = useTheme();
   const { isPrivacyMode } = usePrivacyMode();
 
-  const balance = totalIncome - totalExpenses;
-  const formatAmount = (n) => (isPrivacyMode ? '••••' : `€${Number(n).toFixed(2)}`);
+  const balance = (Number(totalIncome) || 0) - (Number(totalExpenses) || 0);
+  // Ensure numbers always render (avoid NaN)
+  const formatAmount = (n) => (isPrivacyMode ? '••••' : `€${(Number(n) || 0).toFixed(2)}`);
   const isSaving = balance >= 0;
 
   return (

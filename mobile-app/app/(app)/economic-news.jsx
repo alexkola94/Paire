@@ -15,17 +15,21 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, RefreshCw, AlertCircle, Info, Construction } from 'lucide-react-native';
 import { economicService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useBackGesture } from '../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 import { ScreenHeader } from '../../components';
 
 export default function EconomicNewsScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const router = useRouter();
+  useBackGesture();
   const [refreshing, setRefreshing] = useState(false);
 
   const { data, refetch, isLoading, isError, error } = useQuery({
@@ -92,6 +96,7 @@ export default function EconomicNewsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScreenHeader
         title={t('economicNews.title')}
+        onBack={() => router.back()}
         rightElement={
           <TouchableOpacity onPress={onRefresh} style={[styles.refreshBtn, { backgroundColor: theme.colors.surface }, shadows.sm]}>
             <RefreshCw size={18} color={theme.colors.primary} />

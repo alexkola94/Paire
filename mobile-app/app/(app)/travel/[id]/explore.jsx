@@ -35,6 +35,7 @@ import {
 } from 'lucide-react-native';
 import { travelService, savedPlaceService, tripCityService } from '../../../../services/api';
 import { useTheme } from '../../../../context/ThemeContext';
+import { useBackGesture } from '../../../../context/BackGestureContext';
 import { spacing, borderRadius, typography, shadows } from '../../../../constants/theme';
 import { WeatherCard, DiscoveryMap } from '../../../../components/travel';
 
@@ -66,6 +67,7 @@ export default function TripExploreScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
+  useBackGesture();
   const { id } = useLocalSearchParams();
   
   const [selectedCategory, setSelectedCategory] = useState('all');
