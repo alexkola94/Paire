@@ -757,13 +757,83 @@ export const travelAdvisoryService = {
 };
 
 // ========================================
-// Transport Booking (Kiwi, Skyscanner, TripGo via backend)
+// Travel Notifications (backend: document expiry, budget, itinerary, packing, push)
 // ========================================
 
-export const transportBookingService = {
-  async getProviders() { return request('get', '/api/transport/providers'); },
-  async searchFlights(body) { return request('post', '/api/transport/search-flights', body); },
-  async searchRoutes(body) { return request('post', '/api/transport/search-routes', body); },
+export const travelNotificationsService = {
+  /** GET /api/travel/notifications?tripId=&unreadOnly=&limit= */
+  async getNotifications(params = {}) {
+    getCurrentUser();
+    const q = new URLSearchParams();
+    if (params.tripId != null) q.set('tripId', params.tripId);
+    if (params.unreadOnly != null) q.set('unreadOnly', params.unreadOnly);
+    if (params.limit != null) q.set('limit', params.limit);
+    const query = q.toString();
+    return request('get', `/api/travel/notifications${query ? `?${query}` : ''}`);
+  },
+  /** GET /api/travel/notifications/unread?tripId= */
+  async getUnreadCount(tripId = null) {
+    getCurrentUser();
+    const q = tripId != null ? `?tripId=${tripId}` : '';
+    return request('get', `/api/travel/notifications/unread${q}`);
+  },
+  /** PUT /api/travel/notifications/:id/read */
+  async markAsRead(id) {
+    getCurrentUser();
+    return request('put', `/api/travel/notifications/${id}/read`);
+  },
+  /** POST /api/travel/notifications/mark-all-read?tripId= */
+  async markAllAsRead(tripId = null) {
+    getCurrentUser();
+    const q = tripId != null ? `?tripId=${tripId}` : '';
+    return request('post', `/api/travel/notifications/mark-all-read${q}`);
+  },
+  /** DELETE /api/travel/notifications/:id */
+  async deleteNotification(id) {
+    getCurrentUser();
+    return request('delete', `/api/travel/notifications/${id}`);
+  },
+  /** GET /api/travel/notifications/preferences?tripId= */
+  async getPreferences(tripId = null) {
+    getCurrentUser();
+    const q = tripId != null ? `?tripId=${tripId}` : '';
+    return request('get', `/api/travel/notifications/preferences${q}`);
+  },
+  /** PUT /api/travel/notifications/preferences */
+  async updatePreferences(dto) {
+    getCurrentUser();
+    return request('put', '/api/travel/notifications/preferences', dto);
+  },
+  /** POST /api/travel/notifications/push-subscription */
+  async registerPushSubscription(dto) {
+    getCurrentUser();
+    return request('post', '/api/travel/notifications/push-subscription', dto);
+  },
+  /** DELETE /api/travel/notifications/push-subscription?endpoint= */
+  async unregisterPushSubscription(endpoint) {
+    getCurrentUser();
+    return request('delete', `/api/travel/notifications/push-subscription?endpoint=${encodeURIComponent(endpoint)}`);
+  },
+  /** POST /api/travel/notifications/check?tripId= */
+  async checkNotifications(tripId) {
+    getCurrentUser();
+    return request('post', `/api/travel/notifications/check?tripId=${tripId}`);
+  },
+  /** POST /api/travel/notifications/check-documents?tripId= */
+  async checkDocumentNotifications(tripId) {
+    getCurrentUser();
+    return request('post', `/api/travel/notifications/check-documents?tripId=${tripId}`);
+  },
+  /** POST /api/travel/notifications/check-budget?tripId= */
+  async checkBudgetNotifications(tripId) {
+    getCurrentUser();
+    return request('post', `/api/travel/notifications/check-budget?tripId=${tripId}`);
+  },
+  /** POST /api/travel/notifications/check-itinerary?tripId= */
+  async checkItineraryNotifications(tripId) {
+    getCurrentUser();
+    return request('post', `/api/travel/notifications/check-itinerary?tripId=${tripId}`);
+  },
 };
 
 // ========================================

@@ -1,20 +1,14 @@
 # Free Transport Booking / Search API Options
 
-Reference for **free** (or generous free-tier) APIs you can use to search for flights, buses, or ferries instead of only deep-linking to provider sites. All options below have a free tier or test environment; no credit card required for the ones marked ✅.
+Reference for **free** (or generous free-tier) APIs you could use to search for flights, buses, or ferries. All options below have a free tier or test environment; no credit card required for the ones marked ✅.
 
-## Backend proxy (current setup)
+## Current behaviour
 
-Transport **"Search prices"** is proxied through the backend. The frontend and mobile app call:
-
-- `GET /api/transport/providers` – which providers have API keys configured
-- `POST /api/transport/search-flights` – Kiwi or Skyscanner (body: `flyFrom`, `flyTo`, `dateFrom`, etc., `provider: "kiwi" | "skyscanner"`)
-- `POST /api/transport/search-routes` – TripGo (body: `fromPlace`, `toPlace` or `fromLat`/`fromLon`/`toLat`/`toLon`)
-
-API keys are configured on the **backend** only, in `appsettings.json` (see `appsettings.Example.json` under `TransportBooking`). No transport API keys are needed in the frontend or mobile `.env`.
+Transport booking in this app uses **external links only** (Skyscanner, Kiwi.com, FlixBus, Omio, Ferryhopper, Direct Ferries). No backend transport API or API keys are required. The app builds deep-link URLs with route and date query parameters and opens them in the browser.
 
 ---
 
-## Flights
+## Flights (reference – not integrated)
 
 ### 1. **Amadeus for Developers** ✅ (free test + production quota)
 

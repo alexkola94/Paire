@@ -1,7 +1,7 @@
 // Transport booking link generator (same contract as frontend for consistency).
 // Constructs deep-link URLs for external booking providers (flights, buses, ferries).
 // Set to true to log inputs, resolved codes, and final URLs (debug why links don't pre-fill). Set false when fixed.
-const TRANSPORT_LINKS_DEBUG = true;
+const TRANSPORT_LINKS_DEBUG = false;
 
 /**
  * Ferryhopper 3-letter port codes for booking results URL (route + date pre-filled).

@@ -1,28 +1,24 @@
 /**
- * TransportLegCard – Shared leg card for transport booking (from → to + provider links).
- * Used by MultiCityTripWizard and single-destination Add Trip wizard.
+ * TransportLegCard – Leg card with API price offers + external booking deep links.
+ * Shows from → to, transport mode, API-sourced offers (flights/buses), and
+ * one button per deep-link provider (Skyscanner, Kiwi, FlixBus, etc.) with brand icon.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Linking, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Linking, StyleSheet, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, typography } from '../../constants/theme';
 import { generateTransportLink } from '../../utils/transportLinks';
-import { transportBookingService } from '../../services/api';
-import { searchFlights as kiwiSearchFlights } from '../../services/kiwiTequilaService';
-import { searchFlights as skyscannerSearchFlights, resolveToIata } from '../../services/skyscannerService';
-import { searchRoutesByPlaces } from '../../services/tripGoService';
+import { TRANSPORT_BRAND_ICONS } from '../../constants/transportBrandIcons';
+import { ExternalLink } from 'lucide-react-native';
+import Skeleton from '../Skeleton';
+import useTransportSearch from '../../hooks/useTransportSearch';
 
 const BOOKABLE_MODES = ['flight', 'bus', 'ferry'];
 
-const formatDuration = (minutes) => {
-  if (minutes == null || minutes < 0) return '—';
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
-};
+const ICON_SIZE = 24;
+const MAX_OFFERS = 3;
 
 const styles = StyleSheet.create({
   card: {
@@ -34,14 +30,94 @@ const styles = StyleSheet.create({
   legLabel: { flex: 1 },
   legRoute: { ...typography.bodySmall, fontWeight: '500' },
   legMode: { ...typography.caption, marginTop: 2 },
-  linksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
-  linkBtn: { paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, borderRadius: borderRadius.sm, alignSelf: 'flex-start' },
+  linksRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  linkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+  },
   linkBtnText: { ...typography.caption, fontWeight: '600', color: '#fff' },
-  resultsBox: { marginTop: spacing.sm, padding: spacing.sm, borderRadius: borderRadius.sm, borderWidth: 1 },
-  resultsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, borderRadius: borderRadius.xs, marginBottom: spacing.xs },
-  resultsLoading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm },
-  resultsError: { padding: spacing.sm },
+  brandIcon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    borderRadius: 4,
+  },
+  // API offers styles
+  offersSection: {
+    marginTop: spacing.xs,
+  },
+  offersHeader: {
+    ...typography.caption,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  offerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    marginBottom: spacing.xs,
+  },
+  offerDetails: {
+    flex: 1,
+  },
+  offerMainLine: {
+    ...typography.caption,
+    fontWeight: '500',
+  },
+  offerSubLine: {
+    ...typography.caption,
+    marginTop: 1,
+  },
+  offerPrice: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    marginRight: spacing.sm,
+  },
+  offerBookBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
+  },
+  offerBookText: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  divider: {
+    height: 1,
+    marginVertical: spacing.xs,
+  },
+  offersSkeleton: {
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
 });
+
+/**
+ * Format an ISO datetime for display (HH:MM).
+ */
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    // Try extracting HH:MM from string like "2026-03-15T08:30:00"
+    const match = iso.match(/T(\d{2}:\d{2})/);
+    return match ? match[1] : '';
+  }
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
 
 /**
  * @param {{ leg: { from: string, to: string, startDate?: string | null, endDate?: string | null, transportMode?: string | null } }} props
@@ -49,84 +125,25 @@ const styles = StyleSheet.create({
 export default function TransportLegCard({ leg }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const [providers, setProviders] = useState({ kiwi: false, skyscanner: false, tripGo: false });
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState('');
+  const [failedIcons, setFailedIcons] = useState(new Set());
+  const { offers, loading } = useTransportSearch(leg);
 
-  useEffect(() => {
-    transportBookingService.getProviders().then(setProviders).catch(() => setProviders({ kiwi: false, skyscanner: false, tripGo: false }));
-  }, []);
-
-  const isBookable = leg.transportMode && BOOKABLE_MODES.includes(leg.transportMode);
+  const mode = (leg.transportMode && String(leg.transportMode).toLowerCase()) || null;
+  const isBookable = mode && BOOKABLE_MODES.includes(mode);
   const linkData = {
     origin: leg.from,
     destination: leg.to,
     startDate: leg.startDate,
     endDate: leg.endDate,
   };
-  const links = isBookable ? generateTransportLink(leg.transportMode, linkData) : [];
+  const links = isBookable ? generateTransportLink(mode, linkData) : [];
 
-  const runFlightSearch = useCallback(async (provider) => {
-    setSearchLoading(true);
-    setSearchError('');
-    setSearchResults([]);
-    try {
-      if (provider === 'kiwi') {
-        const list = await kiwiSearchFlights({
-          flyFrom: leg.from,
-          flyTo: leg.to,
-          dateFrom: leg.startDate || '',
-          dateTo: leg.startDate || leg.endDate || '',
-          returnFrom: leg.endDate || undefined,
-          returnTo: leg.endDate || undefined,
-          adults: 1,
-        });
-        setSearchResults(list || []);
-      } else if (provider === 'skyscanner') {
-        const originIata = resolveToIata(leg.from || '');
-        const destIata = resolveToIata(leg.to || '');
-        if (!originIata || !destIata) {
-          setSearchError(t('travel.transportBooking.errorOriginDest', 'Could not resolve origin or destination.'));
-          return;
-        }
-        const list = await skyscannerSearchFlights({
-          originIata,
-          destinationIata,
-          outboundDate: leg.startDate || leg.endDate || '',
-          returnDate: leg.endDate || undefined,
-          adults: 1,
-        });
-        setSearchResults(list || []);
-      }
-    } catch (err) {
-      setSearchError(err?.message || String(err));
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [leg, t]);
+  const handleIconError = (provider) => {
+    setFailedIcons((prev) => new Set(prev).add(provider));
+  };
 
-  const runBusSearch = useCallback(async () => {
-    setSearchLoading(true);
-    setSearchError('');
-    setSearchResults([]);
-    try {
-      const list = await searchRoutesByPlaces({
-        fromPlace: leg.from || leg.to || '',
-        toPlace: leg.to || leg.from || '',
-        departAfter: leg.startDate ? Math.floor(new Date(leg.startDate).getTime() / 1000) : undefined,
-      });
-      setSearchResults(list || []);
-    } catch (err) {
-      setSearchError(err?.message || String(err));
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [leg]);
-
-  const isFlight = leg.transportMode === 'flight';
-  const isBus = leg.transportMode === 'bus';
-  const showSearchResults = searchResults.length > 0 || searchLoading || searchError;
+  const displayOffers = offers.slice(0, MAX_OFFERS);
+  const hasOffers = displayOffers.length > 0;
 
   return (
     <View style={[styles.card, { borderColor: theme.colors.glassBorder, backgroundColor: theme.colors.surface }]}>
@@ -135,79 +152,117 @@ export default function TransportLegCard({ leg }) {
           {leg.from} → {leg.to}
         </Text>
         <Text style={[styles.legMode, { color: theme.colors.textSecondary }]}>
-          {leg.transportMode ? t('transport.mode.' + leg.transportMode, leg.transportMode) : '—'}
+          {mode ? t('transport.mode.' + mode, mode) : '—'}
         </Text>
       </View>
+
+      {/* API Offers Section */}
+      {loading && (
+        <View style={styles.offersSkeleton}>
+          <Skeleton type="rectangular" width="100%" height={56} />
+          <Skeleton type="rectangular" width="100%" height={56} />
+        </View>
+      )}
+      {!loading && hasOffers && (
+        <View style={styles.offersSection}>
+          <Text style={[styles.offersHeader, { color: theme.colors.text }]}>
+            {t('travel.transportBooking.bestPrices', 'Best prices found')}
+          </Text>
+          {displayOffers.map((offer, idx) => {
+            const stopsLabel =
+              offer.stops === 0
+                ? t('travel.transportBooking.direct', 'Direct')
+                : t('travel.transportBooking.stops', { count: offer.stops, defaultValue: '{{count}} stop' });
+            const detailLine =
+              mode === 'flight'
+                ? t('travel.transportBooking.flightOffer', {
+                    airline: offer.airline || offer.provider,
+                    duration: offer.duration,
+                    defaultValue: '{{airline}} · {{duration}}',
+                  })
+                : t('travel.transportBooking.busOffer', {
+                    operator: offer.operator || offer.provider,
+                    duration: offer.duration,
+                    defaultValue: '{{operator}} · {{duration}}',
+                  });
+            const depTime = formatTime(offer.departureTime);
+            const arrTime = formatTime(offer.arrivalTime);
+            const timeStr = depTime && arrTime ? `${depTime} – ${arrTime}` : '';
+
+            return (
+              <View
+                key={`offer-${idx}`}
+                style={[styles.offerRow, { borderColor: theme.colors.glassBorder }]}
+              >
+                <View style={styles.offerDetails}>
+                  <Text style={[styles.offerMainLine, { color: theme.colors.text }]}>
+                    {detailLine}
+                  </Text>
+                  <Text style={[styles.offerSubLine, { color: theme.colors.textSecondary }]}>
+                    {[timeStr, stopsLabel].filter(Boolean).join(' · ')}
+                  </Text>
+                </View>
+                {offer.price ? (
+                  <Text style={[styles.offerPrice, { color: theme.colors.primary }]}>
+                    {offer.currency === 'EUR' ? '€' : offer.currency}{offer.price}
+                  </Text>
+                ) : null}
+                {offer.bookingUrl ? (
+                  <TouchableOpacity
+                    style={[styles.offerBookBtn, { backgroundColor: theme.colors.primary }]}
+                    onPress={() => Linking.openURL(offer.bookingUrl)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.offerBookText}>
+                      {t('travel.transportBooking.bookNow', 'Book')}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Divider between offers and deep links */}
+      {hasOffers && isBookable && links.length > 0 && (
+        <View style={[styles.divider, { backgroundColor: theme.colors.glassBorder }]} />
+      )}
+
+      {/* Deep Link Buttons (always shown, unchanged) */}
       {isBookable && links.length > 0 ? (
-        <>
-          <View style={styles.linksRow}>
-            {isFlight && providers.kiwi && (
-              <TouchableOpacity
-                style={[styles.linkBtn, { backgroundColor: theme.colors.primary, opacity: searchLoading ? 0.7 : 1 }]}
-                onPress={() => runFlightSearch('kiwi')}
-                disabled={searchLoading}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.linkBtnText}>{t('travel.transportBooking.searchPrices', 'Search prices')} – Kiwi</Text>
-              </TouchableOpacity>
-            )}
-            {isFlight && providers.skyscanner && (
-              <TouchableOpacity
-                style={[styles.linkBtn, { backgroundColor: theme.colors.primary, opacity: searchLoading ? 0.7 : 1 }]}
-                onPress={() => runFlightSearch('skyscanner')}
-                disabled={searchLoading}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.linkBtnText}>{t('travel.transportBooking.searchPrices', 'Search prices')} – Skyscanner</Text>
-              </TouchableOpacity>
-            )}
-            {isBus && providers.tripGo && (
-              <TouchableOpacity
-                style={[styles.linkBtn, { backgroundColor: theme.colors.primary, opacity: searchLoading ? 0.7 : 1 }]}
-                onPress={runBusSearch}
-                disabled={searchLoading}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.linkBtnText}>{t('travel.transportBooking.searchPrices', 'Search prices')} – TripGo</Text>
-              </TouchableOpacity>
-            )}
-            {links.map((link) => (
+        <View style={styles.linksRow}>
+          {links.map((link) => {
+            const brand = TRANSPORT_BRAND_ICONS[link.provider];
+            const showImage = brand?.uri && !failedIcons.has(link.provider);
+            return (
               <TouchableOpacity
                 key={link.provider}
-                style={[styles.linkBtn, { backgroundColor: theme.colors.primary }]}
+                style={[
+                  styles.linkBtn,
+                  {
+                    backgroundColor: theme.colors.primary,
+                    opacity: 1,
+                  },
+                ]}
                 onPress={() => Linking.openURL(link.url)}
                 activeOpacity={0.8}
               >
+                {showImage ? (
+                  <Image
+                    source={{ uri: brand.uri }}
+                    style={[styles.brandIcon, { backgroundColor: '#fff' }]}
+                    onError={() => handleIconError(link.provider)}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <ExternalLink size={ICON_SIZE} color="#fff" />
+                )}
                 <Text style={styles.linkBtnText}>{link.label}</Text>
               </TouchableOpacity>
-            ))}
-          </View>
-          {showSearchResults && (
-            <View style={[styles.resultsBox, { borderColor: theme.colors.glassBorder, backgroundColor: theme.colors.surface }]}>
-              {searchLoading && (
-                <View style={styles.resultsLoading}>
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
-                  <Text style={[typography.caption, { color: theme.colors.textSecondary }]}>{t('travel.transportBooking.searching', 'Searching...')}</Text>
-                </View>
-              )}
-              {searchError && !searchLoading && (
-                <Text style={[styles.resultsError, { color: theme.colors.textSecondary }]}>{searchError}</Text>
-              )}
-              {!searchLoading && searchResults.length > 0 && searchResults.map((item) => (
-                <View key={item.id} style={[styles.resultsRow, { backgroundColor: theme.colors.background || 'rgba(0,0,0,0.05)' }]}>
-                  <Text style={[typography.caption, { color: theme.colors.text }]}>
-                    {item.price > 0 ? `${item.currency || 'EUR'} ${Number(item.price).toFixed(0)}` : '—'} · {formatDuration(item.durationMinutes ?? item.duration?.total)} {item.provider ? `· ${item.provider}` : ''}
-                  </Text>
-                  {item.bookUrl ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(item.bookUrl)} style={[styles.linkBtn, { backgroundColor: theme.colors.primary }]}>
-                      <Text style={styles.linkBtnText}>{t('travel.transportBooking.book', 'Book')}</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-              ))}
-            </View>
-          )}
-        </>
+            );
+          })}
+        </View>
       ) : (
         <Text style={[styles.legMode, { color: theme.colors.textSecondary, marginTop: spacing.xs }]}>
           {t('travel.transportBooking.noBookingLink', 'No booking link for this transport mode')}

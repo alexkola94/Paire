@@ -28,7 +28,7 @@ function formatDate(d) {
  */
 export default function TripMicrography({ trip, cities = [], onNavigate }) {
   const { t } = useTranslation();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   const orderedCities = useMemo(() => {
     const list = Array.isArray(cities) ? cities : [];
@@ -95,6 +95,7 @@ export default function TripMicrography({ trip, cities = [], onNavigate }) {
 
       {mapRegion && (
         <View style={styles.mapWrap}>
+          {/* Light: standard map (native colors). Dark: midnight-like style via userInterfaceStyle="dark". */}
           <MapView
             style={styles.map}
             initialRegion={mapRegion}
@@ -103,6 +104,8 @@ export default function TripMicrography({ trip, cities = [], onNavigate }) {
             pitchEnabled={false}
             rotateEnabled={false}
             showsUserLocation={false}
+            mapType={isDark ? undefined : 'standard'}
+            userInterfaceStyle={isDark ? 'dark' : 'light'}
           >
             {orderedCities.map(
               (city, index) =>
