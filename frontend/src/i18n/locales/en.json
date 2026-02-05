@@ -1238,6 +1238,7 @@
     "revert": "Revert",
     "total": "Imported",
     "skipped": "Skipped (Duplicates)",
+    "matchedManual": "Matched manual entries",
     "errors": "Errors"
   },
   "travel": {

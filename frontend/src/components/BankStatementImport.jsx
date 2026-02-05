@@ -245,6 +245,9 @@ const BankStatementImport = ({ onImportSuccess }) => {
                                     <ul className="import-stats">
                                         <li>{t('import.total')}: <strong>{uploadResult.details.totalImported}</strong></li>
                                         <li>{t('import.skipped')}: <strong>{uploadResult.details.duplicatesSkipped}</strong></li>
+                                        {uploadResult.details.manualDuplicatesSkipped > 0 && (
+                                            <li>{t('import.matchedManual')}: <strong>{uploadResult.details.manualDuplicatesSkipped}</strong></li>
+                                        )}
                                         {uploadResult.details.errors > 0 && (
                                             <li className="text-danger">{t('import.errors')}: <strong>{uploadResult.details.errors}</strong></li>
                                         )}

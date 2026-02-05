@@ -55,6 +55,8 @@ namespace YouAndMeExpensesAPI.Services
     {
         public int TotalImported { get; set; }
         public int DuplicatesSkipped { get; set; }
+        /// <summary>Count of rows skipped because they matched an existing manual transaction.</summary>
+        public int ManualDuplicatesSkipped { get; set; }
         public int Errors { get; set; }
         public List<string> ErrorMessages { get; set; } = new();
         public DateTime? LastTransactionDate { get; set; }
