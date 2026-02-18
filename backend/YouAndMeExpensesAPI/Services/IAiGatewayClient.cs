@@ -19,4 +19,11 @@ public interface IAiGatewayClient
     /// POST /v1/chat - multi-turn chat; aggregates streaming response into a single ChatResponse.
     /// </summary>
     Task<ChatResponse> ChatAsync(ChatRequest request, string? accessToken = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lightweight warmup ping to the AI Gateway used to trigger cold-start spin-up.
+    /// Should use a very short timeout and swallow errors.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task PingAiAsync(CancellationToken cancellationToken = default);
 }

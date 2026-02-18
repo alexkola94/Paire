@@ -2066,5 +2066,13 @@
     "divide": "Divide",
     "added": "Added to calculator",
     "hint": "Tap expense amounts to add them here"
+  },
+  "warmup": {
+    "message1": "Waking up your personal finance assistant...",
+    "message2": "Almost there, just a few more seconds...",
+    "message3": "Setting things up for you...",
+    "message4": "Preparing your financial dashboard...",
+    "subtitle": "This only takes a moment",
+    "retryExhausted": "Our servers are still waking up. Please try again in a moment."
   }
 }

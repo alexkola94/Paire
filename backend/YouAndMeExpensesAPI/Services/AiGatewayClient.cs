@@ -89,6 +89,37 @@ public class AiGatewayClient : IAiGatewayClient
         };
     }
 
+    /// <inheritdoc />
+    public async Task PingAiAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_options.Enabled)
+        {
+            _logger.LogDebug("AI Gateway warmup skipped because AiGateway is disabled.");
+            return;
+        }
+
+        var url = $"{_options.BaseUrl.TrimEnd('/')}/health";
+        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+        SetAuthHeaders(req, accessToken: null);
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(3));
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(req, cts.Token);
+            _logger.LogDebug("AI Gateway warmup ping to {Url} -> {StatusCode}", url, (int)response.StatusCode);
+        }
+        catch (OperationCanceledException ex) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug(ex, "AI Gateway warmup ping timed out for {Url}", url);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "AI Gateway warmup ping failed for {Url}", url);
+        }
+    }
+
     private void SetAuthHeaders(HttpRequestMessage request, string? accessToken)
     {
         request.Headers.Remove("X-Tenant-Id");

@@ -11,10 +11,13 @@ import { AccessibilityProvider } from './context/AccessibilityContext'
 import { PrivacyModeProvider } from './context/PrivacyModeContext'
 import { ModalProvider } from './context/ModalContext'
 import { CalculatorProvider } from './context/CalculatorContext'
+import { WarmupProvider } from './context/WarmupContext'
 import { TravelModeProvider, useTravelMode } from './travel/context/TravelModeContext'
 import LogoLoader from './components/LogoLoader'
+import WarmupOverlay from './components/WarmupOverlay'
 import AirplaneTransition from './components/AirplaneTransition'
 import { ToastProvider } from './components/Toast'
+import { warmUpApis } from './utils/warmupService'
 
 // Lazy load TravelApp for code splitting
 const TravelApp = lazy(() => import('./travel/TravelApp'))
@@ -55,6 +58,9 @@ import CookieConsent from './components/CookieConsent'
 
 // Preload CSRF token on app load so the antiforgery cookie is set before any state-changing request
 getCsrfToken().catch(() => { /* non-blocking; first mutation will fetch if needed */ })
+
+// Proactively ping backend APIs to trigger cold-start spin-up on Render.com free tier
+warmUpApis()
 
 /**
  * GitHub Pages Redirect Handler Component
@@ -408,19 +414,22 @@ function App() {
 
   return (
     <ThemeProvider>
-      <AccessibilityProvider>
-        <PrivacyModeProvider>
-          <ModalProvider>
-            <TravelModeProvider>
-              <ToastProvider>
-                <CalculatorProvider>
-                  <AppContent session={session} />
-                </CalculatorProvider>
-              </ToastProvider>
-            </TravelModeProvider>
-          </ModalProvider>
-        </PrivacyModeProvider>
-      </AccessibilityProvider>
+      <WarmupProvider>
+        <AccessibilityProvider>
+          <PrivacyModeProvider>
+            <ModalProvider>
+              <TravelModeProvider>
+                <ToastProvider>
+                  <CalculatorProvider>
+                    <AppContent session={session} />
+                    <WarmupOverlay />
+                  </CalculatorProvider>
+                </ToastProvider>
+              </TravelModeProvider>
+            </ModalProvider>
+          </PrivacyModeProvider>
+        </AccessibilityProvider>
+      </WarmupProvider>
     </ThemeProvider>
   )
 }

@@ -21,6 +21,11 @@ using System.IO;
 // This MUST be set before CreateBuilder is called
 System.Environment.SetEnvironmentVariable("DOTNET_hostBuilder:reloadConfigOnChange", "false");
 
+// When no environment is set (e.g. plain "dotnet run"), use Development so appsettings.Development.json
+// is loaded (e.g. local Docker DB connection string). Launch profiles already set this; this is a fallback.
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
+    Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
 var builder = WebApplication.CreateBuilder(args);
 
 // =====================================================

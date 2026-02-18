@@ -29,6 +29,13 @@ namespace YouAndMeExpensesAPI.Services
         Task<ProxyAuthResponse> VerifyBackupCodeAsync(object request);
         Task<ProxyAuthResponse> RegenerateBackupCodesAsync(object request, string token);
         Task<ProxyAuthResponse> Get2FAStatusAsync(string token);
+
+        /// <summary>
+        /// Lightweight warmup ping to the Shield Auth service used to trigger cold-start spin-up.
+        /// Should use a very short timeout and swallow errors.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        Task PingAsync(CancellationToken cancellationToken = default);
     }
 
     public class ShieldAuthService : IShieldAuthService
@@ -135,6 +142,29 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<ProxyAuthResponse> Get2FAStatusAsync(string token)
             => await ProxyRequestAsync(HttpMethod.Get, $"{_baseUrl}/2fa/status", null, token);
+
+        public async Task PingAsync(CancellationToken cancellationToken = default)
+        {
+            var url = $"{_baseUrl.TrimEnd('/')}/health";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(3));
+
+            try
+            {
+                using var response = await _httpClient.SendAsync(request, cts.Token);
+                _logger.LogDebug("Shield warmup ping to {Url} -> {StatusCode}", url, (int)response.StatusCode);
+            }
+            catch (OperationCanceledException ex) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(ex, "Shield warmup ping timed out for {Url}", url);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Shield warmup ping failed for {Url}", url);
+            }
+        }
 
         private async Task<ProxyAuthResponse> ProxyRequestAsync(HttpMethod method, string url, object? payload = null, string? token = null, Dictionary<string, string>? headers = null)
         {

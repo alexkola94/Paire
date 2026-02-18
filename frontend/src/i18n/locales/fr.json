@@ -824,5 +824,13 @@
       "ferry": "Ferry",
       "walking": "À pied"
     }
+  },
+  "warmup": {
+    "message1": "Réveil de votre assistant financier personnel...",
+    "message2": "Presque prêt, encore quelques secondes...",
+    "message3": "Nous préparons tout pour vous...",
+    "message4": "Préparation de votre tableau de bord financier...",
+    "subtitle": "Cela ne prend qu'un instant",
+    "retryExhausted": "Nos serveurs se réveillent encore. Veuillez réessayer dans un instant."
   }
 }

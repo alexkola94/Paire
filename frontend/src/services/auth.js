@@ -12,6 +12,8 @@ import { getBackendUrl } from '../utils/getBackendUrl';
 import { sessionManager } from './sessionManager';
 import { isTokenExpired } from '../utils/tokenUtils';
 import { getDeviceFingerprint, clearDeviceFingerprintCache } from '../utils/deviceFingerprint';
+import { fetchWithRetry } from '../utils/retryFetch';
+import { dispatchWarmupStarted, dispatchWarmupEnded } from '../context/WarmupContext';
 
 /**
  * Get stored auth token (from sessionStorage)
@@ -116,11 +118,22 @@ const apiRequest = async (url, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`
   }
 
+  let warmupSignaled = false
+
   try {
-    const response = await fetch(fullUrl, {
-      ...options,
-      headers
-    })
+    const response = await fetchWithRetry(
+      () => fetch(fullUrl, { ...options, headers }),
+      {
+        onRetry: () => {
+          if (!warmupSignaled) {
+            warmupSignaled = true
+            dispatchWarmupStarted()
+          }
+        },
+      }
+    )
+
+    if (warmupSignaled) dispatchWarmupEnded()
 
     // Handle 401 Unauthorized - session expired or invalid
     if (response.status === 401) {
@@ -142,7 +155,6 @@ const apiRequest = async (url, options = {}) => {
         // 1. Check for 'errors' object (ASP.NET Identity / FluentValidation)
         // Format: { errors: { "Password": ["Too short"], "Email": ["Taken"] } }
         if (errorData.errors && typeof errorData.errors === 'object') {
-          // Join all error messages into a single string
           const allErrors = Object.values(errorData.errors).flat();
           if (allErrors.length > 0) {
             errorMessage = allErrors.join('. ');
@@ -173,8 +185,10 @@ const apiRequest = async (url, options = {}) => {
     const data = await response.json()
     return data
   } catch (error) {
+    if (warmupSignaled) dispatchWarmupEnded()
+
     // Network errors (CORS, connection refused, etc.)
-    if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
+    if (error.name === 'TypeError' || error.message?.includes('Failed to fetch')) {
       const detailedError = `Cannot connect to API at ${fullUrl}. Please check if the server is running and CORS is configured correctly.`;
       console.error('Network error:', { error, url: fullUrl, message: detailedError });
       throw new Error(detailedError)

@@ -2,6 +2,8 @@ import { getToken, getStoredUser } from './auth'
 import { isTokenExpired } from '../utils/tokenUtils'
 import { sessionManager } from './sessionManager'
 import { getCsrfToken, clearCsrfCache } from './csrf'
+import { fetchWithRetry } from '../utils/retryFetch'
+import { dispatchWarmupStarted, dispatchWarmupEnded } from '../context/WarmupContext'
 
 /**
  * API Service for database operations
@@ -107,12 +109,26 @@ const apiRequest = async (url, options = {}) => {
     }
   }
 
+  let warmupSignaled = false
+
   try {
-    const response = await fetch(fullUrl, {
-      ...options,
-      headers,
-      credentials: 'include' // Required for antiforgery cookie to be sent and received
-    })
+    const response = await fetchWithRetry(
+      () => fetch(fullUrl, {
+        ...options,
+        headers,
+        credentials: 'include'
+      }),
+      {
+        onRetry: () => {
+          if (!warmupSignaled) {
+            warmupSignaled = true
+            dispatchWarmupStarted()
+          }
+        },
+      }
+    )
+
+    if (warmupSignaled) dispatchWarmupEnded()
 
     // On 400 invalid CSRF, clear cache so next request fetches a fresh token
     if (response.status === 400) {
@@ -152,8 +168,10 @@ const apiRequest = async (url, options = {}) => {
 
     return await response.text()
   } catch (error) {
+    if (warmupSignaled) dispatchWarmupEnded()
+
     // Network errors (CORS, connection refused, etc.)
-    if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
+    if (error.name === 'TypeError' || error.message?.includes('Failed to fetch')) {
       throw new Error(`Cannot connect to API at ${fullUrl}. Please check if the server is running and CORS is configured correctly.`)
     }
     throw error

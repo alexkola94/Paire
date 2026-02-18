@@ -223,7 +223,9 @@ function Expenses() {
     try {
       setFormLoading(true)
 
-      await createMutation.mutateAsync(expenseData)
+      // Create the expense and capture the returned object for undo (if available)
+      const createdExpense = await createMutation.mutateAsync(expenseData)
+      const createdExpenseId = createdExpense?.id || createdExpense?.transactionId || null
 
       setShowSuccessAnimation(true)
       showSuccess(t('expenses.createdSuccess'))
@@ -232,25 +234,26 @@ function Expenses() {
       setShowForm(false)
 
       // Phase 5: Undo functionality
-      performUndoableAction(
-        async () => {
-          loadExpenses(true)
-        },
-        async () => {
-          // Undo: delete the created expense
-          try {
-            await transactionService.delete(createdExpense.id)
-            setAllExpenses(prev => prev.filter(e => e.id !== createdExpense.id)) // Local Undo
-            loadExpenses(true)
-            showSuccess(t('expenses.undoSuccess'))
-            announce(t('expenses.undoSuccess'))
-          } catch (error) {
-            console.error('Error undoing expense creation:', error)
-            showError(t('expenses.undoError'))
-          }
-        },
-        5000 // 5 seconds to undo
-      )
+      // Only register an undo action if backend returned a valid ID for the created expense
+      if (createdExpenseId) {
+        performUndoableAction(
+          // Redo/confirm action: ensure cache is in sync
+          () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+          // Undo: delete the created expense and refresh
+          async () => {
+            try {
+              await transactionService.delete(createdExpenseId)
+              await queryClient.invalidateQueries({ queryKey: ['transactions'] })
+              showSuccess(t('expenses.undoSuccess'))
+              announce(t('expenses.undoSuccess'))
+            } catch (error) {
+              console.error('Error undoing expense creation:', error)
+              showError(t('expenses.undoError'))
+            }
+          },
+          5000 // 5 seconds to undo
+        )
+      }
     } catch (error) {
       console.error('Error creating expense:', error)
       setShowForm(true) // Re-open form

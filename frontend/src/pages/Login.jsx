@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import { sessionManager } from '../services/sessionManager'
+import { isColdStartError } from '../utils/retryFetch'
 import TwoFactorVerification from '../components/TwoFactorVerification'
 import './Login.css'
 
@@ -16,10 +17,11 @@ import './Login.css'
  * @returns {string} Humanized error message
  */
 function humanizeLoginError(err, isSignUp, t) {
+  if (isColdStartError(err)) return t('warmup.retryExhausted', 'Our servers are still waking up. Please try again in a moment.')
   const msg = (err?.message || '').toLowerCase()
   const isNetwork = err?.name === 'TypeError' || msg.includes('failed to fetch') || msg.includes('cannot connect to api')
-  if (isNetwork) return t('auth.errors.networkError')
-  if (msg.includes('auth service unavailable') || msg.includes('503') || msg.includes('service unavailable')) return t('auth.errors.authServiceUnavailable')
+  if (isNetwork) return t('warmup.retryExhausted', 'Our servers are still waking up. Please try again in a moment.')
+  if (msg.includes('auth service unavailable') || msg.includes('503') || msg.includes('service unavailable')) return t('warmup.retryExhausted', 'Our servers are still waking up. Please try again in a moment.')
   if (msg.includes('invalid') || msg.includes('unauthorized') || msg.includes('401') || msg.includes('incorrect') || msg.includes('wrong password') || msg.includes('invalid login') || msg.includes('session expired')) return t('auth.errors.invalidCredentials')
   if (msg.includes('confirm your email') || msg.includes('verify your email') || msg.includes('email not confirmed')) return t('auth.errors.emailNotConfirmed')
   if (msg.includes('locked') || msg.includes('lockout')) return t('auth.errors.accountLocked')

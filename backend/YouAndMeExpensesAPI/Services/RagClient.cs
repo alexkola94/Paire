@@ -238,4 +238,35 @@ public class RagClient : IRagClient
     }
 
     #endregion
+
+    /// <inheritdoc />
+    public async Task PingRagAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_options.Enabled)
+        {
+            _logger.LogDebug("RAG warmup skipped because RagService is disabled.");
+            return;
+        }
+
+        var url = $"{_options.BaseUrl.TrimEnd('/')}/health";
+        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+        SetAuthHeaders(req, accessToken: null);
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(3));
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(req, cts.Token);
+            _logger.LogDebug("RAG warmup ping to {Url} -> {StatusCode}", url, (int)response.StatusCode);
+        }
+        catch (OperationCanceledException ex) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug(ex, "RAG warmup ping timed out for {Url}", url);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "RAG warmup ping failed for {Url}", url);
+        }
+    }
 }

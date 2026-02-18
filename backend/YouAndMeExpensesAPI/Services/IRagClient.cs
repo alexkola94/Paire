@@ -59,4 +59,11 @@ public interface IRagClient
     /// <param name="documentId">Document ID to delete.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task DeleteDocumentAsync(int documentId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lightweight warmup ping to the RAG service used to trigger cold-start spin-up.
+    /// Should use a very short timeout and swallow errors.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task PingRagAsync(CancellationToken cancellationToken = default);
 }
