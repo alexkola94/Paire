@@ -6,6 +6,7 @@ import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 import { authService } from '../services/auth'
 import { sessionManager } from '../services/sessionManager'
 import { isColdStartError } from '../utils/retryFetch'
+import { dispatchWarmupStarted, dispatchWarmupEnded } from '../context/WarmupContext'
 import TwoFactorVerification from '../components/TwoFactorVerification'
 import './Login.css'
 
@@ -157,6 +158,14 @@ function Login() {
     setError('')
     setSuccess('')
 
+    // Always show the warmup overlay on login attempts so users see
+    // an immediate visual response, even before any cold-start retries kick in.
+    let warmupStarted = false
+    if (!isSignUp) {
+      dispatchWarmupStarted()
+      warmupStarted = true
+    }
+
     try {
       if (isSignUp) {
         // Sign up new user
@@ -246,6 +255,9 @@ function Login() {
       setError(humanizeLoginError(err, isSignUp, t))
     } finally {
       setLoading(false)
+      if (warmupStarted) {
+        dispatchWarmupEnded()
+      }
     }
   }
 
