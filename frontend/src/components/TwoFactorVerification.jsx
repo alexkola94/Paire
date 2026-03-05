@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import OtpInput from 'react-otp-input';
 import { useTranslation } from 'react-i18next';
-import { getBackendUrl } from '../utils/getBackendUrl';
 import { sessionManager } from '../services/sessionManager';
 import { decodeUserFromToken } from '../utils/jwtDecoder';
 import { getDeviceFingerprint } from '../utils/deviceFingerprint';
+import { twoFactorService } from '../services/api';
 import './TwoFactorVerification.css';
 
 /**
@@ -87,53 +87,33 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
         }
       }
 
-      const response = await fetch(`${getBackendUrl()}/api/auth/2fa/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: normalizedCode,
-          tempToken,
-          rememberMe,
-          deviceFingerprint: fingerprint,
-        }),
+      const data = await twoFactorService.verify(email, normalizedCode, tempToken, {
+        rememberMe,
+        deviceFingerprint: fingerprint,
       });
 
       // Clear timeout if request completes
       clearTimeout(timeoutId);
 
-      // Check if response is ok before parsing JSON
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        throw new Error(t('twoFactor.verificationError') || 'Invalid response from server');
-      }
+      // Determine token shape (token or accessToken) and user payload
+      const token = data.accessToken || data.token;
 
-      if (!response.ok) {
-        // Mark that an error occurred and store the failed code
-        hasErrorOccurred.current = true;
-        lastFailedCode.current = normalizedCode;
-        throw new Error(data.error || data.message || t('twoFactor.verificationError'));
-      }
-
-      // Verify we have the required data
-      if (!data.accessToken) {
+      if (!token) {
         hasErrorOccurred.current = true;
         lastFailedCode.current = normalizedCode;
         throw new Error(t('twoFactor.verificationError') || 'Invalid response: missing token');
       }
 
+      // Prefer server-provided user, otherwise decode from token
+      const userFromToken = data.user || decodeUserFromToken(token, email);
+      const refreshToken = data.refreshToken || '';
+
       // Success! Clear error tracking
       hasErrorOccurred.current = false;
       lastFailedCode.current = '';
 
-      // Decode user info from JWT token (Shield doesn't return user object)
-      const userFromToken = decodeUserFromToken(data.accessToken, email);
-
       // Store token and user data using sessionManager (per-tab or persistent)
-      sessionManager.storeSession(data.accessToken, data.refreshToken || '', userFromToken, rememberMe);
+      sessionManager.storeSession(token, refreshToken, userFromToken, rememberMe);
 
       // Show success animation before navigating
       setIsSuccess(true);
@@ -194,30 +174,22 @@ const TwoFactorVerification = ({ email, tempToken, onSuccess, onCancel, remember
         }
       }
 
-      const response = await fetch(`${getBackendUrl()}/api/auth/2fa/verify-backup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          backupCode: backupCode.trim(),
-          tempToken,
-          rememberMe,
-          deviceFingerprint: fingerprint,
-        }),
+      const data = await twoFactorService.verifyBackup(backupCode.trim(), tempToken, {
+        rememberMe,
+        deviceFingerprint: fingerprint,
       });
 
-      const data = await response.json();
+      const token = data.accessToken || data.token;
 
-      if (!response.ok) {
-        throw new Error(data.error || t('twoFactor.verificationError'));
+      if (!token) {
+        throw new Error(t('twoFactor.verificationError') || 'Invalid response: missing token');
       }
 
-      // Decode user info from JWT token (Shield doesn't return user object)
-      const userFromToken = decodeUserFromToken(data.accessToken, email);
+      const userFromToken = data.user || decodeUserFromToken(token, email);
+      const refreshToken = data.refreshToken || '';
 
       // Store token and user data using sessionManager (per-tab or persistent)
-      sessionManager.storeSession(data.accessToken, data.refreshToken || '', userFromToken, rememberMe);
+      sessionManager.storeSession(token, refreshToken, userFromToken, rememberMe);
 
       // Show success animation before navigating
       setIsSuccess(true);

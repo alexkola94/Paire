@@ -17,6 +17,11 @@ namespace YouAndMeExpensesAPI.Services
         /// Synchronizes the local Shadow User and Profile with explicit data (e.g. from Register response).
         /// </summary>
         Task<ApplicationUser?> SyncUserExplicitAsync(string userId, string email, string displayName);
+
+        /// <summary>
+        /// Creates a new user from Google sign-in (no password). Used when no existing user with this email.
+        /// </summary>
+        Task<ApplicationUser?> SyncUserFromGoogleAsync(string email, string? displayName);
     }
 
     public class UserSyncService : IUserSyncService
@@ -93,6 +98,13 @@ namespace YouAndMeExpensesAPI.Services
         public async Task<ApplicationUser?> SyncUserExplicitAsync(string userId, string email, string displayName)
         {
              return await EnsureShadowUserAsync(userId, email, displayName);
+        }
+
+        public async Task<ApplicationUser?> SyncUserFromGoogleAsync(string email, string? displayName)
+        {
+            var userId = Guid.NewGuid().ToString();
+            _logger.LogInformation("Creating user from Google sign-in for {Email}", email);
+            return await EnsureShadowUserAsync(userId, email, displayName ?? email.Split('@')[0]);
         }
 
         private async Task<ApplicationUser?> EnsureShadowUserAsync(string userId, string email, string? displayName)

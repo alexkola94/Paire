@@ -5,7 +5,8 @@ import { motion } from 'framer-motion'
 import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
-  FiGrid, FiList, FiChevronLeft, FiChevronRight, FiPaperclip, FiDownload, FiX, FiFileText, FiTarget, FiSearch
+  FiGrid, FiList, FiChevronLeft, FiChevronRight, FiPaperclip, FiDownload, FiX, FiFileText, FiTarget, FiSearch,
+  FiInfo
 } from 'react-icons/fi'
 import {
   addMonths, addYears, addWeeks, startOfMonth, endOfMonth, isSameMonth,
@@ -17,7 +18,7 @@ import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import CurrencyInput from '../components/CurrencyInput'
 import CategorySelector from '../components/CategorySelector'
-import FormSection from '../components/FormSection'
+import FormTabs from '../components/FormTabs'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import Skeleton from '../components/Skeleton'
@@ -25,6 +26,7 @@ import useSwipeGesture from '../hooks/useSwipeGesture'
 import CalendarView from '../components/CalendarView'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
 import AddToCalculatorButton from '../components/AddToCalculatorButton'
+import EmptyState from '../components/EmptyState'
 import './RecurringBills.css'
 import '../styles/AddToCalculator.css'
 
@@ -94,6 +96,7 @@ function RecurringBills() {
   const [deleteAttachmentModal, setDeleteAttachmentModal] = useState({ isOpen: false, attachmentId: null, bill: null })
   const [pendingAttachments, setPendingAttachments] = useState([])
   const [animatingBill, setAnimatingBill] = useState({ id: null, type: null })
+  const [activeFormTab, setActiveFormTab] = useState('basic')
 
   // Pagination State
   const [page, setPage] = useState(1)
@@ -564,6 +567,7 @@ function RecurringBills() {
     setShowForm(false)
     setEditingBill(null)
     setPendingAttachments([])
+    setActiveFormTab('basic')
     setFormData({
       name: '',
       amount: '',
@@ -1003,14 +1007,15 @@ function RecurringBills() {
 
         {/* No search results - show when search is active but no bills match */}
         {searchQuery.trim() && filteredActiveBills.length === 0 && bills.length > 0 && (
-          <div className="recurring-bills-no-results empty-state glass-card">
-            <FiSearch size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-            <h3>{t('recurringBills.noSearchResults')}</h3>
-            <p>{t('recurringBills.noSearchResultsHint')}</p>
-            <button type="button" className="btn btn-secondary" onClick={() => setSearchQuery('')}>
-              {t('recurringBills.clearSearch')}
-            </button>
-          </div>
+          <EmptyState
+            variant="noResults"
+            icon={<FiSearch size={48} />}
+            title={t('recurringBills.noSearchResults')}
+            description={t('recurringBills.noSearchResultsHint')}
+            secondaryActions={[
+              { label: t('recurringBills.clearSearch'), onClick: () => setSearchQuery('') }
+            ]}
+          />
         )}
 
         {/* Overdue Bills */}
@@ -1269,14 +1274,16 @@ function RecurringBills() {
 
         {/* Empty State */}
         {bills.length === 0 && (
-          <div className="empty-state">
-            <FiCalendar size={64} />
-            <h3>{t('recurringBills.noBills')}</h3>
-            <p>{t('recurringBills.noBillsDescription')}</p>
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-              <FiPlus /> {t('recurringBills.createFirstBill')}
-            </button>
-          </div>
+          <EmptyState
+            icon={<FiCalendar size={64} />}
+            title={t('recurringBills.noBills')}
+            description={t('recurringBills.noBillsDescription')}
+            primaryAction={{
+              label: t('recurringBills.createFirstBill'),
+              onClick: () => setShowForm(true),
+              icon: <FiPlus />
+            }}
+          />
         )}
       </div>
 
@@ -1288,231 +1295,240 @@ function RecurringBills() {
           title={editingBill ? t('recurringBills.editBill') : t('recurringBills.addBill')}
         >
           <form onSubmit={handleSubmit}>
-            {/* Basic Information Section */}
-            <FormSection title={t('transaction.formSections.basicInfo')}>
-              <div className="form-group">
-                <label>{t('recurringBills.billName')} *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder={t('recurringBills.billNamePlaceholder')}
-                />
-              </div>
-
-              <CurrencyInput
-                value={formData.amount}
-                onChange={handleChange}
-                name="amount"
-                id="amount"
-                label={`${t('recurringBills.amount')} *`}
-                required
-              />
-
-              {/* Category - Full width for better visibility */}
-              <div className="form-layout-item-full">
-                <CategorySelector
-                  value={formData.category}
-                  onChange={handleChange}
-                  name="category"
-                  categories={categories.map(c => c.value)}
-                  type="expense"
-                  label={t('recurringBills.category')}
-                />
-              </div>
-
-              {/* Loan Selection - ONLY if "Loan Payment" category is selected and we have active loans */}
-              {formData.category === 'loan' && activeLoanOptions.length > 0 && (
-                <div className="form-layout-item-full fade-in">
-                  <div className="form-group">
-                    <label style={{ color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FiLink /> {t('recurringBills.linkToLoan')}
-                    </label>
-                    <select
-                      name="loanId"
-                      value={formData.loanId}
-                      onChange={handleChange}
-                      className="form-select"
-                      style={{ borderColor: 'var(--primary-color)' }}
-                    >
-                      <option value="">-- {t('recurringBills.selectLoan')} --</option>
-                      {activeLoanOptions.map(loan => {
-                        const isGiven = (loan.lentBy || loan.lent_by) === 'Me'
-                        const partyName = isGiven ? (loan.borrowedBy || loan.borrowed_by) : (loan.lentBy || loan.lent_by)
-                        const type = isGiven ? t('loans.moneyLentShort') : t('loans.moneyBorrowedShort')
-                        const remaining = loan.remainingAmount ?? loan.remaining_amount ?? 0
-
-                        return (
-                          <option key={loan.id} value={loan.id}>
-                            {partyName} ({type}) - {formatCurrency(remaining)} remaining
-                          </option>
-                        )
-                      })}
-                    </select>
-                    <small className="form-hint">
-                      {t('recurringBills.loanHint')}
-                    </small>
-                  </div>
+            <div className="form-with-scroll">
+            <FormTabs
+              tabs={[
+                { id: 'basic', label: t('transaction.formSections.basicInfo'), icon: <FiInfo /> },
+                { id: 'schedule', label: t('recurringBills.schedule'), icon: <FiClock /> },
+                { id: 'extras', label: t('recurringBills.notesAndFiles'), icon: <FiPaperclip /> }
+              ]}
+              activeTab={activeFormTab}
+              onTabChange={setActiveFormTab}
+            >
+              {/* Tab 1: Basic Info */}
+              <FormTabs.Panel id="basic">
+                <div className="form-group">
+                  <label>{t('recurringBills.billName')} *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    placeholder={t('recurringBills.billNamePlaceholder')}
+                  />
                 </div>
-              )}
 
-              {/* Savings Goal Selection - ONLY if "Savings" category is selected and we have active goals */}
-              {formData.category === 'savings' && activeSavingsGoals.length > 0 && (
-                <div className="form-layout-item-full fade-in">
-                  <div className="form-group">
-                    <label style={{ color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FiTarget /> {t('recurringBills.linkToSavingsGoal')}
-                    </label>
-                    <select
-                      name="savingsGoalId"
-                      value={formData.savingsGoalId}
-                      onChange={handleChange}
-                      className="form-select"
-                      style={{ borderColor: 'var(--success-color)' }}
-                    >
-                      <option value="">-- {t('recurringBills.selectSavingsGoal')} --</option>
-                      {activeSavingsGoals.map(goal => {
-                        const currentAmount = goal.currentAmount ?? goal.current_amount ?? 0
-                        const targetAmount = goal.targetAmount ?? goal.target_amount ?? 0
+                <CurrencyInput
+                  value={formData.amount}
+                  onChange={handleChange}
+                  name="amount"
+                  id="amount"
+                  label={`${t('recurringBills.amount')} *`}
+                  required
+                />
 
-                        return (
-                          <option key={goal.id} value={goal.id}>
-                            {goal.name} - {formatCurrency(currentAmount)} / {formatCurrency(targetAmount)}
-                          </option>
-                        )
-                      })}
-                    </select>
-                    <small className="form-hint">
-                      {t('recurringBills.savingsGoalHint')}
-                    </small>
-                  </div>
+                <div className="form-layout-item-full">
+                  <CategorySelector
+                    value={formData.category}
+                    onChange={handleChange}
+                    name="category"
+                    categories={categories.map(c => c.value)}
+                    type="expense"
+                    label={t('recurringBills.category')}
+                  />
                 </div>
-              )}
 
-            </FormSection>
+                {formData.category === 'loan' && activeLoanOptions.length > 0 && (
+                  <div className="form-layout-item-full fade-in">
+                    <div className="form-group">
+                      <label style={{ color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FiLink /> {t('recurringBills.linkToLoan')}
+                      </label>
+                      <select
+                        name="loanId"
+                        value={formData.loanId}
+                        onChange={handleChange}
+                        className="form-select"
+                        style={{ borderColor: 'var(--primary-color)' }}
+                      >
+                        <option value="">-- {t('recurringBills.selectLoan')} --</option>
+                        {activeLoanOptions.map(loan => {
+                          const isGiven = (loan.lentBy || loan.lent_by) === 'Me'
+                          const partyName = isGiven ? (loan.borrowedBy || loan.borrowed_by) : (loan.lentBy || loan.lent_by)
+                          const type = isGiven ? t('loans.moneyLentShort') : t('loans.moneyBorrowedShort')
+                          const remaining = loan.remainingAmount ?? loan.remaining_amount ?? 0
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('recurringBills.frequency')} *</label>
-                <select
-                  name="frequency"
-                  value={formData.frequency}
-                  onChange={handleChange}
-                  required
-                >
-                  {frequencies.map(freq => (
-                    <option key={freq.value} value={freq.value}>
-                      {freq.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>{t('recurringBills.dueDay')} *</label>
-                <input
-                  type="number"
-                  name="dueDay"
-                  value={formData.dueDay}
-                  onChange={handleChange}
-                  required
-                  min="1"
-                  max="31"
-                  placeholder="1-31"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>{t('recurringBills.reminderDays')}</label>
-              <input
-                type="number"
-                name="reminderDays"
-                value={formData.reminderDays}
-                onChange={handleChange}
-                min="0"
-                max="30"
-                placeholder="3"
-              />
-              <small>{t('recurringBills.reminderDaysHint')}</small>
-            </div>
-
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  name="autoPay"
-                  checked={formData.autoPay}
-                  onChange={handleChange}
-                />
-                <span>{t('recurringBills.autoPay')}</span>
-              </label>
-            </div>
-
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleChange}
-                />
-                <span>{t('recurringBills.isActive')}</span>
-              </label>
-            </div>
-
-            <div className="form-group">
-              <label>{t('recurringBills.notes')}</label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows="3"
-                placeholder={t('recurringBills.notesPlaceholder')}
-              />
-            </div>
-
-            {/* File Upload Section for New Bill */}
-            <FormSection title={t('recurringBills.attachments') || "Attachments"}>
-              <div style={{ padding: '0 0.5rem' }}>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handlePendingFileChange}
-                  style={{ display: 'none' }}
-                  id="form-attachment-upload"
-                />
-                <label htmlFor="form-attachment-upload" className="btn btn-secondary" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px', cursor: 'pointer', marginBottom: '1rem' }}>
-                  <FiPlus /> {t('common.addAttachment') || "Add Attachment"}
-                </label>
-
-                {/* List pending files */}
-                {pendingAttachments.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {pendingAttachments.map((file, idx) => (
-                      <div key={idx} className="glass-card" style={{ padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
-                          {file.name}
-                        </span>
-                        <button type="button" onClick={() => removePendingAttachment(idx)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer' }}>
-                          <FiX />
-                        </button>
-                      </div>
-                    ))}
+                          return (
+                            <option key={loan.id} value={loan.id}>
+                              {partyName} ({type}) - {formatCurrency(remaining)} remaining
+                            </option>
+                          )
+                        })}
+                      </select>
+                      <small className="form-hint">
+                        {t('recurringBills.loanHint')}
+                      </small>
+                    </div>
                   </div>
                 )}
 
-                {/* For editing, show info about existing files */}
-                {editingBill && editingBill.attachments && editingBill.attachments.length > 0 && (
-                  <div style={{ marginTop: '1rem', padding: '8px', background: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '0.85rem' }}>
-                    <FiAlertCircle style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                    {editingBill.attachments.length} existing attachments. Manage them from the bill card view.
+                {formData.category === 'savings' && activeSavingsGoals.length > 0 && (
+                  <div className="form-layout-item-full fade-in">
+                    <div className="form-group">
+                      <label style={{ color: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FiTarget /> {t('recurringBills.linkToSavingsGoal')}
+                      </label>
+                      <select
+                        name="savingsGoalId"
+                        value={formData.savingsGoalId}
+                        onChange={handleChange}
+                        className="form-select"
+                        style={{ borderColor: 'var(--success-color)' }}
+                      >
+                        <option value="">-- {t('recurringBills.selectSavingsGoal')} --</option>
+                        {activeSavingsGoals.map(goal => {
+                          const currentAmount = goal.currentAmount ?? goal.current_amount ?? 0
+                          const targetAmount = goal.targetAmount ?? goal.target_amount ?? 0
+
+                          return (
+                            <option key={goal.id} value={goal.id}>
+                              {goal.name} - {formatCurrency(currentAmount)} / {formatCurrency(targetAmount)}
+                            </option>
+                          )
+                        })}
+                      </select>
+                      <small className="form-hint">
+                        {t('recurringBills.savingsGoalHint')}
+                      </small>
+                    </div>
                   </div>
                 )}
-              </div>
-            </FormSection>
+              </FormTabs.Panel>
+
+              {/* Tab 2: Schedule */}
+              <FormTabs.Panel id="schedule">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('recurringBills.frequency')} *</label>
+                    <select
+                      name="frequency"
+                      value={formData.frequency}
+                      onChange={handleChange}
+                      required
+                    >
+                      {frequencies.map(freq => (
+                        <option key={freq.value} value={freq.value}>
+                          {freq.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>{t('recurringBills.dueDay')} *</label>
+                    <input
+                      type="number"
+                      name="dueDay"
+                      value={formData.dueDay}
+                      onChange={handleChange}
+                      required
+                      min="1"
+                      max="31"
+                      placeholder="1-31"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>{t('recurringBills.reminderDays')}</label>
+                  <input
+                    type="number"
+                    name="reminderDays"
+                    value={formData.reminderDays}
+                    onChange={handleChange}
+                    min="0"
+                    max="30"
+                    placeholder="3"
+                  />
+                  <small>{t('recurringBills.reminderDaysHint')}</small>
+                </div>
+
+                <div className="form-group checkbox-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="autoPay"
+                      checked={formData.autoPay}
+                      onChange={handleChange}
+                    />
+                    <span>{t('recurringBills.autoPay')}</span>
+                  </label>
+                </div>
+
+                <div className="form-group checkbox-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={formData.isActive}
+                      onChange={handleChange}
+                    />
+                    <span>{t('recurringBills.isActive')}</span>
+                  </label>
+                </div>
+              </FormTabs.Panel>
+
+              {/* Tab 3: Notes & Files */}
+              <FormTabs.Panel id="extras">
+                <div className="form-group">
+                  <label>{t('recurringBills.notes')}</label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows="3"
+                    placeholder={t('recurringBills.notesPlaceholder')}
+                  />
+                </div>
+
+                <div style={{ padding: '0 0.5rem' }}>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handlePendingFileChange}
+                    style={{ display: 'none' }}
+                    id="form-attachment-upload"
+                  />
+                  <label htmlFor="form-attachment-upload" className="btn btn-secondary" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px', cursor: 'pointer', marginBottom: '1rem' }}>
+                    <FiPlus /> {t('common.addAttachment') || "Add Attachment"}
+                  </label>
+
+                  {pendingAttachments.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {pendingAttachments.map((file, idx) => (
+                        <div key={idx} className="glass-card" style={{ padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                            {file.name}
+                          </span>
+                          <button type="button" onClick={() => removePendingAttachment(idx)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer' }}>
+                            <FiX />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {editingBill && editingBill.attachments && editingBill.attachments.length > 0 && (
+                    <div style={{ marginTop: '1rem', padding: '8px', background: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '0.85rem' }}>
+                      <FiAlertCircle style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                      {editingBill.attachments.length} existing attachments. Manage them from the bill card view.
+                    </div>
+                  )}
+                </div>
+              </FormTabs.Panel>
+            </FormTabs>
+            </div>
 
             <div className="form-actions">
               <button type="button" className="btn btn-secondary" onClick={resetForm}>

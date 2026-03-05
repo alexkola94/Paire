@@ -11,6 +11,7 @@ import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import EmptyState from '../components/EmptyState'
 import './Budgets.css'
 
 /**
@@ -271,54 +272,54 @@ function Budgets() {
         onClose={handleCancel}
         title={editingBudget ? t('budgets.editBudget') : t('budgets.addBudget')}
       >
-        <form onSubmit={handleSubmit} className="budget-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="category">{t('budgets.category')}</label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              >
-                <option value="">{t('budgets.selectCategory')}</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>
-                    {t(`categories.${(cat || '').toLowerCase()}`, { defaultValue: cat })}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <form onSubmit={handleSubmit} className="budget-form budget-form--column">
+          <div className="form-with-scroll">
+          <div className="form-group">
+            <label htmlFor="category">{t('budgets.category')}</label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              required
+            >
+              <option value="">{t('budgets.selectCategory')}</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {t(`categories.${(cat || '').toLowerCase()}`, { defaultValue: cat })}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="amount">{t('budgets.amount')}</label>
-              <input
-                type="number"
-                id="amount"
-                name="amount"
-                value={formData.amount}
-                onChange={handleChange}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                max="1000000"
-                required
-              />
-            </div>
+          <div className="form-group">
+            <label htmlFor="amount">{t('budgets.amount')}</label>
+            <input
+              type="number"
+              id="amount"
+              name="amount"
+              value={formData.amount}
+              onChange={handleChange}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              max="1000000"
+              required
+            />
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="period">{t('budgets.period')}</label>
-              <select
-                id="period"
-                name="period"
-                value={formData.period}
-                onChange={handleChange}
-              >
-                <option value="monthly">{t('budgets.monthly')}</option>
-                <option value="yearly">{t('budgets.yearly')}</option>
-              </select>
-            </div>
+          <div className="form-group">
+            <label htmlFor="period">{t('budgets.period')}</label>
+            <select
+              id="period"
+              name="period"
+              value={formData.period}
+              onChange={handleChange}
+            >
+              <option value="monthly">{t('budgets.monthly')}</option>
+              <option value="yearly">{t('budgets.yearly')}</option>
+            </select>
+          </div>
           </div>
 
           <div className="form-actions">
@@ -357,17 +358,15 @@ function Budgets() {
 
       {/* Budgets List */}
       {budgets.length === 0 ? (
-        <div className="card empty-state">
-          <FiTarget size={64} className="empty-icon" />
-          <p>{t('budgets.noBudgets')}</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
-            <FiPlus />
-            {t('budgets.addFirstBudget')}
-          </button>
-        </div>
+        <EmptyState
+          icon={<FiTarget size={64} />}
+          description={t('budgets.noBudgets')}
+          primaryAction={{
+            label: t('budgets.addFirstBudget'),
+            onClick: () => setShowForm(true),
+            icon: <FiPlus />
+          }}
+        />
       ) : (
         <motion.div 
           className="budgets-grid"

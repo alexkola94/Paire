@@ -23,6 +23,16 @@ export const ModalProvider = ({ children }) => {
 
   const hasOpenModals = openModals.size > 0
 
+  // Lock main view scroll when any overlay/modal is open (only overlay content scrolls)
+  useEffect(() => {
+    if (hasOpenModals) {
+      document.documentElement.classList.add('overlay-open')
+    } else {
+      document.documentElement.classList.remove('overlay-open')
+    }
+    return () => document.documentElement.classList.remove('overlay-open')
+  }, [hasOpenModals])
+
   return (
     <ModalContext.Provider value={{ hasOpenModals, registerModal, unregisterModal }}>
       {children}

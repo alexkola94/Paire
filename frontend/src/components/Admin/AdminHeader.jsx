@@ -2,6 +2,7 @@ import { FiMoon, FiSun, FiLogOut, FiArrowLeft } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../context/ThemeContext'
+import { useLogout } from '../../context/LogoutContext'
 import { authService } from '../../services/auth'
 import './AdminHeader.css'
 
@@ -9,9 +10,11 @@ function AdminHeader({ toggleSidebar }) {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const { theme, toggleTheme } = useTheme()
+    const { startLogout } = useLogout()
 
     const handleLogout = async () => {
         try {
+            startLogout()
             await authService.signOut()
             window.location.reload()
         } catch (error) {

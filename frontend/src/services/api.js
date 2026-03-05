@@ -3,7 +3,6 @@ import { isTokenExpired } from '../utils/tokenUtils'
 import { sessionManager } from './sessionManager'
 import { getCsrfToken, clearCsrfCache } from './csrf'
 import { fetchWithRetry } from '../utils/retryFetch'
-import { dispatchWarmupStarted, dispatchWarmupEnded } from '../context/WarmupContext'
 
 /**
  * API Service for database operations
@@ -109,26 +108,14 @@ const apiRequest = async (url, options = {}) => {
     }
   }
 
-  let warmupSignaled = false
-
   try {
     const response = await fetchWithRetry(
       () => fetch(fullUrl, {
         ...options,
         headers,
         credentials: 'include'
-      }),
-      {
-        onRetry: () => {
-          if (!warmupSignaled) {
-            warmupSignaled = true
-            dispatchWarmupStarted()
-          }
-        },
-      }
+      })
     )
-
-    if (warmupSignaled) dispatchWarmupEnded()
 
     // On 400 invalid CSRF, clear cache so next request fetches a fresh token
     if (response.status === 400) {
@@ -168,8 +155,6 @@ const apiRequest = async (url, options = {}) => {
 
     return await response.text()
   } catch (error) {
-    if (warmupSignaled) dispatchWarmupEnded()
-
     // Network errors (CORS, connection refused, etc.)
     if (error.name === 'TypeError' || error.message?.includes('Failed to fetch')) {
       throw new Error(`Cannot connect to API at ${fullUrl}. Please check if the server is running and CORS is configured correctly.`)
@@ -1041,10 +1026,53 @@ export const twoFactorService = {
     })
   },
 
-  async verify(email, code, tempToken) {
+  /**
+   * Verify 2FA code during login.
+   * Supports legacy and Shield payloads by including optional fields.
+   *
+   * @param {string} email
+   * @param {string} code
+   * @param {string} tempToken
+   * @param {Object} [options]
+   * @param {boolean} [options.rememberMe]
+   * @param {string|null} [options.deviceFingerprint]
+   */
+  async verify(email, code, tempToken, options = {}) {
+    const payload = {
+      email,
+      code,
+      tempToken,
+      // Optional fields are only included when defined
+      ...(typeof options.rememberMe !== 'undefined' ? { rememberMe: options.rememberMe } : {}),
+      ...(options.deviceFingerprint ? { deviceFingerprint: options.deviceFingerprint } : {})
+    }
+
     return await apiRequest('/api/auth/2fa/verify', {
       method: 'POST',
-      body: JSON.stringify({ email, code, tempToken })
+      body: JSON.stringify(payload)
+    })
+  },
+
+  /**
+   * Verify backup 2FA code during login.
+   *
+   * @param {string} backupCode
+   * @param {string} tempToken
+   * @param {Object} [options]
+   * @param {boolean} [options.rememberMe]
+   * @param {string|null} [options.deviceFingerprint]
+   */
+  async verifyBackup(backupCode, tempToken, options = {}) {
+    const payload = {
+      backupCode,
+      tempToken,
+      ...(typeof options.rememberMe !== 'undefined' ? { rememberMe: options.rememberMe } : {}),
+      ...(options.deviceFingerprint ? { deviceFingerprint: options.deviceFingerprint } : {})
+    }
+
+    return await apiRequest('/api/auth/2fa/verify-backup', {
+      method: 'POST',
+      body: JSON.stringify(payload)
     })
   },
 

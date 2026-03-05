@@ -1,0 +1,115 @@
+/* ================================
+   Form Tabs Component Styles
+   ================================ */
+
+.form-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* Tab Bar */
+.form-tabs-bar {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: 2px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+/* When used as form header (e.g. TransactionForm), bar must not shrink */
+form > .form-tabs-bar {
+  flex-shrink: 0;
+}
+
+.form-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tab Button */
+.form-tabs-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.form-tabs-btn:hover:not(.active) {
+  background: rgba(142, 68, 173, 0.08);
+  color: var(--text-primary);
+}
+
+.form-tabs-btn.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(142, 68, 173, 0.25);
+}
+
+.form-tabs-btn-icon {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.form-tabs-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tab Content */
+.form-tabs-content {
+  min-height: 0;
+}
+
+.form-tabs-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .form-tabs-btn {
+    padding: 12px 20px;
+    font-size: 0.875rem;
+  }
+
+  .form-tabs-panel {
+    gap: var(--spacing-xl);
+  }
+}
+
+/* Mobile: compact tabs */
+@media (max-width: 767px) {
+  .form-tabs-bar {
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  .form-tabs-btn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    border-radius: calc(var(--radius-sm) - 2px);
+  }
+
+  .form-tabs-btn-icon {
+    font-size: 0.875rem;
+  }
+}

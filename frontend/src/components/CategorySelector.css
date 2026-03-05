@@ -23,14 +23,11 @@
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  /* Increased min to 100px to accommodate longer category names */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--spacing-sm);
   margin-top: var(--spacing-xs);
   width: 100%;
-  /* Ensure grid uses full available width */
   overflow: visible;
-  /* Prevent cutting off */
 }
 
 .category-card {
@@ -38,7 +35,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--spacing-xs);
   padding: var(--spacing-md);
   background: var(--bg-secondary);
@@ -49,9 +46,9 @@
   min-height: 100px;
   text-align: center;
   font-family: inherit;
-  /* Ensure card can accommodate wrapped text */
   min-width: 0;
-  /* Allow flex items to shrink below their minimum content size */
+  overflow: hidden;
+  /* So category name wraps inside card and never spills out */
 }
 
 .category-card:hover:not(:disabled) {
@@ -102,13 +99,16 @@
   text-align: center;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  word-break: break-word;
   hyphens: auto;
-  /* Allow text to wrap to multiple lines without truncation */
+  /* Fit inside card: wrap to multiple lines, never cut off */
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 0 var(--spacing-xs);
-  /* Ensure text fits within card and wraps naturally */
   display: block;
-  /* Allow natural text wrapping */
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .category-card.selected .category-name {
@@ -173,6 +173,23 @@
     gap: var(--spacing-xs);
   }
 
+  /* In modals: 2 columns + wider min so long names (e.g. "Προσωπική Φροντίδα") fit and wrap */
+  .portal-modal-content .category-grid,
+  .portal-modal-body .category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portal-modal-content .category-card,
+  .portal-modal-body .category-card {
+    min-height: 88px;
+  }
+
+  .portal-modal-content .category-name,
+  .portal-modal-body .category-name {
+    font-size: 0.7rem;
+    line-height: 1.25;
+  }
+
   .category-card {
     min-height: 90px;
     padding: var(--spacing-sm);
@@ -181,48 +198,51 @@
   .category-icon {
     width: 36px;
     height: 36px;
+    flex-shrink: 0;
   }
 
   .category-name {
     font-size: 0.75rem;
     line-height: 1.2;
-    /* Allow text wrapping on mobile too */
     word-wrap: break-word;
     overflow-wrap: break-word;
+    word-break: break-word;
   }
 }
 
-/* Tablet optimization */
+/* Tablet optimization - wider cards so labels wrap */
 @media (min-width: 768px) and (max-width: 1023px) {
   .category-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
 }
 
-/* Desktop optimization - Better use of wider modal */
+/* Desktop optimization - wider cards so full labels fit */
 @media (min-width: 1024px) {
   .category-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    /* Increased min to 120px to better accommodate longer category names */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: var(--spacing-md);
-    /* Slightly larger gap for better spacing */
   }
-  
+
   .category-card {
     min-height: 110px;
-    /* Slightly taller to accommodate wrapped text */
   }
 }
 
-/* Extra Large Desktop - Even more columns when space allows */
+/* Extra Large Desktop */
 @media (min-width: 1280px) {
   .category-grid {
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    /* Auto-fit with slightly larger min for extra large screens */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: var(--spacing-md);
   }
-  
+
   .category-card {
     padding: var(--spacing-md) var(--spacing-lg);
   }
+}
+
+/* Modals: cap columns so cards stay wide (avoid 5 narrow columns) */
+.portal-modal-content .category-grid,
+.portal-modal-body .category-grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
 }

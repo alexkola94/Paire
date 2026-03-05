@@ -226,34 +226,6 @@
   background: rgba(15, 7, 26, 0.7);
 }
 
-/* No search results empty state */
-.recurring-bills-no-results {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
-  border-radius: 24px;
-  text-align: center;
-  gap: var(--spacing-md);
-  transition: all 0.3s ease;
-}
-
-.recurring-bills-no-results h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.recurring-bills-no-results p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-  max-width: 320px;
-}
-
 .summary-detail {
   margin: var(--spacing-xs) 0 0 0;
   font-size: 0.875rem;
@@ -594,46 +566,6 @@
 
 .data-card-meta .bill-due-date {
   margin-bottom: 0;
-}
-
-/* ================================
-   Empty State
-   ================================ */
-
-.empty-state {
-  text-align: center;
-  padding: calc(var(--spacing-xl) * 2);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-}
-
-.empty-state svg {
-  color: var(--text-light);
-  margin-bottom: var(--spacing-lg);
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.empty-state h3 {
-  margin-bottom: var(--spacing-sm);
-  color: var(--text-primary);
-}
-
-.empty-state p {
-  margin-bottom: var(--spacing-lg);
-  color: var(--text-secondary);
 }
 
 /* ================================

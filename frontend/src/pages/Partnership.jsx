@@ -8,7 +8,7 @@ import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Modal from '../components/Modal'
 import LogoLoader from '../components/LogoLoader'
-
+import EmptyState from '../components/EmptyState'
 import './Partnership.css'
 
 /**
@@ -360,15 +360,12 @@ function Partnership() {
         ))}
 
         {partnerships.length === 0 && !showInviteForm && (
-          <div className="card no-partnership-card">
-            <div className="no-partnership-content">
-              <div className="no-partnership-icon">
-                <FiUsers size={64} />
-              </div>
-              <h2>{t('partnership.noPartnership')}</h2>
-              <p>{t('partnership.noPartnershipDescription')}</p>
-            </div>
-          </div>
+          <EmptyState
+            icon={<FiUsers size={64} />}
+            iconCircle
+            title={t('partnership.noPartnership')}
+            description={t('partnership.noPartnershipDescription')}
+          />
         )}
       </motion.div>
 
@@ -440,6 +437,7 @@ function Partnership() {
         title={t('partnership.invitePartner')}
       >
         <form onSubmit={handleInvitePartner} className="invite-form">
+          <div className="form-with-scroll">
           <div className="form-group">
             <label htmlFor="partner-email">
               <FiMail size={18} />
@@ -458,6 +456,7 @@ function Partnership() {
             <small className="form-hint">
               {t('partnership.emailHint')}
             </small>
+          </div>
           </div>
 
           <div className="form-actions">

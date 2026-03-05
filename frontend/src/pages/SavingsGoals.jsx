@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
   FiTarget, FiPlus, FiEdit, FiTrash2, FiTrendingUp,
-  FiCalendar, FiCheckCircle, FiArrowUp, FiArrowDown
+  FiCalendar, FiCheckCircle, FiArrowUp, FiArrowDown,
+  FiInfo, FiSliders
 } from 'react-icons/fi'
 import { savingsGoalService } from '../services/api'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -11,12 +12,13 @@ import Modal from '../components/Modal'
 import CurrencyInput from '../components/CurrencyInput'
 import DateInput from '../components/DateInput'
 import CategorySelector from '../components/CategorySelector'
-import FormSection from '../components/FormSection'
+import FormTabs from '../components/FormTabs'
 import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
 import AddToCalculatorButton from '../components/AddToCalculatorButton'
+import EmptyState from '../components/EmptyState'
 import './SavingsGoals.css'
 import '../styles/AddToCalculator.css'
 
@@ -39,6 +41,7 @@ function SavingsGoals() {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showLoadingProgress, setShowLoadingProgress] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
+  const [activeFormTab, setActiveFormTab] = useState('details')
   const [formData, setFormData] = useState({
     name: '',
     targetAmount: '',
@@ -283,6 +286,7 @@ function SavingsGoals() {
   const resetForm = () => {
     setShowForm(false)
     setEditingGoal(null)
+    setActiveFormTab('details')
     setFormData({
       name: '',
       targetAmount: '',
@@ -424,14 +428,16 @@ function SavingsGoals() {
         }}
       >
         {goals.length === 0 ? (
-          <div className="empty-state">
-            <FiTarget size={64} />
-            <h3>{t('savingsGoals.noGoals')}</h3>
-            <p>{t('savingsGoals.noGoalsDescription')}</p>
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-              <FiPlus /> {t('savingsGoals.createFirstGoal')}
-            </button>
-          </div>
+          <EmptyState
+            icon={<FiTarget size={64} />}
+            title={t('savingsGoals.noGoals')}
+            description={t('savingsGoals.noGoalsDescription')}
+            primaryAction={{
+              label: t('savingsGoals.createFirstGoal'),
+              onClick: () => setShowForm(true),
+              icon: <FiPlus />
+            }}
+          />
         ) : (
           goals.map(goal => {
             const progress = calculateProgress(goal)
@@ -611,117 +617,126 @@ function SavingsGoals() {
         title={editingGoal ? t('savingsGoals.editGoal') : t('savingsGoals.addGoal')}
       >
         <form onSubmit={handleSubmit}>
-          {/* Basic Information Section */}
-          <FormSection title={t('transaction.formSections.basicInfo')}>
-            <div className="form-group">
-              <label>{t('savingsGoals.goalName')} *</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                placeholder={t('savingsGoals.goalNamePlaceholder')}
-              />
-            </div>
-
-            <div className="form-row">
-              <CurrencyInput
-                value={formData.targetAmount}
-                onChange={handleChange}
-                name="targetAmount"
-                id="targetAmount"
-                label={`${t('savingsGoals.targetAmount')} * `}
-                required
-                quickAmounts={[1000, 5000, 10000, 50000]}
-              />
-
-              <CurrencyInput
-                value={formData.currentAmount}
-                onChange={handleChange}
-                name="currentAmount"
-                id="currentAmount"
-                label={t('savingsGoals.currentAmount')}
-                quickAmounts={[]}
-              />
-            </div>
-
-            {/* Category - Full width for better visibility */}
-            <div className="form-layout-item-full">
-              <CategorySelector
-                value={formData.category}
-                onChange={handleChange}
-                name="category"
-                categories={categories.map(c => c.value)}
-                type="expense"
-                label={t('savingsGoals.category')}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>{t('savingsGoals.priority')}</label>
-              <select
-                name="priority"
-                value={formData.priority}
-                onChange={handleChange}
-              >
-                {priorities.map(pri => (
-                  <option key={pri.value} value={pri.value}>
-                    {pri.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <DateInput
-              value={formData.targetDate}
-              onChange={handleChange}
-              name="targetDate"
-              id="targetDate"
-              label={t('savingsGoals.targetDate')}
-              required={false}
-              showQuickButtons={true}
-            />
-          </FormSection>
-
-          {/* Customization Section */}
-          <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.icon || !!formData.notes}>
-
-            <div className="form-row">
+          <div className="form-with-scroll">
+          <FormTabs
+            tabs={[
+              { id: 'details', label: t('savingsGoals.goalDetails'), icon: <FiInfo /> },
+              { id: 'customize', label: t('savingsGoals.customization'), icon: <FiSliders /> }
+            ]}
+            activeTab={activeFormTab}
+            onTabChange={setActiveFormTab}
+          >
+            {/* Tab 1: Goal Details */}
+            <FormTabs.Panel id="details">
               <div className="form-group">
-                <label>{t('savingsGoals.icon')}</label>
+                <label>{t('savingsGoals.goalName')} *</label>
                 <input
                   type="text"
-                  name="icon"
-                  value={formData.icon}
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
-                  placeholder="🎯"
-                  maxLength="2"
+                  required
+                  placeholder={t('savingsGoals.goalNamePlaceholder')}
+                />
+              </div>
+
+              <div className="form-row">
+                <CurrencyInput
+                  value={formData.targetAmount}
+                  onChange={handleChange}
+                  name="targetAmount"
+                  id="targetAmount"
+                  label={`${t('savingsGoals.targetAmount')} * `}
+                  required
+                  quickAmounts={[1000, 5000, 10000, 50000]}
+                />
+
+                <CurrencyInput
+                  value={formData.currentAmount}
+                  onChange={handleChange}
+                  name="currentAmount"
+                  id="currentAmount"
+                  label={t('savingsGoals.currentAmount')}
+                  quickAmounts={[]}
+                />
+              </div>
+
+              <div className="form-layout-item-full">
+                <CategorySelector
+                  value={formData.category}
+                  onChange={handleChange}
+                  name="category"
+                  categories={categories.map(c => c.value)}
+                  type="expense"
+                  label={t('savingsGoals.category')}
                 />
               </div>
 
               <div className="form-group">
-                <label>{t('savingsGoals.color')}</label>
-                <input
-                  type="color"
-                  name="color"
-                  value={formData.color}
+                <label>{t('savingsGoals.priority')}</label>
+                <select
+                  name="priority"
+                  value={formData.priority}
                   onChange={handleChange}
+                >
+                  {priorities.map(pri => (
+                    <option key={pri.value} value={pri.value}>
+                      {pri.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <DateInput
+                value={formData.targetDate}
+                onChange={handleChange}
+                name="targetDate"
+                id="targetDate"
+                label={t('savingsGoals.targetDate')}
+                required={false}
+                showQuickButtons={true}
+              />
+            </FormTabs.Panel>
+
+            {/* Tab 2: Customization */}
+            <FormTabs.Panel id="customize">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>{t('savingsGoals.icon')}</label>
+                  <input
+                    type="text"
+                    name="icon"
+                    value={formData.icon}
+                    onChange={handleChange}
+                    placeholder="🎯"
+                    maxLength="2"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{t('savingsGoals.color')}</label>
+                  <input
+                    type="color"
+                    name="color"
+                    value={formData.color}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>{t('savingsGoals.notes')}</label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  placeholder={t('savingsGoals.notesPlaceholder')}
+                  rows={3}
                 />
               </div>
-            </div>
-
-            <div className="form-group">
-              <label>{t('savingsGoals.notes')}</label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                placeholder={t('savingsGoals.notesPlaceholder')}
-                rows={3}
-              />
-            </div>
-          </FormSection>
+            </FormTabs.Panel>
+          </FormTabs>
+          </div>
 
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={resetForm}>

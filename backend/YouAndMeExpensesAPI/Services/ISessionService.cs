@@ -16,6 +16,11 @@ namespace YouAndMeExpensesAPI.Services
         Task<bool> IsSessionValidAsync(string tokenId);
 
         /// <summary>
+        /// Get user id and token id for a valid refresh token (e.g. for local/Google refresh).
+        /// </summary>
+        Task<(string UserId, string TokenId)?> GetSessionByRefreshTokenAsync(string refreshToken);
+
+        /// <summary>
         /// Revoke a session by token ID
         /// </summary>
         Task RevokeSessionAsync(string tokenId);

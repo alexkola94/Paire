@@ -1,16 +1,19 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { FiTrash2, FiSearch, FiZoomIn, FiDownload, FiX, FiFileText } from 'react-icons/fi'
+import { FiTrash2, FiSearch, FiZoomIn, FiDownload, FiX, FiFileText, FiPlus } from 'react-icons/fi'
 import { transactionService, recurringBillService } from '../services/api'
 import { ALL_CATEGORIES } from '../constants/categories'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Modal from '../components/Modal'
+import TransactionForm from '../components/TransactionForm'
 import SearchInput from '../components/SearchInput'
 import DateRangePicker from '../components/DateRangePicker'
 import Skeleton from '../components/Skeleton'
 import useToast from '../hooks/useToast'
 import ToastContainer from '../components/ToastContainer'
+import EmptyState from '../components/EmptyState'
 import './Expenses.css' // Reuse expenses styling for grid/cards
 import './Receipts.css' // Specific styling
 
@@ -24,6 +27,8 @@ function Receipts() {
     const [endDate, setEndDate] = useState('')
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, receipt: null })
     const [viewModal, setViewModal] = useState(null) // For viewing full image
+    const [showForm, setShowForm] = useState(false)
+    const [formLoading, setFormLoading] = useState(false)
 
     const { toasts, success: showSuccess, error: showError, removeToast } = useToast()
 
@@ -150,13 +155,45 @@ function Receipts() {
         setDeleteModal({ isOpen: false, receipt: null })
     }
 
+    const closeForm = () => {
+        setShowForm(false)
+    }
+
+    const handleCreateReceipt = async (data) => {
+        try {
+            setFormLoading(true)
+            await transactionService.create(data)
+            showSuccess(t('receipts.addSuccess', 'Receipt added successfully'))
+            closeForm()
+            loadReceipts()
+        } catch (error) {
+            console.error('Error adding receipt/expense:', error)
+            showError(t('receipts.addError', 'Failed to add receipt'))
+            throw error
+        } finally {
+            setFormLoading(false)
+        }
+    }
+
     return (
         <div className="receipts-page expenses-page">
-            <div className="page-header">
-                <h1>{t('receipts.title', 'Receipts Gallery')}</h1>
-                <p className="page-subtitle">
-                    {t('receipts.subtitle', 'View and manage your transaction receipts')}
-                </p>
+            <div className="page-header flex-between">
+                <div>
+                    <h1>{t('receipts.title', 'Receipts Gallery')}</h1>
+                    <p className="page-subtitle">
+                        {t('receipts.subtitle', 'View and manage your transaction receipts')}
+                    </p>
+                </div>
+                {!showForm && (
+                    <button
+                        type="button"
+                        onClick={() => setShowForm(true)}
+                        className="btn btn-primary"
+                    >
+                        <FiPlus />
+                        {t('receipts.addReceipt', 'Add Receipt')}
+                    </button>
+                )}
             </div>
 
             {/* Filters - Grid Layout */}
@@ -199,6 +236,20 @@ function Receipts() {
             {/* Toast Container */}
             <ToastContainer toasts={toasts} onRemove={removeToast} />
 
+            {/* Add Receipt Modal */}
+            <Modal
+                isOpen={showForm}
+                onClose={closeForm}
+                title={t('receipts.addReceipt', 'Add Receipt')}
+            >
+                <TransactionForm
+                    type="expense"
+                    onSubmit={handleCreateReceipt}
+                    onCancel={closeForm}
+                    loading={formLoading}
+                />
+            </Modal>
+
             {/* Grid */}
             {loading ? (
                 <div className="receipts-grid">
@@ -213,9 +264,15 @@ function Receipts() {
                     ))}
                 </div>
             ) : filteredReceipts.length === 0 ? (
-                <div className="empty-state card">
-                    <p>{t('receipts.noReceipts', 'No receipts found.')}</p>
-                </div>
+                <EmptyState
+                    icon={<FiFileText size={64} />}
+                    description={t('receipts.noReceipts', 'No receipts found.')}
+                    primaryAction={{
+                        label: t('receipts.addReceipt', 'Add Receipt'),
+                        onClick: () => setShowForm(true),
+                        icon: <FiPlus />
+                    }}
+                />
             ) : (
                 <motion.div 
                   className="receipts-grid"

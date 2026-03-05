@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CATEGORIES } from '../constants/categories'
 import {
@@ -9,6 +9,50 @@ import {
   FiPackage, FiUser, FiSmartphone, FiAlertCircle, FiMapPin, FiNavigation
 } from 'react-icons/fi'
 import './CategorySelector.css'
+
+const MIN_FONT_SIZE_REM = 0.65
+const DEFAULT_FONT_SIZE_REM = 0.8125
+
+/**
+ * Shrinks font size until the label fits inside its container (any language).
+ */
+function CategoryNameFit({ children, className = '' }) {
+  const ref = useRef(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || !children) return
+
+    let fontSizeRem = DEFAULT_FONT_SIZE_REM
+    el.style.fontSize = `${fontSizeRem}rem`
+
+    const fit = () => {
+      if (!el.parentElement) return true
+      const parent = el.parentElement
+      const maxW = parent.clientWidth
+      const maxH = Math.max(32, parent.clientHeight - 52)
+      el.style.fontSize = `${fontSizeRem}rem`
+      el.style.whiteSpace = 'normal'
+      if (el.scrollWidth <= maxW && el.scrollHeight <= maxH) return true
+      if (fontSizeRem <= MIN_FONT_SIZE_REM) return true
+      fontSizeRem = Math.max(MIN_FONT_SIZE_REM, fontSizeRem - 0.05)
+      return false
+    }
+
+    const raf = requestAnimationFrame(() => {
+      for (let i = 0; i < 25; i++) {
+        if (fit()) break
+      }
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [children])
+
+  return (
+    <span ref={ref} className={className}>
+      {children}
+    </span>
+  )
+}
 
 /**
  * Visual Category Selector Component
@@ -234,9 +278,9 @@ function CategorySelector({
               <div className="category-icon" style={{ color: categoryColor }}>
                 {getIcon(category)}
               </div>
-              <span className="category-name">
+              <CategoryNameFit className="category-name">
                 {categoryLabel}
-              </span>
+              </CategoryNameFit>
               {isSelected && (
                 <div className="category-check">
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">

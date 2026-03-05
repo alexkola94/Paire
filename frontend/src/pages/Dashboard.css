@@ -528,28 +528,6 @@
   filter: brightness(0.4);
 }
 
-/* ================================
-   Empty State
-   ================================ */
-
-.empty-state {
-  text-align: center;
-  padding: var(--spacing-xl);
-}
-
-.empty-state p {
-  color: var(--text-light);
-  font-size: 1.0625rem;
-  margin-bottom: var(--spacing-lg);
-}
-
-.quick-actions {
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
 /* Quick Access Section Buttons (links and buttons, e.g. currency popover) */
 .quick-access-btn,
 button.quick-access-btn {

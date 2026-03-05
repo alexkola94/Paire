@@ -729,45 +729,6 @@
   }
 }
 
-/* Empty Chart State */
-.empty-chart-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl) * 2;
-  text-align: center;
-  color: var(--text-light);
-}
-
-.empty-chart-state svg {
-  margin-bottom: var(--spacing-md);
-  opacity: 0.5;
-}
-
-.empty-chart-state h3 {
-  margin: 0 0 var(--spacing-sm) 0;
-  color: var(--text-secondary);
-  font-size: 1.125rem;
-}
-
-.empty-chart-state p {
-  margin: 0;
-  color: var(--text-light);
-  font-size: 0.875rem;
-}
-
-.empty-categories {
-  text-align: center;
-  padding: var(--spacing-xl);
-  color: var(--text-light);
-}
-
-.empty-categories p {
-  margin: 0;
-  font-size: 0.875rem;
-}
-
 /* Note: Mobile styles are now defined as base styles throughout the file.
    Larger screen overrides are done with min-width media queries. */
 
@@ -996,22 +957,6 @@
   padding: var(--spacing-sm);
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-}
-
-.empty-transactions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl) var(--spacing-md);
-  color: var(--text-light);
-  text-align: center;
-  min-height: 200px;
-}
-
-.empty-transactions svg {
-  margin-bottom: var(--spacing-md);
-  opacity: 0.5;
 }
 
 /* Transaction List - Mobile */

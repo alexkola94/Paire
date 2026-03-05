@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom'
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday } from 'date-fns'
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, parseISO } from 'date-fns'
 import { FiCalendar, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import './DatePicker.css'
@@ -18,10 +18,15 @@ const DatePicker = ({
     const containerRef = useRef(null)
     const { t } = useTranslation()
 
+    // Parse selected as local date (YYYY-MM-DD strings are UTC midnight in new Date(), which shifts day in many timezones)
+    const selectedDate = selected
+        ? (typeof selected === 'string' ? parseISO(selected) : new Date(selected))
+        : null
+
     // initialize currentMonth to selected date if exists
     useEffect(() => {
-        if (selected) {
-            setCurrentMonth(new Date(selected))
+        if (selectedDate) {
+            setCurrentMonth(selectedDate)
         }
     }, [selected])
 
@@ -113,7 +118,7 @@ const DatePicker = ({
 
                 {/* Days */}
                 {dayRange.map((dayItem, idx) => {
-                    const isSelected = selected && isSameDay(dayItem, new Date(selected))
+                    const isSelected = selectedDate && isSameDay(dayItem, selectedDate)
                     return (
                         <div
                             key={dayItem.toString()}
@@ -144,7 +149,7 @@ const DatePicker = ({
                     readOnly
                     type="text"
                     className={`date-picker-input ${isOpen ? 'active' : ''}`}
-                    value={selected ? format(new Date(selected), 'PP') : ''}
+                    value={selectedDate ? format(selectedDate, 'PP') : ''}
                     placeholder={placeholder}
                 />
                 {selected && (

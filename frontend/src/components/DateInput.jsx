@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiCalendar } from 'react-icons/fi'
-import { isToday, isYesterday, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns'
+import { isToday, isYesterday, startOfWeek, endOfWeek, isWithinInterval, parseISO, format } from 'date-fns'
 import DatePicker from './DatePicker'
 import './DateInput.css'
 
@@ -143,7 +143,7 @@ function DateInput({
         <DatePicker
           selected={value}
           onChange={(date) => {
-            const dateString = date ? date.toISOString().split('T')[0] : ''
+            const dateString = date ? format(date, 'yyyy-MM-dd') : ''
             handleQuickDate(dateString)
           }}
           placeholder={label || t('transaction.date')}

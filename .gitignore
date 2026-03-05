@@ -82,7 +82,6 @@ bld/
 
 # Visual Studio cache/options
 .vs/
-.vscode/
 *.suo
 *.user
 *.userosscache
@@ -294,4 +293,3 @@ motitoring app/
 codename_Shield-microservice/Codename_Shield.API/
 
 claude.md
-nul

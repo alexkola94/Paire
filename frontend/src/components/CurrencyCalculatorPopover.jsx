@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { currencyService } from '../services/api'
+import { useModalRegistration } from '../context/ModalContext'
 import { FiRefreshCw, FiArrowRight, FiInfo, FiTrendingUp, FiX, FiCpu } from 'react-icons/fi'
 import './CurrencyCalculatorPopover.css'
 
@@ -36,6 +37,8 @@ export default function CurrencyCalculatorPopover({
 
     const popoverRef = useRef(null)
     const triggerRef = useRef(null)
+
+    useModalRegistration(isOpen, 'currency-calculator-popover')
 
     // Fetch currencies when popover opens
     useEffect(() => {
@@ -92,18 +95,6 @@ export default function CurrencyCalculatorPopover({
         document.addEventListener('keydown', handleEscape)
         return () => document.removeEventListener('keydown', handleEscape)
     }, [isOpen, handleClose])
-
-    // Prevent body scroll when popover is open on mobile
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden'
-        } else {
-            document.body.style.overflow = ''
-        }
-        return () => {
-            document.body.style.overflow = ''
-        }
-    }, [isOpen])
 
     const fetchCurrencies = async () => {
         try {

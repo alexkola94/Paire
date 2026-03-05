@@ -6,6 +6,7 @@ import {
   FiUsers, FiCalendar, FiCheckCircle, FiLock
 } from 'react-icons/fi'
 import { achievementService } from '../services/api'
+import EmptyState from '../components/EmptyState'
 import './Achievements.css'
 
 /**
@@ -296,10 +297,10 @@ function Achievements() {
       </motion.div>
 
       {filteredAchievements.length === 0 && (
-        <div className="achievements-empty">
-          <FiAward className="empty-icon" />
-          <p>{t('achievements.noAchievements')}</p>
-        </div>
+        <EmptyState
+          icon={<FiAward size={64} />}
+          description={t('achievements.noAchievements')}
+        />
       )}
     </div>
   )

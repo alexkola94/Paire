@@ -131,24 +131,6 @@
   gap: var(--spacing-sm);
 }
 
-/* Empty Sidebar */
-.empty-sidebar {
-  text-align: center;
-  padding: var(--spacing-xl);
-  color: var(--text-light);
-}
-
-.empty-sidebar svg {
-  margin-bottom: var(--spacing-md);
-  color: var(--text-light);
-  animation: float 3s ease-in-out infinite;
-}
-
-.empty-sidebar p {
-  margin-bottom: var(--spacing-md);
-  font-size: 0.875rem;
-}
-
 /* List Card */
 .list-card {
   padding: var(--spacing-md);
@@ -781,47 +763,6 @@
   margin-top: var(--spacing-xs);
 }
 
-.empty-selection svg {
-  margin-bottom: var(--spacing-lg);
-  animation: float 3s ease-in-out infinite;
-}
-
-.empty-selection h3 {
-  margin-bottom: var(--spacing-sm);
-  color: var(--text-primary);
-}
-
-.empty-selection p {
-  margin-bottom: 0;
-  color: var(--text-secondary);
-}
-
-.empty-items {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--spacing-xl) * 2;
-}
-
-.empty-items svg {
-  color: var(--text-light);
-  margin-bottom: var(--spacing-lg);
-  animation: float 3s ease-in-out infinite;
-}
-
-.empty-items h3 {
-  margin-bottom: var(--spacing-sm);
-  color: var(--text-primary);
-}
-
-.empty-items p {
-  margin-bottom: var(--spacing-lg);
-  color: var(--text-secondary);
-}
-
 /* ================================
    Modal Styles
    ================================ */
@@ -986,6 +927,11 @@
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--bg-tertiary);
+}
+
+/* Portal modal: form-actions stay fixed at bottom (Modal.css), avoid page-level margin */
+.portal-modal-body .form-actions {
+  margin-top: 0;
 }
 
 /* ================================

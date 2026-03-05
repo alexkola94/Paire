@@ -25,6 +25,7 @@ namespace YouAndMeExpensesAPI.Controllers
 
         /// <summary>
         /// Gets all loan payments for a specific loan (loan must belong to user or partner)
+        /// Returns an empty list when the loan exists but has no payments yet.
         /// </summary>
         [HttpGet("by-loan/{loanId}")]
         public async Task<IActionResult> GetLoanPayments(Guid loanId)
@@ -36,12 +37,8 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 var payments = await _loanPaymentsService.GetLoanPaymentsAsync(userId, loanId);
 
-                if (payments.Count == 0)
-                {
-                    // Preserve original behavior: 404 when loan not found.
-                    return NotFound(new { message = $"Loan {loanId} not found" });
-                }
-
+                // Always return OK with the payments list (possibly empty).
+                // The service already ensures only loans belonging to the user/partner are included.
                 return Ok(payments);
             }
             catch (Exception ex)

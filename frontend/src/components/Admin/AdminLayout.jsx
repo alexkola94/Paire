@@ -16,6 +16,7 @@ import {
 } from 'react-icons/fi'
 import { authService } from '../../services/auth'
 import { useTheme } from '../../context/ThemeContext'
+import { useLogout } from '../../context/LogoutContext'
 import AdminHeader from './AdminHeader'
 import './AdminLayout.css'
 
@@ -23,6 +24,7 @@ function AdminLayout() {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const { theme, toggleTheme } = useTheme()
+    const { startLogout } = useLogout()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [checking2FA, setChecking2FA] = useState(true)
 
@@ -59,12 +61,13 @@ function AdminLayout() {
 
     const handleLogout = useCallback(async () => {
         try {
+            startLogout()
             await authService.signOut()
             window.location.reload()
         } catch (error) {
             console.error('Error signing out:', error)
         }
-    }, [])
+    }, [startLogout])
 
     const navItems = [
         { path: '/admin/dashboard', icon: FiHome, label: 'Overview' },

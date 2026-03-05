@@ -90,7 +90,7 @@
 }
 
 .quick-amount-btn:hover:not(:disabled) {
-  background: var(--secondary);
+  background: rgb(176 145 245 / 30%);
   border-color: var(--primary);
   color: var(--primary);
   transform: translateY(-2px);

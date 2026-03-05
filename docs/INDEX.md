@@ -4,6 +4,19 @@ All documentation for You & Me Expenses in one place.
 
 ---
 
+## 📁 Documentation Sections
+
+- **[Getting Started](./getting-started/README.md)** – on-ramps and quick start flows
+- **[Setup & Configuration](./setup/README.md)** – environment, Supabase, EF Core, and integrations
+- **[Deployment](./deployment/README.md)** – production deployment and CI/CD
+- **[Architecture & Implementation](./architecture/README.md)** – feature overviews and migration notes
+- **[Troubleshooting](./troubleshooting/README.md)** – common issues and fix guides
+- **[Reference](./reference/README.md)** – SQL, APIs, and feature reference docs
+- **[Meta & Contributors](./meta/README.md)** – changelog, contributing, and testing meta
+- **[Archive](./archive/README.md)** – historical/session summaries kept for reference
+
+---
+
 ## 🚀 **Getting Started** (Read These First!)
 
 | Document | Description | Time | Priority |

@@ -14,7 +14,8 @@ import {
   FiEdit,
   FiTrash2,
   FiList,
-  FiGitBranch
+  FiGitBranch,
+  FiFileText
 } from 'react-icons/fi'
 import { transactionService } from '../services/api'
 import { format } from 'date-fns'
@@ -29,6 +30,7 @@ import DateRangePicker from '../components/DateRangePicker'
 import TransactionDetailModal from '../components/TransactionDetailModal'
 import TransactionTimeline from '../components/TransactionTimeline'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import EmptyState from '../components/EmptyState'
 import './AllTransactions.css'
 
 /**
@@ -271,22 +273,28 @@ function AllTransactions() {
 
       {/* Transactions Display */}
       {totalItems === 0 && !loading ? (
-        <div className="card empty-state">
-          <p>{t('allTransactions.noTransactions')}</p>
-        </div>
+        <EmptyState
+          icon={<FiFileText size={64} />}
+          description={t('allTransactions.noTransactions')}
+          primaryAction={{ label: t('expenses.addExpense'), to: '/expenses', icon: <FiTrendingDown /> }}
+          secondaryActions={[
+            { label: t('income.addIncome'), to: '/income', icon: <FiTrendingUp /> }
+          ]}
+        />
       ) : viewMode === 'timeline' ? (
         /* Timeline View (current page only with server-side pagination) */
         <div className="card timeline-view-container">
           <TransactionTimeline
             transactions={displayedTransactions}
-            maxHeight="70vh"
+            maxHeight={displayedTransactions.length > 6 ? '70vh' : 'auto'}
             showRelativeDates={true}
           />
         </div>
       ) : displayedTransactions.length === 0 && !loading ? (
-        <div className="card empty-state">
-          <p>{t('common.noResults', 'No transactions found matching your search.')}</p>
-        </div>
+        <EmptyState
+          variant="noResults"
+          description={t('common.noResults', 'No transactions found matching your search.')}
+        />
       ) : (
         /* List View */
         <motion.div 
@@ -298,6 +306,7 @@ function AllTransactions() {
           <div className="transactions-list" style={{ minHeight: Math.min(displayedTransactions.length * 88, 480) }}>
             {List ? (
               <List
+                className="transactions-scroll"
                 height={Math.min(displayedTransactions.length * 88, 480)}
                 itemCount={displayedTransactions.length}
                 itemSize={88}
@@ -315,7 +324,7 @@ function AllTransactions() {
                 {TransactionRow}
               </List>
             ) : (
-              <div style={{ overflow: 'auto' }}>
+              <div className="transactions-scroll" style={{ overflow: 'auto' }}>
                 {displayedTransactions.map((_, index) => (
                   <TransactionRow
                     key={displayedTransactions[index].id}

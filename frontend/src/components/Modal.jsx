@@ -19,7 +19,7 @@ const Modal = ({
     // Register modal to hide bottom navigation on mobile
     useModalRegistration(isOpen);
 
-    // Handle Escape key to close
+    // Handle Escape key to close (body scroll lock is handled by ModalContext + .overlay-open)
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape' && isOpen) {
@@ -29,12 +29,10 @@ const Modal = ({
 
         if (isOpen) {
             document.addEventListener('keydown', handleKeyDown);
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
         }
 
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
-            document.body.style.overflow = '';
         };
     }, [isOpen, onClose]);
 

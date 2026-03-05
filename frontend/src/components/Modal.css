@@ -38,8 +38,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--bg-tertiary);
+    padding: var(--spacing-md);
     background: var(--bg-secondary);
     flex-shrink: 0;
     border-radius: 24px 24px 0 0;
@@ -77,6 +76,125 @@
     padding: var(--spacing-lg);
     overflow-y: auto;
     flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tabs as header: minimal top padding so tab bar sits close to modal title */
+.portal-modal-body:has(form.transaction-form > .form-tabs-bar) {
+    padding-top: var(--spacing-sm);
+}
+
+/* Actions closer to bottom of modal */
+.portal-modal-body:has(form .form-actions) {
+    padding-bottom: var(--spacing-sm);
+}
+
+/* When form has its own scroll area, body must not scroll so actions stay visible */
+.portal-modal-body:has(form .form-with-scroll) {
+    overflow: hidden;
+}
+
+/* Keep Save/Cancel always visible: form content scrolls, actions stick to bottom */
+.portal-modal-body > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.portal-modal-body > form .form-with-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    scroll-behavior: smooth;
+    /* Paire design-system scrollbar: soft tints, rounded, subtle */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 92, 246, 0.35) var(--bg-tertiary);
+}
+
+/* Paire scrollbar: Soft UI radii, no arrows, border-radius 11px */
+.portal-modal-body > form .form-with-scroll::-webkit-scrollbar {
+    width: 8px;
+    display: block;
+}
+
+.portal-modal-body > form .form-with-scroll::-webkit-scrollbar-button {
+    display: none;
+}
+
+.portal-modal-body > form .form-with-scroll::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 11px;
+    margin: var(--spacing-xs) 0;
+}
+
+.portal-modal-body > form .form-with-scroll::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.25);
+    border-radius: 11px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.3s ease-in-out;
+}
+
+.portal-modal-body > form .form-with-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.45);
+    background-clip: padding-box;
+}
+
+.portal-modal-body > form .form-with-scroll::-webkit-scrollbar-thumb:active {
+    background: rgba(139, 92, 246, 0.5);
+    background-clip: padding-box;
+}
+
+/* Add (transaction) form: compact vertical spacing so top/bottom don’t dominate */
+.portal-modal-body > form.transaction-form {
+    gap: var(--spacing-sm);
+}
+
+.portal-modal-body > form.transaction-form .form-with-scroll {
+    gap: var(--spacing-md);
+    padding: 0;
+}
+
+.portal-modal-body > form.transaction-form .form-tabs-panel {
+    gap: var(--spacing-md);
+}
+
+.portal-modal-body > form .form-actions {
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    padding: var(--spacing-md);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--bg-tertiary);
+    z-index: 1;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+    box-sizing: border-box;
+}
+
+.portal-modal-body > form .form-actions .btn,
+.portal-modal-body > form .form-actions button {
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 /* Animations */

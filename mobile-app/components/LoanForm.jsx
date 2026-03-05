@@ -13,7 +13,7 @@
  * - Theme-aware styling
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -60,6 +60,22 @@ export default function LoanForm({
     interestRate: loan?.interestRate || '',
   });
   const [error, setError] = useState('');
+
+  // Sync form state when loan prop changes (e.g. open add vs edit, or switch edit target)
+  useEffect(() => {
+    const type = loan?.type === 'received' ? 'received' : 'given';
+    setFormData({
+      type,
+      name: loan?.name || loan?.borrowerName || loan?.lenderName || '',
+      totalAmount: loan?.totalAmount ?? loan?.amount ?? '',
+      remainingAmount: loan?.remainingAmount ?? loan?.amount ?? '',
+      dueDate: loan?.dueDate ? loan.dueDate.split('T')[0] : '',
+      status: loan?.status || 'active',
+      description: loan?.description || '',
+      interestRate: loan?.interestRate ?? '',
+    });
+    setError('');
+  }, [loan]);
 
   // Get translated status options
   const statusOptions = STATUS_OPTIONS.map(opt => ({
@@ -176,15 +192,17 @@ export default function LoanForm({
         <Text style={[styles.label, dynamicStyles.label]}>
           {t('loans.type', 'Loan Type')} *
         </Text>
-        <View style={styles.typeToggle}>
+        <View style={styles.typeToggle} pointerEvents="box-none">
           <TouchableOpacity
             style={[
               styles.typeBtn,
               dynamicStyles.typeBtn,
-              formData.type === 'given' && dynamicStyles.typeBtnActive,
+              ...(formData.type === 'given' ? [dynamicStyles.typeBtnActive] : []),
             ]}
             onPress={() => handleChange('type', 'given')}
             activeOpacity={0.7}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: formData.type === 'given' }}
           >
             <ArrowUpRight
               size={20}
@@ -194,7 +212,7 @@ export default function LoanForm({
               style={[
                 styles.typeBtnText,
                 dynamicStyles.typeBtnText,
-                formData.type === 'given' && dynamicStyles.typeBtnTextActive,
+                ...(formData.type === 'given' ? [dynamicStyles.typeBtnTextActive] : []),
               ]}
             >
               {t('loans.given', 'I Lent')}
@@ -205,10 +223,12 @@ export default function LoanForm({
             style={[
               styles.typeBtn,
               dynamicStyles.typeBtn,
-              formData.type === 'received' && dynamicStyles.typeBtnActive,
+              ...(formData.type === 'received' ? [dynamicStyles.typeBtnActive] : []),
             ]}
             onPress={() => handleChange('type', 'received')}
             activeOpacity={0.7}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: formData.type === 'received' }}
           >
             <ArrowDownLeft
               size={20}
@@ -218,7 +238,7 @@ export default function LoanForm({
               style={[
                 styles.typeBtnText,
                 dynamicStyles.typeBtnText,
-                formData.type === 'received' && dynamicStyles.typeBtnTextActive,
+                ...(formData.type === 'received' ? [dynamicStyles.typeBtnTextActive] : []),
               ]}
             >
               {t('loans.received', 'I Borrowed')}

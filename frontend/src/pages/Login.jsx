@@ -27,6 +27,7 @@ function humanizeLoginError(err, isSignUp, t) {
   if (msg.includes('confirm your email') || msg.includes('verify your email') || msg.includes('email not confirmed')) return t('auth.errors.emailNotConfirmed')
   if (msg.includes('locked') || msg.includes('lockout')) return t('auth.errors.accountLocked')
   if (isSignUp && (msg.includes('already taken') || msg.includes('already registered') || msg.includes('duplicate') || msg.includes('already exists'))) return t('auth.errors.emailAlreadyRegistered')
+  if (msg.includes('already registered') && msg.includes('password')) return t('auth.errors.emailAlreadyRegisteredUsePassword', 'This email is already registered. Please sign in with your password.')
   // Generic: use server message if short and readable, else fallback
   const raw = err?.message || ''
   if (raw.length > 0 && raw.length < 120 && !raw.includes(' at ') && !raw.startsWith('http')) return raw
@@ -73,6 +74,10 @@ function Login() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isConfirmPasswordTouched, setIsConfirmPasswordTouched] = useState(false)
 
+  // Google Sign-In button container and callback ref (avoids stale closure)
+  const googleButtonRef = useRef(null)
+  const googleCallbackRef = useRef(null)
+
   // Derived state for password match
   const passwordsMatch = formData.password === formData.confirmPassword
   const showMatchError = isSignUp && isConfirmPasswordTouched && !passwordsMatch && formData.confirmPassword.length > 0
@@ -101,6 +106,39 @@ function Login() {
       // This is optional - we can skip it for now
     }
   }, [mode])
+
+  // Initialize and render Google Sign-In button when in sign-in mode
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  useEffect(() => {
+    if (isSignUp || !googleClientId || !googleButtonRef.current) return
+    const el = googleButtonRef.current
+    if (!el || el.children.length > 0) return
+
+    const initGoogle = () => {
+      if (typeof window === 'undefined' || !window.google?.accounts?.id) return false
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: (response) => {
+          if (!response?.credential || !googleCallbackRef.current) return
+          googleCallbackRef.current(response.credential)
+        }
+      })
+      window.google.accounts.id.renderButton(el, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        width: 280
+      })
+      return true
+    }
+
+    if (initGoogle()) return
+    const t = setInterval(() => {
+      if (initGoogle()) clearInterval(t)
+    }, 100)
+    return () => clearInterval(t)
+  }, [isSignUp, googleClientId])
 
   /**
    * Handle input changes
@@ -158,13 +196,8 @@ function Login() {
     setError('')
     setSuccess('')
 
-    // Always show the warmup overlay on login attempts so users see
-    // an immediate visual response, even before any cold-start retries kick in.
     let warmupStarted = false
-    if (!isSignUp) {
-      dispatchWarmupStarted()
-      warmupStarted = true
-    }
+    let keepWarmupForDashboard = false
 
     try {
       if (isSignUp) {
@@ -235,6 +268,14 @@ function Login() {
           // Check if there's a redirect URL
           const targetPath = redirectUrl || '/dashboard'
 
+          // If we're heading to the dashboard, show warmup overlay until dashboard has loaded.
+          if (!redirectUrl && targetPath === '/dashboard') {
+            sessionStorage.setItem('dashboardWarmupPending', 'true')
+            keepWarmupForDashboard = true
+            dispatchWarmupStarted()
+            warmupStarted = true
+          }
+
           // Detect if we're on a mobile device
           const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
@@ -255,7 +296,9 @@ function Login() {
       setError(humanizeLoginError(err, isSignUp, t))
     } finally {
       setLoading(false)
-      if (warmupStarted) {
+      // Only end warmup immediately if we are NOT transitioning into
+      // the authenticated dashboard load flow.
+      if (warmupStarted && !keepWarmupForDashboard) {
         dispatchWarmupEnded()
       }
     }
@@ -311,6 +354,9 @@ function Login() {
         const targetPath = redirectUrl || '/dashboard'
         const fullPath = `${basename}${targetPath}`
 
+        // Do not start warmup overlay after 2FA; let API retries show it only if needed.
+        // Starting it here caused overlay/dashboard to flip repeatedly when other requests retried.
+
         // Use window.location for mobile compatibility
         // This forces a full reload which ensures App.jsx re-checks session
         window.location.href = fullPath
@@ -319,13 +365,13 @@ function Login() {
         // Longer delay for event processing
         await new Promise(resolve => setTimeout(resolve, 200))
 
-        // Check if there's a redirect URL
-        if (redirectUrl) {
-          navigate(redirectUrl, { replace: true })
-        } else {
-          // Navigate to dashboard - App.jsx should now detect the session
-          navigate('/dashboard', { replace: true })
-        }
+        const targetPath = redirectUrl || '/dashboard'
+
+        // Do not start warmup overlay after 2FA; let API retries show it only if needed.
+        // Starting it here caused overlay/dashboard to flip repeatedly when other requests retried.
+
+        // Navigate to the appropriate target
+        navigate(targetPath, { replace: true })
       }
     } catch (error) {
       console.error('Error handling 2FA success:', error)
@@ -345,6 +391,52 @@ function Login() {
     setFormData({ email: '', password: '', confirmPassword: '' })
     handle2FASuccessRef.current = false // Reset to allow retry
   }
+
+  /**
+   * Handle Google Sign-In credential from Google Identity Services.
+   */
+  const handleGoogleSignIn = async (idToken) => {
+    setLoading(true)
+    setError('')
+    let warmupStarted = false
+    let keepWarmupForDashboard = false
+    try {
+      await authService.signInWithGoogle(idToken)
+      window.dispatchEvent(new CustomEvent('auth-storage-change'))
+      let attempts = 0
+      const maxAttempts = 10
+      while (attempts < maxAttempts) {
+        const token = sessionManager.getToken()
+        const user = sessionManager.getCurrentUser()
+        if (token && user) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 50))
+        attempts++
+      }
+      const targetPath = redirectUrl || '/dashboard'
+      if (!redirectUrl && targetPath === '/dashboard') {
+        sessionStorage.setItem('dashboardWarmupPending', 'true')
+        keepWarmupForDashboard = true
+        dispatchWarmupStarted()
+        warmupStarted = true
+      }
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      if (isMobile) {
+        const basename = import.meta.env.MODE === 'production' ? '/Paire' : ''
+        window.location.href = `${basename}${targetPath}`
+      } else {
+        navigate(targetPath, { replace: true })
+      }
+    } catch (err) {
+      setError(humanizeLoginError(err, false, t))
+    } finally {
+      setLoading(false)
+      if (warmupStarted && !keepWarmupForDashboard) dispatchWarmupEnded()
+    }
+  }
+  googleCallbackRef.current = handleGoogleSignIn
 
   /**
    * Toggle between sign in and sign up
@@ -768,6 +860,20 @@ function Login() {
                   isSignUp ? t('auth.signup') : t('auth.login')
                 )}
               </motion.button>
+
+              {/* Sign in with Google (sign-in mode only) */}
+              {!isSignUp && googleClientId && (
+                <>
+                  <div className="login-form-divider">
+                    <span>{t('auth.or', 'or')}</span>
+                  </div>
+                  <div
+                    ref={googleButtonRef}
+                    className="google-signin-button-wrapper"
+                    aria-label={t('auth.signInWithGoogle', 'Sign in with Google')}
+                  />
+                </>
+              )}
             </motion.form>
 
             {/* Toggle Sign In/Sign Up */}

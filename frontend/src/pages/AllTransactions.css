@@ -229,6 +229,34 @@
   gap: var(--spacing-md);
 }
 
+/* Custom Scrollbar for Transactions List */
+.transactions-container .transactions-scroll {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 7, 26, 0.45) rgba(15, 7, 26, 0.08);
+}
+
+.transactions-container .transactions-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.transactions-container .transactions-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 7, 26, 0.06);
+  border-radius: 999px;
+}
+
+.transactions-container .transactions-scroll::-webkit-scrollbar-thumb {
+  background: rgba(15, 7, 26, 0.45);
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.transactions-container .transactions-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 7, 26, 0.65);
+}
+
 .transaction-item {
   display: flex;
   align-items: center;
@@ -268,6 +296,26 @@
     0 2px 8px rgba(0, 0, 0, 0.2),
     0 1px 4px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dark theme scrollbar overrides */
+[data-theme='dark'] .transactions-container .transactions-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.85) rgba(15, 7, 26, 0.7);
+}
+
+[data-theme='dark'] .transactions-container .transactions-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 7, 26, 0.7);
+}
+
+[data-theme='dark'] .transactions-container .transactions-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+  border-radius: 999px;
+  border: 2px solid rgba(15, 7, 26, 0.9);
+}
+
+[data-theme='dark'] .transactions-container .transactions-scroll::-webkit-scrollbar-thumb:hover {
+  opacity: 0.95;
 }
 
 [data-theme='dark'] .transaction-item:hover {
@@ -468,21 +516,6 @@
   color: var(--text-primary) !important;
   filter: blur(12px) !important;
   opacity: 0.5;
-}
-
-/* ================================
-   Empty State
-   ================================ */
-
-.all-transactions-page .empty-state {
-  text-align: center;
-  padding: var(--spacing-xl);
-}
-
-.all-transactions-page .empty-state p {
-  color: var(--text-light);
-  font-size: 1.0625rem;
-  margin: 0;
 }
 
 /* ================================

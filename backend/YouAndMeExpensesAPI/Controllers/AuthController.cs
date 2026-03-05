@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Google.Apis.Auth;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -204,7 +205,126 @@ namespace YouAndMeExpensesAPI.Controllers
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
-            => HandleProxyResponse(await _shieldAuthService.RefreshTokenAsync(request));
+        {
+            if (request == null || string.IsNullOrEmpty(request.RefreshToken))
+                return BadRequest(new { error = "Refresh token is required" });
+
+            // Try Shield first (email/password users)
+            var shieldResponse = await _shieldAuthService.RefreshTokenAsync(request);
+            if (shieldResponse.IsSuccess && shieldResponse.StatusCode >= 200 && shieldResponse.StatusCode < 300)
+                return HandleProxyResponse(shieldResponse);
+
+            // Fallback: local refresh (e.g. Google sign-in users)
+            var sessionInfo = await _sessionService.GetSessionByRefreshTokenAsync(request.RefreshToken);
+            if (sessionInfo == null)
+                return HandleProxyResponse(shieldResponse); // Return Shield error if no local session
+
+            var (userId, oldTokenId) = sessionInfo.Value;
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return Unauthorized(new { error = "User not found" });
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var accessToken = _jwtTokenService.GenerateAccessToken(user, roles);
+            var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+            var tokenId = _jwtTokenService.GetTokenId(accessToken) ?? Guid.NewGuid().ToString();
+            var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
+            var expiresAt = DateTime.UtcNow.AddDays(jwtSettings.RefreshTokenExpirationDays > 0 ? jwtSettings.RefreshTokenExpirationDays : 7);
+
+            await _sessionService.RevokeSessionAsync(oldTokenId);
+            await _sessionService.CreateSessionAsync(userId, tokenId, newRefreshToken, null, null, expiresAt);
+
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email!,
+                DisplayName = user.DisplayName,
+                AvatarUrl = user.AvatarUrl,
+                EmailConfirmed = user.EmailConfirmed,
+                TwoFactorEnabled = user.TwoFactorEnabled,
+                CreatedAt = user.CreatedAt,
+                Roles = roles
+            };
+
+            return Ok(new { token = accessToken, refreshToken = newRefreshToken, user = userDto });
+        }
+
+        /// <summary>
+        /// Sign in with Google ID token (from Google Identity Services).
+        /// Creates or finds user; returns same shape as login (token, refreshToken, user).
+        /// </summary>
+        [HttpPost("google")]
+        public async Task<IActionResult> Google([FromBody] GoogleLoginRequest googleRequest)
+        {
+            if (googleRequest == null || string.IsNullOrWhiteSpace(googleRequest.IdToken))
+                return BadRequest(new { error = "ID token is required" });
+
+            var clientId = _configuration["Google:ClientId"];
+            if (string.IsNullOrEmpty(clientId))
+            {
+                _logger.LogWarning("Google:ClientId is not configured");
+                return StatusCode(500, new { error = "Google sign-in is not configured" });
+            }
+
+            GoogleJsonWebSignature.Payload? payload;
+            try
+            {
+                var validationSettings = new GoogleJsonWebSignature.ValidationSettings { Audience = new[] { clientId } };
+                payload = await GoogleJsonWebSignature.ValidateAsync(googleRequest.IdToken, validationSettings);
+            }
+            catch (InvalidJwtException ex)
+            {
+                _logger.LogWarning(ex, "Invalid Google ID token");
+                return BadRequest(new { error = "Invalid Google sign-in. Please try again." });
+            }
+
+            if (payload == null)
+                return BadRequest(new { error = "Invalid Google sign-in. Please try again." });
+
+            var email = payload.Email;
+            if (string.IsNullOrEmpty(email))
+                return BadRequest(new { error = "Google account did not provide an email." });
+
+            var name = payload.Name ?? payload.GivenName ?? email.Split('@')[0];
+
+            var existingUser = await _userManager.FindByEmailAsync(email);
+            if (existingUser != null && !string.IsNullOrEmpty(existingUser.PasswordHash))
+                return BadRequest(new { error = "This email is already registered. Please sign in with your password." });
+
+            ApplicationUser? user;
+            if (existingUser != null)
+                user = existingUser;
+            else
+                user = await _userSyncService.SyncUserFromGoogleAsync(email, name);
+
+            if (user == null)
+                return StatusCode(500, new { error = "Failed to create or find user." });
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var accessToken = _jwtTokenService.GenerateAccessToken(user, roles);
+            var refreshToken = _jwtTokenService.GenerateRefreshToken();
+            var tokenId = _jwtTokenService.GetTokenId(accessToken) ?? Guid.NewGuid().ToString();
+            var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
+            var expiresAt = DateTime.UtcNow.AddDays(jwtSettings.RefreshTokenExpirationDays > 0 ? jwtSettings.RefreshTokenExpirationDays : 7);
+
+            var ipAddress = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = Request.Headers.UserAgent.ToString();
+            await _sessionService.CreateSessionAsync(user.Id, tokenId, refreshToken, ipAddress, userAgent, expiresAt);
+
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email!,
+                DisplayName = user.DisplayName,
+                AvatarUrl = user.AvatarUrl,
+                EmailConfirmed = user.EmailConfirmed,
+                TwoFactorEnabled = user.TwoFactorEnabled,
+                CreatedAt = user.CreatedAt,
+                Roles = roles
+            };
+
+            return Ok(new { token = accessToken, refreshToken, user = userDto });
+        }
 
         [Authorize]
         [HttpPost("revoke")]

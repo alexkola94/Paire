@@ -15,6 +15,7 @@ import CategorySelector from '../components/CategorySelector'
 import FormSection from '../components/FormSection'
 import LoadingProgress from '../components/LoadingProgress'
 import SuccessAnimation from '../components/SuccessAnimation'
+import EmptyState from '../components/EmptyState'
 import './ShoppingLists.css'
 
 /**
@@ -854,13 +855,17 @@ function ShoppingLists() {
           <div className="lists-section">
             <h3>{t('shoppingLists.activeLists')} ({activeLists.length})</h3>
             {activeLists.length === 0 ? (
-              <div className="empty-sidebar">
-                <FiList size={32} />
-                <p>{t('shoppingLists.noActiveLists')}</p>
-                <button className="btn btn-sm btn-primary" onClick={() => setShowListForm(true)}>
-                  <FiPlus /> {t('shoppingLists.createList')}
-                </button>
-              </div>
+              <EmptyState
+                variant="compact"
+                asCard={false}
+                icon={<FiList size={32} />}
+                description={t('shoppingLists.noActiveLists')}
+                primaryAction={{
+                  label: t('shoppingLists.createList'),
+                  onClick: () => setShowListForm(true),
+                  icon: <FiPlus />
+                }}
+              />
             ) : (
               <>
                 <motion.div 
@@ -1055,6 +1060,7 @@ function ShoppingLists() {
         title={editingList ? t('shoppingLists.editList') : t('shoppingLists.newList')}
       >
         <form onSubmit={handleListSubmit}>
+          <div className="form-with-scroll">
           <FormSection title={t('transaction.formSections.basicInfo')}>
             <div className="form-group">
               <label>{t('shoppingLists.listName')} *</label>
@@ -1093,6 +1099,7 @@ function ShoppingLists() {
               />
             </div>
           </FormSection>
+          </div>
 
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={resetListForm}>
@@ -1112,6 +1119,7 @@ function ShoppingLists() {
         title={editingItem ? t('shoppingLists.editItem') : t('shoppingLists.addItem')}
       >
         <form onSubmit={handleItemSubmit}>
+          <div className="form-with-scroll">
           {/* Basic Information Section */}
           <FormSection title={t('transaction.formSections.basicInfo')}>
             <div className="form-group">
@@ -1189,6 +1197,7 @@ function ShoppingLists() {
               />
             </div>
           </FormSection>
+          </div>
 
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={resetItemForm}>
@@ -1301,14 +1310,18 @@ function ShoppingLists() {
 
           <div className="items-list" key={`list-${selectedList.list.id}`}>
             {selectedList.items.length === 0 ? (
-              <div className="empty-items">
-                <FiPackage size={48} />
-                <h3>{t('shoppingLists.noItems')}</h3>
-                <p>{t('shoppingLists.noItemsDescription')}</p>
-                <button className="btn btn-primary" onClick={() => setShowItemForm(true)}>
-                  <FiPlus /> {t('shoppingLists.addFirstItem')}
-                </button>
-              </div>
+              <EmptyState
+                variant="compact"
+                asCard={false}
+                icon={<FiPackage size={48} />}
+                title={t('shoppingLists.noItems')}
+                description={t('shoppingLists.noItemsDescription')}
+                primaryAction={{
+                  label: t('shoppingLists.addFirstItem'),
+                  onClick: () => setShowItemForm(true),
+                  icon: <FiPlus />
+                }}
+              />
             ) : (
               selectedList.items.map((item) => {
                 const swipe = swipeState[item.id] || {}
@@ -1436,45 +1449,40 @@ function ShoppingLists() {
         </>
       ) : (
         <div className="empty-selection">
-          {activeLists.length > 0 ? (
-            <>
-              <FiShoppingCart size={64} />
-              <h3>{t('shoppingLists.selectList')}</h3>
-              <p>{t('shoppingLists.selectListDescription')}</p>
-              <div className="mobile-lists-preview">
-                <h4>{t('shoppingLists.activeLists')} ({activeLists.length})</h4>
-                <div className="mobile-lists-grid">
-                  {activeLists.map(list => (
-                    <div
-                      key={list.id}
-                      className="mobile-list-card"
-                      onClick={() => {
-                        // Toggle: if already selected, deselect it; otherwise, select it
-                        if (selectedList?.list.id === list.id) {
-                          setSelectedList(null)
-                        } else {
-                          loadListDetails(list.id)
-                        }
-                        setShowSidebar(false)
-                      }}
-                    >
-                      <h5>{list.name}</h5>
-                      {list.estimatedTotal && (
-                        <div className="mobile-list-estimate">
-                          {formatCurrency(list.estimatedTotal)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          <EmptyState
+            variant="compact"
+            asCard={false}
+            icon={<FiShoppingCart size={64} />}
+            title={t('shoppingLists.selectList')}
+            description={t('shoppingLists.selectListDescription')}
+          />
+          {activeLists.length > 0 && (
+            <div className="mobile-lists-preview">
+              <h4>{t('shoppingLists.activeLists')} ({activeLists.length})</h4>
+              <div className="mobile-lists-grid">
+                {activeLists.map(list => (
+                  <div
+                    key={list.id}
+                    className="mobile-list-card"
+                    onClick={() => {
+                      if (selectedList?.list.id === list.id) {
+                        setSelectedList(null)
+                      } else {
+                        loadListDetails(list.id)
+                      }
+                      setShowSidebar(false)
+                    }}
+                  >
+                    <h5>{list.name}</h5>
+                    {list.estimatedTotal && (
+                      <div className="mobile-list-estimate">
+                        {formatCurrency(list.estimatedTotal)}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            </>
-          ) : (
-            <>
-              <FiShoppingCart size={64} />
-              <h3>{t('shoppingLists.selectList')}</h3>
-              <p>{t('shoppingLists.selectListDescription')}</p>
-            </>
+            </div>
           )}
         </div>
       )

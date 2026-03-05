@@ -19,6 +19,7 @@ public class ValidateCsrfTokenFilter : IAsyncAuthorizationFilter
         "/api/antiforgery/token",
         "/api/auth/login",
         "/api/auth/register",
+        "/api/auth/google",
         "/api/auth/forgot-password",
         "/api/auth/reset-password",
         "/api/auth/verify-email",

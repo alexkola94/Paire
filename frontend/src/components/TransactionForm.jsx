@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiUpload, FiX, FiFileText } from 'react-icons/fi'
+import { FiUpload, FiX, FiFileText, FiInfo, FiSettings } from 'react-icons/fi'
 import { storageService } from '../services/api'
 import CurrencyInput from './CurrencyInput'
 import CategorySelector from './CategorySelector'
 import DateInput from './DateInput'
-import FormSection from './FormSection'
+import FormTabs from './FormTabs'
 
 import AutoCompleteInput from './AutoCompleteInput'
 import DuplicateDetection from './DuplicateDetection'
@@ -54,6 +54,7 @@ function TransactionForm({
   const [uploadProgress, setUploadProgress] = useState(false)
   const [error, setError] = useState('')
   const [duplicateDismissed, setDuplicateDismissed] = useState(false)
+  const [activeTab, setActiveTab] = useState('basic')
 
   // Categories based on transaction type
   const expenseCategories = ['food', 'transport', 'utilities', 'entertainment', 'healthcare', 'shopping', 'education', 'other']
@@ -200,180 +201,184 @@ function TransactionForm({
     )
   }
 
+  const tabConfig = [
+    { id: 'basic', label: t('transaction.formSections.basicInfo'), icon: <FiInfo /> },
+    { id: 'details', label: t('transaction.formSections.additionalDetails'), icon: <FiFileText /> },
+    { id: 'advanced', label: t('transaction.formSections.advanced'), icon: <FiSettings /> }
+  ]
+
   return (
     <form onSubmit={handleSubmit} className="transaction-form">
-      {error && (
-        <div className="alert alert-error">
-          {error}
-        </div>
-      )}
-
-      {/* Duplicate Detection */}
-      <DuplicateDetection
-        similarTransactions={similarTransactions}
-        onDismiss={() => setDuplicateDismissed(true)}
-        onProceed={() => setDuplicateDismissed(true)}
+      <FormTabs.Bar
+        tabs={tabConfig}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
-
-      {/* Quick Fill from Recent Transactions */}
-      {!transaction && recentTransactions.length > 0 && (
-        <QuickFill
-          recentTransactions={recentTransactions}
-          onFill={handleQuickFill}
-          maxItems={5}
-        />
-      )}
-
-      {/* Basic Information Section */}
-      <FormSection title={t('transaction.formSections.basicInfo')}>
-        {/* Smart Category Suggestions */}
-        {!transaction && suggestedCategories.length > 0 && (
-          <div className="form-layout-item-full">
-            <SmartCategorySuggestions
-              suggestedCategories={suggestedCategories}
-              currentCategory={formData.category}
-              onSelectCategory={handleCategorySuggestion}
-            />
+      <div className="form-with-scroll">
+        {error && (
+          <div className="alert alert-error">
+            {error}
           </div>
         )}
 
-        {/* Amount - Single column for better spacing */}
-        <CurrencyInput
-          value={formData.amount}
-          onChange={handleChange}
-          name="amount"
-          id="amount"
-          label={`${t('transaction.amount')} *`}
-          required
-          disabled={loading || uploadProgress}
+        <DuplicateDetection
+          similarTransactions={similarTransactions}
+          onDismiss={() => setDuplicateDismissed(true)}
+          onProceed={() => setDuplicateDismissed(true)}
         />
 
-        {/* Category - Full width for better visibility */}
-        <div className="form-layout-item-full">
-          <CategorySelector
-            value={formData.category}
+        <FormTabs.Content activeTab={activeTab}>
+        {/* Tab 1: Basic Info */}
+        <FormTabs.Panel id="basic">
+          {!transaction && recentTransactions.length > 0 && (
+            <div className="form-layout-item-full">
+              <QuickFill
+                recentTransactions={recentTransactions}
+                onFill={handleQuickFill}
+                maxItems={5}
+              />
+            </div>
+          )}
+          {!transaction && suggestedCategories.length > 0 && (
+            <div className="form-layout-item-full">
+              <SmartCategorySuggestions
+                suggestedCategories={suggestedCategories}
+                currentCategory={formData.category}
+                onSelectCategory={handleCategorySuggestion}
+              />
+            </div>
+          )}
+
+          <CurrencyInput
+            value={formData.amount}
             onChange={handleChange}
-            name="category"
-            categories={categories}
-            type={type}
-            label={`${t('transaction.category')} *`}
+            name="amount"
+            id="amount"
+            label={`${t('transaction.amount')} *`}
             required
             disabled={loading || uploadProgress}
           />
-        </div>
 
-        {/* Date - Full width */}
-        <DateInput
-          value={formData.date}
-          onChange={handleChange}
-          name="date"
-          id="date"
-          label={`${t('transaction.date')} *`}
-          required
-          disabled={loading || uploadProgress}
-          showQuickButtons={true}
-        />
+          <div className="form-layout-item-full">
+            <CategorySelector
+              value={formData.category}
+              onChange={handleChange}
+              name="category"
+              categories={categories}
+              type={type}
+              label={`${t('transaction.category')} *`}
+              required
+              disabled={loading || uploadProgress}
+            />
+          </div>
 
-        {/* Description with Auto-complete */}
-        <div className="form-layout-item-full">
-          <AutoCompleteInput
-            value={formData.description}
+          <DateInput
+            value={formData.date}
             onChange={handleChange}
-            suggestions={descriptionSuggestions}
-            name="description"
-            id="description"
-            label={t('transaction.description')}
-            placeholder={t('transaction.descriptionPlaceholder')}
+            name="date"
+            id="date"
+            label={`${t('transaction.date')} *`}
+            required
             disabled={loading || uploadProgress}
-            maxSuggestions={5}
-            minChars={2}
+            showQuickButtons={true}
           />
-        </div>
-      </FormSection>
 
-      {/* Additional Details Section */}
-      <FormSection title={t('transaction.formSections.additionalDetails')} collapsible={true} defaultExpanded={!!formData.attachmentUrl || formData.tags.length > 0}>
-        {/* Tags Input */}
-        <TagsInput
-          tags={formData.tags}
-          onChange={handleChange}
-          name="tags"
-          label={t('transaction.tags.label', 'Tags')}
-          maxTags={10}
-        />
+          <div className="form-layout-item-full">
+            <AutoCompleteInput
+              value={formData.description}
+              onChange={handleChange}
+              suggestions={descriptionSuggestions}
+              name="description"
+              id="description"
+              label={t('transaction.description')}
+              placeholder={t('transaction.descriptionPlaceholder')}
+              disabled={loading || uploadProgress}
+              maxSuggestions={5}
+              minChars={2}
+            />
+          </div>
+        </FormTabs.Panel>
 
-        {/* File Upload */}
-        <div className="form-group">
-          <label>
-            {t('transaction.attachment')}
-          </label>
+        {/* Tab 2: Details */}
+        <FormTabs.Panel id="details">
+          <TagsInput
+            tags={formData.tags}
+            onChange={handleChange}
+            name="tags"
+            label={t('transaction.tags.label', 'Tags')}
+            maxTags={10}
+          />
 
-          {!file && !formData.attachmentUrl ? (
-            <div className="file-upload">
-              <input
-                type="file"
-                id="file-input"
-                accept="image/*,.pdf"
-                onChange={handleFileChange}
-                className="file-input-hidden"
-              />
-              <label htmlFor="file-input" className="file-upload-label">
-                <FiUpload size={20} />
-                <span>{t('transaction.uploadReceipt')}</span>
-              </label>
-            </div>
-          ) : (
-            <div className="file-preview">
-              <FiFileText size={20} />
-              <span className="file-name">
-                {file?.name || t('transaction.attachedFile')}
-              </span>
-              <button
-                type="button"
-                onClick={removeFile}
-                className="remove-file-btn"
-                aria-label={t('transaction.deleteAttachment')}
-              >
-                <FiX size={18} />
-              </button>
-            </div>
+          <div className="form-group">
+            <label>
+              {t('transaction.attachment')}
+            </label>
+
+            {!file && !formData.attachmentUrl ? (
+              <div className="file-upload">
+                <input
+                  type="file"
+                  id="file-input"
+                  accept="image/*,.pdf"
+                  onChange={handleFileChange}
+                  className="file-input-hidden"
+                />
+                <label htmlFor="file-input" className="file-upload-label">
+                  <FiUpload size={20} />
+                  <span>{t('transaction.uploadReceipt')}</span>
+                </label>
+              </div>
+            ) : (
+              <div className="file-preview">
+                <FiFileText size={20} />
+                <span className="file-name">
+                  {file?.name || t('transaction.attachedFile')}
+                </span>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="remove-file-btn"
+                  aria-label={t('transaction.deleteAttachment')}
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+            )}
+          </div>
+        </FormTabs.Panel>
+
+        {/* Tab 3: Advanced */}
+        <FormTabs.Panel id="advanced">
+          <RecurringTransaction
+            isRecurring={formData.isRecurring}
+            recurrencePattern={formData.recurrencePattern}
+            recurrenceEndDate={formData.recurrenceEndDate}
+            onToggle={(checked) => setFormData(prev => ({ ...prev, isRecurring: checked }))}
+            onPatternChange={(pattern) => setFormData(prev => ({ ...prev, recurrencePattern: pattern }))}
+            onEndDateChange={(date) => setFormData(prev => ({ ...prev, recurrenceEndDate: date }))}
+          />
+
+          {type === 'expense' && (
+            <SplitTransaction
+              enabled={!!formData.splitType}
+              splitType={formData.splitType || 'equal'}
+              splitPercentage={formData.splitPercentage}
+              paidBy={formData.paidBy}
+              onToggle={(checked) => setFormData(prev => ({
+                ...prev,
+                splitType: checked ? 'equal' : null,
+                splitPercentage: checked ? 50 : 50
+              }))}
+              onSplitTypeChange={(splitType) => setFormData(prev => ({ ...prev, splitType }))}
+              onPercentageChange={(percentage) => setFormData(prev => ({ ...prev, splitPercentage: percentage }))}
+              onPaidByChange={(paidBy) => setFormData(prev => ({ ...prev, paidBy }))}
+              partnerName={t('transaction.split.partner', 'Partner')}
+            />
           )}
-        </div>
-      </FormSection>
+        </FormTabs.Panel>
+        </FormTabs.Content>
+      </div>
 
-      {/* Advanced Features Section */}
-      <FormSection title={t('transaction.formSections.advanced')} collapsible={true} defaultExpanded={formData.isRecurring || formData.splitType}>
-        {/* Recurring Transaction */}
-        <RecurringTransaction
-          isRecurring={formData.isRecurring}
-          recurrencePattern={formData.recurrencePattern}
-          recurrenceEndDate={formData.recurrenceEndDate}
-          onToggle={(checked) => setFormData(prev => ({ ...prev, isRecurring: checked }))}
-          onPatternChange={(pattern) => setFormData(prev => ({ ...prev, recurrencePattern: pattern }))}
-          onEndDateChange={(date) => setFormData(prev => ({ ...prev, recurrenceEndDate: date }))}
-        />
-
-        {/* Split Transaction - Only show for expenses */}
-        {type === 'expense' && (
-          <SplitTransaction
-            enabled={!!formData.splitType}
-            splitType={formData.splitType || 'equal'}
-            splitPercentage={formData.splitPercentage}
-            paidBy={formData.paidBy}
-            onToggle={(checked) => setFormData(prev => ({
-              ...prev,
-              splitType: checked ? 'equal' : null,
-              splitPercentage: checked ? 50 : 50
-            }))}
-            onSplitTypeChange={(splitType) => setFormData(prev => ({ ...prev, splitType }))}
-            onPercentageChange={(percentage) => setFormData(prev => ({ ...prev, splitPercentage: percentage }))}
-            onPaidByChange={(paidBy) => setFormData(prev => ({ ...prev, paidBy }))}
-            partnerName={t('transaction.split.partner', 'Partner')}
-          />
-        )}
-      </FormSection>
-
-      {/* Form Actions */}
       <div className="form-actions">
         <button
           type="button"

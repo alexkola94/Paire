@@ -126,6 +126,15 @@ namespace YouAndMeExpensesAPI.Models
     }
 
     /// <summary>
+    /// Google sign-in request (ID token from Google Identity Services).
+    /// </summary>
+    public class GoogleLoginRequest
+    {
+        [Required]
+        public string IdToken { get; set; } = string.Empty;
+    }
+
+    /// <summary>
     /// Refresh token request
     /// </summary>
     public class RefreshTokenRequest

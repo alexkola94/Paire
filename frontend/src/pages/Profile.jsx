@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { FiUser, FiMail, FiGlobe, FiLock, FiCamera, FiSave, FiTrash2, FiAlertTriangle, FiDatabase } from 'react-icons/fi'
+import { useLogout } from '../context/LogoutContext'
+import { useModalRegistration } from '../context/ModalContext'
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
 import { getBackendUrl } from '../utils/getBackendUrl'
@@ -16,6 +18,7 @@ import './Profile.css'
  */
 function Profile() {
   const { t, i18n } = useTranslation()
+  const { startLogout } = useLogout()
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -38,6 +41,8 @@ function Profile() {
   const [clearDataConfirmation, setClearDataConfirmation] = useState('')
   const [clearingData, setClearingData] = useState(false)
   const [clearDataRequest, setClearDataRequest] = useState(null)
+
+  useModalRegistration(showClearDataModal, 'clear-data-modal')
 
   /**
    * Load user data on mount
@@ -242,6 +247,7 @@ function Profile() {
         })
         // Log out user after clearing data
         setTimeout(() => {
+          startLogout()
           authService.signOut()
         }, 2000)
       }

@@ -27,6 +27,7 @@ import {
   FiPaperclip
 } from 'react-icons/fi'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
+import { useModalRegistration } from '../context/ModalContext'
 import './TransactionDetailModal.css'
 
 /**
@@ -44,6 +45,8 @@ function TransactionDetailModal({ transaction, onClose, isOpen }) {
   const modalRef = useRef(null)
   const overlayRef = useRef(null)
   const dateLocale = getDateFnsLocale(i18n.language)
+
+  useModalRegistration(isOpen, 'transaction-detail-modal')
 
   // Handle click outside to close
   useEffect(() => {
@@ -63,14 +66,11 @@ function TransactionDetailModal({ transaction, onClose, isOpen }) {
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       document.addEventListener('keydown', handleEscapeKey)
-      // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden'
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleEscapeKey)
-      document.body.style.overflow = ''
     }
   }, [isOpen, onClose])
 

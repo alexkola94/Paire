@@ -2,6 +2,9 @@ import { createContext, useContext, useState, useCallback, useRef, useEffect } f
 
 const WarmupContext = createContext(null)
 
+/** Cooldown (ms) after hiding overlay during which we ignore new warmup-started events. Prevents rapid overlay/dashboard flipping after 2FA or when multiple requests retry in sequence. */
+const WARMUP_COOLDOWN_MS = 2500
+
 /**
  * Tracks whether the app is currently retrying requests due to a cold-start.
  * Components (like WarmupOverlay) can subscribe via useWarmup() to show
@@ -13,8 +16,10 @@ const WarmupContext = createContext(null)
 export function WarmupProvider({ children }) {
   const [isWarmingUp, setIsWarmingUp] = useState(false)
   const activeRetries = useRef(0)
+  const cooldownUntilRef = useRef(0)
 
   const notifyRetryStarted = useCallback(() => {
+    if (Date.now() < cooldownUntilRef.current) return
     activeRetries.current += 1
     setIsWarmingUp(true)
   }, [])
@@ -22,6 +27,7 @@ export function WarmupProvider({ children }) {
   const notifyRetryEnded = useCallback(() => {
     activeRetries.current = Math.max(0, activeRetries.current - 1)
     if (activeRetries.current === 0) {
+      cooldownUntilRef.current = Date.now() + WARMUP_COOLDOWN_MS
       setIsWarmingUp(false)
     }
   }, [])

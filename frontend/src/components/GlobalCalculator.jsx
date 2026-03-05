@@ -10,6 +10,7 @@ import {
     FiMinus
 } from 'react-icons/fi'
 import { useCalculator } from '../context/CalculatorContext'
+import { useModalRegistration } from '../context/ModalContext'
 import './GlobalCalculator.css'
 
 /**
@@ -95,6 +96,8 @@ function GlobalCalculator() {
         calculate,
         toggleSign
     } = useCalculator()
+
+    useModalRegistration(isOpen, 'global-calculator')
     
     // Detect mobile
     const [isMobile, setIsMobile] = useState(false)

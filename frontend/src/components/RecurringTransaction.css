@@ -32,12 +32,70 @@
   opacity: 0.8;
 }
 
-.recurring-checkbox {
+/* Hide native checkbox; custom box is shown instead */
+.recurring-toggle-label .recurring-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+
+.recurring-checkbox-custom {
+  position: relative;
+  flex-shrink: 0;
   width: 20px;
   height: 20px;
   margin-right: var(--spacing-sm);
-  cursor: pointer;
-  accent-color: var(--primary);
+  background-color: var(--bg-primary);
+  border: 2px solid #9CA3AF;
+  border-radius: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.recurring-toggle-label:hover .recurring-checkbox-custom {
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.recurring-toggle-label .recurring-checkbox:checked ~ .recurring-checkbox-custom {
+  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #C4B5FD 100%);
+  border-color: #8B5CF6;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.recurring-checkbox-custom::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.recurring-toggle-label .recurring-checkbox:checked ~ .recurring-checkbox-custom::after {
+  display: block;
+}
+
+[data-theme='dark'] .recurring-checkbox-custom {
+  background-color: rgba(15, 7, 26, 0.6);
+  border-color: #6B7280;
+}
+
+[data-theme='dark'] .recurring-toggle-label:hover .recurring-checkbox-custom {
+  border-color: #A78BFA;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+}
+
+[data-theme='dark'] .recurring-toggle-label .recurring-checkbox:checked ~ .recurring-checkbox-custom {
+  background: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 50%, #DDD6FE 100%);
+  border-color: #A78BFA;
+  box-shadow: 0 2px 8px rgba(167, 139, 250, 0.4);
 }
 
 .recurring-toggle-content {
@@ -72,9 +130,16 @@
   }
 }
 
+.recurring-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .recurring-select {
   width: 100%;
-  padding: 12px 16px;
+  padding: 12px 40px 12px 16px;
+  line-height: 1.5;
   background: var(--bg-secondary);
   border: 2px solid var(--bg-tertiary);
   border-radius: var(--radius-md);
@@ -83,12 +148,26 @@
   font-family: inherit;
   cursor: pointer;
   transition: var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: none !important;
 }
 
 .recurring-select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+}
+
+.recurring-select-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-secondary);
+  width: 18px;
+  height: 18px;
 }
 
 .recurring-date-input,

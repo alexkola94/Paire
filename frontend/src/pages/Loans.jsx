@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDown, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiCheckCircle, FiClock, FiList, FiTrendingDown, FiChevronLeft, FiChevronRight, FiDollarSign } from 'react-icons/fi'
 import { loanService, loanPaymentService } from '../services/api'
 import { format } from 'date-fns'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -14,6 +14,7 @@ import SuccessAnimation from '../components/SuccessAnimation'
 import LoadingProgress from '../components/LoadingProgress'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import EmptyState from '../components/EmptyState'
 import './Loans.css'
 
 /**
@@ -400,6 +401,7 @@ function Loans() {
         title={editingLoan ? t('loans.editLoan') : t('loans.addLoan')}
       >
         <form onSubmit={handleSubmit} className="loan-form">
+          <div className="form-with-scroll">
           {/* Basic Information Section */}
           <FormSection title={t('transaction.formSections.basicInfo')}>
             {/* Loan Type */}
@@ -516,9 +518,11 @@ function Loans() {
                 placeholder={t('loans.additionalNotes')}
                 rows="3"
                 disabled={formLoading}
+                required
               />
             </div>
           </FormSection>
+          </div>
 
           {/* Form Actions */}
           <div className="form-actions">
@@ -553,16 +557,15 @@ function Loans() {
 
       {/* Loans List */}
       {loans.length === 0 ? (
-        <div className="card empty-state">
-          <p>{t('loans.noLoans')}</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
-            <FiPlus />
-            {t('loans.addLoan')}
-          </button>
-        </div>
+        <EmptyState
+          icon={<FiDollarSign size={64} />}
+          description={t('loans.noLoans')}
+          primaryAction={{
+            label: t('loans.addLoan'),
+            onClick: () => setShowForm(true),
+            icon: <FiPlus />
+          }}
+        />
       ) : (
         <motion.div 
           className="loans-grid"

@@ -13,7 +13,6 @@ import { sessionManager } from './sessionManager';
 import { isTokenExpired } from '../utils/tokenUtils';
 import { getDeviceFingerprint, clearDeviceFingerprintCache } from '../utils/deviceFingerprint';
 import { fetchWithRetry } from '../utils/retryFetch';
-import { dispatchWarmupStarted, dispatchWarmupEnded } from '../context/WarmupContext';
 
 /**
  * Get stored auth token (from sessionStorage)
@@ -118,22 +117,10 @@ const apiRequest = async (url, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  let warmupSignaled = false
-
   try {
     const response = await fetchWithRetry(
-      () => fetch(fullUrl, { ...options, headers }),
-      {
-        onRetry: () => {
-          if (!warmupSignaled) {
-            warmupSignaled = true
-            dispatchWarmupStarted()
-          }
-        },
-      }
+      () => fetch(fullUrl, { ...options, headers })
     )
-
-    if (warmupSignaled) dispatchWarmupEnded()
 
     // Handle 401 Unauthorized - session expired or invalid
     if (response.status === 401) {
@@ -185,8 +172,6 @@ const apiRequest = async (url, options = {}) => {
     const data = await response.json()
     return data
   } catch (error) {
-    if (warmupSignaled) dispatchWarmupEnded()
-
     // Network errors (CORS, connection refused, etc.)
     if (error.name === 'TypeError' || error.message?.includes('Failed to fetch')) {
       const detailedError = `Cannot connect to API at ${fullUrl}. Please check if the server is running and CORS is configured correctly.`;
@@ -278,6 +263,25 @@ export const authService = {
       return data
     } catch (error) {
       console.error('Registration error:', error);
+      throw error
+    }
+  },
+
+  /**
+   * Sign in with Google ID token (from Google Identity Services).
+   * Stores session and returns same shape as signIn (token, refreshToken, user).
+   */
+  async signInWithGoogle(idToken) {
+    try {
+      const data = await apiRequest('/api/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ idToken })
+      })
+
+      storeAuthData(data.token, data.refreshToken, data.user, true)
+      return data
+    } catch (error) {
+      console.error('Sign in with Google error:', error)
       throw error
     }
   },

@@ -83,7 +83,7 @@ DateHeader.displayName = 'DateHeader'
 
 const TransactionTimeline = ({
   transactions = [],
-  maxHeight = '600px',
+  maxHeight = 'auto',
   showRelativeDates = true
 }) => {
   const { t, i18n } = useTranslation()
@@ -141,11 +141,16 @@ const TransactionTimeline = ({
     )
   }
 
+  const isScrollable = maxHeight !== 'auto' && maxHeight !== null
+
   return (
     <div
       ref={containerRef}
       className={`timeline-container ${isMobile ? 'timeline-mobile' : 'timeline-desktop'}`}
-      style={{ maxHeight, overflowY: 'auto' }}
+      style={{
+        maxHeight: isScrollable ? maxHeight : 'none',
+        overflowY: isScrollable ? 'auto' : 'visible'
+      }}
     >
       <div className="timeline-axis" />
 

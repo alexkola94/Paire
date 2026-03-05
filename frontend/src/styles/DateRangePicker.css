@@ -84,13 +84,15 @@
     color: var(--text-secondary, #64748b);
 }
 
-/* Dropdown */
+/* Dropdown: fixed width, clip overflow so grid stays inside */
 .picker-dropdown {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
     left: auto;
-    width: 320px;
+    min-width: 336px;
+    width: 336px;
+    box-sizing: border-box;
     background: var(--bg-card, #ffffff);
     border-radius: 16px;
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -135,9 +137,15 @@
     color: var(--text-primary, #1e293b);
 }
 
-/* Calendar Month */
+/* Calendar Month: constrain width so grid doesn't overflow */
+.picker-calendars {
+    min-width: 0;
+}
+
 .picker-month {
     text-align: center;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .picker-month-header {
@@ -146,10 +154,10 @@
     color: var(--text-primary, #1e293b);
 }
 
-/* Grid */
+/* Grid: minmax(0, 1fr) keeps columns inside the dropdown, no overflow */
 .picker-grid-header {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     margin-bottom: 0.5rem;
 }
 
@@ -158,19 +166,21 @@
     font-weight: 600;
     color: var(--text-tertiary, #94a3b8);
     text-align: center;
+    min-width: 0;
 }
 
 .picker-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
-    /* Mobile: ensure day cells are at least 44px for touch */
+    width: 100%;
     min-width: 0;
 }
 
 .picker-day {
     aspect-ratio: 1;
     min-height: 36px;
+    min-width: 0; /* allow column to shrink within grid */
     border: none;
     background: none;
     font-size: 0.875rem;

@@ -25,7 +25,9 @@ import LogoLoader from '../components/LogoLoader'
 import Dropdown from '../components/Dropdown'
 import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
+import { useModalRegistration } from '../context/ModalContext'
 import AddToCalculatorButton from '../components/AddToCalculatorButton'
+import EmptyState from '../components/EmptyState'
 import ExcelJS from 'exceljs'
 import './Analytics.css'
 import '../styles/AddToCalculator.css'
@@ -64,6 +66,8 @@ function Analytics() {
   const [allFilteredTransactions, setAllFilteredTransactions] = useState([])
   const modalRef = useRef(null)
   const closeButtonRef = useRef(null)
+
+  useModalRegistration(categoryModalOpen, 'analytics-category-modal')
 
   /**
    * Load analytics data on mount and when date range or filter changes
@@ -754,7 +758,6 @@ function Analytics() {
     if (categoryModalOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       document.addEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'hidden'
       // Focus the close button for accessibility
       setTimeout(() => {
         closeButtonRef.current?.focus()
@@ -764,7 +767,6 @@ function Analytics() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = ''
     }
   }, [categoryModalOpen])
 
@@ -1006,11 +1008,13 @@ function Analytics() {
               </div>
             </>
           ) : (
-            <div className="empty-chart-state">
-              <FiPieChart size={64} />
-              <h3>{t('analytics.noCategoryData')}</h3>
-              <p>{t('analytics.noCategoryDataDescription')}</p>
-            </div>
+            <EmptyState
+              variant="compact"
+              asCard={false}
+              icon={<FiPieChart size={64} />}
+              title={t('analytics.noCategoryData')}
+              description={t('analytics.noCategoryDataDescription')}
+            />
           )}
         </div>
 
@@ -1157,10 +1161,12 @@ function Analytics() {
             {/* Modal Content - Transaction List */}
             <div className="category-modal-content">
               {categoryTransactions.length === 0 ? (
-                <div className="empty-transactions">
-                  <FiFileText size={48} />
-                  <p>{t('analytics.noTransactionsInCategory', 'No transactions in this category')}</p>
-                </div>
+                <EmptyState
+                  variant="compact"
+                  asCard={false}
+                  icon={<FiFileText size={48} />}
+                  description={t('analytics.noTransactionsInCategory', 'No transactions in this category')}
+                />
               ) : (
                 <div className="category-transactions-list">
                   {categoryTransactions.map((tx, index) => (

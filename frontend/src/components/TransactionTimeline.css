@@ -8,7 +8,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   padding: var(--spacing-md) 0;
-  padding-right: var(--spacing-md);
+  padding-right: calc(var(--spacing-md) - 2px);
   /* Ensure scrollbar appears at the far right with offset */
   scrollbar-gutter: stable;
   /* Smooth scrolling */
@@ -48,8 +48,8 @@
 
 /* Custom scrollbar styling - minimalist pill design */
 .timeline-container::-webkit-scrollbar {
-  width: 6px;
-  margin-right: 4px;
+  width: 5px;
+  margin-right: 2px;
 }
 
 .timeline-container::-webkit-scrollbar-track {
@@ -58,24 +58,26 @@
 }
 
 .timeline-container::-webkit-scrollbar-thumb {
-  background: var(--primary);
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.75), rgba(139, 92, 246, 0.35));
   border-radius: 100px;
   min-height: 40px;
-  transition: background 0.2s ease;
+  box-shadow: 0 0 0 1px rgba(15, 7, 26, 0.25);
+  transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .timeline-container::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.9), rgba(139, 92, 246, 0.55));
+  box-shadow: 0 0 0 1px rgba(15, 7, 26, 0.4);
 }
 
 .timeline-container::-webkit-scrollbar-thumb:active {
-  background: var(--primary-dark);
+  background: linear-gradient(180deg, rgba(139, 92, 246, 1), rgba(139, 92, 246, 0.7));
 }
 
 /* Firefox scrollbar - thin minimalist style */
 .timeline-container {
   scrollbar-width: thin;
-  scrollbar-color: var(--primary) transparent;
+  scrollbar-color: rgba(139, 92, 246, 0.7) transparent;
 }
 
 /* Scrollbar offset wrapper */
@@ -127,8 +129,8 @@
 
 .timeline-item-desktop {
   display: grid;
-  grid-template-columns: 1fr 60px 1fr;
-  gap: var(--spacing-sm);
+  grid-template-columns: 1fr 56px 1fr;
+  gap: var(--spacing-xs);
   align-items: center;
   padding: var(--spacing-xs) var(--spacing-md);
 }
@@ -140,7 +142,7 @@
 
 .timeline-side-left {
   justify-content: flex-end;
-  padding-right: var(--spacing-sm);
+  padding-right: var(--spacing-xs);
 }
 
 .timeline-side-right {
@@ -156,6 +158,15 @@
   justify-content: center;
   position: relative;
   z-index: 2;
+}
+
+/* Subtle horizontal offset so income side sits clearly right of the axis */
+.timeline-item-left .timeline-center {
+  transform: translateX(-6px);
+}
+
+.timeline-item-right .timeline-center {
+  transform: translateX(6px);
 }
 
 .timeline-node-circle {
@@ -207,6 +218,15 @@
 .timeline-connector-right {
   left: 50%;
   background: linear-gradient(to right, var(--success-dark), transparent);
+}
+
+/* Ensure connectors align with shifted center nodes for each side */
+.timeline-item-left .timeline-connector-left {
+  right: calc(50% - 6px);
+}
+
+.timeline-item-right .timeline-connector-right {
+  left: calc(50% + 6px);
 }
 
 /* ================================
@@ -435,6 +455,20 @@
 
 [data-theme='dark'] .timeline-node-circle {
   background: var(--bg-secondary);
+}
+
+/* Dark theme scrollbar refinement */
+[data-theme='dark'] .timeline-container {
+  scrollbar-color: rgba(139, 92, 246, 0.85) transparent;
+}
+
+[data-theme='dark'] .timeline-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.95), rgba(88, 28, 135, 0.9));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='dark'] .timeline-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(167, 139, 250, 1), rgba(124, 58, 237, 1));
 }
 
 /* ================================

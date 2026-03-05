@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiX, FiDownload } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiX, FiDownload, FiTrendingUp } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
@@ -19,6 +19,7 @@ import TransactionDetailModal from '../components/TransactionDetailModal'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
 import useToast from '../hooks/useToast'
 import AddToCalculatorButton from '../components/AddToCalculatorButton'
+import EmptyState from '../components/EmptyState'
 import './Income.css'
 import '../styles/AddToCalculator.css'
 
@@ -268,20 +269,20 @@ function Income() {
 
       {/* Income List */}
       {totalItems === 0 && !loading ? (
-        <div className="card empty-state">
-          <p>{t('income.noIncome')}</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
-            <FiPlus />
-            {t('income.addIncome')}
-          </button>
-        </div>
+        <EmptyState
+          icon={<FiTrendingUp size={64} />}
+          description={t('income.noIncome')}
+          primaryAction={{
+            label: t('income.addIncome'),
+            onClick: () => setShowForm(true),
+            icon: <FiPlus />
+          }}
+        />
       ) : displayedIncomes.length === 0 && !loading ? (
-        <div className="card empty-state">
-          <p>{t('common.noResults', 'No income found matching your search.')}</p>
-        </div>
+        <EmptyState
+          variant="noResults"
+          description={t('common.noResults', 'No income found matching your search.')}
+        />
       ) : (
         <motion.div 
           className="data-cards-grid"

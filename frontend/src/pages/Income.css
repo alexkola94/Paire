@@ -182,7 +182,7 @@
   font-size: clamp(1rem, 2.5vw, 1.1rem);
   font-weight: 700;
   /* Mesh gradient for income amounts */
-  background: linear-gradient(135deg, #10B981 0%, #34D399 50%, #059669 100%);
+  /*background: linear-gradient(135deg, #10B981 0%, #34D399 50%, #059669 100%);*/
 }
 
 /* Privacy mode overrides for income amounts */

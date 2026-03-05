@@ -28,8 +28,10 @@ import Dropdown from '../components/Dropdown'
 import { FiTarget, FiPieChart } from 'react-icons/fi'
 import TransactionDetailModal from '../components/TransactionDetailModal'
 import PrivacyToggle from '../components/PrivacyToggle'
+import EmptyState from '../components/EmptyState'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
 import { useCurrencyPopover } from '../context/CurrencyPopoverContext'
+import { useWarmup, dispatchWarmupStarted, dispatchWarmupEnded } from '../context/WarmupContext'
 import './Dashboard.css'
 
 /**
@@ -40,6 +42,7 @@ import './Dashboard.css'
 function Dashboard() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const { isWarmingUp } = useWarmup()
   const { isPrivate } = usePrivacyMode() // Privacy mode for hiding amounts
   const { openCurrencyPopover } = useCurrencyPopover() // Open currency calculator popover (no navigation)
   const [refreshing, setRefreshing] = useState(false)
@@ -109,6 +112,48 @@ function Dashboard() {
       setRefreshing(false)
     }
   }, [queryClient])
+
+  /**
+   * On mount, if we arrived via full-page redirect (e.g. mobile after login),
+   * start the warmup overlay so it shows until initial data has loaded.
+   * Only start when !isWarmingUp so we don't double-count on client-side
+   * navigate (Login already started the overlay).
+   */
+  useEffect(() => {
+    if (sessionStorage.getItem('dashboardWarmupPending') === 'true' && !isWarmingUp) {
+      dispatchWarmupStarted()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount to restore overlay after full redirect
+  }, [])
+
+  /**
+   * When arriving from a fresh login, keep the warmup overlay visible
+   * until the dashboard's initial data has finished loading.
+   * Uses a session-scoped flag set by the login flow.
+   */
+  useEffect(() => {
+    if (sessionStorage.getItem('dashboardWarmupPending') === 'true' && dataLoaded) {
+      dispatchWarmupEnded()
+      sessionStorage.removeItem('dashboardWarmupPending')
+    }
+  }, [dataLoaded])
+
+  /**
+   * Safety timeout: if for some reason the dashboard never fully loads
+   * (e.g. backend failure), ensure the warmup overlay eventually hides.
+   */
+  useEffect(() => {
+    if (sessionStorage.getItem('dashboardWarmupPending') !== 'true') return
+
+    const timeoutId = setTimeout(() => {
+      if (sessionStorage.getItem('dashboardWarmupPending') === 'true') {
+        dispatchWarmupEnded()
+        sessionStorage.removeItem('dashboardWarmupPending')
+      }
+    }, 60000) // 60s safety window
+
+    return () => clearTimeout(timeoutId)
+  }, [])
 
   /**
    * Load partnerships for filter options
@@ -648,19 +693,14 @@ function Dashboard() {
         </div>
 
         {recentTransactions.length === 0 ? (
-          <div className="empty-state">
-            <p>{t('dashboard.noTransactions')}</p>
-            <div className="quick-actions">
-              <Link to="/expenses" className="btn btn-primary">
-                <FiTrendingDown />
-                {t('expenses.addExpense')}
-              </Link>
-              <Link to="/income" className="btn btn-secondary">
-                <FiTrendingUp />
-                {t('income.addIncome')}
-              </Link>
-            </div>
-          </div>
+          <EmptyState
+            description={t('dashboard.noTransactions')}
+            asCard={false}
+            primaryAction={{ label: t('expenses.addExpense'), to: '/expenses', icon: <FiTrendingDown /> }}
+            secondaryActions={[
+              { label: t('income.addIncome'), to: '/income', icon: <FiTrendingUp /> }
+            ]}
+          />
         ) : (
           <>
             <motion.div 

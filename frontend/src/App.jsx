@@ -12,9 +12,11 @@ import { PrivacyModeProvider } from './context/PrivacyModeContext'
 import { ModalProvider } from './context/ModalContext'
 import { CalculatorProvider } from './context/CalculatorContext'
 import { WarmupProvider } from './context/WarmupContext'
+import { LogoutProvider } from './context/LogoutContext'
 import { TravelModeProvider, useTravelMode } from './travel/context/TravelModeContext'
 import LogoLoader from './components/LogoLoader'
 import WarmupOverlay from './components/WarmupOverlay'
+import LogoutLoadingOverlay from './components/LogoutLoadingOverlay'
 import AirplaneTransition from './components/AirplaneTransition'
 import { ToastProvider } from './components/Toast'
 import { warmUpApis } from './utils/warmupService'
@@ -421,8 +423,11 @@ function App() {
               <TravelModeProvider>
                 <ToastProvider>
                   <CalculatorProvider>
-                    <AppContent session={session} />
-                    <WarmupOverlay />
+                    <LogoutProvider>
+                      <AppContent session={session} />
+                      <WarmupOverlay />
+                      <LogoutLoadingOverlay />
+                    </LogoutProvider>
                   </CalculatorProvider>
                 </ToastProvider>
               </TravelModeProvider>

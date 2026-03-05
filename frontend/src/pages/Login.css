@@ -272,6 +272,41 @@
   gap: var(--spacing-lg);
 }
 
+/* Divider and Google Sign-In */
+.login-form-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
+}
+.login-form-divider::before,
+.login-form-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+[data-theme='dark'] .login-form-divider::before,
+[data-theme='dark'] .login-form-divider::after {
+  background: rgba(255, 255, 255, 0.1);
+}
+.login-form-divider span {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.google-signin-button-wrapper {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: opacity 0.3s ease;
+}
+.google-signin-button-wrapper:empty {
+  min-height: 44px;
+}
+
 .login-form label {
   display: flex;
   align-items: center;

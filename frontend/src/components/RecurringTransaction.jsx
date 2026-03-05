@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiRepeat } from 'react-icons/fi'
+import { FiRepeat, FiChevronDown } from 'react-icons/fi'
 import DatePicker from './DatePicker'
 import './RecurringTransaction.css'
 
@@ -43,6 +43,7 @@ function RecurringTransaction({
             onChange={(e) => handleToggle(e.target.checked)}
             className="recurring-checkbox"
           />
+          <span className="recurring-checkbox-custom" aria-hidden="true" />
           <div className="recurring-toggle-content">
             <FiRepeat size={18} />
             <span>{t('transaction.recurring.makeRecurring')}</span>
@@ -56,19 +57,22 @@ function RecurringTransaction({
             <label htmlFor="recurrencePattern">
               {t('transaction.recurring.pattern')} *
             </label>
-            <select
-              id="recurrencePattern"
-              name="recurrencePattern"
-              value={recurrencePattern}
-              onChange={(e) => onPatternChange && onPatternChange(e.target.value)}
-              className="recurring-select"
-            >
-              {patterns.map(pattern => (
-                <option key={pattern.value} value={pattern.value}>
-                  {pattern.label}
-                </option>
-              ))}
-            </select>
+            <div className="recurring-select-wrapper">
+              <select
+                id="recurrencePattern"
+                name="recurrencePattern"
+                value={recurrencePattern}
+                onChange={(e) => onPatternChange && onPatternChange(e.target.value)}
+                className="recurring-select"
+              >
+                {patterns.map(pattern => (
+                  <option key={pattern.value} value={pattern.value}>
+                    {pattern.label}
+                  </option>
+                ))}
+              </select>
+              <FiChevronDown className="recurring-select-icon" aria-hidden="true" />
+            </div>
           </div>
 
           <div className="form-group">

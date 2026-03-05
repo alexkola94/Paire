@@ -452,6 +452,7 @@ export default function LoansScreen() {
         title={editingLoan ? t('loans.editTitle') : t('loans.addTitle')}
       >
         <LoanForm
+          key={editingLoan ? `edit-${editingLoan.id}` : 'add'}
           loan={editingLoan}
           onSubmit={handleFormSubmit}
           onCancel={closeForm}

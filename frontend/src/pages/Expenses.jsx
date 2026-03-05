@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 // react-window: import via shim (Vite alias uses ESM build)
 import { FixedSizeList as List } from '../utils/reactWindow'
 import { motion } from 'framer-motion'
-import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiZoomIn, FiDownload, FiX } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiFileText, FiChevronLeft, FiChevronRight, FiZoomIn, FiDownload, FiX, FiTrendingDown } from 'react-icons/fi'
 import { transactionService, storageService } from '../services/api'
 import { format } from 'date-fns'
 import TransactionForm from '../components/TransactionForm'
@@ -27,6 +27,7 @@ import useCurrencyFormatter from '../hooks/useCurrencyFormatter'
 import TransactionDetailModal from '../components/TransactionDetailModal'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
 import AddToCalculatorButton from '../components/AddToCalculatorButton'
+import EmptyState from '../components/EmptyState'
 import './Expenses.css'
 
 /** Row renderer for react-window virtualized expense list */
@@ -535,22 +536,23 @@ function Expenses() {
 
       {/* Expenses List */}
       {totalItems === 0 && !loading ? (
-        <div className="card empty-state">
-          <p>{t('expenses.noExpenses')}</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
-            <FiPlus />
-            {t('expenses.addExpense')}
-          </button>
-        </div>
+        <EmptyState
+          icon={<FiTrendingDown size={64} />}
+          description={t('expenses.noExpenses')}
+          primaryAction={{
+            label: t('expenses.addExpense'),
+            onClick: () => setShowForm(true),
+            icon: <FiPlus />
+          }}
+        />
       ) : displayedExpenses.length === 0 && !loading ? (
-        <div className="card empty-state">
-          <p>{t('common.noResults', 'No expenses found matching your search.')}</p>
-        </div>
-      ) : List ? (
-        <div className="data-cards-grid" style={{ minHeight: Math.min(displayedExpenses.length * 180, 540) }}>
+        <EmptyState
+          variant="noResults"
+          description={t('common.noResults', 'No expenses found matching your search.')}
+        />
+      ) : List && displayedExpenses.length > 6 ? (
+        // For larger lists, use virtualized rendering for performance
+        <div style={{ minHeight: Math.min(displayedExpenses.length * 180, 540) }}>
           <List
             height={Math.min(displayedExpenses.length * 180, 540)}
             itemCount={displayedExpenses.length}
@@ -571,7 +573,8 @@ function Expenses() {
           </List>
         </div>
       ) : (
-        <div className="data-cards-grid" style={{ minHeight: Math.min(displayedExpenses.length * 180, 540), overflow: 'auto' }}>
+        // For small lists, render a simple responsive grid so card size stays consistent
+        <div className="data-cards-grid">
           {displayedExpenses.map((expense, index) => (
             <ExpenseRow
               key={expense.id}

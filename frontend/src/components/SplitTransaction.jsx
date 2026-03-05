@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiUsers, FiPercent, FiDollarSign } from 'react-icons/fi'
+import { FiUsers, FiPercent, FiDollarSign, FiChevronDown } from 'react-icons/fi'
 import './SplitTransaction.css'
 
 /**
@@ -52,6 +52,7 @@ function SplitTransaction({
             onChange={(e) => handleToggle(e.target.checked)}
             className="split-checkbox"
           />
+          <span className="split-checkbox-custom" aria-hidden="true" />
           <div className="split-toggle-content">
             <FiUsers size={18} />
             <span>{t('transaction.split.splitTransaction')}</span>
@@ -119,16 +120,19 @@ function SplitTransaction({
             <label htmlFor="paidBy">
               {t('transaction.split.paidBy')} *
             </label>
-            <select
-              id="paidBy"
-              name="paidBy"
-              value={paidBy}
-              onChange={(e) => onPaidByChange && onPaidByChange(e.target.value)}
-              className="split-select"
-            >
-              <option value="me">{t('transaction.split.me')}</option>
-              <option value="partner">{partnerName}</option>
-            </select>
+            <div className="split-select-wrapper">
+              <select
+                id="paidBy"
+                name="paidBy"
+                value={paidBy}
+                onChange={(e) => onPaidByChange && onPaidByChange(e.target.value)}
+                className="split-select"
+              >
+                <option value="me">{t('transaction.split.me')}</option>
+                <option value="partner">{partnerName}</option>
+              </select>
+              <FiChevronDown className="split-select-icon" aria-hidden="true" />
+            </div>
           </div>
         </div>
       )}

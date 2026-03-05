@@ -45,7 +45,7 @@ const DateRangePicker = ({
 }) => {
     const { t, i18n } = useTranslation()
     const dateLocale = getDateFnsLocale(i18n.language)
-    const displayPlaceholder = placeholder ?? t('travel.datePicker.selectDates', 'Select dates')
+    const displayPlaceholder = placeholder ?? t('common.selectDateRange', 'Select date range')
     const { theme } = useTheme()
     const [isOpen, setIsOpen] = useState(false)
     const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -259,7 +259,7 @@ const DateRangePicker = ({
             return `${format(new Date(startDate), 'MMM d', { locale: dateLocale })} - ${format(new Date(endDate), 'MMM d', { locale: dateLocale })}`
         }
         if (startDate) {
-            return `${format(new Date(startDate), 'MMM d', { locale: dateLocale })} - ${t('travel.datePicker.selectReturn', 'Select return date')}`
+            return `${format(new Date(startDate), 'MMM d', { locale: dateLocale })} - ${t('common.endDate', 'End Date')}`
         }
         return displayPlaceholder
     }
@@ -271,13 +271,14 @@ const DateRangePicker = ({
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
-    const [position, setPosition] = useState({ top: 0, left: 0, width: 320 })
+    const DROPDOWN_WIDTH = 336
+    const [position, setPosition] = useState({ top: 0, left: 0, width: DROPDOWN_WIDTH })
     useEffect(() => {
         if (isOpen && containerRef.current && !isMobile) {
             const rect = containerRef.current.getBoundingClientRect()
-            const DROPDOWN_WIDTH = 320
-            let left = rect.right - DROPDOWN_WIDTH
-            if (left < 10) left = rect.left
+            const margin = 10
+            let left = rect.left
+            left = Math.max(margin, Math.min(left, window.innerWidth - DROPDOWN_WIDTH - margin))
             setPosition({ top: rect.bottom + 8, left })
         }
     }, [isOpen, isMobile])
@@ -324,14 +325,14 @@ const DateRangePicker = ({
                         data-mobile={isMobile ? 'true' : undefined}
                         style={isMobile ? {
                             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                            width: '90%', maxWidth: '320px', zIndex: 2147483647, margin: 0,
+                            width: '90%', maxWidth: '336px', zIndex: 2147483647, margin: 0,
                             boxShadow: theme === 'dark' ? '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)' : '0 20px 50px rgba(0,0,0,0.3)',
                             background: theme === 'dark' ? '#1e293b' : '#ffffff',
                             border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0',
                             borderRadius: '20px', padding: '1.25rem', pointerEvents: 'auto',
                             color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
                         } : {
-                            position: 'fixed', top: position.top, left: position.left, width: '320px',
+                            position: 'fixed', top: position.top, left: position.left, width: `${DROPDOWN_WIDTH}px`,
                             zIndex: 2147483647, margin: 0,
                             boxShadow: theme === 'dark' ? '0 10px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)' : '0 10px 40px rgba(0,0,0,0.3)',
                             background: theme === 'dark' ? '#1e293b' : '#ffffff',
@@ -351,8 +352,8 @@ const DateRangePicker = ({
                         <div className="picker-calendars">{renderCalendarMonth(currentMonth)}</div>
                         <div className="picker-footer" style={{ borderTopColor: theme === 'dark' ? '#334155' : '#e2e8f0' }}>
                             {/* Use pending state for hints while picker is open */}
-                            {!pendingStart && <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>{t('travel.datePicker.selectDepart', 'Select departure date')}</div>}
-                            {pendingStart && !pendingEnd && <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>{t('travel.datePicker.selectReturn', 'Select return date')}</div>}
+                            {!pendingStart && <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>{t('common.startDate', 'Start Date')}</div>}
+                            {pendingStart && !pendingEnd && <div className="picker-hint" style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b' }}>{t('common.endDate', 'End Date')}</div>}
                         </div>
                     </div>
                 </div>,

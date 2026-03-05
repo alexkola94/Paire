@@ -165,6 +165,12 @@ html {
   transition: background-color 0.2s ease;
 }
 
+/* When any overlay/modal is open: lock main view scroll; only overlay content scrolls */
+html.overlay-open,
+html.overlay-open body {
+  overflow: hidden !important;
+}
+
 
 /* ================================
    Typography

@@ -64,6 +64,27 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         /// <summary>
+        /// Get user id and token id for a valid refresh token (for local/Google refresh).
+        /// </summary>
+        public async Task<(string UserId, string TokenId)?> GetSessionByRefreshTokenAsync(string refreshToken)
+        {
+            if (string.IsNullOrEmpty(refreshToken)) return null;
+            try
+            {
+                var hash = HashToken(refreshToken);
+                var session = await _context.UserSessions
+                    .FirstOrDefaultAsync(s => s.RefreshTokenHash == hash && s.IsActive && !s.RevokedAt.HasValue && s.ExpiresAt > DateTime.UtcNow);
+                if (session == null) return null;
+                return (session.UserId, session.TokenId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error looking up session by refresh token");
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Validate if a session is still active
         /// </summary>
         public async Task<bool> IsSessionValidAsync(string tokenId)

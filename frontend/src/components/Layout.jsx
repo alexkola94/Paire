@@ -55,6 +55,8 @@ const EuroIcon = memo(({ size = 24, className = '', style = {} }) => {
 })
 EuroIcon.displayName = 'EuroIcon'
 
+import { useLogout } from '../context/LogoutContext'
+import { useModalRegistration } from '../context/ModalContext'
 import { authService } from '../services/auth'
 import { profileService } from '../services/api'
 import { preloadRoute } from '../utils/performance'
@@ -95,6 +97,7 @@ function Layout() {
   const { t } = useTranslation()
   const { theme, toggleTheme } = useTheme()
   const { enterTravelMode, transitionDirection } = useTravelMode()
+  const { startLogout } = useLogout()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
@@ -109,6 +112,10 @@ function Layout() {
   const moreMenuRef = useRef(null)
   const userMenuRef = useRef(null)
   const importModalRef = useRef(null)
+
+  useModalRegistration(isImportOpen, 'import-modal')
+  useModalRegistration(isAccessibilityOpen, 'accessibility-settings')
+  useModalRegistration(isCurrencyPopoverOpen, 'currency-popover')
 
   // Primary navigation items (always visible on desktop)
   const mainNavItems = [
@@ -146,13 +153,14 @@ function Layout() {
 
   const handleLogout = useCallback(async () => {
     try {
+      startLogout()
       await authService.signOut()
       // Force reload to update session state in App.jsx
       window.location.reload()
     } catch (error) {
       console.error('Error signing out:', error)
     }
-  }, [])
+  }, [startLogout])
 
   const toggleMobileMenu = useCallback(() => {
     setMobileMenuOpen(prev => !prev)
@@ -177,7 +185,7 @@ function Layout() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Handle import modal keyboard and body scroll
+  // Handle import modal keyboard
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isImportOpen) {
@@ -187,12 +195,10 @@ function Layout() {
 
     if (isImportOpen) {
       document.addEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'hidden'
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = ''
     }
   }, [isImportOpen])
 
