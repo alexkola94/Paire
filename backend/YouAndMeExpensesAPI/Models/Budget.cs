@@ -163,7 +163,7 @@ namespace YouAndMeExpensesAPI.Models
         public Guid Id { get; set; }
 
         [Column("user_id")]
-        public string UserId { get; set; } = string.Empty;
+        public Guid UserId { get; set; }
 
         [Column("name")]
         public string Name { get; set; } = string.Empty;

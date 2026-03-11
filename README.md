@@ -581,7 +581,7 @@ See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed instructions.
 A: Yes! Supabase offers a generous free tier.
 
 **Q: Is my data secure?**  
-A: Yes. All data is encrypted and protected by Supabase's Row Level Security.
+A: Yes. All data is encrypted and protected by Supabase's Row Level Security. The backend also enforces JWT authentication, CSRF protection for cookie-based flows, strict CORS, global rate limiting, admin-only maintenance APIs, and per-user scoping for all analytics and data-clearing operations.
 
 **Q: Can I use this solo (without a partner)?**  
 A: Absolutely! Partnership is optional.

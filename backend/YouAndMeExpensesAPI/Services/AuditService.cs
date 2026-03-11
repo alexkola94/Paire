@@ -38,11 +38,21 @@ namespace YouAndMeExpensesAPI.Services
                 _context.AuditLogs.Add(auditLog);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Audit Log: {action} by user {userId}");
+                _logger.LogInformation(
+                    "Audit log created for user {UserId}, action {Action}, entity {EntityType}:{EntityId}, severity {Severity}",
+                    userId,
+                    action,
+                    entityType ?? "<none>",
+                    entityId ?? "<none>",
+                    severity);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to create audit log for action: {action}");
+                _logger.LogError(
+                    ex,
+                    "Failed to create audit log for user {UserId}, action {Action}",
+                    userId,
+                    action);
                 // Don't throw - audit logging should not break the main flow
             }
         }

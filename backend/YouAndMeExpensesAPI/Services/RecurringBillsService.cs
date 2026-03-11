@@ -121,11 +121,15 @@ namespace YouAndMeExpensesAPI.Services
                         ? paymentInfos.Max(pi => (DateTime?)pi.paymentDateUtc)
                         : null;
 
-                    DateTime? lastPaidDueDateFromTag = paymentInfos != null
-                        ? paymentInfos
+                    DateTime? lastPaidDueDateFromTag = null;
+                    if (paymentInfos != null)
+                    {
+                        lastPaidDueDateFromTag = paymentInfos
                             .Where(pi => pi.coveredDueDateUtc.HasValue)
-                            .Max(pi => (DateTime?)pi.coveredDueDateUtc.Value)
-                        : null;
+                            .Select(pi => pi.coveredDueDateUtc)
+                            .DefaultIfEmpty()
+                            .Max();
+                    }
 
                     DateTime? lastPaidDueDate = lastPaidDueDateFromTag;
 

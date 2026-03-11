@@ -15,6 +15,7 @@ using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
 using YouAndMeExpensesAPI.Repositories;
 using YouAndMeExpensesAPI.Hubs;
+using YouAndMeExpensesAPI.Logging;
 using System;
 using System.IO;
 // Disable reload on change to avoid inotify limits on Render.com
@@ -27,6 +28,28 @@ if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONM
     Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Logging philosophy:
+// - Plain-text, human-friendly messages for developers.
+// - Use structured templates with named placeholders (e.g. {UserId}, {RequestId}).
+// - Prefer Information/Warning/Error in production; use Debug only for noisy internals.
+// Log level configuration (defaults can be overridden via appsettings.*.json):
+// - Development: allow Debug logs for custom categories.
+// - Production: keep Default at Information and reduce framework noise.
+builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Information);
+if (builder.Environment.IsDevelopment())
+{
+    builder.Logging.AddFilter("YouAndMeExpensesAPI", LogLevel.Debug);
+}
+
+// File logging: write daily text files to local disk.
+// - Development: detailed logs (Debug and above) to "Logs/Development".
+// - Production: important logs only (Warning and above) to "Logs/Production".
+var logsBasePath = builder.Configuration["Logging:File:BasePath"]
+                   ?? Path.Combine(AppContext.BaseDirectory, "Logs");
+var fileMinLevel = builder.Environment.IsDevelopment() ? LogLevel.Debug : LogLevel.Warning;
+builder.Logging.AddDailyFileLogger(logsBasePath, builder.Environment.EnvironmentName, fileMinLevel);
 
 // =====================================================
 // Configure Services
@@ -619,7 +642,7 @@ app.UseCors("AllowFrontend");
 // Rate limiting (per IP)
 app.UseRateLimiter();
 
-// Log all requests (including production) to debug issues
+// Centralized error logging for all requests (including production) to debug issues
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
@@ -632,7 +655,7 @@ app.Use(async (context, next) =>
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error processing request: {Method} {Path}", method, path);
+        logger.LogError(ex, "Unhandled exception processing {Method} {Path}", method, path);
         throw;
     }
 });
@@ -705,27 +728,27 @@ app.MapGet("/diagnostics/email", async (ILogger<Program> logger, Microsoft.Exten
     try
     {
         var resendApiHost = "api.resend.com";
-        Log($"🔍 Starting Connectivity Test for {resendApiHost} (HTTP Mode)...");
+            Log($"Starting connectivity test for {resendApiHost} (HTTP mode)...");
 
         // 1. DNS Resolution
-        Log($"1️⃣ Testing DNS Resolution for {resendApiHost}...");
+            Log($"1. Testing DNS resolution for {resendApiHost}...");
         try
         {
             var addresses = await System.Net.Dns.GetHostAddressesAsync(resendApiHost);
             foreach (var addr in addresses)
             {
-                Log($"   Found IP: {addr} ({addr.AddressFamily})");
+                Log($"Found IP {addr} ({addr.AddressFamily})");
             }
             results["DNS"] = "✅ Success";
         }
         catch (Exception ex)
         {
-            Log($"❌ DNS Lookup Failed: {ex.Message}");
+            Log($"DNS lookup failed: {ex.Message}");
             results["DNS"] = "❌ Failed";
         }
 
         // 2. HTTP Connectivity Test to Resend API (Since we switched to HTTP)
-        Log($"2️⃣ Testing HTTPS Connect to {resendApiHost}...");
+        Log($"2. Testing HTTPS connection to {resendApiHost}...");
         try
         {
             using var client = new HttpClient();
@@ -734,12 +757,12 @@ app.MapGet("/diagnostics/email", async (ILogger<Program> logger, Microsoft.Exten
             // Just test if we can reach the server (Resend root returns 404 or similar, but proves connectivity)
             var response = await client.GetAsync("https://api.resend.com");
             
-            Log($"   ✅ HTTPS Connection Successful (Status: {response.StatusCode})");
+            Log($"HTTPS connection successful (status {response.StatusCode})");
             results["HTTPS-API"] = "✅ Success";
         }
         catch (Exception ex)
         {
-            Log($"   ❌ HTTPS Connection Failed: {ex.Message}");
+            Log($"HTTPS connection failed: {ex.Message}");
             results["HTTPS-API"] = "❌ Failed";
         }
 

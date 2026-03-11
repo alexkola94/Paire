@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using YouAndMeExpensesAPI.Models;
 using YouAndMeExpensesAPI.Services;
+using System.Security.Claims;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
@@ -8,6 +10,7 @@ namespace YouAndMeExpensesAPI.Controllers
     /// Controller for handling data clearing requests with partner confirmation
     /// </summary>
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class DataClearingController : ControllerBase
     {
@@ -29,9 +32,26 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpPost("initiate")]
         public async Task<IActionResult> InitiateDataClearing([FromQuery] string userId, [FromBody] InitiateDataClearingRequest request)
         {
+            var authUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+            if (string.IsNullOrEmpty(authUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                userId = authUserId;
+            }
+            else if (!string.Equals(userId, authUserId, StringComparison.Ordinal))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var response = await _dataClearingService.InitiateDataClearingAsync(userId, request);
+                _logger.LogInformation("Initiated data clearing request for user {UserId}", userId);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -50,6 +70,10 @@ namespace YouAndMeExpensesAPI.Controllers
             try
             {
                 var result = await _dataClearingService.ConfirmDataClearingAsync(request);
+
+                _logger.LogInformation(
+                    "Processed data clearing confirmation for token prefix {TokenPrefix}",
+                    string.IsNullOrEmpty(request.Token) ? "<empty>" : request.Token[..Math.Min(8, request.Token.Length)]);
 
                 // Maintain existing status codes based on response content
                 if (result is { } && result.GetType().GetProperty("error") != null)
@@ -78,9 +102,26 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpGet("status")]
         public async Task<IActionResult> GetStatus([FromQuery] string userId)
         {
+            var authUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+            if (string.IsNullOrEmpty(authUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                userId = authUserId;
+            }
+            else if (!string.Equals(userId, authUserId, StringComparison.Ordinal))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var result = await _dataClearingService.GetStatusAsync(userId);
+                _logger.LogInformation("Retrieved data clearing status for user {UserId}", userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -96,6 +137,22 @@ namespace YouAndMeExpensesAPI.Controllers
         [HttpDelete("cancel")]
         public async Task<IActionResult> CancelRequest([FromQuery] string userId, [FromQuery] Guid requestId)
         {
+            var authUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+            if (string.IsNullOrEmpty(authUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                userId = authUserId;
+            }
+            else if (!string.Equals(userId, authUserId, StringComparison.Ordinal))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var result = await _dataClearingService.CancelRequestAsync(userId, requestId);
@@ -112,6 +169,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return BadRequest(result);
                 }
 
+                _logger.LogInformation(
+                    "Cancelled data clearing request {RequestId} for user {UserId}",
+                    requestId, userId);
                 return Ok(result);
             }
             catch (Exception ex)

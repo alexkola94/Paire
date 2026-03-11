@@ -49,6 +49,9 @@ namespace YouAndMeExpensesAPI.Controllers
                 // Preserve existing response shape (paged vs non-paged)
                 if (page.HasValue && pageSize.HasValue)
                 {
+                    _logger.LogInformation(
+                        "Retrieved paged transactions for user {UserId} (Page {Page}, PageSize {PageSize})",
+                        userId, page, pageSize);
                     return Ok(new
                     {
                         items = result.Items,
@@ -59,6 +62,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     });
                 }
 
+                _logger.LogInformation(
+                    "Retrieved transactions for user {UserId} with filters Type={Type}, StartDate={StartDate}, EndDate={EndDate}, Search={Search}",
+                    userId, type, startDate, endDate, search);
                 return Ok(result.Items);
             }
             catch (ArgumentException ex)
@@ -90,6 +96,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Transaction {id} not found" });
                 }
 
+                _logger.LogInformation("Retrieved transaction {TransactionId} for user {UserId}", id, userId);
                 return Ok(transaction);
             }
             catch (Exception ex)
@@ -134,6 +141,10 @@ namespace YouAndMeExpensesAPI.Controllers
                         "Transaction created with {AlertCount} budget alert(s) for user {UserId}",
                         response.BudgetAlerts.Count, userId);
                 }
+
+                _logger.LogInformation(
+                    "Created transaction {TransactionId} for user {UserId}",
+                    response.Transaction.Id, userId);
 
                 return CreatedAtAction(
                     nameof(GetTransaction),
@@ -181,6 +192,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Transaction {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Updated transaction {TransactionId} for user {UserId}",
+                    id, userId);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -207,6 +221,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Transaction {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Deleted transaction {TransactionId} for user {UserId}",
+                    id, userId);
                 return NoContent();
             }
             catch (Exception ex)

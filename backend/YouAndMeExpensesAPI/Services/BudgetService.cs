@@ -118,7 +118,14 @@ namespace YouAndMeExpensesAPI.Services
                             ? (int)Math.Round((budget.SpentAmount / budget.Amount) * 100)
                             : 0;
 
-                        _logger.LogInformation($"Updated budget {budget.Id} ({budget.Category}): Added {amount}. New Spent: {budget.SpentAmount} ({newPercentage}%)");
+                        _logger.LogInformation(
+                            "Updated budget {BudgetId} ({Category}) for user(s) {UserIds}: Delta {Amount}, NewSpent {SpentAmount}, PercentageUsed {PercentageUsed}",
+                            budget.Id,
+                            budget.Category,
+                            string.Join(",", allUserIds),
+                            amount,
+                            budget.SpentAmount,
+                            newPercentage);
 
                         // Check if we crossed a threshold (only alert on increases, not decreases)
                         if (amount > 0)
@@ -135,7 +142,12 @@ namespace YouAndMeExpensesAPI.Services
                                     PercentageUsed = newPercentage,
                                     AlertType = "exceeded"
                                 });
-                                _logger.LogWarning($"Budget {budget.Id} ({budget.Category}) EXCEEDED: {newPercentage}%");
+                                _logger.LogWarning(
+                                    "Budget {BudgetId} ({Category}) exceeded at {PercentageUsed}% for user(s) {UserIds}",
+                                    budget.Id,
+                                    budget.Category,
+                                    newPercentage,
+                                    string.Join(",", allUserIds));
                             }
                             // Check if we crossed the warning threshold (80%)
                             else if (previousPercentage < WarningThreshold && newPercentage >= WarningThreshold)
@@ -149,7 +161,12 @@ namespace YouAndMeExpensesAPI.Services
                                     PercentageUsed = newPercentage,
                                     AlertType = "warning"
                                 });
-                                _logger.LogWarning($"Budget {budget.Id} ({budget.Category}) WARNING: {newPercentage}%");
+                                _logger.LogWarning(
+                                    "Budget {BudgetId} ({Category}) reached warning threshold at {PercentageUsed}% for user(s) {UserIds}",
+                                    budget.Id,
+                                    budget.Category,
+                                    newPercentage,
+                                    string.Join(",", allUserIds));
                             }
                         }
                     }
@@ -164,7 +181,7 @@ namespace YouAndMeExpensesAPI.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating budget spent amount for User {UserId}, Category {Category}", userId, category);
+                _logger.LogError(ex, "Error updating budget spent amount for user {UserId}, category {Category}", userId, category);
                 // We don't throw here to avoid failing the transaction creation if budget update fails
                 return alerts;
             }
@@ -243,7 +260,11 @@ namespace YouAndMeExpensesAPI.Services
                 budget.UpdatedAt = DateTime.UtcNow;
 
                 await _dbContext.SaveChangesAsync();
-                _logger.LogInformation($"Recalculated budget {budget.Id}: Total Spent {totalSpent}");
+                _logger.LogInformation(
+                    "Recalculated budget {BudgetId} for user {UserId}: TotalSpent {TotalSpent}",
+                    budget.Id,
+                    budget.UserId,
+                    totalSpent);
             }
             catch (Exception ex)
             {

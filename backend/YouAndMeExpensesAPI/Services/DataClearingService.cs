@@ -239,7 +239,7 @@ namespace YouAndMeExpensesAPI.Services
 
             try
             {
-                _logger.LogWarning("⚠️ Executing data clearing request {RequestId}", requestId);
+                _logger.LogWarning("Executing data clearing request {RequestId}", requestId);
 
                 await _context.Database.ExecuteSqlRawAsync(@"
                     SET session_replication_role = 'replica';
@@ -272,7 +272,7 @@ namespace YouAndMeExpensesAPI.Services
                     SET session_replication_role = 'origin';
                 ");
 
-                _logger.LogInformation("✅ Data clearing executed successfully for request {RequestId}", requestId);
+                _logger.LogInformation("Data clearing executed successfully for request {RequestId}", requestId);
             }
             catch (Exception ex)
             {

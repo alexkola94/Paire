@@ -94,6 +94,10 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 var created = await _shoppingListsService.CreateShoppingListAsync(userId, list);
 
+                _logger.LogInformation(
+                    "Created shopping list {ListId} for user {UserId}",
+                    created.Id, userId);
+
                 return CreatedAtAction(
                     nameof(GetShoppingList),
                     new { id = created.Id },
@@ -131,6 +135,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Shopping list {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Updated shopping list {ListId} for user {UserId}",
+                    id, userId);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -158,6 +165,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Shopping list {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Deleted shopping list {ListId} for user {UserId}",
+                    id, userId);
                 return NoContent();
             }
             catch (Exception ex)
@@ -223,6 +233,10 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Shopping list {listId} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Added item {ItemId} to shopping list {ListId} for user {UserId}",
+                    created.Id, listId, userId);
+
                 return CreatedAtAction(
                     nameof(GetShoppingListItems),
                     new { listId },
@@ -261,6 +275,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Shopping list {listId} not found or item {itemId} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Updated item {ItemId} in shopping list {ListId} for user {UserId}",
+                    itemId, listId, userId);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -290,6 +307,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Shopping list {listId} not found or item {itemId} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Toggled item {ItemId} in shopping list {ListId} for user {UserId}. New IsChecked={IsChecked}",
+                    itemId, listId, userId, item.IsChecked);
                 return Ok(item);
             }
             catch (Exception ex)
@@ -319,6 +339,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Shopping list {listId} not found or item {itemId} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Deleted item {ItemId} from shopping list {ListId} for user {UserId}",
+                    itemId, listId, userId);
                 return NoContent();
             }
             catch (Exception ex)
@@ -349,6 +372,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Shopping list {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Marked shopping list {ListId} as completed for user {UserId}",
+                    id, userId);
                 return Ok(updated);
             }
             catch (Exception ex)

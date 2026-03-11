@@ -98,6 +98,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = "Profile not found" });
                 }
 
+                _logger.LogInformation("Updated profile for user {UserId}", userId);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -133,6 +134,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = "Profile not found" });
                 }
 
+                _logger.LogInformation("Updated profile {ProfileId} for user {UserId}", id, userId);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -176,6 +178,7 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = "User not found" });
                 }
 
+                _logger.LogInformation("Uploaded avatar for user {UserId}", userId);
                 return Ok(new { avatar_url = avatarUrl });
             }
             catch (Exception ex)

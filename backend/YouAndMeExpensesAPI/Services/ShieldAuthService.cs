@@ -154,7 +154,7 @@ namespace YouAndMeExpensesAPI.Services
             try
             {
                 using var response = await _httpClient.SendAsync(request, cts.Token);
-                _logger.LogDebug("Shield warmup ping to {Url} -> {StatusCode}", url, (int)response.StatusCode);
+                _logger.LogDebug("Shield warmup ping to {Url} completed with status {StatusCode}", url, (int)response.StatusCode);
             }
             catch (OperationCanceledException ex) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
             {

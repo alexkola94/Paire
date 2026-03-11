@@ -108,6 +108,10 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 var created = await _loansService.CreateLoanAsync(userId, loan);
 
+                _logger.LogInformation(
+                    "Created loan {LoanId} for user {UserId} (LentBy={LentBy}, BorrowedBy={BorrowedBy})",
+                    created.Id, userId, created.LentBy, created.BorrowedBy);
+
                 return CreatedAtAction(
                     nameof(GetLoan),
                     new { id = created.Id },
@@ -166,6 +170,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Loan {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Updated loan {LoanId} for user {UserId}",
+                    id, userId);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -196,6 +203,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Loan {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Deleted loan {LoanId} for user {UserId}",
+                    id, userId);
                 return NoContent();
             }
             catch (Exception ex)
@@ -254,6 +264,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return BadRequest(new { message = "Loan is already settled" });
                 }
 
+                _logger.LogInformation(
+                    "Settled loan {LoanId} for user {UserId}",
+                    id, userId);
                 return Ok(loan);
             }
             catch (Exception ex)

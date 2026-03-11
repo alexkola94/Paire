@@ -93,6 +93,10 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 var created = await _budgetsAppService.CreateBudgetAsync(userId, budget);
 
+                _logger.LogInformation(
+                    "Created budget {BudgetId} in category {Category} for user {UserId}",
+                    created.Id, created.Category, userId);
+
                 return CreatedAtAction(
                     nameof(GetBudget),
                     new { id = created.Id },
@@ -129,6 +133,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Budget {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Updated budget {BudgetId} for user {UserId}",
+                    id, userId);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -155,6 +162,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Budget {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Deleted budget {BudgetId} for user {UserId}",
+                    id, userId);
                 return NoContent();
             }
             catch (Exception ex)

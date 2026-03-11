@@ -100,7 +100,7 @@ namespace YouAndMeExpensesAPI.Services
                     else
                     {
                         var errorContent = await response.Content.ReadAsStringAsync();
-                        _logger.LogWarning("Failed to fetch CPI from {Url}. Status: {StatusCode}", url, response.StatusCode);
+                    _logger.LogWarning("Failed to fetch CPI from {Url}. Status {StatusCode}", url, response.StatusCode);
                     }
                 }
                 catch (Exception ex)
@@ -110,7 +110,7 @@ namespace YouAndMeExpensesAPI.Services
             }
             
             // If all endpoints failed
-            _logger.LogError("All CPI endpoints failed");
+                _logger.LogError("All CPI endpoints failed while fetching CPI data");
             return new CPIDataDTO
             {
                 Error = "Failed to fetch CPI data from all Eurostat endpoints. Please try again later.",

@@ -21,9 +21,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<IReadOnlyList<object>> GetShoppingListsAsync(Guid userId)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var lists = await _dbContext.ShoppingLists
                 .Where(l => allUserIds.Contains(l.UserId))
@@ -42,7 +40,7 @@ namespace YouAndMeExpensesAPI.Services
 
             var userIds = lists.Select(l => l.UserId).Distinct().ToList();
             var userProfiles = await _dbContext.UserProfiles
-                .Where(up => userIds.Contains(up.Id.ToString()))
+                .Where(up => userIds.Contains(up.Id))
                 .AsNoTracking()
                 .ToListAsync();
 
@@ -70,7 +68,7 @@ namespace YouAndMeExpensesAPI.Services
                     completed_date = l.CompletedDate,
                     created_at = l.CreatedAt,
                     updated_at = l.UpdatedAt,
-                    user_profiles = profileDict.ContainsKey(l.UserId) ? profileDict[l.UserId] : null,
+                    user_profiles = profileDict.ContainsKey(l.UserId.ToString()) ? profileDict[l.UserId.ToString()] : null,
                     items = itemsByListId.TryGetValue(l.Id, out var listItems) ? listItems : new List<ShoppingListItem>()
                 })
                 .Cast<object>()
@@ -81,9 +79,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<object?> GetShoppingListAsync(Guid userId, Guid listId)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var list = await _dbContext.ShoppingLists
                 .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
@@ -112,7 +108,7 @@ namespace YouAndMeExpensesAPI.Services
         public async Task<ShoppingList> CreateShoppingListAsync(Guid userId, ShoppingList list)
         {
             list.Id = Guid.NewGuid();
-            list.UserId = userId.ToString();
+            list.UserId = userId;
             list.CreatedAt = DateTime.UtcNow;
             list.UpdatedAt = DateTime.UtcNow;
             list.IsCompleted = false;
@@ -125,9 +121,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<ShoppingList?> UpdateShoppingListAsync(Guid userId, Guid listId, ShoppingList updated)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var existingList = await _dbContext.ShoppingLists
                 .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
@@ -161,9 +155,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<bool> DeleteShoppingListAsync(Guid userId, Guid listId)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var list = await _dbContext.ShoppingLists
                 .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
@@ -186,9 +178,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<IReadOnlyList<ShoppingListItem>> GetShoppingListItemsAsync(Guid userId, Guid listId)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var list = await _dbContext.ShoppingLists
                 .AsNoTracking()
@@ -211,9 +201,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<ShoppingListItem?> AddShoppingListItemAsync(Guid userId, Guid listId, ShoppingListItem item)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var list = await _dbContext.ShoppingLists
                 .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
@@ -248,9 +236,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<ShoppingListItem?> UpdateShoppingListItemAsync(Guid userId, Guid listId, Guid itemId, ShoppingListItem updated)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var list = await _dbContext.ShoppingLists
                 .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
@@ -296,9 +282,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<ShoppingListItem?> ToggleShoppingListItemAsync(Guid userId, Guid listId, Guid itemId)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var list = await _dbContext.ShoppingLists
                 .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
@@ -326,9 +310,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<bool> DeleteShoppingListItemAsync(Guid userId, Guid listId, Guid itemId)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var list = await _dbContext.ShoppingLists
                 .FirstOrDefaultAsync(l => l.Id == listId && allUserIds.Contains(l.UserId));
@@ -360,9 +342,7 @@ namespace YouAndMeExpensesAPI.Services
 
         public async Task<object> GetSummaryAsync(Guid userId)
         {
-            var partnerIds = await GetPartnerIdsAsync(userId);
-            var allUserIds = new List<string> { userId.ToString() };
-            allUserIds.AddRange(partnerIds);
+            var allUserIds = await GetUserAndPartnerIdsAsync(userId);
 
             var lists = await _dbContext.ShoppingLists
                 .Where(l => allUserIds.Contains(l.UserId))
@@ -382,31 +362,33 @@ namespace YouAndMeExpensesAPI.Services
             };
         }
 
-        private async Task<List<string>> GetPartnerIdsAsync(Guid userId)
+        private async Task<List<Guid>> GetUserAndPartnerIdsAsync(Guid userId)
         {
             try
             {
+                var ids = new List<Guid> { userId };
+
                 var partnership = await _dbContext.Partnerships
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p =>
                         (p.User1Id == userId || p.User2Id == userId) &&
                         p.Status == "active");
 
-                if (partnership == null)
+                if (partnership != null)
                 {
-                    return new List<string>();
+                    var partnerId = partnership.User1Id == userId
+                        ? partnership.User2Id
+                        : partnership.User1Id;
+
+                    ids.Add(partnerId);
                 }
 
-                var partnerId = partnership.User1Id == userId
-                    ? partnership.User2Id
-                    : partnership.User1Id;
-
-                return new List<string> { partnerId.ToString() };
+                return ids;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting partner IDs for user: {UserId}", userId);
-                return new List<string>();
+                return new List<Guid> { userId };
             }
         }
     }

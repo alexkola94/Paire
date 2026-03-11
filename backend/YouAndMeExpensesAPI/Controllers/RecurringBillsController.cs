@@ -101,6 +101,10 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 var created = await _recurringBillsService.CreateRecurringBillAsync(userId, bill);
 
+                _logger.LogInformation(
+                    "Created recurring bill {BillId} for user {UserId}",
+                    created.Id, userId);
+
                 return CreatedAtAction(
                     nameof(GetRecurringBill),
                     new { id = created.Id },
@@ -138,6 +142,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Recurring bill {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Updated recurring bill {BillId} for user {UserId}",
+                    id, userId);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -165,6 +172,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Recurring bill {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Deleted recurring bill {BillId} for user {UserId}",
+                    id, userId);
                 return NoContent();
             }
             catch (Exception ex)
@@ -195,6 +205,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Recurring bill {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Marked recurring bill {BillId} as paid for user {UserId}",
+                    id, userId);
                 return Ok(bill);
             }
             catch (Exception ex)
@@ -222,6 +235,9 @@ namespace YouAndMeExpensesAPI.Controllers
                     return NotFound(new { message = $"Recurring bill {id} not found" });
                 }
 
+                _logger.LogInformation(
+                    "Unmarked recurring bill {BillId} as paid for user {UserId}",
+                    id, userId);
                 return Ok(bill);
             }
             catch (Exception ex)

@@ -31,6 +31,24 @@ namespace YouAndMeExpensesAPI.Controllers
             return DateTime.SpecifyKind(value, DateTimeKind.Utc);
         }
 
+        private static (DateTime Start, DateTime End) ClampDateRange(DateTime start, DateTime end, int maxDays)
+        {
+            if (end < start)
+            {
+                (start, end) = (end, start);
+            }
+
+            var maxSpan = TimeSpan.FromDays(maxDays - 1);
+            var currentSpan = end - start;
+
+            if (currentSpan > maxSpan)
+            {
+                start = end - maxSpan;
+            }
+
+            return (start, end);
+        }
+
         /// <summary>
         /// Get financial analytics for a date range
         /// </summary>
@@ -52,6 +70,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 // Default to current month if no dates provided (use UTC for PostgreSQL)
                 var start = ToUtc(startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc));
                 var end = ToUtc(endDate ?? DateTime.UtcNow);
+                (start, end) = ClampDateRange(start, end, maxDays: 366);
 
                 var analytics = await _analyticsService.GetFinancialAnalyticsAsync(userId.ToString(), start, end);
                 return Ok(analytics);
@@ -169,6 +188,7 @@ namespace YouAndMeExpensesAPI.Controllers
                 // Default to current month (use UTC for PostgreSQL)
                 var start = ToUtc(startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc));
                 var end = ToUtc(endDate ?? DateTime.UtcNow);
+                (start, end) = ClampDateRange(start, end, maxDays: 366);
 
                 var analytics = await _analyticsService.GetComparativeAnalyticsAsync(userId.ToString(), start, end);
                 return Ok(analytics);
@@ -225,6 +245,7 @@ namespace YouAndMeExpensesAPI.Controllers
             {
                 var start = ToUtc(startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc));
                 var end = ToUtc(endDate ?? DateTime.UtcNow);
+                (start, end) = ClampDateRange(start, end, maxDays: 366);
 
                 // Fetch analytics sequentially — DbContext is not thread-safe; parallel calls share the same instance
                 var financial = await _analyticsService.GetFinancialAnalyticsAsync(userId.ToString(), start, end);

@@ -15,6 +15,7 @@ public class SystemController : ControllerBase
     private readonly IAiGatewayClient _aiGatewayClient;
     private readonly IRagClient _ragClient;
     private readonly IShieldAuthService _shieldAuthService;
+    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<SystemController> _logger;
 
     public SystemController(
@@ -22,12 +23,14 @@ public class SystemController : ControllerBase
         IAiGatewayClient aiGatewayClient,
         IRagClient ragClient,
         IShieldAuthService shieldAuthService,
+        IWebHostEnvironment environment,
         ILogger<SystemController> logger)
     {
         _systemService = systemService;
         _aiGatewayClient = aiGatewayClient;
         _ragClient = ragClient;
         _shieldAuthService = shieldAuthService;
+        _environment = environment;
         _logger = logger;
     }
 
@@ -153,8 +156,14 @@ public class SystemController : ControllerBase
     /// WARNING: This is irreversible! Use only in development.
     /// </summary>
     [HttpDelete("clear-data")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> ClearAllData()
     {
+        if (!_environment.IsDevelopment())
+        {
+            return Forbid();
+        }
+
         try
         {
             var result = await _systemService.ClearAllDataAsync();
@@ -176,6 +185,7 @@ public class SystemController : ControllerBase
     /// Runs a diagnostic test for SMTP connectivity.
     /// </summary>
     [HttpGet("diagnostics/email")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> TestSmtpConnectivity()
     {
         var result = await _systemService.TestSmtpConnectivityAsync();

@@ -358,13 +358,7 @@ namespace YouAndMeExpensesAPI.Data
                 entity.ToTable("shopping_lists");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasColumnName("id");
-                // Convert string UserId to Guid for database (UUID column)
-                entity.Property(e => e.UserId)
-                    .HasColumnName("user_id")
-                    .IsRequired()
-                    .HasConversion(
-                        v => Guid.Parse(v), // Convert string to Guid when storing
-                        v => v.ToString()); // Convert Guid to string when reading
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
                 entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
                 entity.Property(e => e.Category).HasColumnName("category");
                 entity.Property(e => e.IsCompleted).HasColumnName("is_completed").HasDefaultValue(false);

@@ -162,7 +162,13 @@ namespace YouAndMeExpensesAPI.Services
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                var searchTerm = $"%{search.Trim()}%";
+                var trimmedSearch = search.Trim();
+                if (trimmedSearch.Length > 200)
+                {
+                    trimmedSearch = trimmedSearch.Substring(0, 200);
+                }
+
+                var searchTerm = $"%{trimmedSearch}%";
                 query = query.Where(t =>
                     EF.Functions.ILike(t.Description ?? string.Empty, searchTerm) ||
                     EF.Functions.ILike(t.Category ?? string.Empty, searchTerm) ||
@@ -194,8 +200,30 @@ namespace YouAndMeExpensesAPI.Services
                 query = query.Where(t => t.Date <= endUtc.Value);
             }
 
+            int? effectivePage = page;
+            int? effectivePageSize = pageSize;
+
+            if (effectivePage.HasValue)
+            {
+                if (effectivePage.Value < 1)
+                {
+                    effectivePage = 1;
+                }
+
+                if (!effectivePageSize.HasValue || effectivePageSize.Value <= 0)
+                {
+                    effectivePageSize = 50;
+                }
+
+                const int MaxPageSize = 200;
+                if (effectivePageSize.Value > MaxPageSize)
+                {
+                    effectivePageSize = MaxPageSize;
+                }
+            }
+
             int totalCount = 0;
-            if (page.HasValue && pageSize.HasValue)
+            if (effectivePage.HasValue && effectivePageSize.HasValue)
             {
                 totalCount = await query.CountAsync();
             }
@@ -205,11 +233,11 @@ namespace YouAndMeExpensesAPI.Services
                 .OrderByDescending(t => t.CreatedAt)
                 .ThenByDescending(t => t.Date);
 
-            if (page.HasValue && pageSize.HasValue)
+            if (effectivePage.HasValue && effectivePageSize.HasValue)
             {
                 orderedQuery = (IOrderedQueryable<Transaction>)orderedQuery
-                    .Skip((page.Value - 1) * pageSize.Value)
-                    .Take(pageSize.Value);
+                    .Skip((effectivePage.Value - 1) * effectivePageSize.Value)
+                    .Take(effectivePageSize.Value);
             }
 
             var transactions = await orderedQuery.ToListAsync();
@@ -226,12 +254,12 @@ namespace YouAndMeExpensesAPI.Services
                 Items = enriched
             };
 
-            if (page.HasValue && pageSize.HasValue)
+            if (effectivePage.HasValue && effectivePageSize.HasValue)
             {
                 result.TotalCount = totalCount;
-                result.Page = page;
-                result.PageSize = pageSize;
-                result.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize.Value);
+                result.Page = effectivePage;
+                result.PageSize = effectivePageSize;
+                result.TotalPages = (int)Math.Ceiling(totalCount / (double)effectivePageSize.Value);
             }
 
             return result;

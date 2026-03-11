@@ -6,6 +6,7 @@ using YouAndMeExpensesAPI.Services;
 
 namespace YouAndMeExpensesAPI.Controllers
 {
+    [Authorize(Policy = "AdminOnly")]
     [ApiController]
     [Route("api/admin")]
     public class AdminController : ControllerBase
