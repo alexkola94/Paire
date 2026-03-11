@@ -314,11 +314,16 @@
     0 4px 16px rgba(0, 0, 0, 0.06),
     0 2px 8px rgba(0, 0, 0, 0.03);
   overflow: visible;
-  z-index: 1;
+  z-index: 0;
 }
 
 .bill-card.bill-row .bill-header {
   margin-bottom: 0;
+}
+
+.bill-card.bill-row:hover,
+.bill-card.bill-row:focus-within {
+  z-index: 10;
 }
 
 .bill-row-main {
@@ -355,6 +360,7 @@
   gap: var(--spacing-xs);
   flex-wrap: nowrap;
   position: relative;
+  overflow: visible;
 }
 
 .bill-row-actions-menu-wrapper {
@@ -376,6 +382,18 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+@media (max-width: 767px) {
+  /* On small screens open the actions menu upwards to avoid being cut off by the next card */
+  .bill-row-menu {
+    top: auto;
+    bottom: 110%;
+    right: auto;
+    left: 200%;
+    transform: translateX(-50%);
+    max-width: 90vw;
+  }
 }
 
 [data-theme='dark'] .bill-row-menu {
@@ -491,12 +509,26 @@
 
   .bill-row-actions {
     width: 100%;
-    justify-content: flex-end;
-    gap: var(--spacing-sm);
+    justify-content: flex-start;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    row-gap: var(--spacing-xs);
+    overflow: visible;
   }
 
   .bill-row-actions .btn-success {
-    flex: 1;
+    flex: 1 1 100%;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .bill-row-actions .btn-outline-secondary {
+    flex: 0 0 auto;
+  }
+
+  .bill-row-actions .icon-btn {
+    flex: 0 0 auto;
   }
 }
 
