@@ -32,19 +32,21 @@ function formatAmount(amount, currency = '€') {
  */
 function getUniqueRecentTransactions(transactions = [], maxCount = 6) {
   if (!transactions?.length) return [];
+
+  const getSortKey = (tx) => tx.createdAt || tx.date;
   
   // Group by category
   const byCategory = {};
   for (const tx of transactions) {
     const key = tx.category || 'other';
-    if (!byCategory[key] || new Date(tx.date) > new Date(byCategory[key].date)) {
+    if (!byCategory[key] || new Date(getSortKey(tx)) > new Date(getSortKey(byCategory[key]))) {
       byCategory[key] = tx;
     }
   }
   
-  // Sort by date (most recent first) and take max
+  // Sort by creation timestamp (fallback to date) most recent first and take max
   return Object.values(byCategory)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .sort((a, b) => new Date(getSortKey(b)) - new Date(getSortKey(a)))
     .slice(0, maxCount);
 }
 

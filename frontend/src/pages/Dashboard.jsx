@@ -13,7 +13,7 @@ import {
   FiFilter,
   FiRefreshCw
 } from 'react-icons/fi'
-import { transactionService, budgetService, savingsGoalService, partnershipService } from '../services/api'
+import { transactionService, budgetService, savingsGoalService, partnershipService, analyticsService } from '../services/api'
 import { getStoredUser } from '../services/auth'
 import { format } from 'date-fns'
 import SecurityBadge from '../components/SecurityBadge'
@@ -51,6 +51,7 @@ function Dashboard() {
   const PAGE_SIZE = 5
   const [partnersOptions, setPartnersOptions] = useState([])
   const [detailModal, setDetailModal] = useState(null) // For viewing transaction details
+  const [overviewMode, setOverviewMode] = useState('calendar') // 'calendar' | 'salary'
 
   // Memoize date calculations to avoid recalculation on every render
   const dateRange = useMemo(() => {
@@ -96,6 +97,16 @@ function Dashboard() {
 
   const initialLoading = monthLoading || recentLoading
   const dataLoaded = !monthLoading && !recentLoading
+
+  // Salary-based / effective-month summary for the current month
+  const targetYear = dateRange.startOfMonth.getFullYear()
+  const targetMonth = dateRange.startOfMonth.getMonth() + 1
+
+  const { data: financialMonthSummary, isLoading: financialMonthLoading } = useQuery({
+    queryKey: ['analytics', 'financialMonth', targetYear, targetMonth],
+    queryFn: () => analyticsService.getFinancialMonthSummary(targetYear, targetMonth),
+    enabled: overviewMode === 'salary'
+  })
 
   /**
    * Pull-to-refresh: invalidate and refetch dashboard queries
@@ -358,7 +369,7 @@ function Dashboard() {
         </div>
 
         {/* Skeleton Quick Access */}
-        <div className="quick-access-section" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="quick-access-section">
           {[1, 2].map(i => (
             <Skeleton key={i} height="80px" style={{ flex: 1, borderRadius: '16px' }} className="skeleton-pulse" />
           ))}
@@ -407,10 +418,14 @@ function Dashboard() {
             {t('dashboard.title')}
             <SecurityBadge />
           </h1>
-          <p className="page-subtitle">{t('dashboard.monthlyOverview')}</p>
+          <p className="page-subtitle">
+            {overviewMode === 'calendar'
+              ? t('dashboard.monthlyOverview')
+              : t('dashboard.salaryMonthOverview', 'Upcoming month overview (salary-based)')}
+          </p>
         </div>
 
-        {/* Filter Controls - Dropdown + Privacy Toggle */}
+        {/* Filter Controls - Dropdown + Privacy Toggle + Overview Mode */}
         <div className="dashboard-filters" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}>
           <Dropdown
             icon={<FiFilter size={16} />}
@@ -424,6 +439,22 @@ function Dashboard() {
             style={{ minWidth: '120px', maxWidth: '160px' }}
           />
           <PrivacyToggle size="small" />
+          <div className="dashboard-overview-toggle glass-card">
+            <button
+              type="button"
+              className={`overview-toggle-button ${overviewMode === 'calendar' ? 'is-active' : ''}`}
+              onClick={() => setOverviewMode('calendar')}
+            >
+              {t('dashboard.viewCalendarMonth', 'Calendar')}
+            </button>
+            <button
+              type="button"
+              className={`overview-toggle-button ${overviewMode === 'salary' ? 'is-active' : ''}`}
+              onClick={() => setOverviewMode('salary')}
+            >
+              {t('dashboard.viewSalaryMonth', 'Salary month')}
+            </button>
+          </div>
         </div>
 
       {/* Summary Cards */}
@@ -461,7 +492,12 @@ function Dashboard() {
           <div className="card-content">
             <h3>{t('dashboard.totalIncome')}</h3>
             <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>
-              <CountUpAnimation value={displayedSummary.income} formatter={formatCurrency} />
+              <CountUpAnimation
+                value={overviewMode === 'calendar'
+                  ? displayedSummary.income
+                  : (financialMonthSummary?.income ?? 0)}
+                formatter={formatCurrency}
+              />
             </p>
           </div>
         </motion.div>
@@ -488,7 +524,12 @@ function Dashboard() {
           <div className="card-content">
             <h3>{t('dashboard.totalExpenses')}</h3>
             <p className={`amount ${isPrivate ? 'masked-number' : ''}`}>
-              <CountUpAnimation value={displayedSummary.expenses} formatter={formatCurrency} />
+              <CountUpAnimation
+                value={overviewMode === 'calendar'
+                  ? displayedSummary.expenses
+                  : (financialMonthSummary?.expenses ?? 0)}
+                formatter={formatCurrency}
+              />
             </p>
           </div>
         </motion.div>
@@ -514,9 +555,17 @@ function Dashboard() {
           </div>
           <div className="card-content">
             <h3>{t('dashboard.balance')}</h3>
-            <p className={`amount ${displayedSummary.balance >= 0 ? 'positive' : 'negative'} ${isPrivate ? 'masked-number' : ''}`}>
-              <CountUpAnimation value={displayedSummary.balance} formatter={formatCurrency} />
-            </p>
+            {(() => {
+              const balanceValue = overviewMode === 'calendar'
+                ? displayedSummary.balance
+                : (financialMonthSummary?.balance ?? 0)
+              const balanceClass = balanceValue >= 0 ? 'positive' : 'negative'
+              return (
+                <p className={`amount ${balanceClass} ${isPrivate ? 'masked-number' : ''}`}>
+                  <CountUpAnimation value={balanceValue} formatter={formatCurrency} />
+                </p>
+              )
+            })()}
           </div>
         </motion.div>
       </motion.div>
@@ -614,8 +663,7 @@ function Dashboard() {
       </motion.div>
 
       <motion.div 
-        className="quick-access-section" 
-        style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}
+        className="quick-access-section"
         initial="hidden"
         animate="visible"
         variants={{

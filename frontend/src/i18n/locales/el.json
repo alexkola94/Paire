@@ -94,6 +94,9 @@
     "balance": "Υπόλοιπο",
     "recentTransactions": "Πρόσφατες Συναλλαγές",
     "monthlyOverview": "Μηνιαία Επισκόπηση",
+    "salaryMonthOverview": "Επισκόπηση επόμενου μήνα (βάσει μισθού)",
+    "viewCalendarMonth": "Ημερολόγιο",
+    "viewSalaryMonth": "Μήνας μισθού",
     "noTransactions": "Δεν υπάρχουν συναλλαγές ακόμα",
     "addedBy": "Προστέθηκε από",
     "bankConnection": "Εισαγωγή από Τράπεζα",
@@ -802,7 +805,9 @@
     "errorUploading": "Αποτυχία μεταφόρτωσης συνημμένου",
     "errorDeletingAttachment": "Αποτυχία διαγραφής συνημμένου",
     "deleteAttachment": "Διαγραφή Συνημμένου;",
-    "confirmDeleteAttachment": "Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτό το συνημμένο; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+    "confirmDeleteAttachment": "Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτό το συνημμένο; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.",
+    "linkedToLoan": "Συνδεδεμένο με δάνειο",
+    "linkedToSavingsGoal": "Συνδεδεμένο με στόχο αποταμίευσης"
   },
   "shoppingLists": {
     "title": "Λίστες Αγορών",

@@ -566,7 +566,6 @@
 .empty-payments svg {
   margin-bottom: var(--spacing-lg);
   color: var(--text-light);
-  animation: float 3s ease-in-out infinite;
 }
 
 .empty-payments p {
@@ -577,18 +576,6 @@
 .empty-payments .hint {
   color: var(--text-secondary);
   font-size: 0.75rem;
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
 }
 
 /* ================================

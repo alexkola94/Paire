@@ -208,7 +208,8 @@
     "startDate": "Date de début",
     "endDate": "Date de fin",
     "selectDateRange": "Sélectionner une plage de dates",
-    "noResults": "Aucune transaction ne correspond à votre recherche."
+    "noResults": "Aucune transaction ne correspond à votre recherche.",
+    "more": "Plus"
   },
   "dashboard": {
     "savingGoals": "Objectifs d'épargne",
@@ -216,7 +217,10 @@
     "noSavingGoals": "Commencez à épargner pour vos rêves ! Créez un objectif.",
     "filterSolo": "Seul(e)",
     "filterTogether": "Ensemble",
-    "filterPartner": "Partenaire"
+    "filterPartner": "Partenaire",
+    "salaryMonthOverview": "Aperçu du mois à venir (basé sur le salaire)",
+    "viewCalendarMonth": "Calendrier",
+    "viewSalaryMonth": "Mois de salaire"
   },
   "transaction": {
     "category": "Catégorie",
@@ -384,7 +388,9 @@
     "loanHint": "Marquer cette facture comme payée créera automatiquement un paiement sur ce prêt.",
     "deleteAttachment": "Supprimer la pièce jointe?",
     "confirmDeleteAttachment": "Êtes-vous sûr de vouloir supprimer cette pièce jointe? Cette action ne peut pas être annulée.",
-    "errorDeletingAttachment": "Échec de la suppression de la pièce jointe"
+    "errorDeletingAttachment": "Échec de la suppression de la pièce jointe",
+    "linkedToLoan": "Lié au prêt",
+    "linkedToSavingsGoal": "Lié à l'objectif d'épargne"
   },
   "chatbot": {
     "title": "Assistant Financier",

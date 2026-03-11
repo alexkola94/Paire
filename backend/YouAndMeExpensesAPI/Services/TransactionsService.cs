@@ -200,7 +200,10 @@ namespace YouAndMeExpensesAPI.Services
                 totalCount = await query.CountAsync();
             }
 
-            var orderedQuery = query.OrderByDescending(t => t.Date);
+            // Always return latest-created transactions first; break ties by logical date.
+            var orderedQuery = query
+                .OrderByDescending(t => t.CreatedAt)
+                .ThenByDescending(t => t.Date);
 
             if (page.HasValue && pageSize.HasValue)
             {
@@ -501,7 +504,8 @@ namespace YouAndMeExpensesAPI.Services
             }
 
             var transactions = await query
-                .OrderByDescending(t => t.Date)
+                .OrderByDescending(t => t.CreatedAt)
+                .ThenByDescending(t => t.Date)
                 .ToListAsync();
 
             var userIds = transactions.Select(t => t.UserId).Distinct().ToList();

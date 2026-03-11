@@ -248,6 +248,12 @@
   gap: var(--spacing-lg);
 }
 
+/* Force true list layout (one column) for recurring bills */
+.bills-section .data-cards-grid {
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
 .section-title {
   display: flex;
   align-items: center;
@@ -294,6 +300,204 @@
   border-left: 4px solid var(--primary);
   position: relative;
   overflow: hidden;
+}
+
+/* Compact row variant for list view */
+.bill-card.bill-row.data-card {
+  min-height: auto;
+}
+
+.bill-card.bill-row {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: 18px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.03);
+  overflow: visible;
+  z-index: 1;
+}
+
+.bill-card.bill-row .bill-header {
+  margin-bottom: 0;
+}
+
+.bill-row-main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.bill-row-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  min-width: 0;
+  flex: 1.5;
+}
+
+.bill-row-middle {
+  flex: 1.2;
+  min-width: 0;
+}
+
+.bill-row-amount {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  justify-content: flex-end;
+  flex: 0.9;
+  min-width: 0;
+}
+
+.bill-row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: nowrap;
+  position: relative;
+}
+
+.bill-row-actions-menu-wrapper {
+  position: relative;
+}
+
+.bill-row-menu {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  min-width: 180px;
+  padding: var(--spacing-xs);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 10px 30px rgba(15, 7, 26, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-theme='dark'] .bill-row-menu {
+  background: rgba(15, 7, 26, 0.98);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.bill-row-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.bill-row-menu-item:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.bill-row-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error-dark);
+}
+
+.bill-row-attachments-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bill-row-attachments-count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.bill-card.bill-row .bill-amount,
+.bill-card.bill-row .bill-due-date {
+  margin-bottom: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+.bill-card.bill-row .bill-due-date {
+  font-size: 0.8rem;
+}
+
+.bill-card.bill-row .bill-due-date .days-until,
+.bill-card.bill-row .bill-due-date .days-overdue {
+  margin-left: auto;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+}
+
+.bill-row-amount .amount {
+  font-size: 0.95rem;
+}
+
+.bill-card.bill-row .auto-pay-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+}
+
+.bill-row-notes {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--bg-tertiary);
+}
+
+.bill-row-notes p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .bill-row-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .bill-row-amount {
+    justify-content: flex-start;
+  }
+
+  .bill-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+  }
+
+  .bill-row-actions .btn-success {
+    flex: 1;
+  }
 }
 
 .bill-card::before {

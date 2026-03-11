@@ -29,9 +29,10 @@ function useRecentTransactions(type = 'expense', limit = 20) {
         endDate: endDate.toISOString().split('T')[0]
       })
 
-      // Sort by date (most recent first) and limit
-      const sorted = transactions
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
+      // Sort by creation timestamp (fallback to logical date) and limit
+      const getSortKey = (t) => t.createdAt || t.date
+      const sorted = [...transactions]
+        .sort((a, b) => new Date(getSortKey(b)) - new Date(getSortKey(a)))
         .slice(0, limit)
 
       setRecentTransactions(sorted)

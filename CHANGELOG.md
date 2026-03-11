@@ -13,6 +13,25 @@ All notable changes to this project will be documented in this file.
 ### Documentation
 
 
+## [2.2.0] - 2026-03-11
+
+### Added
+- Dashboard: Enhanced recent transactions and analytics widgets backed by the updated analytics service.
+- Mobile app: QuickFill experience and improved receipts flow to speed up capturing expenses on the go.
+
+### Changed
+- Analytics: Refactored analytics service and controller to power dashboard, recent transactions, and partner insights more efficiently.
+- Recurring Bills & Transactions: Updated backend services and frontend pages to keep recurring bills, expenses, and receipts in sync with improved UX and styling.
+- Dashboard, Expenses, Loans, Receipts, and Recurring Bills pages: Refined layouts, empty states, and styling to better match the Paire design system.
+
+### Fixed
+- Transactions: Corrected handling of recurring bill instances and related analytics to ensure accurate summaries.
+- Various UI fixes across loans and recurring bills pages for more consistent spacing and alignment.
+
+### Documentation
+- Bumped backend API and frontend app versions to 2.2.0 and updated public-facing docs accordingly.
+
+
 ## [2.1.1] - 2026-01-28
 ### Fixed
 - **react-window**: Added `src/utils/reactWindow.js` shim so `FixedSizeList` works in both Vite dev (pre-bundle) and production build (UMD dist). Expenses and AllTransactions now import from the shim; namespace import handles named vs default export shape.

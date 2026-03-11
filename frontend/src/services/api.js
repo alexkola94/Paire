@@ -479,6 +479,13 @@ export const analyticsService = {
     return await apiRequest('/api/analytics/dashboard')
   },
 
+  async getFinancialMonthSummary(year, month) {
+    const params = new URLSearchParams()
+    if (year) params.append('year', year)
+    if (month) params.append('month', month)
+    return await apiRequest(`/api/analytics/financial-month?${params}`)
+  },
+
   async getAllAnalytics(startDate, endDate) {
     const params = new URLSearchParams()
     if (startDate) params.append('startDate', startDate)

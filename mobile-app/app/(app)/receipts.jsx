@@ -92,8 +92,10 @@ export default function ReceiptsScreen() {
           }
         });
       }
+
+      const getSortKey = (item) => item.createdAt || item.date;
       const merged = [...txReceipts, ...billAttachments].sort(
-        (a, b) => new Date(b.date) - new Date(a.date)
+        (a, b) => new Date(getSortKey(b)) - new Date(getSortKey(a))
       );
       return merged;
     },

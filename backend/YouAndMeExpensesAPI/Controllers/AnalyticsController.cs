@@ -64,6 +64,36 @@ namespace YouAndMeExpensesAPI.Controllers
         }
 
         /// <summary>
+        /// Get a simple income/expense summary for a given financial month
+        /// using effective-month logic (salary at month-end and recurring bill
+        /// payments grouped by the month they are meant to cover).
+        /// </summary>
+        [HttpGet("financial-month")]
+        [ResponseCache(Duration = 180)]
+        public async Task<IActionResult> GetFinancialMonthSummary(
+            [FromQuery] int? year = null,
+            [FromQuery] int? month = null)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var now = DateTime.UtcNow;
+                var targetYear = year ?? now.Year;
+                var targetMonth = month ?? now.Month;
+
+                var summary = await _analyticsService.GetFinancialMonthSummaryAsync(userId.ToString(), targetYear, targetMonth);
+                return Ok(summary);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting financial-month summary for user {UserId}", userId);
+                return StatusCode(500, new { message = "Error retrieving financial-month analytics", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Get loan analytics
         /// </summary>
         /// <param name="userId">User ID from auth</param>

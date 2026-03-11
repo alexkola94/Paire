@@ -1,6 +1,6 @@
 # Paire - Project Documentation
-**Version:** 2.0.0
-**Date:** December 15, 2025
+**Version:** 2.2.0
+**Date:** March 11, 2026
 
 ---
 

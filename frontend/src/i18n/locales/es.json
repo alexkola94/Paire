@@ -208,7 +208,8 @@
     "startDate": "Fecha de inicio",
     "endDate": "Fecha de fin",
     "selectDateRange": "Seleccionar rango de fechas",
-    "noResults": "No se encontraron transacciones que coincidan con tu búsqueda."
+    "noResults": "No se encontraron transacciones que coincidan con tu búsqueda.",
+    "more": "Más"
   },
   "dashboard": {
     "savingGoals": "Objetivos de Ahorro",
@@ -216,7 +217,10 @@
     "noSavingGoals": "¡Empieza a ahorrar para tus sueños! Crea un objetivo.",
     "filterSolo": "Solo/a",
     "filterTogether": "Juntos",
-    "filterPartner": "Pareja"
+    "filterPartner": "Pareja",
+    "salaryMonthOverview": "Resumen del mes próximo (basado en salario)",
+    "viewCalendarMonth": "Calendario",
+    "viewSalaryMonth": "Mes de salario"
   },
   "transaction": {
     "category": "Categoría",
@@ -384,7 +388,9 @@
     "loanHint": "Marcar esta factura como pagada creará automáticamente un pago en este préstamo.",
     "deleteAttachment": "¿Eliminar adjunto?",
     "confirmDeleteAttachment": "¿Estás seguro de que quieres eliminar este adjunto? Esta acción no se puede deshacer.",
-    "errorDeletingAttachment": "Error al eliminar el adjunto"
+    "errorDeletingAttachment": "Error al eliminar el adjunto",
+    "linkedToLoan": "Vinculado al préstamo",
+    "linkedToSavingsGoal": "Vinculado al objetivo de ahorro"
   },
   "chatbot": {
     "title": "Asistente Financiero",

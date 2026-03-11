@@ -93,6 +93,9 @@
     "balance": "Balance",
     "recentTransactions": "Recent Transactions",
     "monthlyOverview": "Monthly Overview",
+    "salaryMonthOverview": "Upcoming month overview (salary-based)",
+    "viewCalendarMonth": "Calendar",
+    "viewSalaryMonth": "Salary month",
     "noTransactions": "No transactions yet",
     "addedBy": "Added by",
     "bankConnection": "Imported from Bank",
@@ -426,6 +429,10 @@
     "noCategoryDataDescription": "Add expenses to see spending breakdown by category",
     "clickToViewTransactions": "Click to view transactions",
     "noTransactionsInCategory": "No transactions in this category"
+  },
+  "recurringBills": {
+    "linkedToLoan": "Linked to Loan",
+    "linkedToSavingsGoal": "Linked to Savings Goal"
   },
   "partnership": {
     "title": "Partnership",
@@ -890,7 +897,8 @@
     "confirmDelete": "Confirm delete",
     "deleting": "Deleting...",
     "searching": "Searching...",
-    "noResults": "No transactions found matching your search."
+    "noResults": "No transactions found matching your search.",
+    "more": "More"
   },
   "notifications": {
     "title": "Notifications",

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-Private-red.svg)
 ![React](https://img.shields.io/badge/React-18.2-61dafb.svg)
 ![.NET](https://img.shields.io/badge/.NET-8.0-512bd4.svg)
@@ -552,6 +552,9 @@ See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed instructions.
 - ✅ Partnership sharing
 - ✅ Multi-language support (4 languages)
 
+### **Completed (v2.2):** ✅
+- ✅ Mobile app (React Native) - companion app for capturing expenses and receipts on the go
+
 ### **Planned (v2.1):**
 - [ ] Budget templates
 - [ ] Savings goal milestones
@@ -670,8 +673,8 @@ If you find this helpful, please give it a star ⭐
 
 ---
 
-**Version 2.0.0** - Major Update with 4 New Features!  
-**Last Updated:** December 2025
+**Version 2.2.0** - Analytics, dashboard refinements, and mobile companion app.  
+**Last Updated:** March 2026
 
 ---
 

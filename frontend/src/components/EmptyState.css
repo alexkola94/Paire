@@ -35,7 +35,6 @@
 .empty-state__icon svg {
   width: 64px;
   height: 64px;
-  animation: empty-state-float 3s ease-in-out infinite;
 }
 
 .empty-state__icon--circle {
@@ -114,24 +113,4 @@
 .empty-state--no-results .empty-state__icon svg {
   width: 48px;
   height: 48px;
-}
-
-@keyframes empty-state-float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-/* Reduced motion: disable float */
-@media (prefers-reduced-motion: reduce) {
-  .empty-state__icon svg {
-    animation: none;
-  }
-}
-
-[data-motion="reduced"] .empty-state__icon svg {
-  animation: none;
 }

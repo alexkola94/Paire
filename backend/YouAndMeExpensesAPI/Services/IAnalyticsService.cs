@@ -12,6 +12,7 @@ namespace YouAndMeExpensesAPI.Services
         Task<HouseholdAnalyticsDTO> GetHouseholdAnalyticsAsync(string userId);
         Task<ComparativeAnalyticsDTO> GetComparativeAnalyticsAsync(string userId, DateTime startDate, DateTime endDate);
         Task<DashboardAnalyticsDTO> GetDashboardAnalyticsAsync(string userId);
+        Task<FinancialMonthSummaryDTO> GetFinancialMonthSummaryAsync(string userId, int year, int month);
     }
 }
 

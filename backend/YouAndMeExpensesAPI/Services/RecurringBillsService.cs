@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using YouAndMeExpensesAPI.Data;
 using YouAndMeExpensesAPI.Models;
 
@@ -26,6 +27,8 @@ namespace YouAndMeExpensesAPI.Services
             _storageService = storageService;
             _logger = logger;
         }
+
+        private const int EarlyPaymentLeadDays = 7;
 
         public async Task<IReadOnlyList<object>> GetRecurringBillsAsync(Guid userId)
         {
@@ -64,11 +67,14 @@ namespace YouAndMeExpensesAPI.Services
                 .ToListAsync();
 
             const string prefix = "[RecurringBill:";
-            // For each bill id, keep the latest transaction date (most recent payment).
-            var latestPaymentByBill = new Dictionary<Guid, DateTime>();
+            const string duePrefix = "[Due:";
+
+            // For each bill id, keep all payment records with optional covered due dates.
+            var paymentInfoByBill = new Dictionary<Guid, List<(DateTime paymentDateUtc, DateTime? coveredDueDateUtc)>>();
             foreach (var t in transactionsWithBillTag)
             {
                 if (string.IsNullOrEmpty(t.Notes)) continue;
+
                 var start = t.Notes.IndexOf(prefix, StringComparison.Ordinal);
                 if (start < 0) continue;
                 start += prefix.Length;
@@ -76,9 +82,31 @@ namespace YouAndMeExpensesAPI.Services
                 if (end < 0) continue;
                 var guidStr = t.Notes.Substring(start, end - start);
                 if (!Guid.TryParse(guidStr, out var bid) || !billIds.Contains(bid)) continue;
+
                 var dateUtc = t.Date.Kind == DateTimeKind.Utc ? t.Date : t.Date.ToUniversalTime();
-                if (!latestPaymentByBill.TryGetValue(bid, out var existing) || dateUtc > existing)
-                    latestPaymentByBill[bid] = dateUtc;
+
+                DateTime? coveredDueDateUtc = null;
+                var dueStart = t.Notes.IndexOf(duePrefix, StringComparison.Ordinal);
+                if (dueStart >= 0)
+                {
+                    dueStart += duePrefix.Length;
+                    var dueEnd = t.Notes.IndexOf(']', dueStart);
+                    if (dueEnd > dueStart)
+                    {
+                        var dueStr = t.Notes.Substring(dueStart, dueEnd - dueStart);
+                        if (DateTime.TryParseExact(dueStr, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dueDate))
+                        {
+                            coveredDueDateUtc = dueDate.Date;
+                        }
+                    }
+                }
+
+                if (!paymentInfoByBill.TryGetValue(bid, out var list))
+                {
+                    list = new List<(DateTime paymentDateUtc, DateTime? coveredDueDateUtc)>();
+                    paymentInfoByBill[bid] = list;
+                }
+                list.Add((dateUtc, coveredDueDateUtc));
             }
 
             var todayUtc = DateTime.UtcNow.Date;
@@ -87,12 +115,35 @@ namespace YouAndMeExpensesAPI.Services
                 .Select(b =>
                 {
                     var previousDueDate = CalculatePreviousDueDate(b.Frequency, b.DueDay, b.NextDueDate);
-                    var hasPayment = latestPaymentByBill.TryGetValue(b.Id, out var lastPaymentDate);
+                    paymentInfoByBill.TryGetValue(b.Id, out var paymentInfos);
+
+                    DateTime? lastPaymentDate = paymentInfos != null && paymentInfos.Count > 0
+                        ? paymentInfos.Max(pi => (DateTime?)pi.paymentDateUtc)
+                        : null;
+
+                    DateTime? lastPaidDueDateFromTag = paymentInfos != null
+                        ? paymentInfos
+                            .Where(pi => pi.coveredDueDateUtc.HasValue)
+                            .Max(pi => (DateTime?)pi.coveredDueDateUtc.Value)
+                        : null;
+
+                    DateTime? lastPaidDueDate = lastPaidDueDateFromTag;
+
+                    // Fallback for legacy payments without [Due:...] tag:
+                    if (!lastPaidDueDate.HasValue && lastPaymentDate.HasValue)
+                    {
+                        var legacyWindowStart = previousDueDate.AddDays(-EarlyPaymentLeadDays);
+                        if (lastPaymentDate.Value >= legacyWindowStart)
+                        {
+                            lastPaidDueDate = previousDueDate.Date;
+                        }
+                    }
+
                     var nextDueNormalized = b.NextDueDate.Kind == DateTimeKind.Utc ? b.NextDueDate : b.NextDueDate.ToUniversalTime();
                     var isOverdue = nextDueNormalized.Date < todayUtc;
-                    // Paid only if: we have a payment on or after previous due date, AND the bill is not overdue
-                    // (if overdue, the current occurrence is unpaid so we must show isPaid = false)
-                    var isPaid = hasPayment && lastPaymentDate >= previousDueDate && !isOverdue;
+                    // A bill is treated as paid for the most recent due period if that period's due date
+                    // matches the lastPaidDueDate we inferred from tagged or legacy payments.
+                    var isPaid = lastPaidDueDate.HasValue && lastPaidDueDate.Value.Date == previousDueDate.Date && !isOverdue;
                     return new
                     {
                         id = b.Id,
@@ -107,6 +158,8 @@ namespace YouAndMeExpensesAPI.Services
                         reminderDays = b.ReminderDays,
                         isActive = b.IsActive,
                         isPaid,
+                        lastPaidDueDate,
+                        lastPaymentDate,
                         notes = b.Notes,
                         createdAt = b.CreatedAt,
                         updatedAt = b.UpdatedAt,
@@ -170,9 +223,6 @@ namespace YouAndMeExpensesAPI.Services
             return bill;
         }
 
-        /// <summary>
-        /// Updates bill details only. Does not change NextDueDate — that advances only when the user marks the bill as paid.
-        /// </summary>
         public async Task<RecurringBill?> UpdateRecurringBillAsync(Guid userId, Guid billId, RecurringBill updates)
         {
             var allUserIds = await GetUserAndPartnerIdsAsync(userId);
@@ -185,7 +235,11 @@ namespace YouAndMeExpensesAPI.Services
                 return null;
             }
 
-            // Update only template/details; leave NextDueDate unchanged so the next occurrence stays the same.
+            var scheduleChanged =
+                !string.Equals(existingBill.Frequency, updates.Frequency, StringComparison.OrdinalIgnoreCase) ||
+                existingBill.DueDay != updates.DueDay;
+
+            // Update details
             existingBill.Name = updates.Name;
             existingBill.Amount = updates.Amount;
             existingBill.Category = updates.Category;
@@ -197,7 +251,20 @@ namespace YouAndMeExpensesAPI.Services
             existingBill.Notes = updates.Notes;
             existingBill.UpdatedAt = DateTime.UtcNow;
 
-            // Do NOT recalculate NextDueDate on edit — only MarkBillPaid advances it.
+            if (scheduleChanged)
+            {
+                existingBill.NextDueDate = CalculateNextDueDate(existingBill.Frequency, existingBill.DueDay, null);
+
+                if (existingBill.NextDueDate.Kind == DateTimeKind.Unspecified)
+                {
+                    existingBill.NextDueDate = DateTime.SpecifyKind(existingBill.NextDueDate, DateTimeKind.Utc);
+                }
+                else if (existingBill.NextDueDate.Kind == DateTimeKind.Local)
+                {
+                    existingBill.NextDueDate = existingBill.NextDueDate.ToUniversalTime();
+                }
+            }
+
             await _dbContext.SaveChangesAsync();
 
             return existingBill;
@@ -231,6 +298,15 @@ namespace YouAndMeExpensesAPI.Services
                 return null;
             }
 
+            // Capture the due date for the billing period being covered by this payment
+            var currentCycleDueDate = bill.NextDueDate;
+            if (currentCycleDueDate.Kind != DateTimeKind.Utc)
+            {
+                currentCycleDueDate = currentCycleDueDate.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(currentCycleDueDate, DateTimeKind.Utc)
+                    : currentCycleDueDate.ToUniversalTime();
+            }
+
             var newTransaction = new Transaction
             {
                 Id = Guid.NewGuid(),
@@ -241,7 +317,7 @@ namespace YouAndMeExpensesAPI.Services
                 Description = bill.Name,
                 Date = DateTime.UtcNow,
                 PaidBy = "User",
-                Notes = $"[RecurringBill:{bill.Id}]",
+                Notes = $"[RecurringBill:{bill.Id}][Due:{currentCycleDueDate:yyyy-MM-dd}]",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 IsBankSynced = false

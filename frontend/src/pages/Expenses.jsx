@@ -30,19 +30,45 @@ import AddToCalculatorButton from '../components/AddToCalculatorButton'
 import EmptyState from '../components/EmptyState'
 import './Expenses.css'
 
+const expenseCardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.4, 0, 0.2, 1]
+    }
+  }
+}
+
 /** Row renderer for react-window virtualized expense list */
 const ExpenseRow = memo(({ index, style, data }) => {
-  const { expenses, formatCurrency, t, setDetailModal, openEditForm, openDeleteModal, setViewModal, isPrivate } = data
+  const {
+    expenses,
+    formatCurrency,
+    t,
+    setDetailModal,
+    openEditForm,
+    openDeleteModal,
+    setViewModal,
+    isPrivate,
+    isVirtualized
+  } = data
   const expense = expenses[index]
   if (!expense) return null
   return (
     <div style={style}>
-      <div
+      <motion.div
         className="expense-card card clickable data-card"
         onClick={() => setDetailModal(expense)}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && setDetailModal(expense)}
+        variants={expenseCardVariants}
+        initial={isVirtualized ? 'hidden' : undefined}
+        animate={isVirtualized ? 'visible' : undefined}
       >
         <div className="expense-header data-card-header">
           <div className="expense-category">
@@ -111,7 +137,7 @@ const ExpenseRow = memo(({ index, style, data }) => {
             <FiTrash2 size={18} />
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 })
@@ -566,7 +592,8 @@ function Expenses() {
               openEditForm,
               openDeleteModal,
               setViewModal,
-              isPrivate
+              isPrivate,
+              isVirtualized: true
             }}
           >
             {ExpenseRow}
@@ -574,7 +601,18 @@ function Expenses() {
         </div>
       ) : (
         // For small lists, render a simple responsive grid so card size stays consistent
-        <div className="data-cards-grid">
+        <motion.div
+          className="data-cards-grid"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.08
+              }
+            }
+          }}
+        >
           {displayedExpenses.map((expense, index) => (
             <ExpenseRow
               key={expense.id}
@@ -588,11 +626,12 @@ function Expenses() {
                 openEditForm,
                 openDeleteModal,
                 setViewModal,
-                isPrivate
+                isPrivate,
+                isVirtualized: false
               }}
             />
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Pagination Controls */}

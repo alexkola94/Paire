@@ -6,7 +6,7 @@ import {
   FiCalendar, FiPlus, FiEdit, FiTrash2, FiCheck,
   FiClock, FiAlertCircle, FiRepeat, FiLink, FiRotateCcw,
   FiGrid, FiList, FiChevronLeft, FiChevronRight, FiPaperclip, FiDownload, FiX, FiFileText, FiTarget, FiSearch,
-  FiInfo
+  FiInfo, FiMoreHorizontal
 } from 'react-icons/fi'
 import {
   addMonths, addYears, addWeeks, startOfMonth, endOfMonth, isSameMonth,
@@ -709,28 +709,27 @@ function RecurringBills() {
   // Apply search filter to active bills (used for list and calendar)
   const filteredActiveBills = filterBillsBySearch(activeBills, searchQuery)
 
-  // 1. Overdue: Due date is strictly before today (and not paid)
-  const overdueBills = filteredActiveBills.filter(b => isOverdue(b.nextDueDate || b.next_due_date))
+  // 1. Overdue: Due date is strictly before today and not paid
+  const overdueBills = filteredActiveBills.filter(b => {
+    const isPaid = b.isPaid ?? b.is_paid ?? false
+    return !isPaid && isOverdue(b.nextDueDate || b.next_due_date)
+  })
 
   // 2. To Pay This Month: Due date is within current month (Today to EndOfMonth)
   // Exclude overdue (already handled)
   const dueThisMonthBills = filteredActiveBills.filter(b => {
     const dueDate = new Date(b.nextDueDate || b.next_due_date)
-    return isSameMonth(dueDate, today) && !isOverdue(b.nextDueDate || b.next_due_date)
+    const isPaid = b.isPaid ?? b.is_paid ?? false
+    return isSameMonth(dueDate, today) && !isOverdue(b.nextDueDate || b.next_due_date) && !isPaid
   })
 
-  // 3. Paid This Month: 
-  // Heuristic: Monthly bills where NextDueDate is in the future (Next Month)
-  // This implies the bill for 'Current Month' has been processed.
+  // 3. Paid This Month:
+  // Bills where the last covered due period is in the current month.
   const paidThisMonthBills = filteredActiveBills.filter(b => {
-    const dueDate = new Date(b.nextDueDate || b.next_due_date)
-    // Only apply to Monthly/Weekly. Yearly is too sparse.
-    if (b.frequency !== 'monthly' && b.frequency !== 'weekly') return false
-
-    // If due date is after this month, it means this month is cleared
-    // But we also want to verify it represents a "recent" payment, not just a future bill.
-    // For now, "Next Month" is the best proxy for "Paid This Month".
-    return isAfter(dueDate, currentMonthEnd) && !isAfter(dueDate, addMonths(currentMonthEnd, 1))
+    const lastPaidDueRaw = b.lastPaidDueDate || b.last_paid_due_date
+    if (!lastPaidDueRaw) return false
+    const lastPaidDueDate = new Date(lastPaidDueRaw)
+    return isSameMonth(lastPaidDueDate, today)
   })
 
   // 4. Upcoming / Future: Everything else (Active but not in above categories)
@@ -1067,6 +1066,7 @@ function RecurringBills() {
                   formatCurrency={formatCurrency}
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                   isPrivate={isPrivate}
+                  variant="row"
                 />
                 </motion.div>
               ))}
@@ -1123,6 +1123,7 @@ function RecurringBills() {
                   formatCurrency={formatCurrency}
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                   isPrivate={isPrivate}
+                  variant="row"
                 />
                 </motion.div>
               ))}
@@ -1180,6 +1181,7 @@ function RecurringBills() {
                   formatCurrency={formatCurrency}
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                   isPrivate={isPrivate}
+                  variant="row"
                 />
                 </motion.div>
               ))}
@@ -1236,6 +1238,7 @@ function RecurringBills() {
                   formatCurrency={formatCurrency}
                   animationClass={animatingBill.id === bill.id ? animatingBill.type : ''}
                   isPrivate={isPrivate}
+                  variant="row"
                 />
                 </motion.div>
               ))}
@@ -1706,7 +1709,24 @@ function InternalBillAttachmentsModal({ isOpen, onClose, bill, onUpload, onDelet
 /**
  * Bill Card Component
  */
-function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments, isProcessing, getCategoryIcon, formatDueDate, getDaysUntil, t, status, formatCurrency, animationClass, isPrivate }) {
+function BillCard({
+  bill,
+  onEdit,
+  onDelete,
+  onMarkPaid,
+  onUnmark,
+  onAttachments,
+  isProcessing,
+  getCategoryIcon,
+  formatDueDate,
+  getDaysUntil,
+  t,
+  status,
+  formatCurrency,
+  animationClass,
+  isPrivate,
+  variant = 'row'
+}) {
   /* Swipe Gesture Integration */
   const { handleTouchStart, handleTouchMove, handleTouchEnd, getSwipeProps } = useSwipeGesture({
     onSwipeLeft: () => onDelete(bill.id),
@@ -1729,9 +1749,11 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
     ? bill.notes.replace(/\[LOAN_REF:[^\]]+\]/g, '').replace(/\[SAVINGS_REF:[^\]]+\]/g, '').trim()
     : ''
 
+  const [showActionsMenu, setShowActionsMenu] = useState(false)
+
   return (
     <div
-      className={`bill-card data-card ${status} ${animationClass || ''} ${swipeProps.className || ''}`}
+      className={`bill-card data-card ${status} ${animationClass || ''} ${swipeProps.className || ''} ${variant === 'row' ? 'bill-row' : ''}`}
       style={swipeProps.style}
       onTouchStart={(e) => handleTouchStart(bill.id, e)}
       onTouchMove={(e) => handleTouchMove(bill.id, e)}
@@ -1763,116 +1785,371 @@ function BillCard({ bill, onEdit, onDelete, onMarkPaid, onUnmark, onAttachments,
         </div>
       )}
 
-      {/* Header: name, frequency, amount */}
-      <div className="data-card-header">
-        <div className="bill-header">
-          <div className="bill-icon">{icon}</div>
-          <div className="bill-info">
-            <h3>
-              {bill.name}
-              {hasLoanLink && <FiLink className="linked-icon" title="Linked to Loan" style={{ marginLeft: '6px', color: 'var(--primary-color)' }} />}
-              {hasSavingsLink && <FiTarget className="linked-icon" title="Linked to Savings Goal" style={{ marginLeft: '6px', color: 'var(--success-color)' }} />}
-            </h3>
-            <span className="bill-frequency">{t(`recurringBills.frequencies.${bill.frequency}`)}</span>
-          </div>
-        </div>
-        <div className="bill-amount">
-          <div className="add-to-calc-row">
-            <span className={`amount ${isPrivate ? 'masked-number' : ''}`}>{formatCurrency(bill.amount)}</span>
-            {(bill.autoPay ?? bill.auto_pay) && <span className="auto-pay-badge">{t('recurringBills.autoPayEnabled')}</span>}
-            <AddToCalculatorButton value={bill.amount} isPrivate={isPrivate} size={16} />
-          </div>
-        </div>
-      </div>
+      {variant === 'row' ? (
+        <>
+          <div className="bill-row-main">
+            <div className="bill-row-left">
+              <div className="bill-icon">{icon}</div>
+              <div className="bill-info">
+                <h3>
+                  {bill.name}
+                  {hasLoanLink && (
+                    <FiLink
+                      className="linked-icon"
+                      title={t('recurringBills.linkedToLoan') || 'Linked to Loan'}
+                      style={{ marginLeft: '6px', color: 'var(--primary-color)' }}
+                    />
+                  )}
+                  {hasSavingsLink && (
+                    <FiTarget
+                      className="linked-icon"
+                      title={t('recurringBills.linkedToSavingsGoal') || 'Linked to Savings Goal'}
+                      style={{ marginLeft: '6px', color: 'var(--success-color)' }}
+                    />
+                  )}
+                </h3>
+                <span className="bill-frequency">
+                  {t(`recurringBills.frequencies.${bill.frequency}`)}
+                </span>
+              </div>
+            </div>
 
-      {/* Body: notes with line-clamp */}
-      <div className="data-card-body">
-        {displayNotes ? (
-          <div className="bill-notes">
-            <p>{displayNotes}</p>
+            <div className="bill-row-middle">
+              <div className="bill-due-date bill-due-date--inline">
+                <FiCalendar />
+                <span>
+                  {t('recurringBills.dueOn')}{' '}
+                  {formatDueDate(bill.nextDueDate || bill.next_due_date)}
+                </span>
+                {daysUntil >= 0 ? (
+                  <span className="days-until">
+                    {daysUntil === 0
+                      ? t('recurringBills.today')
+                      : daysUntil === 1
+                        ? t('recurringBills.tomorrow')
+                        : `${daysUntil} ${t('recurringBills.daysLeft')}`}
+                  </span>
+                ) : (
+                  <span className="days-overdue">
+                    {Math.abs(daysUntil)} {t('recurringBills.daysOverdue')}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="bill-row-amount">
+              <span className={`amount ${isPrivate ? 'masked-number' : ''}`}>
+                {formatCurrency(bill.amount)}
+              </span>
+              {(bill.autoPay ?? bill.auto_pay) && (
+                <span className="auto-pay-badge">
+                  {t('recurringBills.autoPayEnabled')}
+                </span>
+              )}
+              <AddToCalculatorButton
+                value={bill.amount}
+                isPrivate={isPrivate}
+                size={16}
+              />
+            </div>
+
+            <div className="bill-row-actions">
+              <div className="bill-row-actions-menu-wrapper">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowActionsMenu(prev => !prev)
+                  }}
+                  title={t('common.more') || 'More actions'}
+                >
+                  <FiMoreHorizontal />
+                </button>
+                {showActionsMenu && (
+                  <div
+                    className="bill-row-menu"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      className="bill-row-menu-item"
+                      onClick={() => {
+                        setShowActionsMenu(false)
+                        onEdit(bill)
+                      }}
+                    >
+                      <FiEdit />
+                      <span>{t('common.edit')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="bill-row-menu-item danger"
+                      onClick={() => {
+                        setShowActionsMenu(false)
+                        onDelete(bill.id)
+                      }}
+                    >
+                      <FiTrash2 />
+                      <span>{t('common.delete')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="bill-row-menu-item"
+                      onClick={() => {
+                        setShowActionsMenu(false)
+                        onAttachments(bill)
+                      }}
+                    >
+                      <div className="bill-row-attachments-icon">
+                        <FiPaperclip />
+                        {bill.attachments?.length > 0 && (
+                          <span className="bill-row-attachments-count">
+                            {bill.attachments.length}
+                          </span>
+                        )}
+                      </div>
+                      <span>
+                        {bill.attachments?.length > 0
+                          ? t('recurringBills.attachments') || 'Attachments'
+                          : t('common.addAttachment') || 'Add Attachment'}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => onUnmark(bill)}
+                title={t('recurringBills.unmarkPaid') || 'Revert Last Payment'}
+              >
+                <FiRotateCcw />
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-success"
+                onClick={() => onMarkPaid(bill.id, bill.amount, bill.notes)}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <div
+                      className="spinner-small"
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        marginRight: '5px'
+                      }}
+                    ></div>{' '}
+                    {t('common.processing')}
+                  </>
+                ) : (
+                  <>
+                    <FiCheck /> {t('recurringBills.markPaid')}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        ) : null}
-      </div>
 
-      {/* Meta: due date and attachments link */}
-      <div className="data-card-meta">
-        <div className="bill-due-date">
-          <FiCalendar />
-          <span>{t('recurringBills.dueOn')} {formatDueDate(bill.nextDueDate || bill.next_due_date)}</span>
-          {daysUntil >= 0 ? (
-            <span className="days-until">
-              {daysUntil === 0 ? t('recurringBills.today') :
-                daysUntil === 1 ? t('recurringBills.tomorrow') :
-                  `${daysUntil} ${t('recurringBills.daysLeft')}`}
-            </span>
-          ) : (
-            <span className="days-overdue">
-              {Math.abs(daysUntil)} {t('recurringBills.daysOverdue')}
-            </span>
-          )}
-        </div>
-        <div className="bill-extras" style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-          <button
-            type="button"
-            className="btn-text-icon"
-            onClick={(e) => { e.stopPropagation(); onAttachments(bill); }}
-            onTouchEnd={(e) => { e.stopPropagation(); }}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'transparent', border: 'none', padding: '4px 0', cursor: 'pointer' }}
-          >
-            <FiPaperclip />
-            {bill.attachments?.length > 0 ? (
-              <span>{bill.attachments.length} {t('recurringBills.attachments') || "Attachments"}</span>
-            ) : (
-              <span>{t('common.addAttachment') || "Add Attachment"}</span>
-            )}
-          </button>
-        </div>
-      </div>
+          {displayNotes ? (
+            <div className="bill-row-notes">
+              <p>{displayNotes}</p>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {/* Original card layout kept for potential reuse */}
+          <div className="data-card-header">
+            <div className="bill-header">
+              <div className="bill-icon">{icon}</div>
+              <div className="bill-info">
+                <h3>
+                  {bill.name}
+                  {hasLoanLink && (
+                    <FiLink
+                      className="linked-icon"
+                      title="Linked to Loan"
+                      style={{ marginLeft: '6px', color: 'var(--primary-color)' }}
+                    />
+                  )}
+                  {hasSavingsLink && (
+                    <FiTarget
+                      className="linked-icon"
+                      title="Linked to Savings Goal"
+                      style={{
+                        marginLeft: '6px',
+                        color: 'var(--success-color)'
+                      }}
+                    />
+                  )}
+                </h3>
+                <span className="bill-frequency">
+                  {t(`recurringBills.frequencies.${bill.frequency}`)}
+                </span>
+              </div>
+            </div>
+            <div className="bill-amount">
+              <div className="add-to-calc-row">
+                <span
+                  className={`amount ${isPrivate ? 'masked-number' : ''}`}
+                >
+                  {formatCurrency(bill.amount)}
+                </span>
+                {(bill.autoPay ?? bill.auto_pay) && (
+                  <span className="auto-pay-badge">
+                    {t('recurringBills.autoPayEnabled')}
+                  </span>
+                )}
+                <AddToCalculatorButton
+                  value={bill.amount}
+                  isPrivate={isPrivate}
+                  size={16}
+                />
+              </div>
+            </div>
+          </div>
 
-      {/* Actions: edit, delete, unmark, mark paid */}
-      <div className="data-card-actions bill-actions-row">
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() => onEdit(bill)}
-            title={t('common.edit')}
-          >
-            <FiEdit />
-          </button>
-          <button
-            type="button"
-            className="icon-btn danger"
-            onClick={() => onDelete(bill.id)}
-            title={t('common.delete')}
-          >
-            <FiTrash2 />
-          </button>
-        </div>
-        <div className="bill-footer" style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flex: 1, minWidth: 0 }}>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary"
-            onClick={() => onUnmark(bill)}
-            title={t('recurringBills.unmarkPaid') || "Revert Last Payment"}
-          >
-            <FiRotateCcw />
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-success"
-            onClick={() => onMarkPaid(bill.id, bill.amount, bill.notes)}
-            style={{ flex: 1 }}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-              <><div className="spinner-small" style={{ width: '12px', height: '12px', marginRight: '5px' }}></div> {t('common.processing')}</>
-            ) : (
-              <><FiCheck /> {t('recurringBills.markPaid')}</>
-            )}
-          </button>
-        </div>
-      </div>
+          <div className="data-card-body">
+            {displayNotes ? (
+              <div className="bill-notes">
+                <p>{displayNotes}</p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="data-card-meta">
+            <div className="bill-due-date">
+              <FiCalendar />
+              <span>
+                {t('recurringBills.dueOn')}{' '}
+                {formatDueDate(bill.nextDueDate || bill.next_due_date)}
+              </span>
+              {daysUntil >= 0 ? (
+                <span className="days-until">
+                  {daysUntil === 0
+                    ? t('recurringBills.today')
+                    : daysUntil === 1
+                      ? t('recurringBills.tomorrow')
+                      : `${daysUntil} ${t('recurringBills.daysLeft')}`}
+                </span>
+              ) : (
+                <span className="days-overdue">
+                  {Math.abs(daysUntil)} {t('recurringBills.daysOverdue')}
+                </span>
+              )}
+            </div>
+            <div
+              className="bill-extras"
+              style={{ display: 'flex', gap: '8px', marginTop: '8px' }}
+            >
+              <button
+                type="button"
+                className="btn-text-icon"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onAttachments(bill)
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation()
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '4px 0',
+                  cursor: 'pointer'
+                }}
+              >
+                <FiPaperclip />
+                {bill.attachments?.length > 0 ? (
+                  <span>
+                    {bill.attachments.length}{' '}
+                    {t('recurringBills.attachments') || 'Attachments'}
+                  </span>
+                ) : (
+                  <span>
+                    {t('common.addAttachment') || 'Add Attachment'}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="data-card-actions bill-actions-row">
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => onEdit(bill)}
+                title={t('common.edit')}
+              >
+                <FiEdit />
+              </button>
+              <button
+                type="button"
+                className="icon-btn danger"
+                onClick={() => onDelete(bill.id)}
+                title={t('common.delete')}
+              >
+                <FiTrash2 />
+              </button>
+            </div>
+            <div
+              className="bill-footer"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: '8px',
+                flex: 1,
+                minWidth: 0
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => onUnmark(bill)}
+                title={
+                  t('recurringBills.unmarkPaid') || 'Revert Last Payment'
+                }
+              >
+                <FiRotateCcw />
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-success"
+                onClick={() => onMarkPaid(bill.id, bill.amount, bill.notes)}
+                style={{ flex: 1 }}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <div
+                      className="spinner-small"
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        marginRight: '5px'
+                      }}
+                    ></div>{' '}
+                    {t('common.processing')}
+                  </>
+                ) : (
+                  <>
+                    <FiCheck /> {t('recurringBills.markPaid')}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

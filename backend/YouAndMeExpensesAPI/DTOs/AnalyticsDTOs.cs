@@ -74,6 +74,19 @@ namespace YouAndMeExpensesAPI.DTOs
         public decimal TotalOutstandingLoans { get; set; }
     }
 
+    /// <summary>
+    /// Summary of income and expenses for a single effective financial month.
+    /// Used for salary-based / due-month dashboard views.
+    /// </summary>
+    public class FinancialMonthSummaryDTO
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public decimal Income { get; set; }
+        public decimal Expenses { get; set; }
+        public decimal Balance { get; set; }
+    }
+
     // Supporting classes
     public class CategoryBreakdown
     {

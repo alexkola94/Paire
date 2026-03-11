@@ -131,6 +131,78 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         /// <summary>
+        /// Get a simple income/expense summary for a given financial month,
+        /// using \"effective month\" logic:
+        /// - Recurring bill payments are grouped by their tagged due month.
+        /// - Salary income near month-end can be shifted to the next month.
+        /// </summary>
+        public async Task<FinancialMonthSummaryDTO> GetFinancialMonthSummaryAsync(string userId, int year, int month)
+        {
+            try
+            {
+                _logger.LogInformation("Calculating financial month summary for user {UserId}, {Year}-{Month}", userId, year, month);
+
+                if (month < 1 || month > 12)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(month), "Month must be between 1 and 12.");
+                }
+
+                var targetMonthStart = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var targetMonthEnd = targetMonthStart.AddMonths(1).AddDays(-1);
+
+                // Small window around the target month to capture end-of-previous-month salary
+                // and early/late payments that conceptually belong to this month.
+                var windowStart = targetMonthStart.AddDays(-10);
+                var windowEnd = targetMonthEnd.AddDays(10);
+
+                // Get partner IDs if partnership exists
+                var partnerIds = await GetPartnerIdsAsync(userId);
+                var allUserIds = new List<string> { userId };
+                allUserIds.AddRange(partnerIds);
+
+                var transactions = await _dbContext.Transactions
+                    .Where(t => allUserIds.Contains(t.UserId))
+                    .Where(t => t.Date >= windowStart && t.Date <= windowEnd)
+                    .ToListAsync();
+
+                decimal income = 0;
+                decimal expenses = 0;
+
+                foreach (var t in transactions)
+                {
+                    var effectiveMonth = GetEffectiveMonthForTransaction(t);
+                    if (effectiveMonth.Year != year || effectiveMonth.Month != month)
+                    {
+                        continue;
+                    }
+
+                    if (t.Type == "income")
+                    {
+                        income += t.Amount;
+                    }
+                    else if (t.Type == "expense")
+                    {
+                        expenses += t.Amount;
+                    }
+                }
+
+                return new FinancialMonthSummaryDTO
+                {
+                    Year = year,
+                    Month = month,
+                    Income = income,
+                    Expenses = expenses,
+                    Balance = income - expenses
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating financial month summary");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Get loan analytics
         /// </summary>
         public async Task<LoanAnalyticsDTO> GetLoanAnalyticsAsync(
@@ -497,6 +569,83 @@ namespace YouAndMeExpensesAPI.Services
         }
 
         // Helper methods
+        private static DateTime GetEffectiveMonthForTransaction(Transaction t)
+        {
+            // Default effective month is based on the transaction date
+            var dateUtc = t.Date.Kind == DateTimeKind.Utc
+                ? t.Date
+                : (t.Date.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(t.Date, DateTimeKind.Utc)
+                    : t.Date.ToUniversalTime());
+
+            var notes = t.Notes ?? string.Empty;
+
+            // 1) Recurring bill payments tagged with [RecurringBill:...][Due:YYYY-MM-DD]
+            const string duePrefix = "[Due:";
+            if (notes.Contains("[RecurringBill:") && notes.Contains(duePrefix))
+            {
+                var dueStart = notes.IndexOf(duePrefix, StringComparison.Ordinal);
+                if (dueStart >= 0)
+                {
+                    dueStart += duePrefix.Length;
+                    var dueEnd = notes.IndexOf(']', dueStart);
+                    if (dueEnd > dueStart)
+                    {
+                        var dueStr = notes.Substring(dueStart, dueEnd - dueStart);
+                        if (DateTime.TryParseExact(dueStr, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                                System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+                                out var dueDate))
+                        {
+                            return new DateTime(dueDate.Year, dueDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                        }
+                    }
+                }
+            }
+
+            // 2) Optional explicit salary tag [SalaryFor:YYYY-MM]
+            const string salaryForPrefix = "[SalaryFor:";
+            if (!string.IsNullOrEmpty(notes))
+            {
+                var salaryStart = notes.IndexOf(salaryForPrefix, StringComparison.Ordinal);
+                if (salaryStart >= 0)
+                {
+                    salaryStart += salaryForPrefix.Length;
+                    var salaryEnd = notes.IndexOf(']', salaryStart);
+                    if (salaryEnd > salaryStart)
+                    {
+                        var ym = notes.Substring(salaryStart, salaryEnd - salaryStart);
+                        var parts = ym.Split('-', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length == 2 &&
+                            int.TryParse(parts[0], out var y) &&
+                            int.TryParse(parts[1], out var m) &&
+                            m >= 1 && m <= 12)
+                        {
+                            return new DateTime(y, m, 1, 0, 0, 0, DateTimeKind.Utc);
+                        }
+                    }
+                }
+            }
+
+            // 3) Salary near end-of-month: shift to next month
+            if (string.Equals(t.Type, "income", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(t.Category, "salary", StringComparison.OrdinalIgnoreCase))
+            {
+                var monthStart = new DateTime(dateUtc.Year, dateUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+                var daysUntilEnd = (monthEnd.Date - dateUtc.Date).TotalDays;
+
+                // If salary is paid within the last 3 days of the month, treat it as covering next month
+                if (daysUntilEnd <= 3)
+                {
+                    var nextMonthStart = monthStart.AddMonths(1);
+                    return nextMonthStart;
+                }
+            }
+
+            // Fallback: calendar month of transaction date
+            return new DateTime(dateUtc.Year, dateUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        }
+
         private async Task<List<MonthlyComparison>> GetMonthlyComparisonAsync(string userId, int months)
         {
             var result = new List<MonthlyComparison>();

@@ -82,9 +82,10 @@ function Receipts() {
                 })
             }
 
-            // Merge and sort by date descending
+            // Merge and sort by creation timestamp (fallback to date) descending
+            const getSortKey = (item) => item.createdAt || item.date
             const mergedReceipts = [...txReceipts, ...billAttachments].sort((a, b) =>
-                new Date(b.date) - new Date(a.date)
+                new Date(getSortKey(b)) - new Date(getSortKey(a))
             )
 
             setAllReceipts(mergedReceipts)

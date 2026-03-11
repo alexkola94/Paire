@@ -44,9 +44,11 @@
 
 .summary-cards {
   display: grid;
-  grid-template-columns: 1fr;
+  /* Responsive grid that standardizes card width based on viewport */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
+  align-items: stretch;
 }
 
 .summary-card {
@@ -528,6 +530,14 @@
   filter: brightness(0.4);
 }
 
+/* Quick Access Section Layout */
+.quick-access-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
 /* Quick Access Section Buttons (links and buttons, e.g. currency popover) */
 .quick-access-btn,
 button.quick-access-btn {
@@ -554,6 +564,8 @@ button.quick-access-btn {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  min-width: 0;
+  width: 100%;
 }
 
 /* Reset native button styles when used for quick-access (e.g. currency popover) */
@@ -646,10 +658,6 @@ button.quick-access-btn {
 
 /* Tablet and above */
 @media (min-width: 768px) {
-  .summary-cards {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
   .card-content .amount {
     /* Fluid typography - larger on tablet */
     font-size: clamp(1.75rem, 3vw, 2rem);
@@ -666,6 +674,12 @@ button.quick-access-btn {
 
 /* Mobile optimization */
 @media (max-width: 767px) {
+  .quick-access-section {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
   .summary-card {
     padding: var(--spacing-md);
     gap: var(--spacing-md);
@@ -925,6 +939,64 @@ button.quick-access-btn {
 .dashboard-filters {
   flex-wrap: wrap;
   align-items: center;
+}
+
+/* Overview mode toggle (Calendar vs Salary month) */
+.dashboard-overview-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  margin-left: 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.28) inset;
+}
+
+[data-theme='dark'] .dashboard-overview-toggle {
+  background: rgba(15, 7, 26, 0.6);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
+.overview-toggle-button {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.overview-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .overview-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.overview-toggle-button.is-active {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  color: #ffffff;
+  box-shadow:
+    0 4px 14px rgba(139, 92, 246, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+}
+
+.overview-toggle-button.is-active:hover {
+  transform: translateY(-1px);
 }
 
 /* ================================
