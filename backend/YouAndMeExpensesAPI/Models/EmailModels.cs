@@ -85,6 +85,14 @@ namespace YouAndMeExpensesAPI.Models
         [System.ComponentModel.DataAnnotations.Schema.Column("privacy_hide_numbers")]
         public bool PrivacyHideNumbers { get; set; } = false;
 
+        /// <summary>
+        /// Preferred overview mode for the dashboard balances header.
+        /// Allowed values: "calendar" or "salary".
+        /// Nullable to allow backend defaults and older rows.
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.Schema.Column("dashboard_overview_mode")]
+        public string? DashboardOverviewMode { get; set; }
+
         [System.ComponentModel.DataAnnotations.Schema.Column("created_at")]
         public DateTime CreatedAt { get; set; }
 

@@ -13,7 +13,7 @@ import {
   FiFilter,
   FiRefreshCw
 } from 'react-icons/fi'
-import { transactionService, budgetService, savingsGoalService, partnershipService, analyticsService } from '../services/api'
+import { transactionService, budgetService, savingsGoalService, partnershipService, analyticsService, reminderService } from '../services/api'
 import { getStoredUser } from '../services/auth'
 import { format } from 'date-fns'
 import SecurityBadge from '../components/SecurityBadge'
@@ -52,6 +52,27 @@ function Dashboard() {
   const [partnersOptions, setPartnersOptions] = useState([])
   const [detailModal, setDetailModal] = useState(null) // For viewing transaction details
   const [overviewMode, setOverviewMode] = useState('calendar') // 'calendar' | 'salary'
+
+  // Persist and restore overview mode (calendar vs salary month) from backend settings
+  useEffect(() => {
+    let isMounted = true
+    const loadOverviewPreference = async () => {
+      try {
+        const prefs = await reminderService.getSettings()
+        if (!isMounted || !prefs) return
+        if (prefs.dashboardOverviewMode === 'calendar' || prefs.dashboardOverviewMode === 'salary') {
+          setOverviewMode(prefs.dashboardOverviewMode)
+        }
+      } catch (err) {
+        // Silent fail – fall back to default calendar mode
+        // console.warn('Failed to load dashboard overview preference', err)
+      }
+    }
+    loadOverviewPreference()
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   // Memoize date calculations to avoid recalculation on every render
   const dateRange = useMemo(() => {
@@ -443,14 +464,25 @@ function Dashboard() {
             <button
               type="button"
               className={`overview-toggle-button ${overviewMode === 'calendar' ? 'is-active' : ''}`}
-              onClick={() => setOverviewMode('calendar')}
+              onClick={() => {
+                setOverviewMode('calendar')
+                // Fire-and-forget persistence to backend; backend treats missing fields as partial update.
+                reminderService.updateSettings({ dashboardOverviewMode: 'calendar' }).catch(() => {
+                  // Ignore errors; UI state already updated locally
+                })
+              }}
             >
               {t('dashboard.viewCalendarMonth', 'Calendar')}
             </button>
             <button
               type="button"
               className={`overview-toggle-button ${overviewMode === 'salary' ? 'is-active' : ''}`}
-              onClick={() => setOverviewMode('salary')}
+              onClick={() => {
+                setOverviewMode('salary')
+                reminderService.updateSettings({ dashboardOverviewMode: 'salary' }).catch(() => {
+                  // Ignore errors; UI state already updated locally
+                })
+              }}
             >
               {t('dashboard.viewSalaryMonth', 'Salary month')}
             </button>

@@ -76,6 +76,7 @@ namespace YouAndMeExpensesAPI.Services
                         BudgetAlertThreshold = 90,
                         SavingsMilestonesEnabled = true,
                         PrivacyHideNumbers = false,
+                        DashboardOverviewMode = null,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
@@ -111,6 +112,12 @@ namespace YouAndMeExpensesAPI.Services
                     existing.BudgetAlertThreshold = preferences.BudgetAlertThreshold;
                     existing.SavingsMilestonesEnabled = preferences.SavingsMilestonesEnabled;
                     existing.PrivacyHideNumbers = preferences.PrivacyHideNumbers;
+                    // For dashboard overview mode, treat null as "no change" so
+                    // partial updates from the frontend don't wipe existing values.
+                    if (!string.IsNullOrWhiteSpace(preferences.DashboardOverviewMode))
+                    {
+                        existing.DashboardOverviewMode = preferences.DashboardOverviewMode;
+                    }
                     existing.UpdatedAt = DateTime.UtcNow;
 
                     await _dbContext.SaveChangesAsync();
@@ -123,6 +130,10 @@ namespace YouAndMeExpensesAPI.Services
                 {
                     preferences.Id = Guid.NewGuid();
                     preferences.UserId = userId;
+                    if (string.IsNullOrWhiteSpace(preferences.DashboardOverviewMode))
+                    {
+                        preferences.DashboardOverviewMode = null;
+                    }
                     preferences.CreatedAt = DateTime.UtcNow;
                     preferences.UpdatedAt = DateTime.UtcNow;
 
