@@ -2827,5 +2827,87 @@
       "sent": "Test notification sent!",
       "error": "Failed to send test notification"
     }
+  },
+  "paireScore": {
+    "title": "Paire Score",
+    "subtitle": "Your Financial Health",
+    "overall": "Overall Score",
+    "budgetAdherence": "Budget Adherence",
+    "savingsRate": "Savings Rate",
+    "debtHealth": "Debt Health",
+    "expenseConsistency": "Expense Consistency",
+    "goalProgress": "Goal Progress",
+    "history": "Score History",
+    "tips": "Improvement Tips",
+    "recalculate": "Recalculate",
+    "noData": "Start tracking expenses to see your score!"
+  },
+  "streaks": {
+    "title": "Streaks",
+    "dayStreak": "Day Streak!",
+    "days": "days",
+    "longestStreak": "Longest streak",
+    "expenseLogging": "Expense Logging",
+    "login": "Login",
+    "budgetAdherence": "Budget",
+    "noStreaks": "Start logging expenses to build your streak!"
+  },
+  "weeklyRecap": {
+    "title": "Weekly Recap",
+    "weekOf": "Week of",
+    "totalSpent": "Total Spent",
+    "totalIncome": "Total Income",
+    "topCategories": "Top Categories",
+    "insights": "Insights",
+    "generate": "Generate Recap",
+    "noRecap": "No recap available for this week."
+  },
+  "chatbotPersonality": {
+    "title": "AI Personality",
+    "supportive": "Supportive Partner",
+    "toughLove": "Tough Love",
+    "cheerleader": "Cheerleader",
+    "roast": "Roast Mode",
+    "hype": "Hype Mode"
+  },
+  "paireHome": {
+    "title": "Our Home",
+    "level": "Level",
+    "totalPoints": "Total Points",
+    "roomsUnlocked": "Rooms Unlocked",
+    "kitchen": "Kitchen",
+    "livingRoom": "Living Room",
+    "bedroom": "Bedroom",
+    "office": "Office",
+    "garden": "Garden",
+    "garage": "Garage",
+    "bathroom": "Bathroom",
+    "locked": "Locked",
+    "bare": "Bare",
+    "basic": "Basic",
+    "furnished": "Furnished",
+    "luxury": "Luxury",
+    "upgrade": "Upgrade",
+    "visitHome": "Visit Home"
+  },
+  "challenges": {
+    "title": "Challenges",
+    "subtitle": "Complete challenges to earn rewards and level up",
+    "active": "Active",
+    "available": "Browse",
+    "completedTab": "Done",
+    "activeCount": "Active",
+    "completedCount": "Done",
+    "pointsEarned": "Points",
+    "noActive": "No active challenges",
+    "noneAvailable": "Check back soon!",
+    "noneCompleted": "Complete a challenge!",
+    "progress": "Progress",
+    "completed": "Completed!",
+    "join": "Join",
+    "joined": "Joined",
+    "claimReward": "Claim",
+    "rewardClaimed": "Claimed",
+    "viewAll": "View All"
   }
 }

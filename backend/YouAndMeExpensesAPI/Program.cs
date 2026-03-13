@@ -510,6 +510,14 @@ builder.Services.AddScoped<IUserSyncService, UserSyncService>();
 
 // Register Achievement Service
 builder.Services.AddScoped<IAchievementService, AchievementService>();
+builder.Services.AddScoped<IStreakService, StreakService>();
+builder.Services.AddScoped<IChatbotPersonalityService, ChatbotPersonalityService>();
+builder.Services.AddScoped<IFinancialHealthService, FinancialHealthService>();
+builder.Services.AddScoped<IWeeklyRecapService, WeeklyRecapService>();
+builder.Services.AddScoped<IPaireHomeService, PaireHomeService>();
+builder.Services.AddScoped<IChallengeService, ChallengeService>();
+builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<IYearInReviewService, YearInReviewService>();
 
 // Register Job Monitor Service (Singleton)
 builder.Services.AddSingleton<JobMonitorService>();
@@ -608,6 +616,9 @@ builder.Services.AddHostedService<ReminderBackgroundService>();
 
 // Enable hourly travel notification checks
 builder.Services.AddHostedService<TravelNotificationBackgroundService>();
+
+// Enable weekly recap generation (Mondays at 7:00 UTC)
+builder.Services.AddHostedService<WeeklyRecapBackgroundService>();
 
 // Uncomment the line below to enable automatic bank transaction sync every 6 hours
 // builder.Services.AddHostedService<BankTransactionSyncBackgroundService>();

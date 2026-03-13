@@ -93,3 +93,9 @@ export { default as AddToCalculatorButton } from './AddToCalculatorButton';
 
 // Chat / structured message (Financial & Travel Guide)
 export { default as StructuredMessageContent } from './StructuredMessageContent';
+
+// Paire features
+export { default as StreakBanner } from './StreakBanner';
+export { default as PaireScoreCard } from './PaireScoreCard';
+export { default as PersonalitySelector } from './PersonalitySelector';
+export { default as ChallengeCard } from './ChallengeCard';

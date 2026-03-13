@@ -500,12 +500,11 @@ export const analyticsService = {
 // ========================================
 
 export const chatbotService = {
-  async sendQuery(query, history = []) {
-    // Get language from localStorage
+  async sendQuery(query, history = [], conversationId = null) {
     const language = localStorage.getItem('language') || 'en'
     return await apiRequest('/api/chatbot/query', {
       method: 'POST',
-      body: JSON.stringify({ query, history, language })
+      body: JSON.stringify({ query, history, language, conversationId })
     })
   },
 
@@ -1170,6 +1169,117 @@ export const publicStatsService = {
 }
 
 // ========================================
+// Streak Service
+// ========================================
+
+export const streakService = {
+  async getAll() {
+    return await apiRequest('/api/streaks')
+  },
+
+  async recordActivity(streakType) {
+    return await apiRequest('/api/streaks/record', {
+      method: 'POST',
+      body: JSON.stringify({ streakType })
+    })
+  }
+}
+
+// ========================================
+// Financial Health Service
+// ========================================
+
+export const financialHealthService = {
+  async getScore() {
+    return await apiRequest('/api/financial-health')
+  },
+
+  async getHistory(months = 6) {
+    return await apiRequest(`/api/financial-health/history?months=${months}`)
+  },
+
+  async getPartnershipScore() {
+    return await apiRequest('/api/financial-health/partnership')
+  },
+
+  async recalculate() {
+    return await apiRequest('/api/financial-health/recalculate', {
+      method: 'POST'
+    })
+  }
+}
+
+// ========================================
+// Weekly Recap Service
+// ========================================
+
+export const weeklyRecapService = {
+  async getLatest() {
+    return await apiRequest('/api/weekly-recap')
+  },
+
+  async getHistory(count = 4) {
+    return await apiRequest(`/api/weekly-recap/history?count=${count}`)
+  },
+
+  async generate() {
+    return await apiRequest('/api/weekly-recap/generate', {
+      method: 'POST'
+    })
+  }
+}
+
+// ========================================
+// Paire Home Service
+// ========================================
+
+export const challengeService = {
+  async getAvailable() {
+    return await apiRequest('/api/challenges/available')
+  },
+
+  async getUserChallenges(status) {
+    const params = status ? `?status=${encodeURIComponent(status)}` : ''
+    return await apiRequest(`/api/challenges${params}`)
+  },
+
+  async join(challengeId) {
+    return await apiRequest(`/api/challenges/${challengeId}/join`, { method: 'POST' })
+  },
+
+  async updateProgress(userChallengeId, incrementBy = 1) {
+    return await apiRequest(`/api/challenges/${userChallengeId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify({ incrementBy })
+    })
+  },
+
+  async claimReward(userChallengeId) {
+    return await apiRequest(`/api/challenges/${userChallengeId}/claim`, { method: 'POST' })
+  },
+
+  async seed() {
+    return await apiRequest('/api/challenges/seed', { method: 'POST' })
+  }
+}
+
+export const paireHomeService = {
+  async getHome() {
+    return await apiRequest('/api/paire-home')
+  },
+
+  async getRooms() {
+    return await apiRequest('/api/paire-home/rooms')
+  },
+
+  async upgradeRoom(room) {
+    return await apiRequest(`/api/paire-home/upgrade/${encodeURIComponent(room)}`, {
+      method: 'POST'
+    })
+  }
+}
+
+// ========================================
 // AI Gateway Service
 // ========================================
 
@@ -1233,9 +1343,10 @@ export const aiGatewayService = {
 
     const fetchOptions = {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         query: query.trim(),
-        conversationHistory: conversationHistory
+        conversationHistory: conversationHistory,
+        conversationId: options.conversationId || null
       })
     }
     if (options.signal) fetchOptions.signal = options.signal
@@ -1280,3 +1391,48 @@ export const aiGatewayService = {
   }
 }
 
+// ========================================
+// Conversation Service (AI Memory)
+// ========================================
+
+export const yearReviewService = {
+  async getReview(year) {
+    return await apiRequest(`/api/year-review/${year}`)
+  }
+}
+
+export const conversationService = {
+  async getConversations(includeArchived = false) {
+    return await apiRequest(`/api/conversations?includeArchived=${includeArchived}`)
+  },
+
+  async getMessages(conversationId, page = 1, pageSize = 50) {
+    return await apiRequest(`/api/conversations/${conversationId}/messages?page=${page}&pageSize=${pageSize}`)
+  },
+
+  async createConversation(title) {
+    return await apiRequest('/api/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title })
+    })
+  },
+
+  async updateTitle(conversationId, title) {
+    return await apiRequest(`/api/conversations/${conversationId}/title`, {
+      method: 'PUT',
+      body: JSON.stringify({ title })
+    })
+  },
+
+  async deleteConversation(conversationId) {
+    return await apiRequest(`/api/conversations/${conversationId}`, {
+      method: 'DELETE'
+    })
+  },
+
+  async archiveConversation(conversationId) {
+    return await apiRequest(`/api/conversations/${conversationId}/archive`, {
+      method: 'POST'
+    })
+  }
+}

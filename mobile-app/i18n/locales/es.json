@@ -1202,5 +1202,87 @@
       "ferry": "Ferry",
       "walking": "A pie"
     }
+  },
+  "paireScore": {
+    "title": "Puntuación Paire",
+    "subtitle": "Tu Salud Financiera",
+    "overall": "Puntuación General",
+    "budgetAdherence": "Cumplimiento de Presupuesto",
+    "savingsRate": "Tasa de Ahorro",
+    "debtHealth": "Salud de Deuda",
+    "expenseConsistency": "Consistencia de Gastos",
+    "goalProgress": "Progreso de Metas",
+    "history": "Historial",
+    "tips": "Consejos",
+    "recalculate": "Recalcular",
+    "noData": "¡Comienza a registrar gastos!"
+  },
+  "streaks": {
+    "title": "Rachas",
+    "dayStreak": "¡Días de Racha!",
+    "days": "días",
+    "longestStreak": "Racha más larga",
+    "expenseLogging": "Registro de Gastos",
+    "login": "Inicio de Sesión",
+    "budgetAdherence": "Presupuesto",
+    "noStreaks": "¡Comienza a registrar gastos!"
+  },
+  "weeklyRecap": {
+    "title": "Resumen Semanal",
+    "weekOf": "Semana del",
+    "totalSpent": "Total Gastado",
+    "totalIncome": "Total Ingresos",
+    "topCategories": "Categorías Principales",
+    "insights": "Perspectivas",
+    "generate": "Generar",
+    "noRecap": "No hay resumen disponible."
+  },
+  "chatbotPersonality": {
+    "title": "Personalidad IA",
+    "supportive": "Compañero Solidario",
+    "toughLove": "Amor Duro",
+    "cheerleader": "Animador",
+    "roast": "Modo Roast",
+    "hype": "Modo Hype"
+  },
+  "paireHome": {
+    "title": "Nuestro Hogar",
+    "level": "Nivel",
+    "totalPoints": "Puntos",
+    "roomsUnlocked": "Habitaciones",
+    "kitchen": "Cocina",
+    "livingRoom": "Sala de Estar",
+    "bedroom": "Dormitorio",
+    "office": "Oficina",
+    "garden": "Jardín",
+    "garage": "Garaje",
+    "bathroom": "Baño",
+    "locked": "Bloqueado",
+    "bare": "Vacío",
+    "basic": "Básico",
+    "furnished": "Amueblado",
+    "luxury": "Lujoso",
+    "upgrade": "Mejorar",
+    "visitHome": "Visitar"
+  },
+  "challenges": {
+    "title": "Desafíos",
+    "subtitle": "Completa desafíos para ganar recompensas",
+    "active": "Activos",
+    "available": "Explorar",
+    "completedTab": "Hechos",
+    "activeCount": "Activos",
+    "completedCount": "Hechos",
+    "pointsEarned": "Puntos",
+    "noActive": "Sin desafíos activos",
+    "noneAvailable": "¡Vuelve pronto!",
+    "noneCompleted": "¡Completa un desafío!",
+    "progress": "Progreso",
+    "completed": "¡Completado!",
+    "join": "Unirse",
+    "joined": "Unido",
+    "claimReward": "Reclamar",
+    "rewardClaimed": "Reclamada",
+    "viewAll": "Ver Todos"
   }
 }

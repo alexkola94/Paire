@@ -2896,5 +2896,87 @@
       "sent": "Η δοκιμαστική ειδοποίηση στάλθηκε!",
       "error": "Αποτυχία αποστολής δοκιμαστικής ειδοποίησης"
     }
+  },
+  "paireScore": {
+    "title": "Βαθμολογία Paire",
+    "subtitle": "Η Οικονομική σας Υγεία",
+    "overall": "Συνολική Βαθμολογία",
+    "budgetAdherence": "Τήρηση Προϋπολογισμού",
+    "savingsRate": "Ρυθμός Αποταμίευσης",
+    "debtHealth": "Υγεία Χρέους",
+    "expenseConsistency": "Σταθερότητα Εξόδων",
+    "goalProgress": "Πρόοδος Στόχων",
+    "history": "Ιστορικό",
+    "tips": "Συμβουλές",
+    "recalculate": "Επανυπολογισμός",
+    "noData": "Αρχίστε να καταγράφετε έξοδα!"
+  },
+  "streaks": {
+    "title": "Σερί",
+    "dayStreak": "Ημέρες Σερί!",
+    "days": "ημέρες",
+    "longestStreak": "Μεγαλύτερο σερί",
+    "expenseLogging": "Καταγραφή Εξόδων",
+    "login": "Σύνδεση",
+    "budgetAdherence": "Προϋπολογισμός",
+    "noStreaks": "Αρχίστε να καταγράφετε έξοδα!"
+  },
+  "weeklyRecap": {
+    "title": "Εβδομαδιαία Ανασκόπηση",
+    "weekOf": "Εβδομάδα",
+    "totalSpent": "Σύνολο Εξόδων",
+    "totalIncome": "Σύνολο Εσόδων",
+    "topCategories": "Κορυφαίες Κατηγορίες",
+    "insights": "Πληροφορίες",
+    "generate": "Δημιουργία",
+    "noRecap": "Δεν υπάρχει ανασκόπηση."
+  },
+  "chatbotPersonality": {
+    "title": "Προσωπικότητα AI",
+    "supportive": "Υποστηρικτικός",
+    "toughLove": "Σκληρή Αγάπη",
+    "cheerleader": "Ενθουσιώδης",
+    "roast": "Ψήσιμο",
+    "hype": "Hype"
+  },
+  "paireHome": {
+    "title": "Το Σπίτι μας",
+    "level": "Επίπεδο",
+    "totalPoints": "Πόντοι",
+    "roomsUnlocked": "Δωμάτια",
+    "kitchen": "Κουζίνα",
+    "livingRoom": "Σαλόνι",
+    "bedroom": "Υπνοδωμάτιο",
+    "office": "Γραφείο",
+    "garden": "Κήπος",
+    "garage": "Γκαράζ",
+    "bathroom": "Μπάνιο",
+    "locked": "Κλειδωμένο",
+    "bare": "Άδειο",
+    "basic": "Βασικό",
+    "furnished": "Επιπλωμένο",
+    "luxury": "Πολυτελές",
+    "upgrade": "Αναβάθμιση",
+    "visitHome": "Επίσκεψη"
+  },
+  "challenges": {
+    "title": "Προκλήσεις",
+    "subtitle": "Ολοκληρώστε προκλήσεις για ανταμοιβές",
+    "active": "Ενεργές",
+    "available": "Αναζήτηση",
+    "completedTab": "Ολοκληρωμένες",
+    "activeCount": "Ενεργές",
+    "completedCount": "Ολοκληρωμένες",
+    "pointsEarned": "Πόντοι",
+    "noActive": "Δεν υπάρχουν ενεργές προκλήσεις",
+    "noneAvailable": "Επιστρέψτε σύντομα!",
+    "noneCompleted": "Ολοκληρώστε μια πρόκληση!",
+    "progress": "Πρόοδος",
+    "completed": "Ολοκληρώθηκε!",
+    "join": "Συμμετοχή",
+    "joined": "Συμμετέχετε",
+    "claimReward": "Απαίτηση",
+    "rewardClaimed": "Ληφθείσα",
+    "viewAll": "Δείτε Όλες"
   }
 }

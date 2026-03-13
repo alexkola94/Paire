@@ -49,6 +49,10 @@ const ShoppingLists = lazyWithRetry(() => import('./pages/ShoppingLists'))
 const EconomicNews = lazyWithRetry(() => import('./pages/EconomicNews'))
 const BankCallback = lazyWithRetry(() => import('./pages/BankCallback'))
 const Achievements = lazyWithRetry(() => import('./pages/Achievements'))
+const PaireScore = lazyWithRetry(() => import('./pages/PaireScore'))
+const WeeklyRecap = lazyWithRetry(() => import('./pages/WeeklyRecap'))
+const PaireHome = lazyWithRetry(() => import('./pages/PaireHome'))
+const Challenges = lazyWithRetry(() => import('./pages/Challenges'))
 const CurrencyCalculator = lazyWithRetry(() => import('./pages/CurrencyCalculator'))
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
 const TermsOfService = lazyWithRetry(() => import('./pages/TermsOfService'))
@@ -278,6 +282,10 @@ function MainAppRouter({ session }) {
             <Route path="shopping-lists" element={<ShoppingLists />} />
             <Route path="economic-news" element={<EconomicNews />} />
             <Route path="achievements" element={<Achievements />} />
+            <Route path="paire-score" element={<PaireScore />} />
+            <Route path="weekly-recap" element={<WeeklyRecap />} />
+            <Route path="paire-home" element={<PaireHome />} />
+            <Route path="challenges" element={<Challenges />} />
             <Route path="partnership" element={<Partnership />} />
             <Route path="reminders" element={<ReminderSettings />} />
             <Route path="profile" element={<Profile />} />

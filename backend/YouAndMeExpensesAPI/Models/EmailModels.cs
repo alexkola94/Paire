@@ -93,6 +93,13 @@ namespace YouAndMeExpensesAPI.Models
         [System.ComponentModel.DataAnnotations.Schema.Column("dashboard_overview_mode")]
         public string? DashboardOverviewMode { get; set; }
 
+        [System.ComponentModel.DataAnnotations.Schema.Column("chatbot_personality")]
+        [System.ComponentModel.DataAnnotations.MaxLength(50)]
+        public string ChatbotPersonality { get; set; } = "supportive";
+
+        [System.ComponentModel.DataAnnotations.Schema.Column("weekly_recap_enabled")]
+        public bool WeeklyRecapEnabled { get; set; } = true;
+
         [System.ComponentModel.DataAnnotations.Schema.Column("created_at")]
         public DateTime CreatedAt { get; set; }
 

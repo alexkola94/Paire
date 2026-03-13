@@ -112,12 +112,15 @@ namespace YouAndMeExpensesAPI.Services
                     existing.BudgetAlertThreshold = preferences.BudgetAlertThreshold;
                     existing.SavingsMilestonesEnabled = preferences.SavingsMilestonesEnabled;
                     existing.PrivacyHideNumbers = preferences.PrivacyHideNumbers;
-                    // For dashboard overview mode, treat null as "no change" so
-                    // partial updates from the frontend don't wipe existing values.
                     if (!string.IsNullOrWhiteSpace(preferences.DashboardOverviewMode))
                     {
                         existing.DashboardOverviewMode = preferences.DashboardOverviewMode;
                     }
+                    if (!string.IsNullOrWhiteSpace(preferences.ChatbotPersonality))
+                    {
+                        existing.ChatbotPersonality = preferences.ChatbotPersonality;
+                    }
+                    existing.WeeklyRecapEnabled = preferences.WeeklyRecapEnabled;
                     existing.UpdatedAt = DateTime.UtcNow;
 
                     await _dbContext.SaveChangesAsync();

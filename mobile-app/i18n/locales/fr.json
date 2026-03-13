@@ -1202,5 +1202,87 @@
       "ferry": "Ferry",
       "walking": "À pied"
     }
+  },
+  "paireScore": {
+    "title": "Score Paire",
+    "subtitle": "Votre Santé Financière",
+    "overall": "Score Global",
+    "budgetAdherence": "Respect du Budget",
+    "savingsRate": "Taux d'Épargne",
+    "debtHealth": "Santé de la Dette",
+    "expenseConsistency": "Régularité des Dépenses",
+    "goalProgress": "Progrès des Objectifs",
+    "history": "Historique",
+    "tips": "Conseils",
+    "recalculate": "Recalculer",
+    "noData": "Commencez à suivre vos dépenses !"
+  },
+  "streaks": {
+    "title": "Séries",
+    "dayStreak": "Jours de Série !",
+    "days": "jours",
+    "longestStreak": "Plus longue série",
+    "expenseLogging": "Suivi des Dépenses",
+    "login": "Connexion",
+    "budgetAdherence": "Budget",
+    "noStreaks": "Commencez à suivre vos dépenses !"
+  },
+  "weeklyRecap": {
+    "title": "Récap Hebdomadaire",
+    "weekOf": "Semaine du",
+    "totalSpent": "Total Dépensé",
+    "totalIncome": "Total Revenus",
+    "topCategories": "Catégories Principales",
+    "insights": "Aperçus",
+    "generate": "Générer",
+    "noRecap": "Pas de récap disponible."
+  },
+  "chatbotPersonality": {
+    "title": "Personnalité IA",
+    "supportive": "Partenaire Bienveillant",
+    "toughLove": "Amour Vache",
+    "cheerleader": "Supporter",
+    "roast": "Mode Roast",
+    "hype": "Mode Hype"
+  },
+  "paireHome": {
+    "title": "Notre Maison",
+    "level": "Niveau",
+    "totalPoints": "Points",
+    "roomsUnlocked": "Pièces",
+    "kitchen": "Cuisine",
+    "livingRoom": "Salon",
+    "bedroom": "Chambre",
+    "office": "Bureau",
+    "garden": "Jardin",
+    "garage": "Garage",
+    "bathroom": "Salle de Bain",
+    "locked": "Verrouillé",
+    "bare": "Vide",
+    "basic": "Basique",
+    "furnished": "Meublé",
+    "luxury": "Luxueux",
+    "upgrade": "Améliorer",
+    "visitHome": "Visiter"
+  },
+  "challenges": {
+    "title": "Défis",
+    "subtitle": "Relevez des défis pour gagner des récompenses",
+    "active": "Actifs",
+    "available": "Explorer",
+    "completedTab": "Faits",
+    "activeCount": "Actifs",
+    "completedCount": "Faits",
+    "pointsEarned": "Points",
+    "noActive": "Aucun défi actif",
+    "noneAvailable": "Revenez bientôt !",
+    "noneCompleted": "Complétez un défi !",
+    "progress": "Progrès",
+    "completed": "Terminé !",
+    "join": "Rejoindre",
+    "joined": "Rejoint",
+    "claimReward": "Réclamer",
+    "rewardClaimed": "Réclamée",
+    "viewAll": "Voir Tous"
   }
 }

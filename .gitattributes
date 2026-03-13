@@ -1,0 +1,5 @@
+# Normalize line endings: checkout with CRLF on Windows, store as LF in repo
+* text=auto eol=lf
+
+# Explicitly normalize JSON (avoids LF/CRLF warning on Windows)
+*.json text eol=lf

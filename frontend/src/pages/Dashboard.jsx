@@ -32,6 +32,11 @@ import EmptyState from '../components/EmptyState'
 import { usePrivacyMode } from '../context/PrivacyModeContext'
 import { useCurrencyPopover } from '../context/CurrencyPopoverContext'
 import { useWarmup, dispatchWarmupStarted, dispatchWarmupEnded } from '../context/WarmupContext'
+import StreakWidget from '../components/widgets/StreakWidget'
+import PaireScoreWidget from '../components/widgets/PaireScoreWidget'
+import WeeklyRecapWidget from '../components/widgets/WeeklyRecapWidget'
+import PaireHomeWidget from '../components/widgets/PaireHomeWidget'
+import ChallengesWidget from '../components/widgets/ChallengesWidget'
 import './Dashboard.css'
 
 /**
@@ -601,6 +606,17 @@ function Dashboard() {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Paire Features Widgets */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <StreakWidget />
+        <PaireScoreWidget />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <WeeklyRecapWidget />
+        <PaireHomeWidget />
+        <ChallengesWidget />
+      </div>
 
       {/* Budget Progress Section - Phase 4 Feature */}
       <motion.div 

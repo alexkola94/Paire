@@ -29,6 +29,7 @@ namespace YouAndMeExpensesAPI.Controllers
         private readonly IUserSyncService _userSyncService;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly IStreakService _streakService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
@@ -41,6 +42,7 @@ namespace YouAndMeExpensesAPI.Controllers
             IUserSyncService userSyncService,
             IEmailService emailService,
             IConfiguration configuration,
+            IStreakService streakService,
             ILogger<AuthController> logger)
         {
             _shieldAuthService = shieldAuthService;
@@ -52,6 +54,7 @@ namespace YouAndMeExpensesAPI.Controllers
             _userSyncService = userSyncService;
             _emailService = emailService;
             _configuration = configuration;
+            _streakService = streakService;
             _logger = logger;
         }
 
@@ -245,6 +248,9 @@ namespace YouAndMeExpensesAPI.Controllers
                 CreatedAt = user.CreatedAt,
                 Roles = roles
             };
+
+            try { await _streakService.RecordActivityAsync(user.Id, "login"); }
+            catch (Exception streakEx) { _logger.LogWarning(streakEx, "Failed to record login streak"); }
 
             return Ok(new { token = accessToken, refreshToken = newRefreshToken, user = userDto });
         }

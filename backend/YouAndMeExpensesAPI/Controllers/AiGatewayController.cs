@@ -22,6 +22,8 @@ public class AiGatewayController : BaseApiController
     private readonly IUserRagContextBuilder _contextBuilder;
     private readonly AiGatewayOptions _options;
     private readonly RagServiceOptions _ragOptions;
+    private readonly IChatbotPersonalityService _personalityService;
+    private readonly IConversationService _conversationService;
     private readonly ILogger<AiGatewayController> _logger;
 
     public AiGatewayController(
@@ -29,6 +31,8 @@ public class AiGatewayController : BaseApiController
         IRagClient ragClient,
         IRagContextService ragContextService,
         IUserRagContextBuilder contextBuilder,
+        IChatbotPersonalityService personalityService,
+        IConversationService conversationService,
         Microsoft.Extensions.Options.IOptions<AiGatewayOptions> options,
         Microsoft.Extensions.Options.IOptions<RagServiceOptions> ragOptions,
         ILogger<AiGatewayController> logger)
@@ -37,6 +41,8 @@ public class AiGatewayController : BaseApiController
         _ragClient = ragClient;
         _ragContextService = ragContextService;
         _contextBuilder = contextBuilder;
+        _personalityService = personalityService;
+        _conversationService = conversationService;
         _options = options.Value;
         _ragOptions = ragOptions.Value;
         _logger = logger;
@@ -57,6 +63,14 @@ public class AiGatewayController : BaseApiController
         var accessToken = GetBearerToken();
         if (string.IsNullOrEmpty(accessToken) && string.IsNullOrEmpty(_options.GatewaySecret))
             return Unauthorized(new { error = "Authorization token or gateway secret required." });
+
+        var userIdStr = GetCurrentUserId();
+        if (!string.IsNullOrEmpty(userIdStr))
+        {
+            var personality = await _personalityService.GetPersonalityAsync(userIdStr);
+            var systemPrompt = _personalityService.GetSystemPromptForPersonality(personality);
+            request.Prompt = systemPrompt + "\n\nUser query: " + request.Prompt;
+        }
 
         try
         {
@@ -85,6 +99,18 @@ public class AiGatewayController : BaseApiController
         var accessToken = GetBearerToken();
         if (string.IsNullOrEmpty(accessToken) && string.IsNullOrEmpty(_options.GatewaySecret))
             return Unauthorized(new { error = "Authorization token or gateway secret required." });
+
+        var chatUserIdStr = GetCurrentUserId();
+        if (!string.IsNullOrEmpty(chatUserIdStr))
+        {
+            var personality = await _personalityService.GetPersonalityAsync(chatUserIdStr);
+            var systemPrompt = _personalityService.GetSystemPromptForPersonality(personality);
+            request.Messages.Insert(0, new YouAndMeExpensesAPI.DTOs.AiGateway.ChatMessage
+            {
+                Role = "system",
+                Content = systemPrompt
+            });
+        }
 
         try
         {
@@ -140,14 +166,25 @@ public class AiGatewayController : BaseApiController
             _logger.LogWarning("Could not determine user ID for RAG query, proceeding without user-specific context");
         }
 
+        Models.Conversation? conversation = null;
+        if (!string.IsNullOrEmpty(userIdStr))
+        {
+            try
+            {
+                conversation = await _conversationService.GetOrCreateConversationAsync(
+                    userIdStr, request.ConversationId);
+                await _conversationService.SaveMessageAsync(conversation.Id, "user", request.Query);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to persist user message for conversation");
+            }
+        }
+
         try
         {
-            // RAG service authenticates via X-Gateway-Secret (set by RagClient). Do not forward the user JWT:
-            // the token is issued by this app and the RAG service uses different JWT settings, so forwarding
-            // it causes "Signature validation failed / kid missing" log noise even though the request succeeds.
             var response = await _ragClient.RagQueryAsync(request, userCategory, accessToken: null, cancellationToken);
 
-            // Hybrid fallback: when RAG retrieved no context but we know the user, inject built summary and call AI directly
             if (_options.Enabled && !response.RagUsed && response.ChunksRetrieved == 0 && userIdParsed.HasValue && !string.IsNullOrEmpty(userCategory))
             {
                 try
@@ -155,15 +192,11 @@ public class AiGatewayController : BaseApiController
                     var (content, _) = await _contextBuilder.BuildContextAsync(userIdParsed.Value.ToString(), cancellationToken);
                     if (!string.IsNullOrWhiteSpace(content))
                     {
-                        // Truncate context to avoid gateway 500 (token/size limits). Keep prompt within a safe size.
                         const int maxContextLength = 6000;
                         var contextToUse = content.Length <= maxContextLength
                             ? content
                             : content.Substring(0, maxContextLength) + "\n\n[Context truncated for length.]";
-                        // Include conversation history for follow-up question support
                         var enhancedPrompt = BuildRagStyleEnhancedPrompt(request.Query, contextToUse, request.ConversationHistory);
-                        // Skip polishing and injection detection since this is a trusted service call
-                        // and the enhanced prompt contains instruction-like patterns that would trigger false positives
                         var genRequest = new GenerateRequest
                         {
                             Prompt = enhancedPrompt,
@@ -172,13 +205,24 @@ public class AiGatewayController : BaseApiController
                             SkipPolishing = true
                         };
                         var aiResponse = await _aiGatewayClient.GenerateAsync(genRequest, accessToken, cancellationToken);
-                        return Ok(new RagQueryResponse
+                        var answer = aiResponse.Response ?? string.Empty;
+
+                        if (conversation != null)
                         {
-                            Answer = aiResponse.Response ?? string.Empty,
+                            try { await _conversationService.SaveMessageAsync(conversation.Id, "assistant", answer); }
+                            catch { /* non-critical */ }
+                        }
+
+                        var fallbackResponse = new RagQueryResponse
+                        {
+                            Answer = answer,
                             Sources = null,
                             RagUsed = false,
                             ChunksRetrieved = 0
-                        });
+                        };
+                        if (conversation != null)
+                            return Ok(new { fallbackResponse.Answer, fallbackResponse.Sources, fallbackResponse.RagUsed, fallbackResponse.ChunksRetrieved, conversationId = conversation.Id });
+                        return Ok(fallbackResponse);
                     }
                 }
                 catch (Exception ex)
@@ -187,6 +231,14 @@ public class AiGatewayController : BaseApiController
                 }
             }
 
+            if (conversation != null && !string.IsNullOrEmpty(response.Answer))
+            {
+                try { await _conversationService.SaveMessageAsync(conversation.Id, "assistant", response.Answer); }
+                catch { /* non-critical */ }
+            }
+
+            if (conversation != null)
+                return Ok(new { response.Answer, response.Sources, response.RagUsed, response.ChunksRetrieved, conversationId = conversation.Id });
             return Ok(response);
         }
         catch (HttpRequestException ex)

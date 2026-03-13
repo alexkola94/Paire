@@ -19,14 +19,19 @@ import {
   FiChevronDown,
   FiCopy,
   FiPaperclip,
-  FiImage
+  FiImage,
+  FiList,
+  FiPlus,
+  FiTrash2
 } from 'react-icons/fi'
 import { TbBrain } from 'react-icons/tb' // Brain icon for thinking mode toggle
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
-import { chatbotService, aiGatewayService } from '../services/api'
+import { FiSettings } from 'react-icons/fi'
+import { chatbotService, aiGatewayService, reminderService, conversationService } from '../services/api'
 import { buildAttachmentsPayload } from '../utils/chatAttachments'
+import PersonalitySelector from './PersonalitySelector'
 import './Chatbot.css'
 
 /**
@@ -82,11 +87,16 @@ function Chatbot() {
   const [isRevealed, setIsRevealed] = useState(false) // For mobile reveal state
   const [isMobile, setIsMobile] = useState(false)
   const [downloadingReport, setDownloadingReport] = useState(null) // Track which report is downloading
-  const [isAiMode, setIsAiMode] = useState(false) // Toggle between rule-based and AI mode
-  const [aiSubMode, setAiSubMode] = useState('normal') // When AI mode: 'thinking' = RAG enhanced, 'normal' = normal chat
-  const [abortController, setAbortController] = useState(null) // AbortController for cancelling AI requests
-  const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen mode for desktop
+  const [isAiMode, setIsAiMode] = useState(false)
+  const [aiSubMode, setAiSubMode] = useState('normal')
+  const [abortController, setAbortController] = useState(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showPersonalitySelector, setShowPersonalitySelector] = useState(false)
+  const [currentPersonality, setCurrentPersonality] = useState('supportive')
   const [attachments, setAttachments] = useState([]) // { file, preview?, type: 'image'|'document' }
+  const [conversationId, setConversationId] = useState(null)
+  const [conversations, setConversations] = useState([])
+  const [showConversationList, setShowConversationList] = useState(false)
   const fileInputRef = useRef(null)
   const MAX_ATTACHMENT_SIZE_MB = 5
   const messagesEndRef = useRef(null)
@@ -100,9 +110,20 @@ function Chatbot() {
   const isAtBottomRef = useRef(true) // Ref so callbacks (e.g. typewriter onUpdate) see current value
   const SCROLL_THRESHOLD_PX = 80 // Pixels from bottom to consider "at bottom"
 
-  /**
-   * Detect mobile viewport
-   */
+  useEffect(() => {
+    reminderService.getSettings().then(prefs => {
+      if (prefs?.chatbotPersonality) setCurrentPersonality(prefs.chatbotPersonality)
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (isOpen) {
+      conversationService.getConversations().then(list => {
+        setConversations(Array.isArray(list) ? list : [])
+      }).catch(() => {})
+    }
+  }, [isOpen])
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -439,8 +460,12 @@ function Chatbot() {
           const response = await aiGatewayService.ragQuery(userMessage, { 
             signal: controller?.signal,
             history: history,
-            attachments: attachmentsPayload
+            attachments: attachmentsPayload,
+            conversationId: conversationId
           })
+          if (response?.conversationId && !conversationId) {
+            setConversationId(response.conversationId)
+          }
           const answer = response?.answer ?? response?.message?.content ?? ''
           const sources = response?.sources
           const sourceLabels = Array.isArray(sources)
@@ -458,7 +483,10 @@ function Chatbot() {
         }
       } else {
         // Rule-based mode - existing chatbot service
-        const response = await chatbotService.sendQuery(userMessage, history)
+        const response = await chatbotService.sendQuery(userMessage, history, conversationId)
+        if (response.conversationId && !conversationId) {
+          setConversationId(response.conversationId)
+        }
 
         addBotMessage(
           response.message,
@@ -731,12 +759,64 @@ function Chatbot() {
    */
   const clearChat = () => {
     setMessages([])
+    setConversationId(null)
     const language = localStorage.getItem('language') || 'en'
     const clearMessage = language === 'el'
       ? 'Η συνομιλία καθαρίστηκε! Πώς μπορώ να βοηθήσω;'
       : 'Chat cleared! How can I help you?'
     addBotMessage(clearMessage)
     loadSuggestions()
+  }
+
+  const startNewConversation = async () => {
+    setMessages([])
+    setConversationId(null)
+    setShowConversationList(false)
+    addBotMessage(getWelcomeMessage(isAiMode))
+    loadSuggestions()
+    try {
+      const conv = await conversationService.createConversation()
+      setConversationId(conv.id)
+      setConversations(prev => [conv, ...prev])
+    } catch (e) {
+      console.warn('Failed to create conversation:', e)
+    }
+  }
+
+  const loadConversation = async (conv) => {
+    setConversationId(conv.id)
+    setShowConversationList(false)
+    setMessages([])
+    try {
+      const msgs = await conversationService.getMessages(conv.id)
+      if (Array.isArray(msgs) && msgs.length > 0) {
+        setMessages(msgs.map(m => ({
+          id: new Date(m.createdAt).getTime() + Math.random(),
+          role: m.role === 'assistant' ? 'bot' : m.role,
+          message: m.content,
+          type: m.messageType || 'text',
+          timestamp: new Date(m.createdAt),
+          typing: false
+        })))
+      } else {
+        addBotMessage(getWelcomeMessage(isAiMode))
+      }
+    } catch (e) {
+      console.warn('Failed to load conversation:', e)
+      addBotMessage(getWelcomeMessage(isAiMode))
+    }
+  }
+
+  const deleteConversation = async (convId) => {
+    try {
+      await conversationService.deleteConversation(convId)
+      setConversations(prev => prev.filter(c => c.id !== convId))
+      if (conversationId === convId) {
+        startNewConversation()
+      }
+    } catch (e) {
+      console.warn('Failed to delete conversation:', e)
+    }
   }
 
   /**
@@ -903,6 +983,7 @@ function Chatbot() {
   }
 
   return (
+    <>
     <div className="chatbot-container">
       {/* Reveal Button - Shows when chatbot is not revealed (first tap) */}
       {!isRevealed && (
@@ -958,6 +1039,26 @@ function Chatbot() {
               </div>
             </div>
             <div className="chatbot-header-actions">
+              {/* Conversation History Button */}
+              <button
+                type="button"
+                onClick={() => setShowConversationList(!showConversationList)}
+                className="chatbot-header-btn"
+                aria-label={t('conversations.title', 'Conversations')}
+                title={t('conversations.title', 'Conversations')}
+              >
+                <FiList size={14} />
+              </button>
+              {/* Personality Mode Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowPersonalitySelector(true)}
+                className="chatbot-header-btn"
+                aria-label={t('chatbotPersonality.title', 'AI Personality')}
+                title={t('chatbotPersonality.title', 'AI Personality')}
+              >
+                <FiSettings size={14} />
+              </button>
               {/* AI Mode Toggle: active when isAiMode, inactive = rule-based */}
               <button
                 type="button"
@@ -1004,6 +1105,51 @@ function Chatbot() {
             </div>
           </div>
 
+          {/* Conversation List Panel */}
+          {showConversationList && !isMinimized && (
+            <div className="chatbot-conversation-list">
+              <div className="chatbot-conversation-list-header">
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('conversations.title', 'Conversations')}</span>
+                <button
+                  type="button"
+                  className="chatbot-quick-action-btn"
+                  onClick={startNewConversation}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <FiPlus size={14} />
+                  {t('conversations.new', 'New')}
+                </button>
+              </div>
+              <div className="chatbot-conversation-items">
+                {conversations.length === 0 ? (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '12px', textAlign: 'center' }}>
+                    {t('conversations.empty', 'No conversations yet')}
+                  </p>
+                ) : conversations.map(conv => (
+                  <div
+                    key={conv.id}
+                    className={`chatbot-conversation-item ${conv.id === conversationId ? 'active' : ''}`}
+                    onClick={() => loadConversation(conv)}
+                  >
+                    <div className="chatbot-conversation-item-info">
+                      <span className="chatbot-conversation-item-title">{conv.title || t('conversations.untitled', 'Untitled')}</span>
+                      <span className="chatbot-conversation-item-date">
+                        {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : new Date(conv.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="chatbot-conversation-delete"
+                      onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}
+                      aria-label={t('conversations.delete', 'Delete')}
+                    >
+                      <FiTrash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Messages */}
           {!isMinimized && (
@@ -1315,6 +1461,18 @@ function Chatbot() {
         </div>
       )}
     </div>
+    <PersonalitySelector
+      isOpen={showPersonalitySelector}
+      onClose={() => setShowPersonalitySelector(false)}
+      currentPersonality={currentPersonality}
+      onSelect={async (personality) => {
+        setCurrentPersonality(personality)
+        setShowPersonalitySelector(false)
+        try { await reminderService.updateSettings({ chatbotPersonality: personality }) }
+        catch (e) { console.warn('Failed to save personality preference', e) }
+      }}
+    />
+    </>
   )
 }
 

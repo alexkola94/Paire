@@ -200,6 +200,46 @@ export const WIDGET_REGISTRY = {
         defaultVisible: false,
         category: 'page',
         path: '/currency-calculator'
+    },
+    // Paire Features Widgets
+    'paire-score-widget': {
+        id: 'paire-score-widget',
+        title: 'paireScore.title',
+        icon: '📊',
+        defaultVisible: true,
+        category: 'core',
+        path: '/paire-score'
+    },
+    'streak-widget': {
+        id: 'streak-widget',
+        title: 'streaks.title',
+        icon: '🔥',
+        defaultVisible: true,
+        category: 'core'
+    },
+    'weekly-recap-widget': {
+        id: 'weekly-recap-widget',
+        title: 'weeklyRecap.title',
+        icon: '📋',
+        defaultVisible: true,
+        category: 'core',
+        path: '/weekly-recap'
+    },
+    'paire-home-widget': {
+        id: 'paire-home-widget',
+        title: 'paireHome.title',
+        icon: '🏠',
+        defaultVisible: true,
+        category: 'core',
+        path: '/paire-home'
+    },
+    'challenges-widget': {
+        id: 'challenges-widget',
+        title: 'challenges.title',
+        icon: '🎯',
+        defaultVisible: true,
+        category: 'core',
+        path: '/challenges'
     }
 }
 

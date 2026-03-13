@@ -19,6 +19,7 @@ import {
   Eye, EyeOff, ChevronRight, Pencil, Trash2, Receipt, Repeat, Settings, Menu, User,
 } from 'lucide-react-native';
 import { analyticsService, budgetService, recurringBillService, transactionService, savingsGoalService, profileService } from '../../../services/api';
+import { StreakBanner, PaireScoreCard, ChallengeCard } from '../../../components';
 import { useCurrentMonthExpenses } from '../../../hooks/useCurrentMonthExpenses';
 import { authService } from '../../../services/auth';
 import { useTheme } from '../../../context/ThemeContext';
@@ -254,6 +255,20 @@ export default function DashboardScreen() {
           <Text style={[styles.askPaireTitle, { color: theme.colors.text }]}>{t('chatbot.title', 'Financial Assistant')}</Text>
           <Text style={[styles.askPaireSubtitle, { color: theme.colors.textSecondary }]}>{t('chatbot.placeholder', 'Ask me anything...')}</Text>
         </TouchableOpacity>
+
+        {/* Paire Features */}
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+          <View style={{ flex: 1 }}>
+            <StreakBanner />
+          </View>
+          <View style={{ flex: 1 }}>
+            <PaireScoreCard />
+          </View>
+        </View>
+
+        <View style={{ marginBottom: 12 }}>
+          <ChallengeCard />
+        </View>
 
         {/* Quick Access Widget */}
         {isWidgetVisible('quickAccess') && (

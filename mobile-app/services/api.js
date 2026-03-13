@@ -401,9 +401,9 @@ export const analyticsService = {
 // ========================================
 
 export const chatbotService = {
-  async sendQuery(query, history = []) {
+  async sendQuery(query, history = [], conversationId = null) {
     const language = await AsyncStorage.getItem('language') || 'en';
-    return request('post', '/api/chatbot/query', { query, history, language });
+    return request('post', '/api/chatbot/query', { query, history, language, conversationId });
   },
   async getSuggestions() {
     const language = await AsyncStorage.getItem('language') || 'en';
@@ -729,6 +729,7 @@ export const aiGatewayService = {
       })) || [];
     const payload = { query: query.trim(), conversationHistory };
     if (options.attachments?.length) payload.attachments = options.attachments;
+    if (options.conversationId) payload.conversationId = options.conversationId;
     return request('post', '/api/ai-gateway/rag-query', payload);
   },
 
@@ -856,6 +857,98 @@ export const flightService = {
 };
 
 // ========================================
+// Streaks
+// ========================================
+
+export const streakService = {
+  async getAll() {
+    getCurrentUser();
+    return request('get', '/api/streaks');
+  },
+  async recordActivity(streakType) {
+    getCurrentUser();
+    return request('post', '/api/streaks/record', { streakType });
+  },
+};
+
+// ========================================
+// Financial Health (Paire Score)
+// ========================================
+
+export const financialHealthService = {
+  async getScore() {
+    getCurrentUser();
+    return request('get', '/api/financial-health');
+  },
+  async getHistory(months = 6) {
+    getCurrentUser();
+    return request('get', `/api/financial-health/history?months=${months}`);
+  },
+  async recalculate() {
+    getCurrentUser();
+    return request('post', '/api/financial-health/recalculate');
+  },
+};
+
+// ========================================
+// Weekly Recap
+// ========================================
+
+export const weeklyRecapService = {
+  async getLatest() {
+    getCurrentUser();
+    return request('get', '/api/weekly-recap');
+  },
+  async getHistory(count = 4) {
+    getCurrentUser();
+    return request('get', `/api/weekly-recap/history?count=${count}`);
+  },
+  async generate() {
+    getCurrentUser();
+    return request('post', '/api/weekly-recap/generate');
+  },
+};
+
+// ========================================
+// Paire Home
+// ========================================
+
+export const challengeService = {
+  async getAvailable() {
+    getCurrentUser();
+    return request('get', '/api/challenges/available');
+  },
+  async getUserChallenges(status) {
+    getCurrentUser();
+    const params = status ? `?status=${encodeURIComponent(status)}` : '';
+    return request('get', `/api/challenges${params}`);
+  },
+  async join(challengeId) {
+    getCurrentUser();
+    return request('post', `/api/challenges/${challengeId}/join`);
+  },
+  async claimReward(userChallengeId) {
+    getCurrentUser();
+    return request('post', `/api/challenges/${userChallengeId}/claim`);
+  },
+};
+
+export const paireHomeService = {
+  async getHome() {
+    getCurrentUser();
+    return request('get', '/api/paire-home');
+  },
+  async getRooms() {
+    getCurrentUser();
+    return request('get', '/api/paire-home/rooms');
+  },
+  async upgradeRoom(room) {
+    getCurrentUser();
+    return request('post', `/api/paire-home/upgrade/${encodeURIComponent(room)}`);
+  },
+};
+
+// ========================================
 // Open Banking / Bank Linking (Plaid)
 // ========================================
 
@@ -876,5 +969,40 @@ export const openBankingService = {
   async getAccounts() {
     getCurrentUser();
     return request('get', '/api/open-banking/accounts');
+  },
+};
+
+// ========================================
+// Year in Review
+// ========================================
+
+export const yearReviewService = {
+  async getYearReview(year) {
+    return request('get', `/api/year-review/${year}`);
+  },
+  async regenerate(year) {
+    return request('post', `/api/year-review/${year}/regenerate`);
+  },
+};
+
+// ========================================
+// Conversations (AI Memory)
+// ========================================
+
+export const conversationService = {
+  async getConversations(includeArchived = false) {
+    return request('get', `/api/conversations?includeArchived=${includeArchived}`);
+  },
+
+  async getMessages(conversationId, page = 1, pageSize = 50) {
+    return request('get', `/api/conversations/${conversationId}/messages?page=${page}&pageSize=${pageSize}`);
+  },
+
+  async createConversation(title) {
+    return request('post', '/api/conversations', { title });
+  },
+
+  async deleteConversation(conversationId) {
+    return request('delete', `/api/conversations/${conversationId}`);
   },
 };

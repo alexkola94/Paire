@@ -179,7 +179,10 @@ appsettings.Production.json
 # ================================
 # OS Files
 # ================================
-# Windows
+# Windows (nul, con, prn are reserved device names - cannot be committed)
+/nul
+/con
+/prn
 Thumbs.db
 ehthumbs.db
 Desktop.ini
@@ -232,6 +235,7 @@ credentials.json
 .history/
 .ionide/
 *.code-workspace
+.claude/
 
 # ================================
 # Misc

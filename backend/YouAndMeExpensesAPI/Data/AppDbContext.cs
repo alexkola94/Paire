@@ -54,6 +54,17 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<PushSubscription> PushSubscriptions { get; set; }
         public DbSet<TravelNotification> TravelNotifications { get; set; }
 
+        // Paire Features DbSets
+        public DbSet<FinancialHealthScore> FinancialHealthScores { get; set; }
+        public DbSet<UserStreak> UserStreaks { get; set; }
+        public DbSet<WeeklyRecap> WeeklyRecaps { get; set; }
+        public DbSet<PaireHome> PaireHomes { get; set; }
+        public DbSet<Challenge> Challenges { get; set; }
+        public DbSet<UserChallenge> UserChallenges { get; set; }
+        public DbSet<Conversation> Conversations { get; set; }
+        public DbSet<ConversationMessage> ConversationMessages { get; set; }
+        public DbSet<YearReview> YearReviews { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -344,6 +355,8 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.BudgetAlertThreshold).HasColumnName("budget_alert_threshold").HasColumnType("decimal(5,2)");
                 entity.Property(e => e.SavingsMilestonesEnabled).HasColumnName("savings_milestones_enabled");
                 entity.Property(e => e.PrivacyHideNumbers).HasColumnName("privacy_hide_numbers");
+                entity.Property(e => e.ChatbotPersonality).HasColumnName("chatbot_personality").HasMaxLength(50).HasDefaultValue("supportive");
+                entity.Property(e => e.WeeklyRecapEnabled).HasColumnName("weekly_recap_enabled").HasDefaultValue(true);
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
 
@@ -986,6 +999,214 @@ namespace YouAndMeExpensesAPI.Data
                     .WithMany()
                     .HasForeignKey(e => e.TripId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ============================================
+            // FINANCIAL HEALTH SCORES TABLE
+            // ============================================
+            modelBuilder.Entity<FinancialHealthScore>(entity =>
+            {
+                entity.ToTable("financial_health_scores");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.OverallScore).HasColumnName("overall_score");
+                entity.Property(e => e.BudgetAdherenceScore).HasColumnName("budget_adherence_score");
+                entity.Property(e => e.SavingsRateScore).HasColumnName("savings_rate_score");
+                entity.Property(e => e.DebtHealthScore).HasColumnName("debt_health_score");
+                entity.Property(e => e.ExpenseConsistencyScore).HasColumnName("expense_consistency_score");
+                entity.Property(e => e.GoalProgressScore).HasColumnName("goal_progress_score");
+                entity.Property(e => e.Tips).HasColumnName("tips");
+                entity.Property(e => e.CalculatedAt).HasColumnName("calculated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.Period).HasColumnName("period").HasMaxLength(10);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.Period);
+                entity.HasIndex(e => new { e.UserId, e.Period }).IsUnique();
+            });
+
+            // ============================================
+            // USER STREAKS TABLE
+            // ============================================
+            modelBuilder.Entity<UserStreak>(entity =>
+            {
+                entity.ToTable("user_streaks");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.StreakType).HasColumnName("streak_type").HasMaxLength(50).IsRequired();
+                entity.Property(e => e.CurrentStreak).HasColumnName("current_streak").HasDefaultValue(0);
+                entity.Property(e => e.LongestStreak).HasColumnName("longest_streak").HasDefaultValue(0);
+                entity.Property(e => e.LastActivityDate).HasColumnName("last_activity_date");
+                entity.Property(e => e.TotalPoints).HasColumnName("total_points").HasDefaultValue(0);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => new { e.UserId, e.StreakType }).IsUnique();
+            });
+
+            // ============================================
+            // WEEKLY RECAPS TABLE
+            // ============================================
+            modelBuilder.Entity<WeeklyRecap>(entity =>
+            {
+                entity.ToTable("weekly_recaps");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.WeekStart).HasColumnName("week_start");
+                entity.Property(e => e.WeekEnd).HasColumnName("week_end");
+                entity.Property(e => e.TotalSpent).HasColumnName("total_spent").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.TotalIncome).HasColumnName("total_income").HasColumnType("decimal(18,2)");
+                entity.Property(e => e.TopCategories).HasColumnName("top_categories");
+                entity.Property(e => e.Insights).HasColumnName("insights");
+                entity.Property(e => e.PersonalityMode).HasColumnName("personality_mode").HasMaxLength(50).HasDefaultValue("supportive");
+                entity.Property(e => e.FormattedContent).HasColumnName("formatted_content");
+                entity.Property(e => e.EmailSent).HasColumnName("email_sent").HasDefaultValue(false);
+                entity.Property(e => e.NotificationSent).HasColumnName("notification_sent").HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => new { e.UserId, e.WeekStart }).IsUnique();
+            });
+
+            // ============================================
+            // PAIRE HOMES TABLE
+            // ============================================
+            modelBuilder.Entity<PaireHome>(entity =>
+            {
+                entity.ToTable("paire_homes");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.HomeName).HasColumnName("home_name").HasMaxLength(255).HasDefaultValue("Love Nest");
+                entity.Property(e => e.Level).HasColumnName("level").HasDefaultValue(1);
+                entity.Property(e => e.TotalPoints).HasColumnName("total_points").HasDefaultValue(0);
+                entity.Property(e => e.UnlockedRooms).HasColumnName("unlocked_rooms").HasDefaultValue("[]");
+                entity.Property(e => e.RoomLevels).HasColumnName("room_levels").HasDefaultValue("{}");
+                entity.Property(e => e.RoomPoints).HasColumnName("room_points").HasDefaultValue("{}");
+                entity.Property(e => e.Decorations).HasColumnName("decorations").HasDefaultValue("{}");
+                entity.Property(e => e.SeasonalTheme).HasColumnName("seasonal_theme").HasMaxLength(50).HasDefaultValue("default");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId).IsUnique();
+            });
+
+            // ============================================
+            // CHALLENGES TABLE
+            // ============================================
+            modelBuilder.Entity<Challenge>(entity =>
+            {
+                entity.ToTable("challenges");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Code).HasColumnName("code").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description");
+                entity.Property(e => e.ChallengeType).HasColumnName("challenge_type").HasMaxLength(50).HasDefaultValue("weekly");
+                entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(50).HasDefaultValue("spending");
+                entity.Property(e => e.Icon).HasColumnName("icon").HasMaxLength(100);
+                entity.Property(e => e.CriteriaType).HasColumnName("criteria_type").HasMaxLength(50).HasDefaultValue("amount");
+                entity.Property(e => e.CriteriaValue).HasColumnName("criteria_value");
+                entity.Property(e => e.RewardPoints).HasColumnName("reward_points").HasDefaultValue(50);
+                entity.Property(e => e.Difficulty).HasColumnName("difficulty").HasMaxLength(20).HasDefaultValue("medium");
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                entity.Property(e => e.IsRecurring).HasColumnName("is_recurring").HasDefaultValue(true);
+                entity.Property(e => e.SortOrder).HasColumnName("sort_order").HasDefaultValue(0);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.Code).IsUnique();
+            });
+
+            // ============================================
+            // USER CHALLENGES TABLE
+            // ============================================
+            modelBuilder.Entity<UserChallenge>(entity =>
+            {
+                entity.ToTable("user_challenges");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.ChallengeId).HasColumnName("challenge_id").IsRequired();
+                entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("active");
+                entity.Property(e => e.Progress).HasColumnName("progress").HasDefaultValue(0m);
+                entity.Property(e => e.TargetValue).HasColumnName("target_value").HasDefaultValue(0m);
+                entity.Property(e => e.CurrentValue).HasColumnName("current_value").HasDefaultValue(0m);
+                entity.Property(e => e.StartedAt).HasColumnName("started_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+                entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+                entity.Property(e => e.RewardClaimed).HasColumnName("reward_claimed").HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Challenge)
+                    .WithMany()
+                    .HasForeignKey(e => e.ChallengeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.UserId, e.ChallengeId, e.Status });
+            });
+
+            // ============================================
+            // CONVERSATIONS TABLE
+            // ============================================
+            modelBuilder.Entity<Conversation>(entity =>
+            {
+                entity.ToTable("conversations");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255);
+                entity.Property(e => e.LastMessageAt).HasColumnName("last_message_at");
+                entity.Property(e => e.MessageCount).HasColumnName("message_count").HasDefaultValue(0);
+                entity.Property(e => e.Summary).HasColumnName("summary");
+                entity.Property(e => e.IsArchived).HasColumnName("is_archived").HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => new { e.UserId, e.IsArchived });
+            });
+
+            // ============================================
+            // CONVERSATION MESSAGES TABLE
+            // ============================================
+            modelBuilder.Entity<ConversationMessage>(entity =>
+            {
+                entity.ToTable("conversation_messages");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ConversationId).HasColumnName("conversation_id").IsRequired();
+                entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(20).IsRequired();
+                entity.Property(e => e.Content).HasColumnName("content").IsRequired();
+                entity.Property(e => e.MessageType).HasColumnName("message_type").HasMaxLength(30).HasDefaultValue("text");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Conversation)
+                    .WithMany()
+                    .HasForeignKey(e => e.ConversationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.ConversationId);
+            });
+
+            // ============================================
+            // YEAR REVIEWS TABLE
+            // ============================================
+            modelBuilder.Entity<YearReview>(entity =>
+            {
+                entity.ToTable("year_reviews");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.Year).HasColumnName("year");
+                entity.Property(e => e.Data).HasColumnName("data").HasColumnType("text");
+                entity.Property(e => e.GeneratedAt).HasColumnName("generated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => new { e.UserId, e.Year }).IsUnique();
             });
         }
     }

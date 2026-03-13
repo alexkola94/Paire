@@ -53,11 +53,15 @@ import {
   AlertCircle,
   Lightbulb,
   Info,
+  Settings,
+  List,
+  Plus,
+  Trash2,
 } from 'lucide-react-native';
-import { chatbotService, aiGatewayService } from '../../services/api';
+import { chatbotService, aiGatewayService, reminderService, conversationService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { useBackGesture } from '../../context/BackGestureContext';
-import { useToast, ScreenHeader, StructuredMessageContent } from '../../components';
+import { useToast, ScreenHeader, StructuredMessageContent, PersonalitySelector } from '../../components';
 import { spacing, borderRadius, typography, shadows } from '../../constants/theme';
 
 // Default suggestion translation keys when API fails or is empty
@@ -200,13 +204,27 @@ export default function ChatbotScreen() {
   // AI mode state
   const [isAiMode, setIsAiMode] = useState(false);
   const [isThinkingMode, setIsThinkingMode] = useState(false);
+  const [showPersonalitySelector, setShowPersonalitySelector] = useState(false);
+  const [currentPersonality, setCurrentPersonality] = useState('supportive');
   const [aiAvailable, setAiAvailable] = useState(false);
+
+  // Conversation persistence state
+  const [conversationId, setConversationId] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [showConversationList, setShowConversationList] = useState(false);
   
   // Request cancellation
   const abortControllerRef = useRef(null);
   
   const listRef = useRef(null);
   const lang = i18n.language || 'en';
+
+  // Load personality preference
+  useEffect(() => {
+    reminderService.getSettings().then(prefs => {
+      if (prefs?.chatbotPersonality) setCurrentPersonality(prefs.chatbotPersonality);
+    }).catch(() => {});
+  }, []);
 
   // Check AI availability on mount
   useEffect(() => {
@@ -218,6 +236,13 @@ export default function ChatbotScreen() {
         setAiAvailable(false);
       }
     })();
+  }, []);
+
+  // Load existing conversations
+  useEffect(() => {
+    conversationService.getConversations().then(list => {
+      setConversations(Array.isArray(list) ? list : []);
+    }).catch(() => {});
   }, []);
 
   // Load suggestions (fallback uses translated default suggestions)
@@ -289,7 +314,8 @@ export default function ChatbotScreen() {
 
           if (isThinkingMode) {
             // RAG-enhanced query (Thinking mode)
-            const res = await aiGatewayService.ragQuery(trimmed, { history });
+            const res = await aiGatewayService.ragQuery(trimmed, { history, conversationId });
+            if (res?.conversationId && !conversationId) setConversationId(res.conversationId);
             botContent = res?.response || res?.answer || res?.message || 
               t('chatbot.thinking', 'Let me think about that...');
             messageType = 'insight';
@@ -303,7 +329,8 @@ export default function ChatbotScreen() {
         } else {
           // Rule-based mode - Use chatbotService
           const history = messages.map((m) => ({ role: m.role, content: m.content }));
-          const res = await chatbotService.sendQuery(trimmed, history);
+          const res = await chatbotService.sendQuery(trimmed, history, conversationId);
+          if (res?.conversationId && !conversationId) setConversationId(res.conversationId);
           botContent = res?.response ?? res?.message ?? 
             (typeof res === 'string' ? res : t('chatbot.thinking', 'Thinking...'));
         }
@@ -334,7 +361,7 @@ export default function ChatbotScreen() {
         abortControllerRef.current = null;
       }
     },
-    [input, loading, messages, isAiMode, isThinkingMode, aiAvailable, t]
+    [input, loading, messages, isAiMode, isThinkingMode, aiAvailable, conversationId, t]
   );
 
   // Clear chat history
@@ -365,12 +392,78 @@ export default function ChatbotScreen() {
     }
   }, [aiAvailable, showToast, t]);
 
+  const startNewConversation = useCallback(async () => {
+    setMessages([]);
+    setConversationId(null);
+    setShowConversationList(false);
+    try {
+      const conv = await conversationService.createConversation();
+      setConversationId(conv.id);
+      setConversations(prev => [conv, ...prev]);
+    } catch (e) {
+      console.warn('Failed to create conversation:', e);
+    }
+  }, []);
+
+  const loadConversation = useCallback(async (conv) => {
+    setConversationId(conv.id);
+    setShowConversationList(false);
+    setMessages([]);
+    try {
+      const msgs = await conversationService.getMessages(conv.id);
+      if (Array.isArray(msgs) && msgs.length > 0) {
+        setMessages(msgs.map(m => ({
+          role: m.role === 'assistant' ? 'bot' : m.role,
+          content: m.content,
+          type: m.messageType || 'default',
+          isComplete: true,
+        })));
+      }
+    } catch (e) {
+      console.warn('Failed to load conversation:', e);
+    }
+  }, []);
+
+  const deleteConversationHandler = useCallback(async (convId) => {
+    try {
+      await conversationService.deleteConversation(convId);
+      setConversations(prev => prev.filter(c => c.id !== convId));
+      if (conversationId === convId) {
+        setMessages([]);
+        setConversationId(null);
+      }
+    } catch (e) {
+      console.warn('Failed to delete conversation:', e);
+    }
+  }, [conversationId]);
+
   return (
+    <>
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScreenHeader title={t('chatbot.title', 'Financial Assistant')} onBack={() => router.back()} />
-      {/* Chat area: same UI/UX as Travel Mode chat – clear button, stacked AI/Deep Think toggles, welcome icon, suggestion chips, large input */}
       <View style={[styles.chatbotSection, { backgroundColor: theme.colors.surface }, shadows.sm]}>
         <View style={styles.chatbotSectionHeader}>
+          <TouchableOpacity
+            onPress={() => setShowPersonalitySelector(true)}
+            style={styles.clearChatBtn}
+            accessibilityLabel={t('chatbotPersonality.title', 'AI Personality')}
+          >
+            <Settings size={18} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowConversationList(!showConversationList)}
+            style={styles.clearChatBtn}
+            accessibilityLabel={t('conversations.title', 'Conversations')}
+          >
+            <List size={18} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={startNewConversation}
+            style={styles.clearChatBtn}
+            accessibilityLabel={t('conversations.new', 'New conversation')}
+          >
+            <Plus size={18} color={theme.colors.primary} />
+          </TouchableOpacity>
           <View style={styles.chatbotSectionHeaderSpacer} />
           <TouchableOpacity
             onPress={clearHistory}
@@ -413,6 +506,51 @@ export default function ChatbotScreen() {
             </View>
           )}
         </View>
+
+        {showConversationList && (
+          <View style={[styles.conversationList, { backgroundColor: theme.colors.surface, borderColor: theme.colors.glassBorder }]}>
+            <Text style={[styles.conversationListTitle, { color: theme.colors.text }]}>
+              {t('conversations.title', 'Conversations')}
+            </Text>
+            {conversations.length === 0 ? (
+              <Text style={[styles.conversationEmpty, { color: theme.colors.textSecondary }]}>
+                {t('conversations.empty', 'No conversations yet')}
+              </Text>
+            ) : (
+              <FlatList
+                data={conversations}
+                keyExtractor={(item) => item.id}
+                style={{ maxHeight: 180 }}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.conversationItem,
+                      { borderBottomColor: theme.colors.glassBorder },
+                      item.id === conversationId && { backgroundColor: theme.colors.primary + '15' },
+                    ]}
+                    onPress={() => loadConversation(item)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.conversationItemTitle, { color: theme.colors.text }]} numberOfLines={1}>
+                        {item.title || t('conversations.untitled', 'Untitled')}
+                      </Text>
+                      <Text style={[styles.conversationItemDate, { color: theme.colors.textSecondary }]}>
+                        {item.lastMessageAt ? new Date(item.lastMessageAt).toLocaleDateString() : new Date(item.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => deleteConversationHandler(item.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Trash2 size={16} color={theme.colors.textLight} />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+        )}
 
         <KeyboardAvoidingView
           style={styles.chatbotKeyboardWrap}
@@ -538,6 +676,18 @@ export default function ChatbotScreen() {
         </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
+    <PersonalitySelector
+      visible={showPersonalitySelector}
+      onClose={() => setShowPersonalitySelector(false)}
+      currentPersonality={currentPersonality}
+      onSelect={async (personality) => {
+        setCurrentPersonality(personality);
+        setShowPersonalitySelector(false);
+        try { await reminderService.updateSettings({ chatbotPersonality: personality }); }
+        catch (e) { console.warn('Failed to save personality preference', e); }
+      }}
+    />
+    </>
   );
 }
 
@@ -684,5 +834,40 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Conversation list
+  conversationList: {
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  conversationListTitle: {
+    ...typography.label,
+    fontWeight: '600',
+    padding: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  conversationEmpty: {
+    ...typography.bodySmall,
+    textAlign: 'center',
+    padding: spacing.md,
+  },
+  conversationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    gap: spacing.sm,
+  },
+  conversationItemTitle: {
+    ...typography.bodySmall,
+    fontWeight: '500',
+  },
+  conversationItemDate: {
+    ...typography.caption,
+    marginTop: 2,
   },
 });

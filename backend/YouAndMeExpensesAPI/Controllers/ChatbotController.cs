@@ -13,16 +13,22 @@ namespace YouAndMeExpensesAPI.Controllers
     public class ChatbotController : BaseApiController
     {
         private readonly IChatbotService _chatbotService;
+        private readonly IChatbotPersonalityService _personalityService;
         private readonly IReportGenerationService _reportService;
+        private readonly IConversationService _conversationService;
         private readonly ILogger<ChatbotController> _logger;
 
         public ChatbotController(
-            IChatbotService chatbotService, 
+            IChatbotService chatbotService,
+            IChatbotPersonalityService personalityService,
             IReportGenerationService reportService,
+            IConversationService conversationService,
             ILogger<ChatbotController> logger)
         {
             _chatbotService = chatbotService;
+            _personalityService = personalityService;
             _reportService = reportService;
+            _conversationService = conversationService;
             _logger = logger;
         }
 
@@ -45,8 +51,30 @@ namespace YouAndMeExpensesAPI.Controllers
             try
             {
                 var language = request.Language ?? "en";
-                var response = await _chatbotService.ProcessQueryAsync(userId.ToString(), request.Query, request.History, language);
-                return Ok(response);
+
+                var conversation = await _conversationService.GetOrCreateConversationAsync(
+                    userId.ToString(), request.ConversationId);
+
+                var contextMessages = await _conversationService.GetRecentContextAsync(conversation.Id, 10);
+                var history = request.History ?? new List<DTOs.ChatMessage>();
+                if (!history.Any() && contextMessages.Any())
+                {
+                    history = contextMessages.Select(m => new DTOs.ChatMessage
+                    {
+                        Role = m.Role,
+                        Message = m.Content
+                    }).ToList();
+                }
+
+                var response = await _chatbotService.ProcessQueryAsync(userId.ToString(), request.Query, history, language);
+                var personality = await _personalityService.GetPersonalityAsync(userId.ToString());
+                response = _personalityService.ApplyPersonality(response, personality);
+
+                await _conversationService.SaveMessageAsync(conversation.Id, "user", request.Query);
+                if (!string.IsNullOrEmpty(response.Message))
+                    await _conversationService.SaveMessageAsync(conversation.Id, "assistant", response.Message);
+
+                return Ok(new { response.Message, response.Type, response.Data, response.QuickActions, response.ActionLink, response.CanGenerateReport, response.ReportType, response.ReportParams, conversationId = conversation.Id });
             }
             catch (Exception ex)
             {

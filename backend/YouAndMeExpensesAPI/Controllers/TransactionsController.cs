@@ -14,13 +14,22 @@ namespace YouAndMeExpensesAPI.Controllers
     public class TransactionsController : BaseApiController
     {
         private readonly ITransactionsService _transactionsService;
+        private readonly IStreakService _streakService;
+        private readonly IPaireHomeService _paireHomeService;
+        private readonly IChallengeService _challengeService;
         private readonly ILogger<TransactionsController> _logger;
 
         public TransactionsController(
             ITransactionsService transactionsService,
+            IStreakService streakService,
+            IPaireHomeService paireHomeService,
+            IChallengeService challengeService,
             ILogger<TransactionsController> logger)
         {
             _transactionsService = transactionsService;
+            _streakService = streakService;
+            _paireHomeService = paireHomeService;
+            _challengeService = challengeService;
             _logger = logger;
         }
 
@@ -145,6 +154,18 @@ namespace YouAndMeExpensesAPI.Controllers
                 _logger.LogInformation(
                     "Created transaction {TransactionId} for user {UserId}",
                     response.Transaction.Id, userId);
+
+                try { await _streakService.RecordActivityAsync(userId.ToString(), "expense_logging"); }
+                catch (Exception streakEx) { _logger.LogWarning(streakEx, "Failed to record expense_logging streak"); }
+
+                if (request.Type == "expense" && !string.IsNullOrEmpty(request.Category))
+                {
+                    try { await _paireHomeService.ProcessExpenseAsync(userId.ToString(), request.Category, request.Amount); }
+                    catch (Exception homeEx) { _logger.LogWarning(homeEx, "Failed to process Paire Home expense"); }
+                }
+
+                try { await _challengeService.ProcessTransactionForChallengesAsync(userId.ToString(), request.Amount, request.Category); }
+                catch (Exception challengeEx) { _logger.LogWarning(challengeEx, "Failed to process challenges for transaction"); }
 
                 return CreatedAtAction(
                     nameof(GetTransaction),

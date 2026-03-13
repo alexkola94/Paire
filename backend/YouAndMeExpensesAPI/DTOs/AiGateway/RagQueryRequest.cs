@@ -23,6 +23,11 @@ public class RagQueryRequest
     public List<ConversationMessage>? ConversationHistory { get; set; }
 
     /// <summary>
+    /// Optional. Conversation ID for message persistence. A new conversation is created if omitted.
+    /// </summary>
+    public Guid? ConversationId { get; set; }
+
+    /// <summary>
     /// Optional. Number of relevant chunks to retrieve. For user-scoped queries the backend may use a higher default (e.g. 10).
     /// </summary>
     public int? TopK { get; set; }

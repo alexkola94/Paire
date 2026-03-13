@@ -23,8 +23,9 @@ namespace YouAndMeExpensesAPI.DTOs
     public class ChatbotQuery
     {
         public string Query { get; set; } = string.Empty;
-        public List<ChatMessage>? History { get; set; } // Conversation history for context
-        public string? Language { get; set; } = "en"; // Language code (en, el, es, fr)
+        public List<ChatMessage>? History { get; set; }
+        public string? Language { get; set; } = "en";
+        public Guid? ConversationId { get; set; }
         /// <summary>Optional trip context for Travel Guide chatbot (active trip from frontend).</summary>
         public TripContext? TripContext { get; set; }
     }
