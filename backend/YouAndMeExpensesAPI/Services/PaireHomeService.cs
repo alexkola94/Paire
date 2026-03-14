@@ -71,7 +71,7 @@ namespace YouAndMeExpensesAPI.Services
             var home = await GetOrCreateHomeAsync(userId);
             var room = MapCategoryToRoom(category);
             if (string.IsNullOrEmpty(room))
-                return home;
+                room = "living_room";
 
             var pointsToAdd = (int)Math.Floor(amount);
             if (pointsToAdd <= 0)
@@ -101,6 +101,9 @@ namespace YouAndMeExpensesAPI.Services
                 _logger.LogInformation("User {UserId} leveled up room {Room} to level {Level}", userId, room, newLevel);
             }
 
+            // Furniture unlock check
+            await CheckAndUnlockFurnitureAsync(userId, room, newPoints);
+
             home.RoomPoints = JsonSerializer.Serialize(roomPoints, JsonOptions);
             home.RoomLevels = JsonSerializer.Serialize(roomLevels, JsonOptions);
             home.UnlockedRooms = JsonSerializer.Serialize(unlockedRooms, JsonOptions);
@@ -110,6 +113,148 @@ namespace YouAndMeExpensesAPI.Services
 
             await _context.SaveChangesAsync();
             return home;
+        }
+
+        private async Task CheckAndUnlockFurnitureAsync(string userId, string room, int roomPoints)
+        {
+            if (!FurnitureCatalog.RoomFurniture.TryGetValue(room, out var furnitureList))
+                return;
+
+            var existingUnlocks = await _context.HomeFurniture
+                .Where(f => f.UserId == userId && f.RoomName == room)
+                .Select(f => f.FurnitureCode)
+                .ToListAsync();
+
+            for (int i = 0; i < furnitureList.Length; i++)
+            {
+                var code = furnitureList[i];
+                var threshold = FurnitureCatalog.GetUnlockPointsThreshold(i);
+
+                if (roomPoints >= threshold && !existingUnlocks.Contains(code))
+                {
+                    _context.HomeFurniture.Add(new HomeFurniture
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        RoomName = room,
+                        FurnitureCode = code,
+                        UnlockedAt = DateTime.UtcNow
+                    });
+                    _logger.LogInformation("User {UserId} unlocked furniture {Furniture} in {Room}", userId, code, room);
+                }
+            }
+        }
+
+        public async Task<object> GetFurnitureAsync(string userId)
+        {
+            var unlocked = await _context.HomeFurniture
+                .Where(f => f.UserId == userId)
+                .OrderBy(f => f.RoomName)
+                .ThenBy(f => f.UnlockedAt)
+                .ToListAsync();
+
+            var home = await GetOrCreateHomeAsync(userId);
+            var decorations = DeserializeDecorations(home.Decorations);
+
+            var result = new Dictionary<string, object>();
+            foreach (var (room, catalog) in FurnitureCatalog.RoomFurniture)
+            {
+                var roomUnlocked = unlocked.Where(f => f.RoomName == room).Select(f => f.FurnitureCode).ToList();
+                var roomEquipped = decorations.TryGetValue(room, out var equipped) ? equipped : new List<string>();
+
+                result[room] = new
+                {
+                    catalog = catalog.Select((code, index) => new
+                    {
+                        code,
+                        unlocked = roomUnlocked.Contains(code),
+                        equipped = roomEquipped.Contains(code),
+                        unlockPoints = FurnitureCatalog.GetUnlockPointsThreshold(index)
+                    }),
+                    equippedCount = roomEquipped.Count,
+                    unlockedCount = roomUnlocked.Count,
+                    totalCount = catalog.Length
+                };
+            }
+
+            return result;
+        }
+
+        public async Task<object> EquipFurnitureAsync(string userId, string room, string furnitureCode, bool equip)
+        {
+            var isOwned = await _context.HomeFurniture
+                .AnyAsync(f => f.UserId == userId && f.RoomName == room && f.FurnitureCode == furnitureCode);
+
+            if (!isOwned)
+                throw new InvalidOperationException($"Furniture {furnitureCode} is not unlocked");
+
+            var home = await GetOrCreateHomeAsync(userId);
+            var decorations = DeserializeDecorations(home.Decorations);
+
+            if (!decorations.ContainsKey(room))
+                decorations[room] = new List<string>();
+
+            if (equip && !decorations[room].Contains(furnitureCode))
+                decorations[room].Add(furnitureCode);
+            else if (!equip)
+                decorations[room].Remove(furnitureCode);
+
+            home.Decorations = JsonSerializer.Serialize(decorations, JsonOptions);
+            home.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return new { room, furnitureCode, equipped = equip, decorations };
+        }
+
+        public async Task<PaireHome> SetSeasonalThemeAsync(string userId, string theme)
+        {
+            var validThemes = new[] { "default", "spring", "summer", "autumn", "winter", "holiday" };
+            if (!validThemes.Contains(theme.ToLowerInvariant()))
+                throw new ArgumentException($"Invalid theme: {theme}");
+
+            var home = await GetOrCreateHomeAsync(userId);
+            home.SeasonalTheme = theme.ToLowerInvariant();
+            home.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return home;
+        }
+
+        public async Task<object> GetCoupleHomeAsync(string userId)
+        {
+            var partnership = await _context.Partnerships
+                .FirstOrDefaultAsync(p =>
+                    (p.User1Id.ToString() == userId || p.User2Id.ToString() == userId) && p.Status == "active");
+
+            if (partnership == null)
+                return new { hasPartner = false };
+
+            var partnerId = partnership.User1Id.ToString() == userId
+                ? partnership.User2Id.ToString()
+                : partnership.User1Id.ToString();
+
+            var myHome = await GetOrCreateHomeAsync(userId);
+            var partnerHome = await GetOrCreateHomeAsync(partnerId);
+
+            var myRoomPoints = DeserializeRoomPoints(myHome.RoomPoints);
+            var partnerRoomPoints = DeserializeRoomPoints(partnerHome.RoomPoints);
+
+            var combinedPoints = new Dictionary<string, int>();
+            foreach (var room in RoomCategoryMapping.Keys)
+            {
+                combinedPoints[room] = myRoomPoints.GetValueOrDefault(room, 0)
+                    + partnerRoomPoints.GetValueOrDefault(room, 0);
+            }
+
+            return new
+            {
+                hasPartner = true,
+                combinedLevel = myHome.Level + partnerHome.Level,
+                combinedPoints = myHome.TotalPoints + partnerHome.TotalPoints,
+                roomPoints = combinedPoints,
+                myLevel = myHome.Level,
+                partnerLevel = partnerHome.Level,
+                seasonalTheme = myHome.SeasonalTheme
+            };
         }
 
         public async Task<object> GetRoomsAsync(string userId)
@@ -263,6 +408,18 @@ namespace YouAndMeExpensesAPI.Services
             catch
             {
                 return new List<string>();
+            }
+        }
+
+        private static Dictionary<string, List<string>> DeserializeDecorations(string json)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json) ?? new Dictionary<string, List<string>>();
+            }
+            catch
+            {
+                return new Dictionary<string, List<string>>();
             }
         }
     }

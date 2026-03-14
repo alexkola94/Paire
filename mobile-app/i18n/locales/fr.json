@@ -1284,5 +1284,62 @@
     "claimReward": "Réclamer",
     "rewardClaimed": "Réclamée",
     "viewAll": "Voir Tous"
+  },
+  "conversations": {
+    "title": "Conversations",
+    "new": "Nouveau",
+    "empty": "Aucune conversation",
+    "untitled": "Sans titre",
+    "delete": "Supprimer"
+  },
+  "voiceInput": {
+    "start": "Saisie vocale",
+    "stop": "Arrêter l'écoute",
+    "listening": "Écoute en cours...",
+    "quickExpense": "Dépense vocale",
+    "comingSoon": "La saisie vocale des dépenses arrive bientôt !",
+    "mobileHint": "La saisie vocale arrive bientôt"
+  },
+  "yearReview": {
+    "title": "Bilan de l'Année",
+    "wrapped": "Votre Bilan Financier {{year}}",
+    "totalNumbers": "Votre Année en Chiffres",
+    "totalIncome": "Revenus Totaux",
+    "totalExpenses": "Dépenses Totales",
+    "netSavings": "Épargne Nette",
+    "topCategories": "Catégories de Dépenses Principales",
+    "biggestExpense": "Votre Plus Grosse Dépense",
+    "bestMonth": "Meilleur Mois d'Épargne",
+    "worstMonth": "Mois de Plus Grosses Dépenses",
+    "streaksAchievements": "Séries & Réalisations",
+    "longestStreak": "Plus Longue Série",
+    "achievementsUnlocked": "Réalisations Débloquées",
+    "challengesCompleted": "Défis Terminés",
+    "scoreJourney": "Votre Parcours Paire Score",
+    "partnerComparison": "Vous vs Partenaire",
+    "summary": "Votre Résumé Annuel",
+    "savingsRate": "Taux d'Épargne",
+    "totalTransactions": "Total des Transactions",
+    "share": "Partager",
+    "selectYear": "Sélectionner l'Année",
+    "noData": "Aucune donnée pour cette année",
+    "generating": "Génération de votre bilan..."
+  },
+  "furniture": {
+    "title": "Mobilier",
+    "equip": "Équiper",
+    "unequip": "Retirer",
+    "locked": "Verrouillé",
+    "unlocked": "Déverrouillé",
+    "equipped": "Équipé",
+    "pointsNeeded": "{{points}} pts pour débloquer"
+  },
+  "seasonalThemes": {
+    "default": "Par Défaut",
+    "spring": "Printemps",
+    "summer": "Été",
+    "autumn": "Automne",
+    "winter": "Hiver",
+    "holiday": "Fête"
   }
 }

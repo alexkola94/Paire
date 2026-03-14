@@ -99,3 +99,4 @@ export { default as StreakBanner } from './StreakBanner';
 export { default as PaireScoreCard } from './PaireScoreCard';
 export { default as PersonalitySelector } from './PersonalitySelector';
 export { default as ChallengeCard } from './ChallengeCard';
+export { default as YearReviewCard } from './YearReviewCard';

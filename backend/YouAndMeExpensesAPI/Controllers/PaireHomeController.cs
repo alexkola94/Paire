@@ -91,5 +91,97 @@ namespace YouAndMeExpensesAPI.Controllers
                 return StatusCode(500, new { error = "Failed to upgrade room" });
             }
         }
+
+        [HttpGet("furniture")]
+        public async Task<IActionResult> GetFurniture()
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var furniture = await _paireHomeService.GetFurnitureAsync(userId.ToString());
+                return Ok(furniture);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting furniture for user {UserId}", userId);
+                return StatusCode(500, new { error = "Failed to retrieve furniture" });
+            }
+        }
+
+        [HttpPost("furniture/equip")]
+        public async Task<IActionResult> EquipFurniture([FromBody] EquipFurnitureRequest request)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var result = await _paireHomeService.EquipFurnitureAsync(userId.ToString(), request.Room, request.FurnitureCode, request.Equip);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error equipping furniture for user {UserId}", userId);
+                return StatusCode(500, new { error = "Failed to equip furniture" });
+            }
+        }
+
+        [HttpPost("theme")]
+        public async Task<IActionResult> SetSeasonalTheme([FromBody] SetThemeRequest request)
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var home = await _paireHomeService.SetSeasonalThemeAsync(userId.ToString(), request.Theme);
+                return Ok(home);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting theme for user {UserId}", userId);
+                return StatusCode(500, new { error = "Failed to set theme" });
+            }
+        }
+
+        [HttpGet("couple")]
+        public async Task<IActionResult> GetCoupleHome()
+        {
+            var (userId, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            try
+            {
+                var coupleHome = await _paireHomeService.GetCoupleHomeAsync(userId.ToString());
+                return Ok(coupleHome);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting couple home for user {UserId}", userId);
+                return StatusCode(500, new { error = "Failed to retrieve couple home" });
+            }
+        }
+    }
+
+    public class EquipFurnitureRequest
+    {
+        public string Room { get; set; } = string.Empty;
+        public string FurnitureCode { get; set; } = string.Empty;
+        public bool Equip { get; set; } = true;
+    }
+
+    public class SetThemeRequest
+    {
+        public string Theme { get; set; } = "default";
     }
 }

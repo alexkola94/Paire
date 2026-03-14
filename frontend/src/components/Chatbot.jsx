@@ -22,7 +22,9 @@ import {
   FiImage,
   FiList,
   FiPlus,
-  FiTrash2
+  FiTrash2,
+  FiMic,
+  FiMicOff
 } from 'react-icons/fi'
 import { TbBrain } from 'react-icons/tb' // Brain icon for thinking mode toggle
 import ReactMarkdown from 'react-markdown'
@@ -97,6 +99,8 @@ function Chatbot() {
   const [conversationId, setConversationId] = useState(null)
   const [conversations, setConversations] = useState([])
   const [showConversationList, setShowConversationList] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const recognitionRef = useRef(null)
   const fileInputRef = useRef(null)
   const MAX_ATTACHMENT_SIZE_MB = 5
   const messagesEndRef = useRef(null)
@@ -402,6 +406,42 @@ function Chatbot() {
       next.splice(index, 1)
       return next
     })
+  }
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      const lang = localStorage.getItem('language') || 'en'
+      const msg = lang === 'el' ? 'Η φωνητική αναγνώριση δεν υποστηρίζεται σε αυτόν τον browser.' : 'Voice recognition is not supported in this browser.'
+      addBotMessage(msg, 'warning')
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = false
+    recognition.interimResults = false
+    const langMap = { en: 'en-US', el: 'el-GR', es: 'es-ES', fr: 'fr-FR' }
+    recognition.lang = langMap[localStorage.getItem('language') || 'en'] || 'en-US'
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript
+      setInput(prev => prev ? prev + ' ' + transcript : transcript)
+      setIsListening(false)
+    }
+    recognition.onerror = () => setIsListening(false)
+    recognition.onend = () => setIsListening(false)
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsListening(true)
+  }
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+      recognitionRef.current = null
+    }
+    setIsListening(false)
   }
 
   /**
@@ -1391,6 +1431,16 @@ function Chatbot() {
                   title={t('chatbot.attachFile', 'Attach file')}
                 >
                   <FiPaperclip size={18} />
+                </button>
+                <button
+                  type="button"
+                  className={`chatbot-attach-btn ${isListening ? 'chatbot-mic-active' : ''}`}
+                  onClick={isListening ? stopListening : startListening}
+                  disabled={loading}
+                  aria-label={isListening ? t('voiceInput.stop', 'Stop listening') : t('voiceInput.start', 'Voice input')}
+                  title={isListening ? t('voiceInput.listening', 'Listening...') : t('voiceInput.start', 'Voice input')}
+                >
+                  {isListening ? <FiMicOff size={18} /> : <FiMic size={18} />}
                 </button>
                 {/* Thinking Mode Toggle - only visible when AI mode is on */}
                 {isAiMode && (

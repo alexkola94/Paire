@@ -53,6 +53,7 @@ const PaireScore = lazyWithRetry(() => import('./pages/PaireScore'))
 const WeeklyRecap = lazyWithRetry(() => import('./pages/WeeklyRecap'))
 const PaireHome = lazyWithRetry(() => import('./pages/PaireHome'))
 const Challenges = lazyWithRetry(() => import('./pages/Challenges'))
+const YearInReview = lazyWithRetry(() => import('./pages/YearInReview'))
 const CurrencyCalculator = lazyWithRetry(() => import('./pages/CurrencyCalculator'))
 const PrivacyPolicy = lazyWithRetry(() => import('./pages/PrivacyPolicy'))
 const TermsOfService = lazyWithRetry(() => import('./pages/TermsOfService'))
@@ -286,6 +287,7 @@ function MainAppRouter({ session }) {
             <Route path="weekly-recap" element={<WeeklyRecap />} />
             <Route path="paire-home" element={<PaireHome />} />
             <Route path="challenges" element={<Challenges />} />
+            <Route path="year-in-review" element={<YearInReview />} />
             <Route path="partnership" element={<Partnership />} />
             <Route path="reminders" element={<ReminderSettings />} />
             <Route path="profile" element={<Profile />} />

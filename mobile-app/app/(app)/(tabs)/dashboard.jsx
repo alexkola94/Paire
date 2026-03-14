@@ -16,10 +16,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Wallet, TrendingDown, TrendingUp, PiggyBank, CreditCard, ShoppingCart,
   Bell, BarChart3, Calculator, Newspaper, Users, MapPin, Plus, MessageCircle,
-  Eye, EyeOff, ChevronRight, Pencil, Trash2, Receipt, Repeat, Settings, Menu, User,
+  Eye, EyeOff, ChevronRight, Pencil, Trash2, Receipt, Repeat, Settings, Menu, User, Mic,
 } from 'lucide-react-native';
 import { analyticsService, budgetService, recurringBillService, transactionService, savingsGoalService, profileService } from '../../../services/api';
-import { StreakBanner, PaireScoreCard, ChallengeCard } from '../../../components';
+import { StreakBanner, PaireScoreCard, ChallengeCard, YearReviewCard } from '../../../components';
 import { useCurrentMonthExpenses } from '../../../hooks/useCurrentMonthExpenses';
 import { authService } from '../../../services/auth';
 import { useTheme } from '../../../context/ThemeContext';
@@ -270,6 +270,10 @@ export default function DashboardScreen() {
           <ChallengeCard />
         </View>
 
+        <View style={{ marginBottom: 12 }}>
+          <YearReviewCard />
+        </View>
+
         {/* Quick Access Widget */}
         {isWidgetVisible('quickAccess') && (
           <QuickAccessWidget onItemPress={(route) => router.push(route)} />
@@ -418,6 +422,14 @@ export default function DashboardScreen() {
         layout={layout}
         onSave={saveLayout}
       />
+
+      <TouchableOpacity
+        style={[styles.voiceFab, { backgroundColor: theme.colors.primary }]}
+        onPress={() => showToast(t('voiceInput.comingSoon', 'Voice expense entry coming soon!'), 'info')}
+        accessibilityLabel={t('voiceInput.quickExpense', 'Voice expense')}
+      >
+        <Mic size={24} color="#fff" />
+      </TouchableOpacity>
       </SafeAreaView>
     </Animated.View>
   );
@@ -477,4 +489,16 @@ const styles = StyleSheet.create({
   detailLabel: { ...typography.caption, marginBottom: 2 },
   detailValue: { ...typography.body, fontWeight: '600' },
   detailActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+  voiceFab: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.md,
+    elevation: 8,
+  },
 });

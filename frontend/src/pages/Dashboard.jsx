@@ -37,6 +37,8 @@ import PaireScoreWidget from '../components/widgets/PaireScoreWidget'
 import WeeklyRecapWidget from '../components/widgets/WeeklyRecapWidget'
 import PaireHomeWidget from '../components/widgets/PaireHomeWidget'
 import ChallengesWidget from '../components/widgets/ChallengesWidget'
+import YearReviewWidget from '../components/widgets/YearReviewWidget'
+import VoiceExpenseEntry from '../components/VoiceExpenseEntry'
 import './Dashboard.css'
 
 /**
@@ -616,7 +618,10 @@ function Dashboard() {
         <WeeklyRecapWidget />
         <PaireHomeWidget />
         <ChallengesWidget />
+        <YearReviewWidget />
       </div>
+
+      <VoiceExpenseEntry />
 
       {/* Budget Progress Section - Phase 4 Feature */}
       <motion.div 

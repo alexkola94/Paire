@@ -24,16 +24,12 @@ namespace YouAndMeExpensesAPI.Controllers
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(WeeklyRecap), 200)]
-        [ProducesResponseType(404)]
         public async Task<IActionResult> GetLatest()
         {
             var (userId, error) = GetAuthenticatedUser();
             if (error != null) return error;
 
             var recap = await _weeklyRecapService.GetLatestRecapAsync(userId.ToString());
-            if (recap == null)
-                return NotFound(new { message = "No recap found" });
-
             return Ok(recap);
         }
 

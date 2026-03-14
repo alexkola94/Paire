@@ -64,6 +64,7 @@ namespace YouAndMeExpensesAPI.Data
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<ConversationMessage> ConversationMessages { get; set; }
         public DbSet<YearReview> YearReviews { get; set; }
+        public DbSet<HomeFurniture> HomeFurniture { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -1207,6 +1208,22 @@ namespace YouAndMeExpensesAPI.Data
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasIndex(e => new { e.UserId, e.Year }).IsUnique();
+            });
+
+            // ============================================
+            // HOME FURNITURE TABLE
+            // ============================================
+            modelBuilder.Entity<HomeFurniture>(entity =>
+            {
+                entity.ToTable("home_furniture");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.RoomName).HasColumnName("room_name").HasMaxLength(50).IsRequired();
+                entity.Property(e => e.FurnitureCode).HasColumnName("furniture_code").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.UnlockedAt).HasColumnName("unlocked_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => new { e.UserId, e.RoomName, e.FurnitureCode }).IsUnique();
             });
         }
     }

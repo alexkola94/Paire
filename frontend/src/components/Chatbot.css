@@ -2244,3 +2244,13 @@ body.calculator-open .chatbot-container {
   color: #EF4444;
   background: rgba(239, 68, 68, 0.1);
 }
+
+.chatbot-mic-active {
+  color: #EF4444 !important;
+  animation: pulse-mic 1.5s infinite;
+}
+
+@keyframes pulse-mic {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

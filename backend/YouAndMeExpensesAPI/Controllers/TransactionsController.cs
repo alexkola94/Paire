@@ -368,6 +368,93 @@ namespace YouAndMeExpensesAPI.Controllers
                 return StatusCode(500, new { message = "Error importing statement", error = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Parse voice-transcribed text into transaction fields.
+        /// </summary>
+        [HttpPost("parse-voice")]
+        public IActionResult ParseVoice([FromBody] ParseVoiceRequest request)
+        {
+            var (_, error) = GetAuthenticatedUser();
+            if (error != null) return error;
+
+            if (string.IsNullOrWhiteSpace(request?.Text))
+                return BadRequest(new { error = "Text is required" });
+
+            try
+            {
+                var text = request.Text.Trim();
+                var lang = (request.Language ?? "en").ToLowerInvariant();
+
+                decimal? amount = null;
+                string? category = null;
+                string? description = null;
+                double confidence = 0.0;
+
+                // Amount extraction: find numbers (with optional currency)
+                var amountMatch = System.Text.RegularExpressions.Regex.Match(text, @"(\d+[.,]?\d*)\s*(euros?|dollars?|€|\$|£|pounds?)?", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (amountMatch.Success && decimal.TryParse(amountMatch.Groups[1].Value.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedAmount))
+                {
+                    amount = parsedAmount;
+                    confidence += 0.4;
+                }
+
+                // Category detection via keywords
+                var categoryKeywords = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["groceries"] = ["grocery", "groceries", "supermarket", "lidl", "aldi", "market", "food shop"],
+                    ["food"] = ["food", "lunch", "dinner", "breakfast", "coffee", "restaurant", "cafe", "eat", "meal"],
+                    ["transport"] = ["transport", "gas", "fuel", "uber", "taxi", "bus", "train", "parking", "car"],
+                    ["entertainment"] = ["entertainment", "movie", "cinema", "netflix", "spotify", "game", "concert"],
+                    ["shopping"] = ["shopping", "clothes", "shoes", "amazon", "online", "store", "mall"],
+                    ["health"] = ["health", "doctor", "pharmacy", "medicine", "gym", "fitness", "hospital"],
+                    ["utilities"] = ["utility", "utilities", "electric", "electricity", "water", "internet", "phone", "bill"],
+                    ["housing"] = ["rent", "mortgage", "housing", "home", "apartment"]
+                };
+
+                var lowerText = text.ToLowerInvariant();
+                foreach (var (cat, keywords) in categoryKeywords)
+                {
+                    if (keywords.Any(k => lowerText.Contains(k)))
+                    {
+                        category = cat;
+                        confidence += 0.3;
+                        break;
+                    }
+                }
+
+                // Description: remainder after stripping amount and known keywords
+                var descCandidate = System.Text.RegularExpressions.Regex.Replace(text, @"\d+[.,]?\d*\s*(euros?|dollars?|€|\$|£|pounds?)?", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+                var fillers = new[] { "spent", "paid", "bought", "on", "for", "at", "i", "my", "the", "a", "an", "about", "around" };
+                var words = descCandidate.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Where(w => !fillers.Contains(w.ToLowerInvariant()))
+                    .ToArray();
+                description = words.Length > 0 ? string.Join(" ", words) : null;
+                if (!string.IsNullOrEmpty(description)) confidence += 0.3;
+
+                confidence = Math.Min(1.0, confidence);
+
+                return Ok(new
+                {
+                    amount,
+                    category,
+                    description,
+                    confidence = Math.Round(confidence, 2),
+                    originalText = text
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error parsing voice text");
+                return StatusCode(500, new { error = "Failed to parse voice text" });
+            }
+        }
+    }
+
+    public class ParseVoiceRequest
+    {
+        public string Text { get; set; } = string.Empty;
+        public string? Language { get; set; } = "en";
     }
 }
 

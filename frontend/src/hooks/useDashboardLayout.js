@@ -240,6 +240,14 @@ export const WIDGET_REGISTRY = {
         defaultVisible: true,
         category: 'core',
         path: '/challenges'
+    },
+    'year-review-widget': {
+        id: 'year-review-widget',
+        title: 'yearReview.title',
+        icon: '📊',
+        defaultVisible: true,
+        category: 'core',
+        path: '/year-in-review'
     }
 }
 

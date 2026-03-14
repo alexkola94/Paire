@@ -946,6 +946,22 @@ export const paireHomeService = {
     getCurrentUser();
     return request('post', `/api/paire-home/upgrade/${encodeURIComponent(room)}`);
   },
+  async getFurniture() {
+    getCurrentUser();
+    return request('get', '/api/paire-home/furniture');
+  },
+  async equipFurniture(room, furnitureCode, equip) {
+    getCurrentUser();
+    return request('post', '/api/paire-home/furniture/equip', { room, furnitureCode, equip });
+  },
+  async setTheme(theme) {
+    getCurrentUser();
+    return request('post', '/api/paire-home/theme', { theme });
+  },
+  async getCoupleHome() {
+    getCurrentUser();
+    return request('get', '/api/paire-home/couple');
+  },
 };
 
 // ========================================
@@ -982,6 +998,16 @@ export const yearReviewService = {
   },
   async regenerate(year) {
     return request('post', `/api/year-review/${year}/regenerate`);
+  },
+};
+
+// ========================================
+// Voice Service
+// ========================================
+
+export const voiceService = {
+  async parseVoice(text, language = 'en') {
+    return request('post', '/api/transactions/parse-voice', { text, language });
   },
 };
 

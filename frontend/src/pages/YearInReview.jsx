@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -660,18 +661,19 @@ function YearInReview() {
   }
 
   if (loading) {
-    return (
+    return createPortal(
       <div className="yr-page yr-state-page" style={{ background: SLIDE_GRADIENTS[0] }}>
         <div className="yr-state-content">
           <div className="yr-loading-spinner" />
           <p>{t('yearReview.loading', 'Preparing your wrapped...')}</p>
         </div>
-      </div>
+      </div>,
+      document.body
     )
   }
 
   if (error || !data) {
-    return (
+    return createPortal(
       <div className="yr-page yr-state-page" style={{ background: SLIDE_GRADIENTS[0] }}>
         <div className="yr-state-content">
           <h2 className="yr-error-title">{t('yearReview.error.title', 'Oops!')}</h2>
@@ -691,13 +693,14 @@ function YearInReview() {
             </button>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     )
   }
 
   const current = slides[currentSlide]
 
-  return (
+  return createPortal(
     <div className="yr-page">
       <div className="yr-header">
         <button className="yr-header-btn" onClick={() => navigate(-1)} aria-label="Close">
@@ -765,7 +768,8 @@ function YearInReview() {
           />
         ))}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

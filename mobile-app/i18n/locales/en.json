@@ -2909,5 +2909,62 @@
     "claimReward": "Claim",
     "rewardClaimed": "Claimed",
     "viewAll": "View All"
+  },
+  "conversations": {
+    "title": "Conversations",
+    "new": "New",
+    "empty": "No conversations yet",
+    "untitled": "Untitled",
+    "delete": "Delete"
+  },
+  "voiceInput": {
+    "start": "Voice input",
+    "stop": "Stop listening",
+    "listening": "Listening...",
+    "quickExpense": "Voice expense",
+    "comingSoon": "Voice expense entry coming soon!",
+    "mobileHint": "Voice input coming soon - use keyboard for now"
+  },
+  "yearReview": {
+    "title": "Year in Review",
+    "wrapped": "Your {{year}} Financial Wrapped",
+    "totalNumbers": "Your Year in Numbers",
+    "totalIncome": "Total Income",
+    "totalExpenses": "Total Expenses",
+    "netSavings": "Net Savings",
+    "topCategories": "Top Spending Categories",
+    "biggestExpense": "Your Biggest Expense",
+    "bestMonth": "Best Savings Month",
+    "worstMonth": "Highest Spending Month",
+    "streaksAchievements": "Streaks & Achievements",
+    "longestStreak": "Longest Streak",
+    "achievementsUnlocked": "Achievements Unlocked",
+    "challengesCompleted": "Challenges Completed",
+    "scoreJourney": "Your Paire Score Journey",
+    "partnerComparison": "You vs Partner",
+    "summary": "Your Year Summary",
+    "savingsRate": "Savings Rate",
+    "totalTransactions": "Total Transactions",
+    "share": "Share",
+    "selectYear": "Select Year",
+    "noData": "No data available for this year",
+    "generating": "Generating your review..."
+  },
+  "furniture": {
+    "title": "Furniture",
+    "equip": "Equip",
+    "unequip": "Remove",
+    "locked": "Locked",
+    "unlocked": "Unlocked",
+    "equipped": "Equipped",
+    "pointsNeeded": "{{points}} pts to unlock"
+  },
+  "seasonalThemes": {
+    "default": "Default",
+    "spring": "Spring",
+    "summer": "Summer",
+    "autumn": "Autumn",
+    "winter": "Winter",
+    "holiday": "Holiday"
   }
 }

@@ -1276,6 +1276,41 @@ export const paireHomeService = {
     return await apiRequest(`/api/paire-home/upgrade/${encodeURIComponent(room)}`, {
       method: 'POST'
     })
+  },
+
+  async getFurniture() {
+    return await apiRequest('/api/paire-home/furniture')
+  },
+
+  async equipFurniture(room, furnitureCode, equip) {
+    return await apiRequest('/api/paire-home/furniture/equip', {
+      method: 'POST',
+      body: JSON.stringify({ room, furnitureCode, equip })
+    })
+  },
+
+  async setTheme(theme) {
+    return await apiRequest('/api/paire-home/theme', {
+      method: 'POST',
+      body: JSON.stringify({ theme })
+    })
+  },
+
+  async getCoupleHome() {
+    return await apiRequest('/api/paire-home/couple')
+  }
+}
+
+// ========================================
+// Voice Service
+// ========================================
+
+export const voiceService = {
+  async parseVoice(text, language) {
+    return await apiRequest('/api/transactions/parse-voice', {
+      method: 'POST',
+      body: JSON.stringify({ text, language })
+    })
   }
 }
 
@@ -1397,7 +1432,12 @@ export const aiGatewayService = {
 
 export const yearReviewService = {
   async getReview(year) {
-    return await apiRequest(`/api/year-review/${year}`)
+    try {
+      return await apiRequest(`/api/year-review/${year}`)
+    } catch (e) {
+      if (e.message?.includes('404')) return null
+      throw e
+    }
   }
 }
 

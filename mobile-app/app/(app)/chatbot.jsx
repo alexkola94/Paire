@@ -57,6 +57,8 @@ import {
   List,
   Plus,
   Trash2,
+  Mic,
+  MicOff,
 } from 'lucide-react-native';
 import { chatbotService, aiGatewayService, reminderService, conversationService } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
@@ -207,6 +209,9 @@ export default function ChatbotScreen() {
   const [showPersonalitySelector, setShowPersonalitySelector] = useState(false);
   const [currentPersonality, setCurrentPersonality] = useState('supportive');
   const [aiAvailable, setAiAvailable] = useState(false);
+
+  // Voice state
+  const [isListening, setIsListening] = useState(false);
 
   // Conversation persistence state
   const [conversationId, setConversationId] = useState(null);
@@ -651,6 +656,28 @@ export default function ChatbotScreen() {
               multiline
               maxLength={2000}
             />
+            <TouchableOpacity
+              style={[
+                styles.voiceBtn,
+                { backgroundColor: isListening ? theme.colors.error + '20' : theme.colors.surfaceSecondary },
+              ]}
+              onPress={() => {
+                if (isListening) {
+                  setIsListening(false);
+                } else {
+                  setIsListening(true);
+                  showToast(t('voiceInput.mobileHint', 'Voice input coming soon - use keyboard for now'), 'info');
+                  setTimeout(() => setIsListening(false), 2000);
+                }
+              }}
+              accessibilityLabel={t('voiceInput.start', 'Voice input')}
+            >
+              {isListening ? (
+                <MicOff size={20} color={theme.colors.error} />
+              ) : (
+                <Mic size={20} color={theme.colors.textSecondary} />
+              )}
+            </TouchableOpacity>
             {loading ? (
               <TouchableOpacity
                 style={[styles.sendBtn, { backgroundColor: theme.colors.error }]}
@@ -829,6 +856,13 @@ const styles = StyleSheet.create({
     ...typography.body,
   },
   sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceBtn: {
     width: 44,
     height: 44,
     borderRadius: borderRadius.md,
