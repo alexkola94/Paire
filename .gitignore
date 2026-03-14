@@ -58,6 +58,7 @@ pnpm-debug.log*
 *.ntvs*
 *.njsproj
 *.sln
+!backend/Paire.sln
 *.sw?
 *.swp
 *~
