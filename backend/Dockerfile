@@ -6,9 +6,8 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY ["Paire.sln", "./"]
 COPY ["src/", "src/"]
-RUN dotnet restore "Paire.sln"
+RUN dotnet restore "src/Host/Paire.Api/Paire.Api.csproj"
 RUN dotnet build "src/Host/Paire.Api/Paire.Api.csproj" -c Release -o /app/build
 
 FROM build AS publish
