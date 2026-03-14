@@ -1,0 +1,386 @@
+/* ================================
+   Email Confirmation Page Styles
+   Liquid Glass 2026 Aesthetic
+   ================================ */
+
+.email-confirmation-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0e6ff 0%, #a29bfe 100%);
+  padding: var(--spacing-lg);
+  animation: fadeIn 0.5s ease-out;
+}
+
+[data-theme='dark'] .email-confirmation-page {
+  background: linear-gradient(135deg, #0F071A 0%, #1a0f2e 50%, #2d1f4e 100%);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confirmation-container {
+  width: 100%;
+  max-width: 500px;
+}
+
+.confirmation-card {
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: var(--spacing-xl);
+  text-align: center;
+  /* Multi-layered box shadows */
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  animation: slideUp 0.6s ease-out;
+}
+
+[data-theme='dark'] .confirmation-card {
+  background: rgba(15, 7, 26, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Logo */
+.confirmation-logo {
+  margin-bottom: var(--spacing-xl);
+}
+
+.confirmation-logo img {
+  filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.3));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='dark'] .confirmation-logo img {
+  filter: drop-shadow(0 4px 12px rgba(167, 139, 250, 0.4));
+}
+
+/* Content */
+.confirmation-content {
+  padding: var(--spacing-lg) 0;
+}
+
+.confirmation-icon {
+  margin-bottom: var(--spacing-lg);
+}
+
+.confirmation-icon svg {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.confirmation-icon.loading svg {
+  color: #8B5CF6;
+  animation: spin 1s linear infinite;
+  filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
+}
+
+[data-theme='dark'] .confirmation-icon.loading svg {
+  color: #A78BFA;
+  filter: drop-shadow(0 2px 8px rgba(167, 139, 250, 0.4));
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.confirmation-content.success .confirmation-icon svg {
+  color: #10B981;
+  animation: scaleIn 0.5s ease-out;
+  filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3));
+}
+
+[data-theme='dark'] .confirmation-content.success .confirmation-icon svg {
+  color: #34D399;
+  filter: drop-shadow(0 4px 12px rgba(52, 211, 153, 0.4));
+}
+
+.confirmation-content.error .confirmation-icon svg {
+  color: #EF4444;
+  animation: shake 0.5s ease-out;
+  filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.3));
+}
+
+[data-theme='dark'] .confirmation-content.error .confirmation-icon svg {
+  color: #F87171;
+  filter: drop-shadow(0 4px 12px rgba(248, 113, 113, 0.4));
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+/* Typography */
+.confirmation-content h1 {
+  /* Fluid typography */
+  font-size: clamp(1.5rem, 3vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--spacing-md) 0;
+  /* Royal Amethyst mesh gradient */
+  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #C4B5FD 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
+  /* Fallback */
+  color: #8B5CF6;
+}
+
+[data-theme='dark'] .confirmation-content h1 {
+  background: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 50%, #DDD6FE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(167, 139, 250, 0.4));
+  color: #C4B5FD;
+}
+
+.confirmation-content p {
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-lg) 0;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+[data-theme='dark'] .confirmation-content p {
+  color: #D1D5DB;
+}
+
+.success-message {
+  color: #10B981;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .success-message {
+  color: #34D399;
+}
+
+.error-message {
+  color: #EF4444;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .error-message {
+  color: #F87171;
+}
+
+/* Redirect Notice */
+.redirect-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  /* Glassmorphic background */
+  background: rgba(16, 185, 129, 0.15);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border-radius: 12px; /* rounded-2xl */
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  margin-bottom: var(--spacing-lg);
+}
+
+[data-theme='dark'] .redirect-notice {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.redirect-notice svg {
+  color: #10B981;
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .redirect-notice svg {
+  color: #34D399;
+}
+
+.redirect-notice p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+[data-theme='dark'] .redirect-notice p {
+  color: #D1D5DB;
+}
+
+/* Actions */
+.error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: 14px var(--spacing-lg);
+  border-radius: 12px; /* rounded-2xl */
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  text-decoration: none;
+  width: 100%;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #C4B5FD 100%);
+  color: white;
+  /* Multi-layered shadows */
+  box-shadow: 
+    0 4px 15px rgba(139, 92, 246, 0.3),
+    0 2px 8px rgba(139, 92, 246, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 20px rgba(139, 92, 246, 0.4),
+    0 4px 12px rgba(139, 92, 246, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  color: var(--text-primary);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+[data-theme='dark'] .btn-secondary {
+  background: rgba(15, 7, 26, 0.3);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  color: #E5E7EB;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+[data-theme='dark'] .btn-secondary:hover {
+  background: rgba(15, 7, 26, 0.4);
+  border-color: rgba(167, 139, 250, 0.4);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  color: #8B5CF6;
+}
+
+[data-theme='dark'] .btn-outline {
+  border: 2px solid rgba(167, 139, 250, 0.3);
+  color: #A78BFA;
+}
+
+.btn-outline:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #7C3AED;
+  background: rgba(139, 92, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+[data-theme='dark'] .btn-outline:hover {
+  border-color: rgba(167, 139, 250, 0.5);
+  color: #C4B5FD;
+  background: rgba(167, 139, 250, 0.15);
+}
+
+/* Footer */
+.confirmation-footer {
+  margin-top: var(--spacing-lg);
+  text-align: center;
+}
+
+.confirmation-footer p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+[data-theme='dark'] .confirmation-footer p {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive Design */
+@media (max-width: 767px) {
+  .email-confirmation-page {
+    padding: var(--spacing-md);
+  }
+
+  .confirmation-card {
+    padding: var(--spacing-lg);
+  }
+
+  .confirmation-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .confirmation-logo img {
+    width: 60px;
+    height: 60px;
+  }
+
+  .confirmation-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+}

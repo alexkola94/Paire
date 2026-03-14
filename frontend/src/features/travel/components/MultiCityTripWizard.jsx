@@ -1,0 +1,1521 @@
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import ReactDOM from 'react-dom'
+import { useTranslation } from 'react-i18next'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useModalRegistration } from '../../../shared/context/ModalContext'
+import { useTheme } from '../../../shared/context/ThemeContext'
+import {
+  FiX,
+  FiMapPin,
+  FiDollarSign,
+  FiCheck,
+  FiChevronRight,
+  FiChevronLeft,
+  FiList,
+  FiTrash2
+} from 'react-icons/fi'
+import { tripService, geocodingService, tripCityService } from '../services/travelApi'
+import { getAdvisories, getAdvisory } from '../services/travelAdvisoryService'
+import TravelAdvisoryBadge from './TravelAdvisoryBadge'
+import TravelAdvisoryCard from './TravelAdvisoryCard'
+import { budgetService, savingsGoalService } from '../../../services/api'
+import { TRAVEL_CURRENCIES } from '../utils/travelConstants'
+import CitySelectionMap from './CitySelectionMap'
+import MultiCityDistanceSummary from './MultiCityDistanceSummary'
+import { getRouteDirections, calculateDistance, reverseGeocode } from '../services/discoveryService'
+import { getTransportSuggestions, getBestTransportModes, TRANSPORT_MODES } from '../utils/transportSuggestion'
+import { buildTransportLegs } from '../utils/buildTransportLegs'
+import TransportBookingStep from './TransportBookingStep'
+import DatePicker from './DatePicker'
+import DateRangePicker from './DateRangePicker'
+import '../styles/TripSetupWizard.css'
+import '../styles/MultiCityTripWizard.css'
+
+// Helper to calculate distance between two location objects
+const getDistanceKm = (loc1, loc2) => {
+  if (!loc1 || !loc2 || !loc1.latitude || !loc1.longitude || !loc2.latitude || !loc2.longitude) {
+    return null
+  }
+  return calculateDistance(loc1.latitude, loc1.longitude, loc2.latitude, loc2.longitude)
+}
+
+/**
+ * MultiCityTripWizard Component
+ * Step wizard for creating multi-city trips with map-based city selection
+ */
+const MultiCityTripWizard = ({ trip, onClose, onSave }) => {
+  const { t } = useTranslation()
+  const { theme } = useTheme()
+
+  // Register modal to hide bottom navigation and explore button
+  useModalRegistration(true)
+
+  const [step, setStep] = useState(1)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+
+  // Advisory modal state
+  const [isAdvisoryBannerOpen, setIsAdvisoryBannerOpen] = useState(false)
+
+  // Budget selection state
+  const [availableBudgets, setAvailableBudgets] = useState([])
+  const [budgetMode, setBudgetMode] = useState('new') // 'new' or 'existing'
+  const [selectedBudgetId, setSelectedBudgetId] = useState('')
+
+  // Cities state
+  const [cities, setCities] = useState([])
+  const [routeDistances, setRouteDistances] = useState({})
+  // Store per-leg metadata so we can adapt UI based on routing availability (e.g. sea legs)
+  const [routeLegMeta, setRouteLegMeta] = useState({})
+  const [routesLoading, setRoutesLoading] = useState(false)
+  const [cityAdvisories, setCityAdvisories] = useState({})
+  // Home location + optional distances from home → first city and last city → home.
+  // This mirrors the behaviour in TravelHome and TripMicrography so users see
+  // a consistent \"door-to-door\" distance picture.
+  const [homeLocation, setHomeLocation] = useState(null)
+  const [homeCityName, setHomeCityName] = useState(null)
+  const [homeToFirstDistance, setHomeToFirstDistance] = useState(0)
+  const [lastToHomeDistance, setLastToHomeDistance] = useState(0)
+  // Transport selection for the return leg (Last City → Home)
+  const [returnTransportMode, setReturnTransportMode] = useState(null)
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: trip?.name || '',
+    budget: trip?.budget || '',
+    budgetCategory: trip?.name || '',
+    budgetCurrency: trip?.budgetCurrency || 'EUR'
+  })
+
+  // Try to detect the user's home location once, using the browser's geolocation.
+  // If permission is denied or unavailable we simply omit the home legs from
+  // the distance summary – the rest of the wizard continues to work normally.
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        setHomeLocation({ latitude, longitude })
+        // Reverse geocode to get city name for transport booking links
+        try {
+          const result = await reverseGeocode(latitude, longitude)
+          if (result?.name) {
+            setHomeCityName(result.name)
+          }
+        } catch (err) {
+          console.warn('Home city name detection failed:', err)
+        }
+      },
+      (error) => {
+        // Keep logic simple and fail silently to avoid blocking the flow.
+        console.warn('Geolocation unavailable for MultiCityTripWizard:', error)
+      }
+    )
+  }, [])
+
+  // Load existing budgets and saving goals on mount
+  useEffect(() => {
+    const loadBudgets = async () => {
+      try {
+        const [budgets, savingGoals] = await Promise.all([
+          budgetService.getAll().catch(() => []),
+          savingsGoalService.getAll().catch(() => [])
+        ])
+
+        const normalizedBudgets = (budgets || []).map(b => ({
+          id: b.id,
+          category: b.category,
+          amount: b.amount,
+          period: b.period,
+          type: 'budget'
+        }))
+
+        const normalizedGoals = (savingGoals || []).map(goal => ({
+          ...goal,
+          category: goal.name,
+          amount: goal.targetAmount,
+          period: 'one-time',
+          type: 'savingGoal'
+        }))
+
+        const merged = [...normalizedBudgets, ...normalizedGoals].sort((a, b) =>
+          a.category.localeCompare(b.category)
+        )
+
+        setAvailableBudgets(merged)
+      } catch (err) {
+        console.error('Error loading budgets and saving goals:', err)
+        setAvailableBudgets([])
+      }
+    }
+    loadBudgets()
+  }, [])
+
+  // Load existing cities if editing
+  useEffect(() => {
+    const loadCities = async () => {
+      if (trip?.id) {
+        try {
+          const tripCities = await tripCityService.getByTrip(trip.id)
+          setCities(tripCities || [])
+        } catch (err) {
+          console.error('Error loading cities:', err)
+        }
+      }
+    }
+    loadCities()
+  }, [trip?.id])
+
+  // Handle city addition with smart transport mode detection
+  // Uses Mapbox Directions API to detect water crossings and suggest appropriate transport
+  const handleCityAdd = async (city) => {
+    // Determine the "from" location for this new leg (previous city or home)
+    const prevLocation = cities.length > 0 ? cities[cities.length - 1] : homeLocation
+
+    // Default mode: use provided transportMode or detect smart default
+    let initialMode = city.transportMode || null
+
+    // Smart Transport Detection: Use async API to check for water crossings
+    if (!initialMode && prevLocation && prevLocation.latitude && prevLocation.longitude &&
+        city.latitude && city.longitude) {
+      try {
+        // Use getBestTransportModes which checks Mapbox for route availability
+        // This detects water crossings (no land route) and suggests ferry/flight accordingly
+        const suggestions = await getBestTransportModes({
+          fromCity: prevLocation,
+          toCity: city,
+          distanceKm: getDistanceKm(prevLocation, city)
+        })
+
+        // Use the top suggestion based on distance + water crossing detection
+        // e.g., flight for >500km, ferry for water crossings <300km, train for regional
+        if (suggestions && suggestions.length > 0) {
+          initialMode = suggestions[0]
+        }
+      } catch (err) {
+        // Fallback to synchronous heuristic if async detection fails
+        console.warn('Smart transport detection failed, using fallback:', err.message)
+        const dist = getDistanceKm(prevLocation, city)
+        if (dist != null) {
+          const fallbackSuggestions = getTransportSuggestions({
+            distanceKm: dist,
+            fromCity: prevLocation,
+            toCity: city,
+            routeAvailable: undefined // Unknown, use keyword detection only
+          })
+          if (fallbackSuggestions.length > 0) {
+            initialMode = fallbackSuggestions[0]
+          }
+        }
+      }
+    }
+
+    // Create new city with detected transport mode
+    const newCity = {
+      ...city,
+      id: `temp-${Date.now()}`,
+      order: cities.length,
+      // Keep transport explicit on the incoming leg for this city
+      transportMode: initialMode
+    }
+    setCities([...cities, newCity])
+
+    // Fetch and show travel advisory if country is available
+    if (newCity.country) {
+      try {
+        const advisory = await getAdvisory(newCity.country)
+        if (advisory && advisory.countryCode) {
+          // Update local cache so it's available immediately
+          setCityAdvisories(prev => ({
+            ...prev,
+            [advisory.countryCode.toLowerCase()]: advisory
+          }))
+          setIsAdvisoryBannerOpen(true)
+        }
+      } catch (err) {
+        console.error('Failed to load advisory on map click:', err)
+      }
+    }
+  }
+
+  // Handle city removal
+  const [cityToDelete, setCityToDelete] = useState(null)
+
+  // Trip deletion confirmation modal state
+  const [showDeleteTripModal, setShowDeleteTripModal] = useState(false)
+
+  const handleCityRemove = (cityId) => {
+    const city = cities.find(c => c.id === cityId)
+    if (city) {
+      setCityToDelete(city)
+    }
+  }
+
+  const confirmCityDelete = () => {
+    if (!cityToDelete) return
+
+    setCities(
+      cities
+        .filter(c => c.id !== cityToDelete.id)
+        .map((c, idx) => ({
+          ...c,
+          order: idx
+        }))
+    )
+    setCityToDelete(null)
+  }
+
+  const cancelCityDelete = () => {
+    setCityToDelete(null)
+  }
+
+  // Handle city reorder (drag and drop would go here, simplified for now)
+  const handleCityReorder = (fromIndex, toIndex) => {
+    const newCities = [...cities]
+    const [moved] = newCities.splice(fromIndex, 1)
+    newCities.splice(toIndex, 0, moved)
+    setCities(newCities.map((c, idx) => ({ ...c, order: idx })))
+  }
+
+  // Handle transport change
+  const handleCityTransportChange = (cityId, newMode) => {
+    setCities(cities.map(city =>
+      city.id === cityId ? { ...city, transportMode: newMode } : city
+    ))
+  }
+
+  // Smart Date Selection Logic
+  const handleCityDateChange = useCallback((index, changes) => {
+    // changes is object { startDate, endDate } or field/value from old calls (transition safety)
+
+    setCities(prevCities => {
+      const newCities = [...prevCities]
+      const ordered = [...newCities].sort((a, b) => (a.order || 0) - (b.order || 0))
+      const targetCity = { ...ordered[index] }
+
+      let updatedDateReceived = false
+      let newStartDate = targetCity.startDate
+      let newEndDate = targetCity.endDate
+
+      if (changes && typeof changes === 'object' && (changes.startDate !== undefined || changes.endDate !== undefined)) {
+        // New DateRangePicker object style
+        if (changes.startDate !== undefined) {
+          newStartDate = changes.startDate
+          targetCity.startDate = newStartDate
+          updatedDateReceived = true
+        }
+        if (changes.endDate !== undefined) {
+          newEndDate = changes.endDate
+          targetCity.endDate = newEndDate
+          updatedDateReceived = true
+        }
+      } else {
+        // Fallback for old calls if any: (index, field, value)
+        // But our new call signature is (index, changes), so we assume changes IS the object.
+        // If changes is string (field), this logic would fail. 
+        // Since we updated the call site, we assume correct object.
+        return prevCities
+      }
+
+      if (!updatedDateReceived) return newCities
+
+      // Cascade to Next City
+      if (newEndDate && index < ordered.length - 1) {
+        const nextCityIndex = index + 1
+        const nextCity = { ...ordered[nextCityIndex] }
+
+        if (!nextCity.startDate || new Date(nextCity.startDate) < new Date(newEndDate)) {
+          // Suggest seamless start
+          nextCity.startDate = newEndDate
+
+          // Shift next city end date if needed
+          if (nextCity.endDate && new Date(nextCity.endDate) <= new Date(newEndDate)) {
+            const d = new Date(newEndDate)
+            d.setDate(d.getDate() + 2)
+            nextCity.endDate = d.toISOString().split('T')[0]
+          }
+
+          const realNextIndex = newCities.findIndex(c => c.id === nextCity.id)
+          if (realNextIndex !== -1) newCities[realNextIndex] = nextCity
+        }
+      }
+
+      // Update target
+      const realIndex = newCities.findIndex(c => c.id === targetCity.id)
+      if (realIndex !== -1) newCities[realIndex] = targetCity
+
+      return newCities
+    })
+  }, [])
+
+  // Create a stable country signature that only changes when the set of countries changes
+  // This prevents unnecessary advisory fetches when only dates or transport modes change
+  const countrySignature = useMemo(() => {
+    if (!cities || cities.length === 0) {
+      return ''
+    }
+
+    // Extract unique countries, sort for stability, and join into a signature string
+    const uniqueCountries = [...new Set(
+      cities
+        .map(city => city.country)
+        .filter(Boolean)
+    )].sort().join(',')
+
+    return uniqueCountries
+  }, [cities])
+
+  // Load advisories only when the set of countries actually changes (not on date/transport changes)
+  useEffect(() => {
+    const loadAdvisories = async () => {
+      // Early return if no countries
+      if (!countrySignature || countrySignature.length === 0) {
+        setCityAdvisories({})
+        return
+      }
+
+      // Extract country codes from the signature (split the sorted, unique list)
+      const countryCodes = countrySignature.split(',').filter(Boolean)
+
+      if (countryCodes.length === 0) {
+        setCityAdvisories({})
+        return
+      }
+
+      try {
+        const advisories = await getAdvisories(countryCodes)
+        const map = {}
+        advisories.forEach(a => {
+          if (a && a.countryCode) {
+            map[a.countryCode.toLowerCase()] = a
+          }
+        })
+
+        setCityAdvisories(map)
+      } catch (error) {
+        console.error('Error loading advisories for cities:', error)
+      }
+    }
+
+    loadAdvisories()
+    // Only run when countrySignature changes (i.e., when countries are added/removed/changed)
+    // This prevents unnecessary API calls when only dates or transport modes are updated
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countrySignature])
+
+  // Calculate home-to-first and last-to-home distances when homeLocation or cities change
+  useEffect(() => {
+    if (!homeLocation || cities.length === 0) {
+      setHomeToFirstDistance(0)
+      setLastToHomeDistance(0)
+      return
+    }
+
+    const orderedCities = [...cities].sort((a, b) => (a.order || 0) - (b.order || 0))
+    const firstCity = orderedCities[0]
+    const lastCity = orderedCities[orderedCities.length - 1]
+
+    // Calculate distance from home to first city
+    if (firstCity && firstCity.latitude && firstCity.longitude) {
+      const distToFirst = getDistanceKm(homeLocation, firstCity)
+      setHomeToFirstDistance(distToFirst || 0)
+    } else {
+      setHomeToFirstDistance(0)
+    }
+
+    // Calculate distance from last city to home
+    if (lastCity && lastCity.latitude && lastCity.longitude) {
+      const distFromLast = getDistanceKm(lastCity, homeLocation)
+      setLastToHomeDistance(distFromLast || 0)
+    } else {
+      setLastToHomeDistance(0)
+    }
+  }, [homeLocation, cities])
+
+  // Handle form input changes
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    setError(null)
+  }
+
+  // Handle trip deletion - show confirmation modal
+  const handleDeleteTrip = () => {
+    if (!trip?.id) return
+    setShowDeleteTripModal(true)
+  }
+
+  // Confirm trip deletion
+  const confirmTripDelete = async () => {
+    if (!trip?.id) return
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      await tripService.delete(trip.id)
+      setShowDeleteTripModal(false)
+      onClose() // Close the wizard after successful deletion
+    } catch (err) {
+      console.error('Failed to delete trip:', err)
+      setError(t('travel.multiCity.deleteError', 'Failed to delete trip. Please try again.'))
+      setSaving(false)
+      setShowDeleteTripModal(false)
+    }
+  }
+
+  // Cancel trip deletion
+  const cancelTripDelete = () => {
+    setShowDeleteTripModal(false)
+  }
+
+  // Helper: always work with cities in a stable route order
+  // Memoized to prevent frequent re-calculations and reference changes
+  const orderedCities = useMemo(() => {
+    return [...cities].sort((a, b) => (a.order || 0) - (b.order || 0))
+  }, [cities])
+
+  const getOrderedCities = () => orderedCities
+
+  // Detect mobile viewport
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 1024)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Step configuration
+  // Desktop: 1 (Map+List), 2 (Dates), 3 (Transport Booking), 4 (Budget)
+  // Mobile: 1 (Map Only), 2 (List/Transport), 3 (Dates), 4 (Transport Booking), 5 (Budget)
+  const MAX_STEPS = isMobile ? 5 : 4
+
+  // Validate current step
+  const validateStep = (currentStep = step) => {
+    // Map Mobile Step 1 -> Desktop 1 Logic
+    // Mobile Step 2 -> Desktop 1 Logic
+    // Mobile Step 3 -> Desktop 2 Logic
+    // Mobile Step 4 -> Desktop 3 Logic
+
+    if (isMobile) {
+      switch (currentStep) {
+        case 1: // Mobile Map
+          if (cities.length < 2) {
+            setError(t('travel.multiCity.errors.minCities', 'Please select at least 2 cities'))
+            return false
+          }
+          break
+        case 2: // Mobile List/Review
+          if (cities.length < 2) {
+            setError(t('travel.multiCity.errors.minCities', 'Please select at least 2 cities'))
+            return false
+          }
+          break
+        case 3: // Dates
+          for (let i = 0; i < cities.length; i++) {
+            const city = cities[i]
+            if (!city.startDate) {
+              setError(t('travel.multiCity.errors.cityDateRequired', 'Please set arrival date for {{city}}', { city: city.name }))
+              return false
+            }
+            if (i > 0) {
+              const prevCity = cities[i - 1]
+              if (new Date(city.startDate) < new Date(prevCity.endDate || prevCity.startDate)) {
+                setError(t('travel.multiCity.errors.dateOrder', 'City dates must be in order'))
+                return false
+              }
+            }
+          }
+          break
+        case 4: // Transport Booking - optional, no validation
+          break
+        case 5: // Budget
+          if (budgetMode === 'new' && formData.budget && !formData.budgetCategory) {
+            setError(t('travel.setup.errors.budgetCategoryRequired', 'Please name your budget'))
+            return false
+          }
+          if (budgetMode === 'existing' && !selectedBudgetId) {
+            setError(t('travel.wizard.selectBudget', 'Please select a budget'))
+            return false
+          }
+          break
+      }
+    } else {
+      // Desktop Validation
+      switch (currentStep) {
+        case 1:
+          if (cities.length < 2) {
+            setError(t('travel.multiCity.errors.minCities', 'Please select at least 2 cities'))
+            return false
+          }
+          break
+        case 2:
+          // Validate dates
+          for (let i = 0; i < cities.length; i++) {
+            const city = cities[i]
+            if (!city.startDate) {
+              setError(t('travel.multiCity.errors.cityDateRequired', 'Please set arrival date for {{city}}', { city: city.name }))
+              return false
+            }
+            if (i > 0) {
+              const prevCity = cities[i - 1]
+              if (new Date(city.startDate) < new Date(prevCity.endDate || prevCity.startDate)) {
+                setError(t('travel.multiCity.errors.dateOrder', 'City dates must be in order'))
+                return false
+              }
+            }
+          }
+          break
+        case 3: // Transport Booking - optional, no validation
+          break
+        case 4: // Budget
+          if (budgetMode === 'new' && formData.budget && !formData.budgetCategory) {
+            setError(t('travel.setup.errors.budgetCategoryRequired', 'Please name your budget'))
+            return false
+          }
+          if (budgetMode === 'existing' && !selectedBudgetId) {
+            setError(t('travel.wizard.selectBudget', 'Please select a budget'))
+            return false
+          }
+          break
+      }
+    }
+    return true
+  }
+
+  // Handle next step
+  const nextStep = () => {
+    if (validateStep()) {
+      setError(null)
+      setStep(prev => prev + 1)
+    }
+  }
+
+  // Handle previous step
+  const prevStep = () => {
+    setStep(prev => prev - 1)
+    setError(null)
+  }
+
+  // Handle save
+  const handleSave = async () => {
+    if (!validateStep()) return
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      let finalBudget = parseFloat(formData.budget) || 0
+      let linkedBudgetId = null
+
+      // Determine canonical start/end cities based on route order
+      const ordered = getOrderedCities()
+      const startCity = ordered[0]
+      const endCity = ordered[ordered.length - 1]
+
+      // Handle Budget Creation/Selection
+      if (budgetMode === 'new' && finalBudget > 0) {
+        try {
+          const newBudget = await budgetService.create({
+            category: formData.budgetCategory || formData.name || 'Multi-City Trip',
+            amount: finalBudget,
+            startDate: startCity?.startDate,
+            endDate: endCity?.endDate,
+            period: 'monthly'
+          })
+          linkedBudgetId = newBudget.id
+        } catch (err) {
+          console.error('Failed to create linked budget:', err)
+        }
+      } else if (budgetMode === 'existing' && selectedBudgetId) {
+        const selectedBudget = availableBudgets.find(b => b.id === selectedBudgetId)
+        if (selectedBudget) {
+          finalBudget = selectedBudget.targetAmount || selectedBudget.amount
+          linkedBudgetId = selectedBudget.id
+        }
+      }
+
+      // Create or update trip
+      const tripData = {
+        name: formData.name || ordered.map(c => c.name).join(' → '),
+        destination: startCity?.name || '',
+        country: startCity?.country || '',
+        latitude: startCity?.latitude || null,
+        longitude: startCity?.longitude || null,
+        startDate: startCity?.startDate || null,
+        endDate: endCity?.endDate || null,
+        budget: finalBudget,
+        budgetCurrency: formData.budgetCurrency,
+        tripType: 'multi-city',
+        linkedBudgetId,
+        // Optional summary fields
+        startCityName: startCity?.name || '',
+        startCountry: startCity?.country || '',
+        endCityName: endCity?.name || '',
+        endCountry: endCity?.country || ''
+      }
+
+      let savedTrip
+      if (trip?.id) {
+        savedTrip = await tripService.update(trip.id, tripData)
+      } else {
+        savedTrip = await tripService.create(tripData)
+      }
+
+      // Save cities logic (unchanged)
+      if (savedTrip?.id) {
+        if (trip?.id) {
+          const existingCities = await tripCityService.getByTrip(savedTrip.id)
+          const existingIds = new Set(existingCities.map(c => c.id))
+          const toUpdate = []
+          const toCreate = []
+
+          cities.forEach((city, index) => {
+            const hasRealId = city.id && !city.id.startsWith('temp-') && existingIds.has(city.id)
+            if (hasRealId) {
+              toUpdate.push({ id: city.id, data: { ...city, tripId: savedTrip.id, order: index } })
+            } else {
+              toCreate.push({ ...city, id: undefined, tripId: savedTrip.id, order: index })
+            }
+          })
+
+          const newRealIds = new Set(cities.filter(c => c.id && !c.id.startsWith('temp-')).map(c => c.id))
+          const toDelete = existingCities.filter(city => !newRealIds.has(city.id)).map(city => city.id)
+
+          await Promise.all([
+            ...toUpdate.map(({ id, data }) => tripCityService.update(id, data)),
+            ...toCreate.map(cityData => tripCityService.create(savedTrip.id, cityData)),
+            ...toDelete.map(id => tripCityService.delete(id))
+          ])
+        } else {
+          await Promise.all(cities.map((city, i) =>
+            tripCityService.create(savedTrip.id, { ...city, id: undefined, order: i })
+          ))
+        }
+      }
+
+      if (onSave) onSave(savedTrip)
+
+      if (trip?.id) {
+        setSaveSuccess(true)
+      } else {
+        onClose()
+      }
+    } catch (err) {
+      console.error('Error saving trip:', err)
+      setError(t('travel.setup.errors.saveFailed', 'Failed to save trip. Please try again.'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // --- Render Helpers ---
+
+  const renderMapSection = (orderedCities) => (
+    <div className="wizard-step-map" style={isMobile ? { height: '100%' } : {}}>
+      <div className="city-selection-map-wrapper">
+        <CitySelectionMap
+          cities={orderedCities}
+          onCityAdd={handleCityAdd}
+          onCityRemove={handleCityRemove}
+          onCityReorder={handleCityReorder}
+          homeLocation={homeLocation}
+          returnTransportMode={returnTransportMode}
+        />
+      </div>
+    </div>
+  )
+
+  const renderListSection = (orderedCities, startCity, endCity, advisoriesList) => (
+    <div className="wizard-step-details">
+      <h3>{isMobile ? t('travel.multiCity.step2.manageRoute', 'Review Route') : t('travel.multiCity.step1.title', 'Select Cities')}</h3>
+      <p className="step-description">
+        {isMobile
+          ? t('travel.multiCity.step2.manageDescription', 'Arrange your stops and choose transport.')
+          : t('travel.multiCity.step1.description', 'Click on the map to add cities to your trip')
+        }
+      </p>
+
+      {/* Advisory Banner */}
+      {isAdvisoryBannerOpen && advisoriesList.length > 0 && (
+        <div className="wizard-advisory-banner" style={{ marginBottom: '1rem' }}>
+          <TravelAdvisoryCard
+            advisories={advisoriesList}
+            compact={true}
+            onClose={() => setIsAdvisoryBannerOpen(false)}
+            showDetailsButton={false}
+          />
+        </div>
+      )}
+
+      {/* Route overview */}
+      {orderedCities.length > 1 && (
+        <div className="route-overview-card">
+          <div className="route-overview-header">
+            {t('travel.multiCity.step1.routeOverview', 'Route overview')}
+          </div>
+          <div className="route-overview-body">
+            <div className="route-endpoint">
+              <span className="endpoint-label">{t('travel.multiCity.step1.startLabel', 'Start')}</span>
+              <div className="endpoint-chip">
+                <span className="endpoint-number">1</span>
+                <div className="endpoint-text">
+                  <span className="endpoint-city">{startCity?.name}</span>
+                  {startCity?.country && <span className="endpoint-country">{startCity.country}</span>}
+                </div>
+              </div>
+            </div>
+            <div className="route-arrow"><span>→</span></div>
+            <div className="route-endpoint">
+              <span className="endpoint-label">{t('travel.multiCity.step1.endLabel', 'End')}</span>
+              <div className="endpoint-chip">
+                <span className="endpoint-number">{orderedCities.length}</span>
+                <div className="endpoint-text">
+                  <span className="endpoint-city">{endCity?.name}</span>
+                  {endCity?.country && <span className="endpoint-country">{endCity.country}</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selected cities list */}
+      {orderedCities.length > 0 && (
+        <div className="selected-cities-list">
+          <h4>{t('travel.multiCity.step1.selectedCities', 'Selected Cities')}</h4>
+          <div className="selected-cities-tags">
+            {orderedCities.map((city, index) => (
+              <div key={city.id || index} className="city-tag">
+                <span className="city-tag-number">{index + 1}</span>
+                <div className="city-tag-info">
+                  <span className="city-tag-name">{city.name}</span>
+                  {city.country && <span className="city-tag-country">{city.country}</span>}
+                </div>
+                <button
+                  className="city-tag-remove"
+                  onClick={() => handleCityRemove(city.id)}
+                  aria-label={t('common.remove', 'Remove')}
+                >
+                  <FiX size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <MultiCityDistanceSummary
+            cities={cities}
+            orderedCities={orderedCities}
+            routeDistances={routeDistances}
+            routeLegMeta={routeLegMeta}
+            homeLocation={homeLocation}
+            homeToFirstDistance={homeToFirstDistance}
+            lastToHomeDistance={lastToHomeDistance}
+            getDistanceKm={getDistanceKm}
+            onCityTransportChange={handleCityTransportChange}
+            returnTransportMode={returnTransportMode}
+            onReturnTransportChange={setReturnTransportMode}
+            routesLoading={routesLoading}
+          />
+        </div>
+      )}
+
+      <div className="form-group">
+        <label>{t('travel.multiCity.step1.tripName', 'Trip Name (optional)')}</label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => handleChange('name', e.target.value)}
+          placeholder={t('travel.multiCity.step1.namePlaceholder', 'e.g., European Adventure')}
+        />
+      </div>
+    </div>
+  )
+
+  // Step content
+  const renderStep = () => {
+    // Shared Data
+    const orderedCities = getOrderedCities()
+    const startCity = orderedCities[0]
+    const endCity = orderedCities[orderedCities.length - 1]
+    const uniqueCountries = [...new Set(cities.map(c => c.country).filter(Boolean))]
+    const advisoriesList = uniqueCountries.reverse().map(cName =>
+      Object.values(cityAdvisories).find(a =>
+        (a.countryName || a.name || '').toLowerCase() === cName.toLowerCase()
+      )
+    ).filter(Boolean)
+
+    // Mobile Logic (4 Steps)
+    if (isMobile) {
+      switch (step) {
+        case 1: // Mobile Map Only
+          return (
+            <div className="wizard-step mobile-map-step" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div className="city-selection-map-wrapper" style={{ margin: '-1.5rem', width: 'calc(100% + 3rem)', height: 'calc(100% + 3rem)', borderRadius: 0 }}>
+                <CitySelectionMap
+                  cities={orderedCities}
+                  onCityAdd={handleCityAdd}
+                  onCityRemove={handleCityRemove}
+                  onCityReorder={handleCityReorder}
+                  homeLocation={homeLocation}
+                  returnTransportMode={returnTransportMode}
+                  showInstructions={!isMobile}
+                />
+
+                {/* Floating City Counter Overlay / Instructions */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '80px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(8px)',
+                  padding: '8px 16px',
+                  borderRadius: '24px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  color: 'var(--text-primary)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  pointerEvents: 'none',
+                  zIndex: 10,
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  {orderedCities.length === 0 ? (
+                    <>
+                      <FiMapPin size={16} color="var(--primary)" />
+                      <span>{t('travel.multiCity.tapMapToAdd', 'Tap map to add cities')}</span>
+                    </>
+                  ) : (
+                    <span>{orderedCities.length} {t('travel.multiCity.selectedCount', 'cities selected')}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        case 2: // Mobile List Review
+          return (
+            <div className="wizard-step">
+              {renderListSection(orderedCities, startCity, endCity, advisoriesList)}
+            </div>
+          )
+        // Cases 3, 4, 5 fall through to shared step renderers below
+        case 3: // Dates
+          break
+        case 4: // Transport Booking
+          break
+        case 5: // Budget
+          break
+      }
+    } else {
+      // Desktop Logic (4 Steps)
+      if (step === 1) {
+        return (
+          <div className="wizard-step wizard-step-split">
+            {renderListSection(orderedCities, startCity, endCity, advisoriesList)}
+            {renderMapSection(orderedCities)}
+          </div>
+        )
+      }
+    }
+
+    // Shared Step renderers (Dates, Transport, Budget)
+    // Mobile Step 3 = Desktop Step 2 (Dates)
+    // Mobile Step 4 = Desktop Step 3 (Transport Booking)
+    // Mobile Step 5 = Desktop Step 4 (Budget)
+    const isDateStep = (isMobile && step === 3) || (!isMobile && step === 2)
+    const isTransportStep = (isMobile && step === 4) || (!isMobile && step === 3)
+    const isBudgetStep = (isMobile && step === 5) || (!isMobile && step === 4)
+
+    if (isDateStep) {
+      return (
+        <div className="wizard-step">
+          <h3>{t('travel.multiCity.step2.title', 'Set Dates')}</h3>
+          <p className="step-description">
+            {t('travel.multiCity.step2.description', 'Set arrival and departure dates for each city')}
+          </p>
+
+          <div className="city-dates-list">
+            {orderedCities.map((city, index) => {
+              const advisoryKey = (city.country || '').toLowerCase()
+              const advisory = cityAdvisories[advisoryKey]
+
+              return (
+                <div
+                  key={city.id || index}
+                  className="city-date-card"
+                  style={{
+                    zIndex: orderedCities.length - index,
+                    position: 'relative' // Ensure z-index works
+                  }}
+                >
+                  <div className="city-date-header">
+                    <div className="city-date-number">{index + 1}</div>
+                    <div className="city-date-info">
+                      <span className="city-date-name">{city.name}</span>
+                      {city.country && (
+                        <span className="city-date-country">
+                          {city.country}
+                          {advisory && (
+                            <span className="city-advisory-inline">
+                              <TravelAdvisoryBadge advisory={advisory} />
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="city-date-inputs">
+                    <div className="form-group" style={{ width: '100%' }}>
+                      <DateRangePicker
+                        startDate={city.startDate}
+                        endDate={city.endDate}
+                        onChange={(range) => handleCityDateChange(index, range)}
+                        minDate={index > 0 ? orderedCities[index - 1]?.endDate || orderedCities[index - 1]?.startDate : new Date().toISOString().split('T')[0]}
+                        placeholder={t('travel.multiCity.step2.selectDates', 'Select arrival and departure')}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {
+            cities.length > 0 && cities[0]?.startDate && cities[cities.length - 1]?.endDate && (
+              <div className="trip-duration">
+                {(() => {
+                  const start = new Date(cities[0].startDate)
+                  const end = new Date(cities[cities.length - 1].endDate)
+                  const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
+                  return t('travel.setup.step2.duration', '{{days}} days', { days })
+                })()}
+              </div>
+            )
+          }
+        </div >
+      )
+    }
+
+    if (isTransportStep) {
+      const legs = buildTransportLegs({
+        orderedCities,
+        homeLocation,
+        homeCityName,
+        returnTransportMode
+      })
+      return (
+        <TransportBookingStep legs={legs} />
+      )
+    }
+
+    if (isBudgetStep) {
+      return (
+        <div className="wizard-step">
+          <h3>{t('travel.setup.step3.title', 'Set your budget')}</h3>
+          <p className="step-description">
+            {t('travel.setup.step3.description', 'Link an existing budget or create a new one')}
+          </p>
+
+          <div className="budget-mode-toggle">
+            <button
+              className={`mode-btn ${budgetMode === 'new' ? 'active' : ''}`}
+              onClick={() => setBudgetMode('new')}
+            >
+              <FiDollarSign /> <span>{t('travel.multiCity.budget.createNew', 'Create New')}</span>
+            </button>
+            <button
+              className={`mode-btn ${budgetMode === 'existing' ? 'active' : ''}`}
+              onClick={() => setBudgetMode('existing')}
+            >
+              <FiList /> <span>{t('travel.multiCity.budget.useExisting', 'Use Existing')}</span>
+            </button>
+          </div>
+
+          {budgetMode === 'new' ? (
+            <div className="budget-form-section">
+              <div className="budget-row">
+                <div className="form-group budget-input-group">
+                  <label>{t('travel.multiCity.budget.totalBudget', 'Total Budget')}</label>
+                  <input
+                    type="number"
+                    value={formData.budget}
+                    onChange={(e) => handleChange('budget', e.target.value)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group currency-group">
+                  <label>{t('travel.multiCity.budget.currency', 'Currency')}</label>
+                  <select
+                    value={formData.budgetCurrency}
+                    onChange={(e) => handleChange('budgetCurrency', e.target.value)}
+                  >
+                    {TRAVEL_CURRENCIES.map(currency => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.code} ({currency.symbol})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>{t('travel.multiCity.budget.budgetName', 'Budget Name')}</label>
+                <input
+                  type="text"
+                  value={formData.budgetCategory}
+                  onChange={(e) => handleChange('budgetCategory', e.target.value)}
+                  placeholder={t('travel.setup.step1.namePlaceholder', 'e.g., Summer Trip')}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="budget-selection-section">
+              <div className="form-group">
+                <label>{t('travel.multiCity.budget.selectBudget', 'Select a Budget')}</label>
+                <div className="budget-list">
+                  {availableBudgets.length === 0 ? (
+                    <div className="no-budgets-msg">{t('travel.multiCity.budget.noBudgets', 'No existing budgets or saving goals found.')}</div>
+                  ) : (
+                    <select
+                      value={selectedBudgetId}
+                      onChange={(e) => setSelectedBudgetId(e.target.value)}
+                      className="budget-select"
+                    >
+                      <option value="">-- {t('travel.multiCity.budget.selectBudget', 'Select a Budget')} --</option>
+                      {availableBudgets.map(b => {
+                        const displayName = b.type === 'savingGoal'
+                          ? `${b.icon || '🎯'} ${b.category}`
+                          : b.category
+                        const amount = b.amount || b.targetAmount || 0
+                        return (
+                          <option key={b.id} value={b.id}>
+                            {displayName} ({new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(amount)})
+                          </option>
+                        )
+                      })}
+                    </select>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="skip-hint">
+            {t('travel.setup.step3.skipHint', 'You can skip this step and set a budget later')}
+          </div>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  return (
+    <div className="wizard-overlay" data-theme={theme}>
+      <motion.div
+        className="wizard-modal multi-city-wizard"
+        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0, y: 50, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 50, scale: 0.95 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* Header */}
+        <div className="wizard-header">
+          <h2>
+            {trip ? t('travel.multiCity.editTrip', 'Edit Trip') : t('travel.multiCity.createTrip', 'Create Trip')}
+          </h2>
+
+          {/* Progress indicator - dynamic based on mobile/desktop */}
+          <div className="wizard-progress">
+            {Array.from({ length: MAX_STEPS }).map((_, i) => {
+              const s = i + 1
+              return (
+                <div
+                  key={s}
+                  className={`progress-step ${s === step ? 'active' : ''} ${s < step ? 'completed' : ''}`}
+                >
+                  {s < step ? <FiCheck size={14} /> : s}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="wizard-header-actions">
+            {trip && (
+              <button
+                type="button"
+                className="wizard-header-delete"
+                onClick={handleDeleteTrip}
+                disabled={saving}
+                title={t('travel.multiCity.deleteTrip', 'Delete Trip')}
+              >
+                <FiTrash2 size={20} />
+              </button>
+            )}
+            <button className="wizard-close" onClick={onClose} aria-label={t('common.close', 'Close')}>
+              <FiX size={24} />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="wizard-content">
+          {saveSuccess ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="wizard-success"
+            >
+              <div className="success-icon">
+                <FiCheck size={48} />
+              </div>
+              <h3>{t('travel.multiCity.saveSuccess.title', 'Trip Saved Successfully!')}</h3>
+              <p>{t('travel.multiCity.saveSuccess.message', 'Your multi-city trip has been saved.')}</p>
+              <div className="success-actions">
+                <button
+                  className="wizard-btn secondary"
+                  onClick={() => {
+                    setSaveSuccess(false)
+                    setStep(1)
+                  }}
+                >
+                  {t('travel.multiCity.saveSuccess.editMore', 'Edit More')}
+                </button>
+                <button
+                  className="wizard-btn primary"
+                  onClick={onClose}
+                >
+                  {t('common.done', 'Done')}
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={step}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ height: '100%' }} // Ensure full height for map step
+                >
+                  {renderStep()}
+                </motion.div>
+              </AnimatePresence>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        {
+          !saveSuccess && (
+            <div className="wizard-footer">
+              <div className="wizard-footer-error" style={{ flex: 1, marginRight: '1rem' }}>
+                {error && <div className="wizard-error" style={{ margin: 0, padding: '0.5rem', fontSize: '0.85rem' }}>{error}</div>}
+              </div>
+              <div className="wizard-footer-right">
+                {step > 1 ? (
+                  <button className="wizard-btn secondary" onClick={prevStep} disabled={saving}>
+                    <FiChevronLeft />
+                    {t('common.back', 'Back')}
+                  </button>
+                ) : (
+                  <button className="wizard-btn secondary" onClick={onClose} disabled={saving}>
+                    {t('common.cancel', 'Cancel')}
+                  </button>
+                )}
+
+                {step < MAX_STEPS ? (
+                  <button className="wizard-btn primary" onClick={nextStep} disabled={saving}>
+                    <span>{t('common.next', 'Next')}</span>
+                    <FiChevronRight />
+                  </button>
+                ) : (
+                  <button
+                    className="wizard-btn primary"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <>
+                        <span className="spinner" />
+                        <span>{t('common.saving', 'Saving...')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{t('common.save', 'Save')}</span>
+                        <FiCheck />
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        }
+      </motion.div >
+      {/* Delete Confirmation Modal - Portalled */}
+      {cityToDelete && ReactDOM.createPortal(
+        <div data-theme={theme} style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: theme === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.5)',
+          zIndex: 2147483647,
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }} onClick={cancelCityDelete}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: theme === 'dark' ? '#1e293b' : '#ffffff',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              width: '100%',
+              maxWidth: '350px',
+              boxShadow: theme === 'dark'
+                ? '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                : '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'center' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                background: theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2',
+                color: theme === 'dark' ? '#f87171' : '#ef4444',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
+                fontSize: '1.5rem'
+              }}>
+                <FiTrash2 />
+              </div>
+
+              <div>
+                <h3 style={{
+                  margin: '0 0 0.5rem 0',
+                  fontSize: '1.125rem',
+                  fontWeight: 600,
+                  color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
+                }}>
+                  {t('common.confirmDelete', 'Remove City?')}
+                </h3>
+                <p style={{
+                  margin: 0,
+                  color: theme === 'dark' ? '#94a3b8' : '#64748b',
+                  fontSize: '0.9rem'
+                }}>
+                  {t('travel.multiCity.confirmCityDelete', 'Are you sure you want to remove {{city}} from your trip?', { city: cityToDelete.name })}
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  onClick={cancelCityDelete}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    borderRadius: '8px',
+                    border: theme === 'dark' ? '1px solid #475569' : '1px solid #e2e8f0',
+                    background: theme === 'dark' ? '#0f172a' : 'transparent',
+                    color: theme === 'dark' ? '#cbd5e1' : '#64748b',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = theme === 'dark' ? '#1e293b' : '#f1f5f9'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = theme === 'dark' ? '#0f172a' : 'transparent'
+                  }}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  onClick={confirmCityDelete}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: theme === 'dark' ? '#dc2626' : '#ef4444',
+                    color: 'white',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = theme === 'dark' ? '#b91c1c' : '#dc2626'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = theme === 'dark' ? '#dc2626' : '#ef4444'
+                  }}
+                >
+                  {t('common.remove', 'Remove')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Trip Delete Confirmation Modal - Portalled */}
+      {showDeleteTripModal && ReactDOM.createPortal(
+        <div data-theme={theme} style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: theme === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.5)',
+          zIndex: 2147483647,
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }} onClick={cancelTripDelete}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: theme === 'dark' ? '#1e293b' : '#ffffff',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              width: '100%',
+              maxWidth: '380px',
+              boxShadow: theme === 'dark'
+                ? '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                : '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'center' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                background: theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2',
+                color: theme === 'dark' ? '#f87171' : '#ef4444',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
+                fontSize: '1.75rem'
+              }}>
+                <FiTrash2 />
+              </div>
+
+              <div>
+                <h3 style={{
+                  margin: '0 0 0.5rem 0',
+                  fontSize: '1.25rem',
+                  fontWeight: 600,
+                  color: theme === 'dark' ? '#f1f5f9' : '#1e293b'
+                }}>
+                  {t('travel.multiCity.deleteTrip', 'Delete Trip?')}
+                </h3>
+                <p style={{
+                  margin: 0,
+                  color: theme === 'dark' ? '#94a3b8' : '#64748b',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.5
+                }}>
+                  {t('travel.multiCity.confirmDelete', 'Are you sure you want to delete this trip? This action cannot be undone.')}
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  onClick={cancelTripDelete}
+                  disabled={saving}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    border: theme === 'dark' ? '1px solid #475569' : '1px solid #e2e8f0',
+                    background: theme === 'dark' ? '#0f172a' : 'transparent',
+                    color: theme === 'dark' ? '#cbd5e1' : '#64748b',
+                    fontWeight: 500,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    fontSize: '0.95rem',
+                    opacity: saving ? 0.6 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!saving) e.currentTarget.style.background = theme === 'dark' ? '#1e293b' : '#f1f5f9'
+                  }}
+                  onMouseOut={(e) => {
+                    if (!saving) e.currentTarget.style.background = theme === 'dark' ? '#0f172a' : 'transparent'
+                  }}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  onClick={confirmTripDelete}
+                  disabled={saving}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: theme === 'dark' ? '#dc2626' : '#ef4444',
+                    color: 'white',
+                    fontWeight: 500,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    fontSize: '0.95rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    opacity: saving ? 0.7 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!saving) e.currentTarget.style.background = theme === 'dark' ? '#b91c1c' : '#dc2626'
+                  }}
+                  onMouseOut={(e) => {
+                    if (!saving) e.currentTarget.style.background = theme === 'dark' ? '#dc2626' : '#ef4444'
+                  }}
+                >
+                  {saving ? (
+                    <>
+                      <span className="spinner" style={{ width: 16, height: 16 }} />
+                      <span>{t('common.deleting', 'Deleting...')}</span>
+                    </>
+                  ) : (
+                    t('common.delete', 'Delete')
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  )
+}
+
+export default MultiCityTripWizard

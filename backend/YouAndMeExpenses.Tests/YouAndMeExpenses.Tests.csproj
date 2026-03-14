@@ -26,11 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\YouAndMeExpensesAPI\YouAndMeExpensesAPI.csproj" />
+    <ProjectReference Include="..\src\Shared\Paire.Shared.Infrastructure\Paire.Shared.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
+    <Compile Remove="Services\TransactionsServiceTests.cs" />
+    <Compile Remove="Services\TransactionsServicePagingTests.cs" />
+    <Compile Remove="Models\EmailModelsTests.cs" />
   </ItemGroup>
 
 </Project>

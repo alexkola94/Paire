@@ -1,0 +1,313 @@
+/* Accept Invitation Landing Page Styles
+   Liquid Glass 2026 Aesthetic */
+.accept-invitation-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0e6ff 0%, #a29bfe 100%);
+  padding: var(--spacing-lg);
+  animation: fadeIn 0.5s ease-out;
+}
+
+[data-theme='dark'] .accept-invitation-container {
+  background: linear-gradient(135deg, #0F071A 0%, #1a0f2e 50%, #2d1f4e 100%);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.accept-invitation-card {
+  /* Enhanced glassmorphism */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: var(--spacing-xl);
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  /* Multi-layered box shadows */
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='dark'] .accept-invitation-card {
+  background: rgba(15, 7, 26, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.accept-invitation-card:hover {
+  transform: translateY(-5px) scale(1.01);
+  box-shadow: 
+    0 25px 70px rgba(0, 0, 0, 0.2),
+    0 10px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+.status-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.status-icon.success {
+  color: #10B981;
+  filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.3));
+  animation: scaleIn 0.5s ease;
+}
+
+[data-theme='dark'] .status-icon.success {
+  color: #34D399;
+  filter: drop-shadow(0 4px 12px rgba(52, 211, 153, 0.4));
+}
+
+.status-icon.error {
+  color: #EF4444;
+  filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.3));
+  animation: scaleIn 0.5s ease;
+}
+
+[data-theme='dark'] .status-icon.error {
+  color: #F87171;
+  filter: drop-shadow(0 4px 12px rgba(248, 113, 113, 0.4));
+}
+
+.status-icon.info {
+  color: #8B5CF6;
+  filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.3));
+  animation: scaleIn 0.5s ease;
+}
+
+[data-theme='dark'] .status-icon.info {
+  color: #A78BFA;
+  filter: drop-shadow(0 4px 12px rgba(167, 139, 250, 0.4));
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.accept-invitation-card h1 {
+  /* Fluid typography */
+  font-size: clamp(1.5rem, 3vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--spacing-md);
+  /* Royal Amethyst mesh gradient */
+  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 50%, #C4B5FD 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
+  /* Fallback */
+  color: #8B5CF6;
+}
+
+[data-theme='dark'] .accept-invitation-card h1 {
+  background: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 50%, #DDD6FE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 8px rgba(167, 139, 250, 0.4));
+  color: #C4B5FD;
+}
+
+.accept-invitation-card h2 {
+  /* Fluid typography */
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .accept-invitation-card h2 {
+  color: #E5E7EB;
+}
+
+.accept-invitation-card p {
+  /* Fluid typography */
+  font-size: clamp(0.9375rem, 2vw, 1rem);
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+}
+
+[data-theme='dark'] .accept-invitation-card p {
+  color: #D1D5DB;
+}
+
+.invitation-details {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.invitation-details p {
+  margin-bottom: 12px;
+}
+
+.invitation-email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.invitation-email svg {
+  color: #7c3aed;
+}
+
+.info-text {
+  background: #eff6ff;
+  border-left: 4px solid #3b82f6;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: center;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+  transform: translateY(-2px);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--spacing-lg);
+  animation: spin 1s linear infinite;
+  color: #8B5CF6;
+  filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
+}
+
+[data-theme='dark'] .loading-spinner {
+  color: #A78BFA;
+  filter: drop-shadow(0 2px 8px rgba(167, 139, 250, 0.4));
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.processing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.processing-message {
+  color: #6b7280;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+.redirect-message {
+  color: var(--text-secondary);
+  /* Fluid typography */
+  font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
+  font-style: italic;
+  margin-top: var(--spacing-sm);
+}
+
+[data-theme='dark'] .redirect-message {
+  color: #9CA3AF;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .accept-invitation-card {
+    padding: 24px;
+  }
+
+  .accept-invitation-card h1 {
+    font-size: 24px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+}
+

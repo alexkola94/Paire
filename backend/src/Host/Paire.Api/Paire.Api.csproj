@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Paire.Api</RootNamespace>
+    <Version>2.2.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Paire.Shared.Kernel\Paire.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\..\Shared\Paire.Shared.Infrastructure\Paire.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Identity\Paire.Modules.Identity.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Finance\Paire.Modules.Finance.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Partnership\Paire.Modules.Partnership.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Travel\Paire.Modules.Travel.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Shopping\Paire.Modules.Shopping.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Analytics\Paire.Modules.Analytics.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.AI\Paire.Modules.AI.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Gamification\Paire.Modules.Gamification.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Notifications\Paire.Modules.Notifications.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Banking\Paire.Modules.Banking.csproj" />
+    <ProjectReference Include="..\..\Modules\Paire.Modules.Admin\Paire.Modules.Admin.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
+  </ItemGroup>
+
+</Project>

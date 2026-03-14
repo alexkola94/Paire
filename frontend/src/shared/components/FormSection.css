@@ -1,0 +1,106 @@
+/* ================================
+   Form Section Component Styles
+   ================================ */
+
+.form-section {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--bg-tertiary);
+  transition: var(--transition);
+}
+
+.form-section:hover {
+  border-color: var(--primary-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--bg-tertiary);
+  transition: var(--transition);
+}
+
+.form-section.collapsible .form-section-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.form-section.collapsible .form-section-header:hover {
+  border-bottom-color: var(--primary-light);
+}
+
+.form-section-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.form-section-toggle {
+  color: var(--text-secondary);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-section.collapsible .form-section-header:hover .form-section-toggle {
+  color: var(--primary);
+}
+
+.form-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Desktop: Better spacing and layout */
+@media (min-width: 1024px) {
+  .form-section {
+    padding: var(--spacing-xl);
+    margin-bottom: calc(var(--spacing-xl) * 1.5);
+  }
+
+  .form-section-content {
+    gap: var(--spacing-xl);
+  }
+
+  .form-section-header {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .form-section {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .form-section-title {
+    font-size: 0.9375rem;
+  }
+}
+

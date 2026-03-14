@@ -1,0 +1,490 @@
+/* ================================
+   Expenses Page Styles
+   ================================ */
+@import '../../../shared/styles/DataCard.css';
+
+.expenses-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+
+
+/* ================================
+   Expense Card (uses .data-cards-grid from DataCard.css)
+   Compact height: less data than RecurringBills
+   ================================ */
+
+.expenses-page .expense-card.data-card {
+  min-height: 240px;
+}
+
+@media (max-width: 767px) {
+  .expenses-page .expense-card.data-card {
+    min-height: 220px;
+  }
+}
+
+.expense-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  /* Enhanced glassmorphism with increased backdrop-blur saturation */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  /* Multi-layered box shadows for floating effect */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.expense-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  /* Enhanced floating effect with deeper shadows */
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark theme adjustments */
+[data-theme='dark'] .expense-card {
+  background: rgba(15, 7, 26, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .expense-card:hover {
+  background: rgba(15, 7, 26, 0.5);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+.expense-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-sm);
+}
+
+.expense-category {
+  font-weight: 700;
+  /* Fluid typography */
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
+  color: var(--primary-dark);
+  /* Darker color for better visibility */
+  text-transform: capitalize;
+  letter-spacing: -0.01em;
+}
+
+.expense-amount {
+  font-weight: 700;
+  /* Fluid typography */
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* Privacy mode overrides for expense amounts */
+.expense-amount.masked-number {
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  background: none !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.6;
+}
+
+[data-theme='dark'] .expense-amount.masked-number {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.5;
+  letter-spacing: -0.01em;
+}
+
+/* Amount row with "Add to calculator" button */
+.expense-amount-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Add to calculator button - visible affordance */
+/* Expense-specific add-to-calc button inherits icon-only styles from AddToCalculator.css */
+/* This class is applied via className prop but the shared .add-to-calc-btn styles take precedence */
+/* Label always hidden for icon-only design */
+.expense-add-to-calc-label {
+  display: none !important;
+}
+
+/* Description in data-card-body: 2-line clamp so card height stays consistent */
+.data-card-body .expense-description {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+  font-size: clamp(0.9375rem, 2vw, 1rem);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.expense-date {
+  color: var(--text-light);
+  /* Fluid typography */
+  font-size: clamp(0.8125rem, 1.5vw, 0.875rem);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Name tag showing who added the expense */
+.expense-date .added-by {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-left: var(--spacing-sm);
+  padding: 2px 8px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.expense-date .added-by:hover {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Email in name tag - slightly muted */
+.expense-date .added-by-email {
+  color: var(--text-light);
+  font-weight: 400;
+  font-size: 0.8em;
+  margin-left: var(--spacing-xs);
+}
+
+
+
+
+
+/* ================================
+   Expense Actions
+   ================================ */
+
+.expense-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--bg-tertiary);
+}
+
+.btn-icon {
+  /* Enhanced glassmorphism for action buttons */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px; /* rounded-xl */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-secondary);
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.btn-icon:hover {
+  background: rgba(139, 92, 246, 0.2);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  color: var(--primary);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+[data-theme='dark'] .btn-icon {
+  background: rgba(15, 7, 26, 0.3);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .btn-icon:hover {
+  background: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.btn-icon.delete:hover {
+  background: var(--error-dark);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Grid breakpoints defined in DataCard.css (.data-cards-grid) */
+
+
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--spacing-md);
+  }
+
+  .page-header button {
+    width: auto;
+    min-width: fit-content;
+  }
+
+  /* Empty state responsive adjustments */
+  .empty-state {
+    padding: var(--spacing-lg);
+  }
+
+  .empty-state .btn {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .expense-amount {
+    /* Fluid typography for mobile */
+    font-size: clamp(1.125rem, 3vw, 1.25rem);
+  }
+}
+
+/* Tablet optimization */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .empty-state {
+    padding: var(--spacing-xl) var(--spacing-xl);
+  }
+}
+
+/* ================================
+   Phase 5: Undo Banner
+   ================================ */
+
+.undo-banner {
+  position: fixed;
+  bottom: var(--spacing-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 9998;
+  animation: slideUpBanner 0.3s ease-out;
+}
+
+@keyframes slideUpBanner {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.undo-banner span {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.btn-undo {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-undo:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .undo-banner {
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    transform: none;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .btn-undo {
+    width: 100%;
+  }
+}
+
+/* ================================
+   Pagination Controls
+   ================================ */
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+}
+
+.pagination-info {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 8px 16px;
+}
+
+
+/* ================================
+   Search and Filters - Grid Layout
+   ================================ */
+
+/* Professional Filter Grid Layout */
+.expenses-filters-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  align-items: center;
+  /* Vertically center items */
+}
+
+/* Ensure all inputs in the grid have consistent height */
+.expenses-filters-grid input,
+.expenses-filters-grid select,
+.expenses-filters-grid .search-input {
+  height: 48px !important;
+  /* Force consistency */
+  box-sizing: border-box;
+}
+
+/* Mobile: Stacked (Default 1fr) */
+
+/* Tablet (768px+): Search full width, date range full width below */
+@media (min-width: 768px) {
+  .expenses-filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-span-full {
+    grid-column: auto;
+  }
+
+  .expenses-filters-grid .filter-item {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Desktop (1280px+): Single row, search + date range */
+@media (min-width: 1280px) {
+  .expenses-filters-grid {
+    grid-template-columns: 2fr 1fr;
+    /* Search | Date range */
+  }
+
+  .search-span-full {
+    grid-column: auto;
+  }
+
+  .expenses-filters-grid .filter-item {
+    grid-column: auto;
+  }
+}
+
+/* DateRangePicker in grid: full width on mobile, consistent height */
+.expenses-filters-grid .date-range-picker,
+.expenses-filters-grid .picker-trigger {
+  width: 100%;
+}
+.expenses-filters-grid .picker-trigger {
+  height: 48px;
+  min-height: 48px;
+}
+
+/* ================================
+   Clickable Card Styles
+   ================================ */
+
+.clickable {
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.clickable:active {
+  transform: translateY(0);
+}
+
+.clickable:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

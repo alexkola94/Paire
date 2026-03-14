@@ -1,0 +1,448 @@
+/* ================================
+   Discovery Mode - Main Styles
+   ================================ */
+
+/* Map Container */
+.discovery-map-container {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--bg-primary);
+  padding-top: 60px;
+  /* Account for fixed header */
+  touch-action: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.discovery-map-container .mapboxgl-map {
+  font-family: inherit;
+}
+
+.discovery-map-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: rgba(15, 7, 26, 0.9);
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Map Loading State */
+.discovery-map-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: rgba(15, 7, 26, 0.95);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.discovery-map-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(168, 85, 247, 0.2);
+  border-top-color: var(--primary, #a855f7);
+  border-radius: 50%;
+  animation: discovery-spin 0.8s linear infinite;
+}
+
+@keyframes discovery-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Trip Center Marker */
+.trip-center-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.trip-marker-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: var(--primary, #a855f7);
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+.trip-marker-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  background: var(--primary, #a855f7);
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: pulse-marker 2s infinite ease-out;
+}
+
+@keyframes pulse-marker {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* ================================
+   Discovery Controls
+   ================================ */
+
+.discovery-controls {
+  position: fixed;
+  right: 16px;
+  bottom: 160px;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.discovery-controls-group {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 7, 26, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.discovery-control-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.discovery-control-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.discovery-control-btn:active {
+  background: rgba(168, 85, 247, 0.2);
+}
+
+.discovery-control-btn+.discovery-control-btn {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.discovery-control-btn.compass-btn.rotated {
+  color: var(--primary, #a855f7);
+}
+
+.discovery-control-btn.compass-btn svg {
+  transition: transform 0.3s ease;
+}
+
+/* ================================
+   Distance Overlay
+   ================================ */
+
+.distance-overlay {
+  position: fixed;
+  bottom: 100px;
+  /* Above mapbox logo */
+  left: 20px;
+  transform: none;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(15, 7, 26, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.distance-icon {
+  color: var(--primary, #a855f7);
+  flex-shrink: 0;
+}
+
+.distance-text {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+}
+
+/* ================================
+   Discovery Mode Toggle
+   ================================ */
+
+.discovery-toggle {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--primary-gradient, linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%));
+  border: none;
+  border-radius: 50px;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
+}
+
+.discovery-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(168, 85, 247, 0.5);
+}
+
+.discovery-toggle.active {
+  background: rgba(15, 7, 26, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ================================
+   Discovery UI Layer Animation
+   ================================ */
+
+.discovery-ui-layer {
+  position: fixed;
+  top: 60px;
+  /* Below fixed header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+  pointer-events: none;
+}
+
+.discovery-ui-layer>* {
+  pointer-events: auto;
+}
+
+/* ================================
+   Offline Toast
+   ================================ */
+
+.discovery-offline-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(231, 76, 60, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(231, 76, 60, 0.3);
+}
+
+/* ================================
+   Responsive Adjustments
+   ================================ */
+
+/* Mobile Controls */
+@media (max-width: 768px) {
+  .discovery-controls {
+    bottom: 100px;
+    right: 12px;
+    gap: 8px;
+  }
+
+  .discovery-control-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Adjust icons inside */
+  .discovery-control-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .discovery-controls {
+    right: 24px;
+  }
+
+  .discovery-control-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .distance-overlay {
+    bottom: 120px;
+    padding: 12px 20px;
+  }
+}
+
+/* ================================
+   Reduced Motion
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-marker-pulse {
+    animation: none;
+  }
+
+  .discovery-toggle,
+  .discovery-control-btn {
+    transition: none;
+  }
+}
+
+/* =========================================
+   Multi-City Trip City Markers (Discovery)
+   ========================================= */
+
+.discovery-city-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  /* Default (dark-leaning) styling – tuned for map dark mode */
+  background: rgba(15, 7, 26, 0.85);
+  box-shadow: 0 10px 30px rgba(15, 7, 26, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  backdrop-filter: blur(14px);
+  transform: translateY(-6px);
+  transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.discovery-city-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #F9FAFB;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.discovery-city-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.discovery-city-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #E5E7EB;
+  white-space: nowrap;
+}
+
+.discovery-city-country {
+  font-size: 0.7rem;
+  color: rgba(229, 231, 235, 0.7);
+  white-space: nowrap;
+}
+
+/* Light mode variant for city markers – keeps the Paire soft tech aesthetic
+   while improving contrast on bright map styles. */
+[data-theme='light'] .discovery-city-marker {
+  background: rgba(249, 250, 251, 0.92);
+  border-color: rgba(139, 92, 246, 0.28);
+  box-shadow: 0 10px 30px rgba(15, 7, 26, 0.16);
+}
+
+[data-theme='light'] .discovery-city-badge {
+  /* Brighter, softer pill for the stop index in light mode */
+  background: linear-gradient(135deg, #A855F7 0%, #8B5CF6 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+[data-theme='light'] .discovery-city-name {
+  color: #111827;
+}
+
+[data-theme='light'] .discovery-city-country {
+  color: rgba(55, 65, 81, 0.7);
+}
+
+/* Home marker (user's current location - starting point) */
+.discovery-home-marker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.discovery-home-marker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+}
+
+@media (max-width: 640px) {
+  .discovery-city-marker {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .discovery-city-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+
+  .discovery-city-name {
+    font-size: 0.7rem;
+  }
+
+  .discovery-city-country {
+    font-size: 0.65rem;
+  }
+}

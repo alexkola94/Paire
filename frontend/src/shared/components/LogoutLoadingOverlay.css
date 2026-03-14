@@ -1,0 +1,150 @@
+/* Logout overlay – full-screen, above app. Design system: glassmorphism, soft radii, primary. */
+.logout-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  background: var(--bg-primary, #fdfbfd);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: logoutOverlayFadeIn 0.3s ease-out;
+  transition: opacity 0.3s ease-in-out;
+}
+
+@keyframes logoutOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.logout-overlay__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 3rem 2.5rem;
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.08);
+  max-width: 380px;
+  width: 90vw;
+  text-align: center;
+}
+
+.logout-overlay__logo-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-overlay__logo {
+  width: 80px;
+  height: 80px;
+  z-index: 2;
+  animation: logoutOverlayPulse 2s ease-in-out infinite;
+  user-select: none;
+  pointer-events: none;
+}
+
+@keyframes logoutOverlayPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.85; }
+}
+
+.logout-overlay__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #8B5CF6;
+  border-right-color: #8B5CF6;
+  animation: logoutOverlayRingSpin 1.2s linear infinite;
+  z-index: 1;
+}
+
+@keyframes logoutOverlayRingSpin {
+  to { transform: rotate(360deg); }
+}
+
+.logout-overlay__text-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.5rem;
+}
+
+.logout-overlay__app-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  letter-spacing: -0.02em;
+}
+
+.logout-overlay__message {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary, #6b7280);
+  letter-spacing: -0.01em;
+}
+
+.logout-overlay__progress {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.12);
+  overflow: hidden;
+}
+
+.logout-overlay__progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8B5CF6, #a78bfa, #8B5CF6);
+  background-size: 200% 100%;
+  animation: logoutOverlayShimmer 1.5s ease-in-out infinite;
+  width: 40%;
+}
+
+@keyframes logoutOverlayShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logout-overlay__logo {
+    animation: none;
+  }
+  .logout-overlay__ring {
+    animation: none;
+    border-color: #8B5CF6;
+    opacity: 0.4;
+  }
+  .logout-overlay__progress-bar {
+    animation: none;
+    width: 60%;
+  }
+}
+
+@media (max-width: 480px) {
+  .logout-overlay__card {
+    padding: 2rem 1.5rem;
+    gap: 1.5rem;
+  }
+  .logout-overlay__logo-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+  .logout-overlay__logo {
+    width: 64px;
+    height: 64px;
+  }
+}

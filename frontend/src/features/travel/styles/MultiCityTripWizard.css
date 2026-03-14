@@ -1,0 +1,1753 @@
+/* ================================
+   Multi-City Trip Wizard Styles
+   Following Paire Design System
+   ================================ */
+
+.multi-city-wizard {
+  max-width: 1600px;
+  width: 95%;
+  max-height: 95vh;
+}
+
+/* Light theme: soften global wizard shell (overlay, header, footer) so it feels
+   like a glass card floating over the travel layout rather than a dark modal. */
+.travel-layout:not([data-theme='dark']) .wizard-overlay {
+  background: rgba(15, 7, 26, 0.25);
+  backdrop-filter: blur(18px);
+}
+
+/* Light theme container – clean glass card surface using global tokens.
+   We also mirror the TravelHome warm accent palette here so the wizard
+   visually belongs to the same experience (soft sand + orange). */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard {
+  /* Travel light-theme accent palette – warm sand + soft orange */
+  --travel-accent: #e8913a;
+  --travel-accent-strong: #d07a28;
+  --travel-accent-soft: #fbe6d2;
+  --travel-accent-chip: #fef4e7;
+  --travel-accent-border: rgba(232, 145, 58, 0.4);
+
+  background: var(--glass-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--glass-border);
+  padding: var(--spacing-xl);
+  transition: var(--transition);
+}
+
+/* Light theme: header + footer sit on subtle off‑white rails rather than
+   inheriting darker defaults from the generic wizard styles. */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-header,
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-footer {
+  background: rgba(249, 250, 251, 0.95);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+/* Force dark theme button color in wizard footer to ensure it overrides any light theme leaks */
+[data-theme='dark'] .multi-city-wizard .wizard-footer .wizard-btn.primary {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%) !important;
+  color: white;
+  border: none;
+}
+
+/* Tighten title tracking to align with Paire typography guidelines. */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-header h2 {
+  letter-spacing: -0.03em;
+}
+
+/* Close button in light theme: soft hover halo instead of harsh contrast. */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-close {
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-close:hover {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-primary);
+}
+
+/* Light theme: make wizard content breathe a bit more on large layouts */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-content {
+  padding: var(--spacing-xl);
+}
+
+/* Light theme: progress strip becomes transparent in the header */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .wizard-progress {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Light theme: keep progress steps soft but readable */
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step.active {
+  /* Use warm travel accent instead of global violet in light mode */
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
+  color: #ffffff;
+}
+
+.travel-layout:not([data-theme='dark']) .multi-city-wizard .progress-step.completed {
+  background: var(--success);
+  color: #ffffff;
+}
+
+/* Split layout for step 1: details left, map right */
+.wizard-step-split {
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr;
+  gap: var(--spacing-xl);
+  align-items: flex-start;
+}
+
+.wizard-step-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  /* Allow the left column to scroll independently from the map on large
+     screens so long multi‑city routes don't push the map out of view. */
+  max-height: calc(90vh - 160px);
+  overflow-y: auto;
+  padding-right: var(--spacing-md);
+}
+
+/* Light theme: gently separate the left column from the shell */
+.travel-layout:not([data-theme='dark']) .wizard-step-details {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.wizard-step-map {
+  height: 100%;
+  /* Desktop height keeps the map feeling immersive; mobile overrides reduce this
+     so the wizard content does not feel vertically cramped. */
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* City Selection Map Wrapper */
+.city-selection-map-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  border-radius: 1rem;
+  overflow: hidden;
+  margin: var(--spacing-md) 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  touch-action: pan-x pan-y pinch-zoom;
+  position: relative;
+}
+
+/* Light theme: map wrapper framed as a bright glass card */
+.travel-layout:not([data-theme='dark']) .city-selection-map-wrapper {
+  border-radius: var(--radius-lg);
+  border: var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  transition: var(--transition);
+}
+
+/* Home marker (current location) – compact house chip that stands out on the map
+   using a bright but still theme-neutral cyan/blue. */
+.home-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  /* Bright cyan gradient so Home is clearly distinguished from other markers */
+  background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 45%, #0369a1 100%);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 0 2px rgba(15, 23, 42, 0.15),
+    0 10px 18px rgba(15, 23, 42, 0.35);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+.home-marker:hover {
+  transform: scale(1.1);
+  box-shadow:
+    0 0 0 2px rgba(15, 23, 42, 0.2),
+    0 14px 24px rgba(15, 23, 42, 0.5);
+}
+
+/* City pins – gradient from green (start) to red (end) to show route progression.
+   The background is set inline via JS for the color gradient. */
+.city-marker-pin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  /* Default fallback - actual gradient set via inline style */
+  background: linear-gradient(145deg, #10b981 0%, #059669 100%);
+  border: 2.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.1),
+    0 8px 16px rgba(15, 23, 42, 0.4);
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: center bottom;
+}
+
+.city-marker-pin:hover {
+  transform: scale(1.15) translateY(-2px);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 12px 24px rgba(15, 23, 42, 0.5);
+}
+
+/* Number inside the marker */
+.city-marker-number {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  line-height: 1;
+}
+
+/* First city marker - slightly larger with start indicator */
+.city-marker-first {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+  box-shadow:
+    0 0 0 2px rgba(16, 185, 129, 0.3),
+    0 10px 20px rgba(16, 185, 129, 0.35);
+}
+
+.city-marker-first .city-marker-number {
+  font-size: 0.8rem;
+}
+
+/* Last city marker - slightly larger with end indicator */
+.city-marker-last {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+  box-shadow:
+    0 0 0 2px rgba(244, 63, 94, 0.3),
+    0 10px 20px rgba(244, 63, 94, 0.35);
+}
+
+.city-marker-last .city-marker-number {
+  font-size: 0.8rem;
+}
+
+.city-selection-map-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  touch-action: pan-x pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+  /* Ensure legend stays within bounds */
+  overflow: hidden;
+}
+
+.city-selection-map-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--spacing-lg);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.city-selection-instructions {
+  position: absolute;
+  top: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.85);
+  /* Much more opaque for legibility */
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 2rem;
+  /* Pill shape looks more modern */
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: #ffffff;
+  /* Force white text for contrast on dark bg */
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Map Search Overlay - positioning for the search bar inside the map */
+.map-search-overlay {
+  position: absolute;
+  top: var(--spacing-md);
+  left: var(--spacing-md);
+  right: auto;
+  z-index: 10;
+  width: 320px;
+  max-width: calc(100% - 2 * var(--spacing-md));
+}
+
+.map-search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  padding: 0;
+}
+
+.map-search-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.map-search-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  /* Removed left padding for icon */
+  font-size: 0.9rem;
+  outline: none;
+  border-radius: var(--radius-lg);
+}
+
+.map-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.map-search-clear {
+  position: absolute;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-search-clear:hover {
+  color: #ffffff;
+}
+
+.map-search-results {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.map-search-results ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.map-search-results li {
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s;
+}
+
+.map-search-results li:last-child {
+  border-bottom: none;
+}
+
+.map-search-results li:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.result-icon {
+  margin-top: 0.2rem;
+  color: var(--text-secondary);
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.result-name {
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.result-country {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+/* Light theme: keep instructions bar distinct and legible */
+.travel-layout:not([data-theme='dark']) .city-selection-instructions {
+  background: rgba(255, 255, 255, 0.95);
+  /* High opacity for readability */
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: 0 4px 15px rgba(148, 163, 184, 0.25);
+  color: var(--travel-text-dark);
+  /* Dark text for light bg */
+}
+
+/* Light theme overrides for search overlay */
+.travel-layout:not([data-theme='dark']) .map-search-input-wrapper {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: 0 4px 15px rgba(148, 163, 184, 0.2);
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-input {
+  color: var(--text-primary);
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-results {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: 0 10px 30px rgba(148, 163, 184, 0.25);
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-results li {
+  border-bottom-color: rgba(148, 163, 184, 0.15);
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-results li:hover {
+  background: rgba(232, 145, 58, 0.1);
+}
+
+.travel-layout:not([data-theme='dark']) .result-name {
+  color: var(--text-primary);
+}
+
+.travel-layout:not([data-theme='dark']) .map-search-clear:hover {
+  color: var(--text-primary);
+}
+
+.city-selection-instructions svg {
+  color: #6366f1;
+}
+
+/* Light theme: map hint icon uses warm travel accent */
+.travel-layout:not([data-theme='dark']) .city-selection-instructions svg {
+  color: var(--travel-accent);
+}
+
+/* City Markers - Simple dots on map */
+.city-marker-simple {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.city-marker-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  /* Neutral marker colour shared by both themes */
+  background: #64748b;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.5);
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Selected Cities List */
+.selected-cities-list {
+  margin-top: var(--spacing-lg);
+}
+
+.selected-cities-list h4 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.selected-cities-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.city-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+}
+
+.city-tag:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Light theme: city tags become soft chips on off-white */
+.travel-layout:not([data-theme='dark']) .city-tag {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .city-tag:hover {
+  background: #eef2ff;
+  border-color: rgba(129, 140, 248, 0.8);
+}
+
+.city-tag-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Light theme: city index badge uses travel accent gradient */
+.travel-layout:not([data-theme='dark']) .city-tag-number {
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
+}
+
+.city-tag-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  line-height: 1.2;
+}
+
+.city-tag-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+
+.city-tag-country {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  opacity: 0.7;
+}
+
+.city-tag-remove {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--spacing-xs);
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.city-tag-remove:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Distance Summary - Clean Route Visualization */
+.cities-distance-summary {
+  margin-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wizard-progress {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.city-distance-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.city-distance-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.distance-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+/* Light theme: distance rows as subtle list cards */
+.travel-layout:not([data-theme='dark']) .cities-distance-summary {
+  border-top-color: rgba(148, 163, 184, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .city-distance-item {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .city-distance-item:hover {
+  background: #eef2ff;
+  border-color: rgba(129, 140, 248, 0.85);
+}
+
+.distance-route {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 50px;
+}
+
+.distance-step {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Light theme: distance badges tied to travel accent gradient */
+.travel-layout:not([data-theme='dark']) .distance-step {
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
+}
+
+.distance-arrow {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  opacity: 0.6;
+}
+
+.distance-cities {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+}
+
+.distance-city-from,
+.distance-city-to {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.distance-arrow-small {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  opacity: 0.5;
+  margin: 0 0.25rem;
+}
+
+.distance-value {
+  font-weight: 600;
+  color: #8B5CF6;
+  font-size: 0.875rem;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Light theme: distance text uses warm travel accent */
+.travel-layout:not([data-theme='dark']) .distance-value {
+  color: var(--travel-accent-strong);
+}
+
+/* Transport selection row under each distance item */
+.transport-leg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding-top: 0.25rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+.transport-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.14), rgba(124, 58, 237, 0.04));
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  box-shadow: 0 4px 14px rgba(15, 7, 26, 0.35);
+  transition: var(--transition);
+}
+
+.transport-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.transport-current-mode {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8B5CF6;
+}
+
+.transport-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  flex: 1;
+  /* Needed so the custom chevron pseudo-element can be anchored neatly
+     to the right edge of the select without affecting layout. */
+  position: relative;
+}
+
+.transport-mode-select {
+  min-width: 150px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: 0.35rem 0.75rem;
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  outline: none;
+  transition: var(--transition);
+  /* Reset native select chrome so we avoid repeated system chevrons,
+     especially in desktop Safari / Firefox, and keep the Paire look. */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  /* Give the value a little extra space on the right for our custom chevron. */
+  padding-right: 1.9rem;
+}
+
+/* Custom soft chevron so the selector matches the Paire design language
+   instead of relying on inconsistent system arrows. */
+.transport-select-wrapper::after {
+  content: '▾';
+  position: absolute;
+  right: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  transition: var(--transition);
+}
+
+.transport-leg-row:hover .transport-select-wrapper::after,
+.transport-mode-select:focus+.transport-suggestion-text+.transport-suggestion-text~.transport-select-wrapper::after {
+  opacity: 1;
+}
+
+/* Dark theme focus/hover keep the violet accent; light theme overrides are
+   defined further below so we avoid double-colored outlines. */
+[data-theme='dark'] .transport-mode-select:focus {
+  border-color: rgba(139, 92, 246, 0.8);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.6);
+}
+
+[data-theme='dark'] .transport-mode-select:hover {
+  border-color: rgba(139, 92, 246, 0.7);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.transport-suggestion-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.travel-layout:not([data-theme='dark']) .transport-leg-row {
+  border-top-color: rgba(148, 163, 184, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-mode-pill {
+  /* In light theme, transport pill becomes a neutral chip with subtle border –
+     keeping purple only in text/icons to respect the light palette. */
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.6);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-mode-select {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.7);
+}
+
+/* Light theme: transport mode text + focus ring use travel accent */
+.travel-layout:not([data-theme='dark']) .transport-current-mode {
+  color: var(--travel-accent-strong);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-mode-select:focus {
+  border-color: var(--travel-accent-strong);
+  box-shadow: 0 0 0 1px rgba(232, 145, 58, 0.7);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-mode-select:hover {
+  background: var(--travel-accent-chip);
+  border-color: var(--travel-accent-strong);
+}
+
+/* Total Trip Distance */
+.trip-total-distance {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  /* Default (dark theme) version keeps a subtle purple tint for readability;
+     light mode is neutralised below. */
+  background: rgba(139, 92, 246, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+/* Light theme: total distance highlight uses primary tokens */
+.travel-layout:not([data-theme='dark']) .trip-total-distance {
+  /* Large surface uses neutral off‑white; primary stays in text only. */
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: var(--shadow-sm);
+}
+
+.total-distance-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.total-distance-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #8B5CF6;
+  letter-spacing: 0.02em;
+}
+
+/* Optional legs between Home and the route endpoints, shown as a compact
+   summary strip above the detailed city-to-city legs. Mirrors the calm
+   home-leg styling used on TravelHome. */
+.home-legs-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: var(--spacing-sm);
+  padding: 0.5rem var(--spacing-md);
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.home-leg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.home-leg-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.home-leg-distance {
+  font-weight: 600;
+  color: #8B5CF6;
+}
+
+.travel-layout:not([data-theme='dark']) .home-legs-summary {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .home-leg-distance {
+  color: var(--travel-accent-strong);
+}
+
+/* =================================================================
+   Mobile Optimizations
+   ================================================================= */
+
+@media (max-width: 1024px) {
+
+  /* On tablets/mobile, switch to stack layout */
+  .wizard-step-split {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  /* Reduce map height so it doesn't dominate small screens */
+  .wizard-step-map {
+    min-height: 40vh;
+    height: 40vh;
+    order: -1;
+    /* Show map first for context */
+  }
+
+  .city-selection-map-wrapper {
+    min-height: 100%;
+    height: 100%;
+    margin: 0;
+  }
+
+  .wizard-step-details {
+    max-height: none;
+    overflow: visible;
+    padding: var(--spacing-md);
+  }
+
+  .multi-city-wizard {
+    padding: var(--spacing-sm);
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  /* Make content scrollable within full screen modal */
+  .multi-city-wizard .wizard-content {
+    padding: var(--spacing-sm);
+    flex: 1;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 768px) {
+
+  /* Smaller map on phones */
+  .wizard-step-map {
+    min-height: 35vh;
+    height: 35vh;
+  }
+
+  .transport-leg-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .transport-select-wrapper {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .transport-mode-select {
+    width: 100%;
+  }
+
+  .distance-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .distance-value {
+    text-align: left;
+    margin-left: 28px;
+    /* Align with text */
+  }
+}
+
+/* =================================================================
+   Route Overview Card (Desktop & Mobile)
+   ================================================================= */
+.route-overview-card {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.route-overview-header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+  font-weight: 600;
+}
+
+.route-overview-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.route-endpoint {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.endpoint-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 0.5rem;
+}
+
+.endpoint-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+}
+
+.endpoint-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.endpoint-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.endpoint-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.endpoint-city {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.endpoint-country {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.route-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  font-size: 1.2rem;
+  padding-top: 1rem;
+  /* Align with chip center */
+}
+
+/* Light theme overrides for Route Overview */
+.travel-layout:not([data-theme='dark']) .route-overview-card {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .endpoint-chip {
+  background: #ffffff;
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.travel-layout:not([data-theme='dark']) .endpoint-number {
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
+}
+
+/* =================================================================
+   Step 2: Date Selection List
+   ================================================================= */
+.city-date-card {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+
+  /* Desktop: Side-by-side layout */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xl);
+}
+
+.city-date-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  /* No margin bottom on desktop */
+  margin-bottom: 0;
+  flex: 1;
+  /* Take available space */
+}
+
+.city-date-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.city-date-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.city-date-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f8fafc;
+  /* Visible in dark mode */
+}
+
+.city-date-country {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.city-date-inputs {
+  /* Desktop: Fixed width for picker or flex based */
+  flex: 0 0 350px;
+  width: 350px;
+}
+
+/* Mobile Responsive - Stack back to column */
+@media (max-width: 768px) {
+  .city-date-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .city-date-header {
+    margin-bottom: var(--spacing-sm);
+    width: 100%;
+  }
+
+  .city-date-inputs {
+    width: 100%;
+    flex: auto;
+  }
+}
+
+/* Light Theme Overrides for Step 2 */
+.travel-layout:not([data-theme='dark']) .city-date-card {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: var(--shadow-sm);
+}
+
+.travel-layout:not([data-theme='dark']) .city-date-number {
+  background: linear-gradient(135deg, var(--travel-accent), var(--travel-accent-strong));
+}
+
+.travel-layout:not([data-theme='dark']) .city-date-name {
+  color: var(--text-primary);
+}
+
+.travel-layout:not([data-theme='dark']) .city-date-country {
+  color: var(--text-secondary);
+}
+
+/* Mobile adjustments for date inputs */
+@media (max-width: 480px) {
+  .city-date-inputs {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+}
+
+/* =================================================================
+   Step 3: Budget Setting
+   ================================================================= */
+.budget-mode-toggle {
+  display: flex;
+  gap: var(--spacing-sm);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.mode-btn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(232, 145, 58, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark Theme active button override to prevent bright orange if preferred, 
+   but orange is the travel accent. If user wants theme-aware, let's keep it orange 
+   for travel consistency OR use violet for dark mode consistency. 
+   Given previous request for "theme aware", let's use violet for dark mode active. */
+[data-theme='dark'] .mode-btn.active {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  color: white;
+}
+
+.budget-form-section {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.budget-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.budget-input-group label,
+.currency-group label {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.budget-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.budget-input svg {
+  position: absolute;
+  left: 1rem;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.budget-input input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: #f8fafc;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.budget-input input:focus {
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+}
+
+.currency-group select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: #f8fafc;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .input-icon {
+  position: absolute;
+  left: 1rem;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.input-with-icon input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: #f8fafc;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.input-with-icon input:focus {
+  border-color: #8B5CF6;
+}
+
+/* Light Theme Overrides for Step 3 */
+.travel-layout:not([data-theme='dark']) .budget-mode-toggle {
+  background: #f1f5f9;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .mode-btn {
+  color: #64748b;
+}
+
+.travel-layout:not([data-theme='dark']) .mode-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: #334155;
+}
+
+.travel-layout:not([data-theme='dark']) .mode-btn.active {
+  /* Keep orange accent for light theme travel */
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(232, 145, 58, 0.25);
+}
+
+.travel-layout:not([data-theme='dark']) .budget-form-section {
+  background: #f9fafb;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .budget-input input,
+.travel-layout:not([data-theme='dark']) .input-with-icon input {
+  background: #ffffff;
+  border-color: rgba(148, 163, 184, 0.4);
+  color: var(--text-primary);
+}
+
+.travel-layout:not([data-theme='dark']) .budget-input input:focus,
+.travel-layout:not([data-theme='dark']) .input-with-icon input:focus {
+  border-color: var(--travel-accent);
+  box-shadow: 0 0 0 2px rgba(232, 145, 58, 0.15);
+}
+
+.travel-layout:not([data-theme='dark']) .currency-group select {
+  background: #ffffff;
+  border-color: rgba(148, 163, 184, 0.4);
+  color: var(--text-primary);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 480px) {
+  .budget-row {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  /* Hide icons in inputs for cleaner mobile view */
+  .budget-input svg,
+  .input-with-icon .input-icon {
+    display: none;
+  }
+
+  .budget-input input,
+  .input-with-icon input {
+    padding-left: 1rem;
+    /* Reset padding since icon is gone */
+  }
+}
+
+/* =================================================================
+   Mobile Optimization (Space Saving)
+   ================================================================= */
+@media (max-width: 768px) {
+
+  /* 1. Header Optimization */
+  .multi-city-wizard .wizard-header {
+    padding: 0.75rem 1rem;
+    position: relative;
+    /* Anchor for absolute close button */
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: auto;
+    gap: 0.25rem;
+  }
+
+  /* Reduce title size and ensure it doesn't overlap with the absolute button */
+  .multi-city-wizard .wizard-header h2 {
+    font-size: 1.1rem;
+    margin: 0;
+    width: calc(100% - 32px);
+    /* Reserve space for close button */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Compact Step Indicators */
+  .multi-city-wizard .wizard-progress {
+    margin: 0;
+    transform: scale(0.9);
+    transform-origin: left center;
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  /* Absolute Position Close Button at Top-Right
+     We target the button directly. Note: The parent container .wizard-header-actions
+     might still be in the static flow, which is fine. */
+  .multi-city-wizard .wizard-header-actions .wizard-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 0;
+  }
+
+  /* Ensure delete button (if present) stays in a reasonable spot, 
+     e.g., positioned absolute left of the close button or just in flow?
+     If header is flex-col, standard flow buttons ends up below title.
+     Let's position Delete absolute too if it exists, to keeping header compact. */
+  .multi-city-wizard .wizard-header-actions .wizard-header-delete {
+    position: absolute;
+    top: 0.75rem;
+    right: 3.5rem;
+    /* Left of the close button */
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+  }
+
+  /* 2. Content Area Optimization */
+  .multi-city-wizard .wizard-content {
+    padding: 0.75rem;
+    /* Reduce padding from XL/LG */
+  }
+
+  /* Step 1 Map: Ensure it fills vertical space */
+  .multi-city-wizard .wizard-step.mobile-map-step {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .city-selection-map-wrapper {
+    margin: 0.5rem 0 0 0;
+    /* Reduce margin */
+    flex: 1;
+    /* Grow to fill */
+    min-height: 0;
+    /* CSS Grid/Flex trick to allow shrinking */
+  }
+
+  /* Reduce other spacings */
+  .wizard-step-details h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .step-description {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  /* Compact list items in Step 2 */
+  .city-tag {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Less spacing between tags */
+  .selected-cities-tags {
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .cities-distance-summary {
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    gap: 0.5rem;
+  }
+
+  /* Maximize width for step 2 cards */
+  .route-overview-card,
+  .city-distance-item,
+  .trip-total-distance {
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+  }
+
+  .city-distance-item {
+    padding: 0.6rem;
+  }
+
+  /* Adjust transport row for mobile */
+  .transport-leg-row {
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .transport-mode-pill {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 400px) {
+
+    /* Even tighter for small phones */
+    .multi-city-wizard .wizard-content {
+      padding: 0.5rem;
+    }
+
+    .wizard-step-details {
+      padding: 0;
+    }
+  }
+
+  .city-distance-item {
+    padding: 0.5rem;
+  }
+
+  /* 3. Footer Optimization (Side-by-Side Buttons) */
+  .multi-city-wizard .wizard-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .multi-city-wizard .wizard-footer-right {
+    display: flex;
+    flex-direction: row;
+    /* Force row direction */
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  /* Make buttons expand to fill space equally */
+  .multi-city-wizard .wizard-footer-right .wizard-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  /* If there's an error message in the footer on mobile, let it sit above buttons */
+  .multi-city-wizard .wizard-footer-error {
+    width: 100%;
+    margin: 0 0 0.5rem 0 !important;
+    /* Override inline styles */
+    text-align: center;
+  }
+}
+
+/* =================================================================
+   AGGRESSIVE MOBILE OVERRIDES (Step 2 Specifics)
+   ================================================================= */
+@media (max-width: 1024px) {
+  .multi-city-wizard .wizard-content {
+    padding: 0.5rem !important;
+  }
+
+  /* Remove the boxed look of the details container on mobile to let cards expand */
+  .wizard-step-details {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  /* Force cards to near full width */
+  .route-overview-card,
+  .city-distance-item,
+  .trip-total-distance,
+  .city-date-card {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: none !important;
+    /* Optional: flatter look */
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  /* Ensure the container allows full width children */
+  .wizard-step-details>* {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Reduce gap in the main list */
+  .city-selection-map-wrapper {
+    margin-bottom: 0.5rem !important;
+  }
+}

@@ -1,8 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import ErrorBoundary from './components/ErrorBoundary'
-import './styles/index.css'
+import App from './app/App.jsx'
+import ErrorBoundary from './shared/components/ErrorBoundary'
+import './shared/styles/index.css'
 import './i18n/config'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

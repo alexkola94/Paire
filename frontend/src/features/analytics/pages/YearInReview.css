@@ -1,0 +1,909 @@
+/* =============================================
+   Year-in-Review — Spotify Wrapped-style
+   ============================================= */
+
+/* Full-screen immersive page */
+.yr-page {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #1a0533, #4c1d95);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Loading / Error state pages ---- */
+
+.yr-state-page {
+  align-items: center;
+  justify-content: center;
+}
+
+.yr-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
+  padding: 2rem;
+}
+
+.yr-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #8B5CF6;
+  border-radius: 50%;
+  animation: yr-spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes yr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.yr-error-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.yr-error-text {
+  color: rgba(255, 255, 255, 0.65);
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.yr-error-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.yr-error-year-select {
+  padding: 0.55rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.yr-error-year-select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.yr-error-btn {
+  padding: 0.55rem 1.5rem;
+  border-radius: 12px;
+  border: none;
+  background: #8B5CF6;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.25s ease;
+}
+
+.yr-error-btn:hover {
+  filter: brightness(1.15);
+}
+
+/* ---- Header overlay ---- */
+
+.yr-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+}
+
+.yr-header-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.yr-header-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.yr-year-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.yr-year-selector select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 0.45rem 1.6rem 0.45rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 12px;
+  transition: all 0.25s ease;
+}
+
+.yr-year-selector select:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.yr-year-selector select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+/* ---- Slide viewport ---- */
+
+.yr-slides-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.yr-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 1.5rem 4.5rem;
+  cursor: grab;
+  user-select: none;
+}
+
+.yr-slide:active {
+  cursor: grabbing;
+}
+
+.yr-slide-inner {
+  max-width: 560px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+}
+
+.yr-slide-heading {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2rem;
+  letter-spacing: -0.02em;
+}
+
+/* ---- Animated counter ---- */
+
+.yr-counter {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Color helpers ---- */
+
+.yr-income { color: #10B981 !important; }
+.yr-expense { color: #EF4444 !important; }
+.yr-primary { color: #8B5CF6 !important; }
+.yr-empty-text { color: rgba(255, 255, 255, 0.5); font-style: italic; }
+
+/* =====================
+   SLIDE 1 — Intro
+   ===================== */
+
+.yr-intro {
+  gap: 0.75rem;
+}
+
+.yr-intro-year {
+  font-size: clamp(5rem, 18vw, 10rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  background: linear-gradient(135deg, #c4b5fd 0%, #f9a8d4 50%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 4px 30px rgba(139, 92, 246, 0.35));
+}
+
+.yr-intro-title {
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin: 0;
+}
+
+.yr-intro-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+.yr-intro-cta {
+  margin-top: 2.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.04em;
+  animation: yr-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes yr-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.7; }
+}
+
+/* =====================
+   SLIDE 2 — Numbers
+   ===================== */
+
+.yr-numbers-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.yr-number-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1.25rem 1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.yr-savings-highlight {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.yr-number-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.15rem;
+}
+
+.yr-icon-income { color: #10B981; }
+.yr-icon-expense { color: #EF4444; }
+.yr-icon-savings { color: #8B5CF6; }
+
+.yr-number-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.yr-number-value {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+/* =====================
+   SLIDE 3 — Categories
+   ===================== */
+
+.yr-categories-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.yr-category-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.yr-category-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.yr-category-rank {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  min-width: 22px;
+}
+
+.yr-category-name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: left;
+}
+
+.yr-category-amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+
+.yr-category-bar-track {
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.yr-category-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #10B981, #34D399);
+}
+
+/* =====================
+   SLIDE 4 — Biggest
+   ===================== */
+
+.yr-biggest {
+  gap: 1.5rem;
+}
+
+.yr-biggest-amount {
+  font-size: clamp(2.75rem, 12vw, 5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #FCA5A5;
+  line-height: 1;
+  text-shadow: 0 0 60px rgba(239, 68, 68, 0.35);
+}
+
+.yr-biggest-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.yr-biggest-desc {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.yr-biggest-meta {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* =====================
+   SLIDE 5 — Months
+   ===================== */
+
+.yr-months-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+}
+
+.yr-month-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.75rem 1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.yr-month-best {
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.yr-month-worst {
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.yr-month-icon {
+  font-size: 1.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.yr-month-best .yr-month-icon { color: #10B981; }
+.yr-month-worst .yr-month-icon { color: #EF4444; }
+
+.yr-month-card-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.yr-month-name {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.yr-month-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* =====================
+   SLIDE 6 — Streaks
+   ===================== */
+
+.yr-streaks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.yr-streak-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem 0.5rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.yr-streak-icon {
+  font-size: 2rem;
+}
+
+.yr-streak-value {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.yr-streak-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.yr-streaks-bonus {
+  margin-top: 1.25rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* =====================
+   SLIDE 7 — Score Journey
+   ===================== */
+
+.yr-scores-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+  height: 220px;
+  padding: 0 4px;
+}
+
+.yr-score-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.yr-score-val {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  min-height: 14px;
+}
+
+.yr-score-bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 6px 6px 4px 4px;
+  overflow: hidden;
+}
+
+.yr-score-bar {
+  width: 100%;
+  border-radius: 6px 6px 4px 4px;
+  min-height: 4px;
+}
+
+.yr-score-month {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* =====================
+   SLIDE 8 — Partner
+   ===================== */
+
+.yr-partner {
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.yr-partner-section {
+  width: 100%;
+}
+
+.yr-partner-section-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.75rem;
+  text-align: left;
+}
+
+.yr-partner-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.yr-partner-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.yr-partner-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  min-width: 52px;
+  text-align: left;
+}
+
+.yr-partner-bar-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.yr-partner-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.7s ease;
+}
+
+.yr-bar-coral  { background: linear-gradient(90deg, #EF4444, #F87171); }
+.yr-bar-pink   { background: linear-gradient(90deg, #EC4899, #F472B6); }
+.yr-bar-green  { background: linear-gradient(90deg, #10B981, #34D399); }
+.yr-bar-teal   { background: linear-gradient(90deg, #14B8A6, #5EEAD4); }
+
+.yr-partner-amount {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  min-width: 60px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =====================
+   SLIDE 9 — Summary
+   ===================== */
+
+.yr-summary {
+  gap: 1.25rem;
+}
+
+.yr-summary-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.yr-summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 90px;
+}
+
+.yr-summary-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.yr-summary-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.yr-summary-ring {
+  width: 100px;
+  height: 100px;
+  margin: 0.5rem 0;
+}
+
+.yr-summary-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.yr-summary-message {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 380px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.yr-summary-footer {
+  margin-top: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* =====================
+   Navigation arrows
+   ===================== */
+
+.yr-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 15;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+
+.yr-nav-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.yr-nav-prev { left: 0.75rem; }
+.yr-nav-next { right: 0.75rem; }
+
+/* =====================
+   Progress dots
+   ===================== */
+
+.yr-progress {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 15;
+}
+
+.yr-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  border: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.35s ease;
+}
+
+.yr-dot:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.yr-dot-visited {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.yr-dot-active {
+  width: 22px;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+/* =====================
+   Responsive
+   ===================== */
+
+@media (min-width: 640px) {
+  .yr-slide {
+    padding: 5rem 3rem 4rem;
+  }
+
+  .yr-numbers-grid {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+
+  .yr-number-card {
+    flex: 1;
+    padding: 1.5rem 1rem;
+  }
+
+  .yr-number-value {
+    font-size: 1.75rem;
+  }
+
+  .yr-scores-chart {
+    gap: 6px;
+    height: 260px;
+  }
+
+  .yr-score-val {
+    font-size: 0.68rem;
+  }
+
+  .yr-score-month {
+    font-size: 0.65rem;
+  }
+
+  .yr-nav-btn {
+    width: 52px;
+    height: 52px;
+  }
+
+  .yr-nav-prev { left: 1.25rem; }
+  .yr-nav-next { right: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .yr-slide {
+    padding: 4.5rem 1rem 4rem;
+  }
+
+  .yr-slide-heading {
+    font-size: 1.15rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .yr-months-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .yr-month-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .yr-streaks-grid {
+    gap: 0.5rem;
+  }
+
+  .yr-streak-card {
+    padding: 1rem 0.25rem;
+  }
+
+  .yr-streak-value {
+    font-size: 1.75rem;
+  }
+
+  .yr-streak-icon {
+    font-size: 1.5rem;
+  }
+
+  .yr-number-value {
+    font-size: 1.75rem;
+  }
+
+  .yr-biggest-amount {
+    font-size: clamp(2rem, 10vw, 3.5rem);
+  }
+
+  .yr-scores-chart {
+    height: 180px;
+    gap: 2px;
+  }
+
+  .yr-partner-label {
+    min-width: 42px;
+    font-size: 0.72rem;
+  }
+
+  .yr-partner-amount {
+    font-size: 0.72rem;
+    min-width: 50px;
+  }
+
+  .yr-summary-value {
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-height: 800px) {
+  .yr-intro-year {
+    font-size: clamp(6rem, 20vw, 12rem);
+  }
+
+  .yr-summary-ring {
+    width: 120px;
+    height: 120px;
+  }
+}

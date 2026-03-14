@@ -1,0 +1,889 @@
+/* Travel Advisory Styles */
+.travel-advisory-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.travel-advisory-card-compact {
+  padding: 0.75rem 1rem;
+  border-radius: 20px;
+  /* Reduced from 50px so multi-line text looks better */
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  /* Changed from row to column to stack header and msg */
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.travel-advisory-nav {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  padding: 2px 6px;
+}
+
+.travel-advisory-nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #475569;
+  border-radius: 4px;
+}
+
+.travel-advisory-nav-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.travel-advisory-slide {
+  width: 100%;
+}
+
+/*** HEADER LAYOUT (FLEX WRAP) ***/
+.travel-advisory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.5rem;
+  position: relative;
+  /* Enable wrapping for stacked layout on mobile */
+  flex-wrap: wrap;
+}
+
+.travel-advisory-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  /* Allow grow/shrink */
+  min-width: 0;
+  margin-right: 0.5rem;
+  /* Always put title first */
+  order: 1;
+}
+
+.travel-advisory-icon {
+  flex-shrink: 0;
+}
+
+.travel-advisory-title-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.travel-advisory-country {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.travel-advisory-level-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.travel-advisory-score-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  transition: margin-right 0.2s ease;
+  position: relative;
+  z-index: 2;
+  /* On wide screens, it sits to the right using margin-left: auto */
+  margin-left: auto;
+  /* Order 3 ensures it comes after spacer, or visually last */
+  order: 3;
+}
+
+/* Spacer element - hidden, we use margin on score wrapper instead */
+.travel-advisory-nav-spacer {
+  display: none;
+}
+
+/* Add right margin to score wrapper when navigation arrows are present */
+.travel-advisory-card.has-navigation .travel-advisory-score-wrapper {
+  margin-right: 5rem; /* Space for nav buttons */
+}
+
+/* When both nav and close button are present, need more space */
+.travel-advisory-card.has-navigation.has-close .travel-advisory-score-wrapper {
+  margin-right: 7.5rem;
+}
+
+/* Only close button, no navigation */
+.travel-advisory-card.has-close:not(.has-navigation) .travel-advisory-score-wrapper {
+  margin-right: 2.5rem;
+}
+
+.travel-advisory-score-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+  text-align: right;
+  max-width: 120px;
+  line-height: 1.1;
+  white-space: normal;
+  /* Allow wrapping */
+}
+
+.travel-advisory-score-pill {
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.travel-advisory-card-compact .travel-advisory-score-pill {
+  /* Use risk-based color background in compact mode */
+  background: #fbbf24;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Explicit risk coloring for compact score pill */
+.travel-advisory-card-compact .advisory-level-low~.travel-advisory-score-wrapper .travel-advisory-score-pill {
+  background: #22c55e;
+  color: #fff;
+}
+
+.travel-advisory-card-compact .advisory-level-medium~.travel-advisory-score-wrapper .travel-advisory-score-pill {
+  background: #fbbf24;
+  color: #fff;
+}
+
+.travel-advisory-card-compact .advisory-level-high~.travel-advisory-score-wrapper .travel-advisory-score-pill {
+  background: #f97316;
+  color: #fff;
+}
+
+.travel-advisory-card-compact .advisory-level-critical~.travel-advisory-score-wrapper .travel-advisory-score-pill {
+  background: #ef4444;
+  color: #fff;
+}
+
+
+.travel-advisory-score-value {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: inherit;
+}
+
+.travel-advisory-score-max {
+  font-size: 0.7rem;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.travel-advisory-body {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.travel-advisory-message {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #334155;
+  margin-bottom: 0.75rem;
+}
+
+.travel-advisory-meta {
+  display: flex;
+  align-items: flex-start;
+  /* Changed from center to allow multi-line button alignment */
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.travel-advisory-more-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  color: var(--travel-accent, #e8913a);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.8rem;
+  /* Updated for wrapping text */
+  text-align: right;
+  white-space: normal;
+  max-width: 50%;
+  /* Prevent taking full width if wrapped */
+  line-height: 1.3;
+}
+
+.travel-advisory-more-btn:hover {
+  text-decoration: underline;
+  color: var(--travel-accent-strong, #d07a28);
+}
+
+.travel-advisory-header-more {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.travel-advisory-header-more:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* New: Header actions container for Details + Close buttons */
+.travel-advisory-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.75rem;
+}
+
+.travel-advisory-header-close {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.travel-advisory-header-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #ef4444;
+}
+
+/* Compact message styling */
+.travel-advisory-compact-body {
+  padding-top: 0;
+  padding-bottom: 0.25rem;
+}
+
+.travel-advisory-message-compact {
+  font-size: 0.8rem;
+  color: #475569;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Level Colors */
+.advisory-level-low {
+  color: #166534;
+}
+
+.advisory-level-medium {
+  color: #b45309;
+}
+
+.advisory-level-high {
+  color: #c2410c;
+}
+
+.advisory-level-critical {
+  color: #991b1b;
+}
+
+.advisory-level-unknown {
+  color: #475569;
+}
+
+/* Modal Styles */
+.travel-advisory-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.travel-advisory-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.travel-advisory-modal-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.travel-advisory-modal-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.travel-advisory-modal-country {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.travel-advisory-modal-close {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.travel-advisory-modal-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.travel-advisory-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.advisory-section-block {
+  margin-bottom: 1.5rem;
+}
+
+.advisory-section-block:last-child {
+  margin-bottom: 0;
+}
+
+.advisory-section-block h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.advisory-section-block ul {
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.advisory-section-block li {
+  font-size: 0.9rem;
+  color: #475569;
+  margin-bottom: 0.4rem;
+  line-height: 1.5;
+}
+
+.advisory-overview-title {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.advisory-overview-text {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.advisory-section-summary {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-style: italic;
+  margin-bottom: 0.75rem;
+}
+
+/* Flags */
+.advisory-flags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.advisory-flag-chip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.advisory-flag-chip.warning {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.advisory-flag-chip.regional {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+/* =================================================================
+   Light Mode Overrides (Warm Orange Palette)
+   Matches the peach/sand aesthetic from TravelHome.css
+   ================================================================= */
+
+[data-theme='light'] .travel-advisory-card {
+  background: rgba(255, 252, 247, 0.98);
+  border-color: rgba(232, 145, 58, 0.22);
+  box-shadow: 0 10px 30px rgba(180, 120, 60, 0.12);
+}
+
+[data-theme='light'] .travel-advisory-country {
+  color: #3d3530;
+}
+
+[data-theme='light'] .travel-advisory-message,
+[data-theme='light'] .travel-advisory-message-compact {
+  color: #6b6058;
+}
+
+[data-theme='light'] .travel-advisory-meta {
+  color: #9a9088;
+}
+
+[data-theme='light'] .travel-advisory-nav {
+  background: rgba(255, 252, 247, 0.95);
+  color: #6b6058;
+}
+
+[data-theme='light'] .travel-advisory-nav-btn {
+  color: #6b6058;
+}
+
+[data-theme='light'] .travel-advisory-nav-btn:hover {
+  background: rgba(232, 145, 58, 0.1);
+  color: #e8913a;
+}
+
+[data-theme='light'] .travel-advisory-header-more {
+  background: rgba(255, 252, 247, 0.95);
+  border-color: rgba(232, 145, 58, 0.25);
+  color: #6b6058;
+}
+
+[data-theme='light'] .travel-advisory-header-more:hover {
+  background: rgba(251, 230, 210, 0.6);
+  border-color: rgba(232, 145, 58, 0.4);
+  color: #e8913a;
+}
+
+[data-theme='light'] .travel-advisory-header-close {
+  color: #9a9088;
+}
+
+[data-theme='light'] .travel-advisory-header-close:hover {
+  background: rgba(232, 145, 58, 0.1);
+  color: #ef4444;
+}
+
+[data-theme='light'] .travel-advisory-more-btn {
+  color: #e8913a;
+}
+
+[data-theme='light'] .travel-advisory-more-btn:hover {
+  color: #d07a28;
+}
+
+[data-theme='light'] .travel-advisory-score-pill {
+  background: rgba(251, 230, 210, 0.6);
+  color: #3d3530;
+}
+
+[data-theme='light'] .travel-advisory-score-label {
+  color: #9a9088;
+}
+
+[data-theme='light'] .travel-advisory-body {
+  border-top-color: rgba(232, 145, 58, 0.15);
+}
+
+[data-theme='light'] .travel-advisory-modal {
+  background: #fffcf7;
+  border: 1px solid rgba(232, 145, 58, 0.2);
+  box-shadow: 0 25px 50px rgba(180, 120, 60, 0.2);
+}
+
+[data-theme='light'] .travel-advisory-modal-header {
+  border-bottom-color: rgba(232, 145, 58, 0.15);
+}
+
+[data-theme='light'] .travel-advisory-modal-country {
+  color: #3d3530;
+}
+
+[data-theme='light'] .travel-advisory-modal-close {
+  background: rgba(232, 145, 58, 0.08);
+  color: #6b6058;
+}
+
+[data-theme='light'] .travel-advisory-modal-close:hover {
+  background: rgba(232, 145, 58, 0.15);
+  color: #3d3530;
+}
+
+[data-theme='light'] .advisory-overview-title,
+[data-theme='light'] .advisory-section-block h4 {
+  color: #3d3530;
+}
+
+[data-theme='light'] .advisory-overview-text,
+[data-theme='light'] .advisory-section-block li {
+  color: #6b6058;
+}
+
+[data-theme='light'] .advisory-section-summary {
+  color: #9a9088;
+}
+
+/* =================================================================
+   Dark Mode Overrides
+   Matches the violet/slate aesthetic from TravelHome.css
+   ================================================================= */
+
+[data-theme='dark'] .travel-advisory-card {
+  background: rgba(15, 7, 26, 0.65);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+/* Text Colors */
+[data-theme='dark'] .travel-advisory-country {
+  color: #f8fafc;
+  /* Slate-50 */
+}
+
+[data-theme='dark'] .travel-advisory-message,
+[data-theme='dark'] .travel-advisory-message-compact {
+  color: #94a3b8;
+  /* Slate-400 */
+}
+
+[data-theme='dark'] .travel-advisory-meta {
+  color: #64748b;
+  /* Slate-500 */
+}
+
+/* Navigation & Header Actions */
+[data-theme='dark'] .travel-advisory-nav {
+  background: rgba(30, 41, 59, 0.6);
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .travel-advisory-nav-btn {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .travel-advisory-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .travel-advisory-header-more {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .travel-advisory-header-more:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .travel-advisory-header-close {
+  color: #64748b;
+}
+
+[data-theme='dark'] .travel-advisory-header-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ef4444;
+}
+
+/* More safety & entry info button */
+[data-theme='dark'] .travel-advisory-more-btn {
+  color: #a5b4fc;
+  /* Indigo-300 for dark mode */
+}
+
+[data-theme='dark'] .travel-advisory-more-btn:hover {
+  color: #c7d2fe;
+  /* Indigo-200 on hover */
+}
+
+/* Score Pill */
+[data-theme='dark'] .travel-advisory-score-pill {
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
+}
+
+/* Compact Score Pill - keep vivid colors but maybe check contrast? */
+/* The default colors (green, amber, orange, red) usually work okay on dark, 
+   but we can tweak if needed. */
+
+/* Body Border */
+[data-theme='dark'] .travel-advisory-body {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Modal */
+[data-theme='dark'] .travel-advisory-modal {
+  background: #1e1b24;
+  /* Matches deep dark backgrounds */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='dark'] .travel-advisory-modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='dark'] .travel-advisory-modal-country {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .travel-advisory-modal-close {
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .travel-advisory-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .advisory-overview-title,
+[data-theme='dark'] .advisory-section-block h4 {
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .advisory-overview-text,
+[data-theme='dark'] .advisory-section-block li {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .advisory-section-summary {
+  color: #94a3b8;
+}
+
+/* Flag chips in modal - Adjust for dark mode legibility */
+[data-theme='dark'] .advisory-flag-chip.warning {
+  background: rgba(127, 29, 29, 0.3);
+  color: #fecaca;
+  border-color: rgba(185, 28, 28, 0.5);
+}
+
+[data-theme='dark'] .advisory-flag-chip.regional {
+  background: rgba(124, 45, 18, 0.3);
+  color: #fed7aa;
+  border-color: rgba(194, 65, 12, 0.5);
+}
+
+/* Close Button (Absolute) */
+.travel-advisory-close-absolute {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  z-index: 6;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.travel-advisory-close-absolute:hover {
+  background: #f1f5f9;
+  color: #ef4444;
+  transform: scale(1.05);
+}
+
+/* Shift navigation arrows when close button is present */
+.travel-advisory-card.has-close .travel-advisory-nav {
+  right: 3rem;
+  /* Shift left to make room for close button */
+}
+
+
+
+/* Dark Mode Overrides for Close Button */
+[data-theme='dark'] .travel-advisory-close-absolute {
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .travel-advisory-close-absolute:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ef4444;
+}
+
+/* Adjust nav background in dark mode if needed to match close button style consistency */
+[data-theme='dark'] .travel-advisory-nav {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] .travel-advisory-close-absolute {
+  background: rgba(255, 252, 247, 0.95);
+  border: 1px solid rgba(232, 145, 58, 0.1);
+  color: #9a9088;
+}
+
+[data-theme='light'] .travel-advisory-close-absolute:hover {
+  background: rgba(232, 145, 58, 0.1);
+  color: #ef4444;
+}
+
+/* =================================================================
+   Mobile Responsive - Prevent arrow/score overlap
+   ================================================================= */
+
+@media (max-width: 480px) {
+  .travel-advisory-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .travel-advisory-title {
+    width: 100%;
+    margin-right: 0;
+    padding-right: 4rem; /* Space for absolute nav/close buttons */
+  }
+
+  /* Reset desktop margins on mobile - use stacked layout instead */
+  .travel-advisory-score-wrapper,
+  .travel-advisory-card.has-navigation .travel-advisory-score-wrapper,
+  .travel-advisory-card.has-navigation.has-close .travel-advisory-score-wrapper,
+  .travel-advisory-card.has-close:not(.has-navigation) .travel-advisory-score-wrapper {
+    margin-left: 0;
+    margin-right: 0;
+    align-items: flex-start;
+    order: 2;
+  }
+
+  .travel-advisory-nav {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .travel-advisory-card.has-close .travel-advisory-nav {
+    right: 2.5rem;
+  }
+
+  .travel-advisory-close-absolute {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .travel-advisory-header-actions {
+    margin-left: 0;
+    margin-top: 0.25rem;
+  }
+
+  .travel-advisory-card-compact .travel-advisory-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .travel-advisory-card-compact .travel-advisory-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-right: 3rem;
+  }
+
+  .travel-advisory-card-compact .travel-advisory-score-wrapper {
+    position: absolute;
+    top: 0.75rem;
+    right: 3.5rem;
+    margin: 0;
+  }
+
+  .travel-advisory-card-compact.has-navigation .travel-advisory-score-wrapper {
+    right: 6rem;
+  }
+
+  .travel-advisory-card-compact.has-close .travel-advisory-score-wrapper {
+    right: 6rem;
+  }
+
+  .travel-advisory-card-compact.has-navigation.has-close .travel-advisory-score-wrapper {
+    right: 8.5rem;
+  }
+}

@@ -1,0 +1,62 @@
+/**
+ * Shared "Add to calculator" button styles
+ * Used on Expenses, Income, RecurringBills, Analytics, SavingsGoals
+ */
+.add-to-calc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Icon-only button: larger tap area (40x40px), subtle default, clear hover */
+.add-to-calc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary, rgba(0, 0, 0, 0.5));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.add-to-calc-btn:hover,
+.add-to-calc-btn:focus {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  color: var(--primary, #8B5CF6);
+  transform: scale(1.05);
+}
+
+.add-to-calc-btn:active {
+  transform: scale(0.98);
+}
+
+.add-to-calc-btn svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+/* Dark theme: subtle default, primary on hover */
+[data-theme='dark'] .add-to-calc-btn {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+}
+
+[data-theme='dark'] .add-to-calc-btn:hover,
+[data-theme='dark'] .add-to-calc-btn:focus {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  color: var(--primary-light, #A78BFA);
+}
+
+/* Label always hidden for icon-only design */
+.add-to-calc-label {
+  display: none !important;
+}

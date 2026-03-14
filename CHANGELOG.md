@@ -13,6 +13,32 @@ All notable changes to this project will be documented in this file.
 ### Documentation
 
 
+## [2.3.0] - 2026-03-14
+
+### Added
+- **Modular monolith backend:** Refactored backend into 11 domain modules (Identity, Finance, Partnership, Travel, Shopping, Analytics, AI, Gamification, Notifications, Banking, Admin).
+- **Shared infrastructure:** `Paire.Shared.Kernel` (base entities, `Result<T>`, integration events) and `Paire.Shared.Infrastructure` (Email, Storage, Session validation, CSRF, logging).
+- **Integration events:** MediatR-based events (e.g., `TransactionCreatedEvent`) for decoupled cross-module communication.
+- **Feature-based frontend:** Restructured into `features/`, `shared/`, and `app/` directories with feature-specific API services.
+- **Feature-based mobile:** Mirrored frontend structure in React Native (Expo) app.
+- **Docker support:** Added `backend/Dockerfile` for Paire.Api.
+- **CI/CD:** Added `.github/workflows/backend-ci.yml` and updated `full-test-suite.yml` for backend and frontend tests.
+- **Migration guide:** Added `docs/MIGRATION_GUIDE.md` for modular monolith architecture.
+
+### Changed
+- **Backend entry point:** Switched from `YouAndMeExpensesAPI` to `Paire.Api` host project.
+- **Module registration:** Each module exposes `AddXxxModule()` and uses Contracts for cross-module dependencies.
+- **Per-module DbContexts:** Each module owns its DbContext; shared PostgreSQL database.
+- **Configuration:** Added `appsettings.Example.json` template in Paire.Api.
+
+### Removed
+- Legacy monolithic `YouAndMeExpensesAPI` project (manual cleanup recommended if directory still present).
+
+### Documentation
+- Updated `PROJECT_DOCUMENTATION.md` with modular monolith architecture, module layout, system diagram, and deployment instructions.
+- Updated `README.md` with new project structure, Quick Start (Paire.Api), and migration guide reference.
+
+
 ## [2.2.0] - 2026-03-11
 
 ### Added

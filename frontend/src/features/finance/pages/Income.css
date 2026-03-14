@@ -1,0 +1,324 @@
+/* ================================
+   Income Page Styles
+   (Similar to Expenses but with income colors)
+   ================================ */
+@import './Expenses.css';
+
+/* Professional Filter Grid Layout */
+.income-filters-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  align-items: center;
+  /* Vertically center items */
+}
+
+/* Ensure all inputs in the grid have consistent height */
+.income-filters-grid input,
+.income-filters-grid select,
+.income-filters-grid .search-input {
+  height: 48px !important;
+  /* Force consistency */
+  box-sizing: border-box;
+}
+
+/* Mobile: Stacked (Default 1fr) */
+
+/* Tablet (768px+): Search full width, date range full width below */
+@media (min-width: 768px) {
+  .income-filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-span-full {
+    grid-column: auto;
+  }
+
+  .income-filters-grid .filter-item {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Desktop (1280px+): Single row, search + date range */
+@media (min-width: 1280px) {
+  .income-filters-grid {
+    grid-template-columns: 2fr 1fr;
+    /* Search | Date range */
+  }
+
+  .search-span-full {
+    grid-column: auto;
+  }
+
+  .income-filters-grid .filter-item {
+    grid-column: auto;
+  }
+}
+
+/* DateRangePicker in grid: full width on mobile, consistent height */
+.income-filters-grid .date-range-picker,
+.income-filters-grid .picker-trigger {
+  width: 100%;
+}
+.income-filters-grid .picker-trigger {
+  height: 48px;
+  min-height: 48px;
+}
+
+.income-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+
+
+/* Grid: uses .data-cards-grid from DataCard.css (via Expenses.css) */
+
+/* ================================
+   Income Card
+   Compact height: less data than RecurringBills
+   ================================ */
+
+.income-page .income-card.data-card {
+  min-height: 240px;
+}
+
+@media (max-width: 767px) {
+  .income-page .income-card.data-card {
+    min-height: 220px;
+  }
+}
+
+.income-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  /* Enhanced glassmorphism with increased backdrop-blur saturation */
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px; /* rounded-3xl */
+  /* Multi-layered box shadows for floating effect */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.income-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  /* Enhanced floating effect with deeper shadows */
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(16, 185, 129, 0.3) inset;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Dark theme adjustments */
+[data-theme='dark'] .income-card {
+  background: rgba(15, 7, 26, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .income-card:hover {
+  background: rgba(15, 7, 26, 0.5);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(16, 185, 129, 0.4) inset;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.income-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-md);
+}
+
+.income-category {
+  font-weight: 700;
+  /* Fluid typography */
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
+  /* Mesh gradient for Vitality Green */
+  background: linear-gradient(135deg, #10B981 0%, #34D399 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-transform: capitalize;
+  letter-spacing: -0.01em;
+  filter: drop-shadow(0 1px 2px rgba(16, 185, 129, 0.2));
+}
+
+.income-amount {
+  /* Fluid typography */
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
+  font-weight: 700;
+  /* Mesh gradient for income amounts */
+  /*background: linear-gradient(135deg, #10B981 0%, #34D399 50%, #059669 100%);*/
+}
+
+/* Privacy mode overrides for income amounts */
+.income-amount.masked-number {
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  background: none !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.6;
+}
+
+[data-theme='dark'] .income-amount.masked-number {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  filter: blur(12px) !important;
+  opacity: 0.5;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  filter: drop-shadow(0 1px 2px rgba(16, 185, 129, 0.2));
+}
+
+/* Description in data-card-body: 2-line clamp so card height stays consistent */
+.data-card-body .income-description {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+  font-size: clamp(0.9375rem, 2vw, 1rem);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.income-date {
+  color: var(--text-light);
+  /* Fluid typography */
+  font-size: clamp(0.8125rem, 1.5vw, 0.875rem);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Name tag showing who added the income */
+.income-date .added-by {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-left: var(--spacing-sm);
+  padding: 2px 8px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.income-date .added-by:hover {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Email in name tag - slightly muted */
+.income-date .added-by-email {
+  color: var(--text-light);
+  font-weight: 400;
+  font-size: 0.8em;
+  margin-left: var(--spacing-xs);
+}
+
+/* ================================
+   Income Actions
+   ================================ */
+
+.income-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--bg-tertiary);
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
+
+/* Grid breakpoints defined in DataCard.css (.data-cards-grid) */
+
+/* Mobile optimization */
+@media (max-width: 767px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--spacing-md);
+  }
+
+  .page-header button {
+    width: auto;
+    min-width: fit-content;
+  }
+
+
+}
+
+/* ================================
+   Pagination Controls
+   ================================ */
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+}
+
+.pagination-info {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 8px 16px;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}

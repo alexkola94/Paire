@@ -1,0 +1,486 @@
+/* ================================
+   Transport Booking Step Styles
+   ================================ */
+
+/* Transport type selector - mirrors .budget-mode-toggle */
+.transport-type-selector {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xs);
+}
+
+/* Transport type button - mirrors .mode-btn */
+.transport-type-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  white-space: nowrap;
+}
+
+.transport-type-btn span {
+  display: inline-block;
+}
+
+.transport-type-btn.active {
+  background: var(--primary-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.transport-type-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.transport-type-btn svg {
+  flex-shrink: 0;
+}
+
+/* Provider CTA cards container */
+.transport-cta-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Individual CTA card - glassmorphism */
+.transport-cta-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  transition: all 0.2s ease;
+}
+
+.transport-cta-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.transport-cta-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.transport-cta-provider {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.transport-cta-route {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CTA link button */
+.transport-cta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.transport-cta-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(142, 68, 173, 0.3);
+}
+
+.transport-cta-link svg {
+  flex-shrink: 0;
+}
+
+/* Actions row: Search prices + Open in new tab */
+.transport-cta-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.transport-cta-search-prices {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.transport-cta-search-prices:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.transport-cta-search-prices:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Origin detection status */
+.transport-origin-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.transport-origin-status svg {
+  flex-shrink: 0;
+}
+
+.transport-origin-status .origin-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Skip hint */
+.transport-skip-hint {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-lg);
+}
+
+/* Multi-city: per-leg booking cards */
+.transport-leg-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.transport-leg-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  transition: all 0.2s ease;
+}
+
+.transport-leg-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.9rem;
+}
+
+.transport-leg-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.transport-leg-route {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.transport-leg-mode {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+  margin-left: auto;
+}
+
+.transport-leg-ctas {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.transport-leg-no-link {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: var(--spacing-xs) 0;
+}
+
+/* Loading spinner for origin detection */
+.transport-origin-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: transport-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes transport-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mobile: stack type buttons vertically */
+@media (max-width: 480px) {
+  .transport-type-selector {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .transport-type-btn {
+    width: 100%;
+    padding: var(--spacing-sm);
+  }
+
+  .transport-cta-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .transport-cta-link {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .transport-leg-ctas {
+    flex-direction: column;
+  }
+}
+
+/* ================================
+   Light Theme Overrides
+   ================================ */
+.travel-layout:not([data-theme='dark']) .transport-type-selector {
+  background: var(--travel-bg-sand);
+  border-color: var(--travel-glass-border-light);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-type-btn {
+  color: var(--travel-text-medium);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-type-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-type-btn.active {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(232, 145, 58, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-cta-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--travel-glass-border-light);
+  backdrop-filter: blur(8px);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-cta-card:hover {
+  border-color: rgba(232, 145, 58, 0.3);
+  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.1);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-cta-provider {
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-cta-route {
+  color: var(--travel-text-medium);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-cta-link {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-cta-link:hover {
+  box-shadow: 0 4px 12px rgba(232, 145, 58, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-origin-status {
+  background: rgba(232, 145, 58, 0.05);
+  border-color: rgba(232, 145, 58, 0.1);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-origin-status .origin-name {
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-leg-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--travel-glass-border-light);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-leg-number {
+  background: var(--travel-warm-primary);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-leg-route {
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-skip-hint {
+  color: var(--travel-text-medium);
+}
+
+/* ================================
+   In-app search results (TransportSearchResults)
+   ================================ */
+.transport-results {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+}
+
+.transport-results-loading,
+.transport-results-error,
+.transport-results-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.transport-results-error-detail {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+
+.transport-results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.transport-results-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.transport-results-item:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.transport-results-item-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.transport-results-price {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.transport-results-duration {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.transport-results-provider {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.transport-results-book {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+/* Light theme – results */
+.travel-layout:not([data-theme='dark']) .transport-results {
+  background: rgba(232, 145, 58, 0.05);
+  border-color: rgba(232, 145, 58, 0.15);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-results-loading,
+.travel-layout:not([data-theme='dark']) .transport-results-error,
+.travel-layout:not([data-theme='dark']) .transport-results-empty {
+  color: var(--travel-text-medium);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-results-item {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--travel-glass-border-light);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-results-item:hover {
+  border-color: rgba(232, 145, 58, 0.3);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-results-price {
+  color: var(--travel-text-dark);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-cta-search-prices {
+  background: rgba(232, 145, 58, 0.2);
+  border-color: rgba(232, 145, 58, 0.4);
+}
+
+.travel-layout:not([data-theme='dark']) .transport-cta-search-prices:hover:not(:disabled) {
+  background: rgba(232, 145, 58, 0.35);
+}

@@ -4,34 +4,34 @@ overview: Full refactoring of the You&me Expenses (Paire) project -- backend (.N
 todos:
   - id: phase-1
     content: "Phase 1: Foundation -- create solution structure, Shared.Kernel, Shared.Infrastructure, Paire.Api host, add MediatR"
-    status: pending
+    status: completed
   - id: phase-2
     content: "Phase 2: Identity Module -- extract auth, profiles, users, sessions, 2FA, streaks"
-    status: pending
+    status: completed
   - id: phase-3
     content: "Phase 3: Partnership Module -- extract partnerships, invitations, IPartnershipResolver contract"
-    status: pending
+    status: completed
   - id: phase-4
     content: "Phase 4: Finance Module -- extract transactions, budgets, loans, savings, recurring bills, imports"
-    status: pending
+    status: completed
   - id: phase-5
     content: "Phase 5: Travel Module -- extract trips, itinerary, packing, documents, travel expenses, notifications"
-    status: pending
+    status: completed
   - id: phase-6
     content: "Phase 6: Remaining Modules -- Shopping, Analytics, AI, Gamification, Notifications, Banking, Admin"
-    status: pending
+    status: completed
   - id: phase-7
     content: "Phase 7: Delete old project, finalize backend, consolidate migrations, update Dockerfile"
-    status: pending
+    status: completed
   - id: phase-8
     content: "Phase 8: Frontend restructuring -- features/, shared/, split api.js, update routing"
-    status: pending
+    status: completed
   - id: phase-9
     content: "Phase 9: Mobile app restructuring -- mirror frontend feature structure in React Native"
-    status: pending
+    status: completed
   - id: phase-10
     content: "Phase 10: CI/CD, Docker, documentation updates"
-    status: pending
+    status: completed
 isProject: false
 ---
 

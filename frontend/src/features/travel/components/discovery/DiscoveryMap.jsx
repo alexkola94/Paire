@@ -1,0 +1,558 @@
+import { memo, useCallback, useRef, useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { FiHome } from 'react-icons/fi'
+import { useTravelMode } from '../../context/TravelModeContext'
+import POIMarker from './POIMarker'
+import { MAP_STYLES, DISCOVERY_MAP_CONFIG } from '../../utils/travelConstants'
+import { reverseGeocode } from '../../services/discoveryService'
+
+// react-map-gl v8 requires subpath imports for Mapbox
+import { Map, Marker, GeolocateControl } from 'react-map-gl/mapbox'
+import 'mapbox-gl/dist/mapbox-gl.css'
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
+
+/**
+ * DiscoveryMap Component
+ * Interactive Mapbox GL map for Discovery Mode
+ */
+const DiscoveryMap = memo(({
+  pois = [],
+  stays = [],
+  onPOIClick,
+  onStayClick,
+  selectedPOIId,
+  selectedStayId,
+  showTripMarker = true,
+  mapStyle = 'detailed'
+}) => {
+  const { activeTrip, activeTripCities, mapViewState, updateMapViewState } = useTravelMode()
+  const mapRef = useRef(null)
+  const longPressTimer = useRef(null)
+  const isLongPress = useRef(false)
+  const touchStartTime = useRef(0)
+  const [homeLocation, setHomeLocation] = useState(null)
+  const [isMapReady, setIsMapReady] = useState(false)
+  const isInitializing = useRef(false)
+
+  // Get user's current location (Home) on mount
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setHomeLocation({ latitude, longitude })
+      },
+      (error) => {
+        // Fail silently – home location is optional
+        console.warn('Geolocation unavailable for DiscoveryMap:', error)
+      }
+    )
+  }, [])
+
+  // Reset map ready state when activeTrip changes to allow re-initialization
+  useEffect(() => {
+    return () => {
+      setIsMapReady(false)
+      isInitializing.current = false
+    }
+  }, [activeTrip?.id])
+
+  // Initialize view state:
+  // - For multi-city trips, center between all cities (and trip center and home) with an appropriate zoom
+  // - Otherwise, fall back to single trip center
+  useEffect(() => {
+    // If view state is already initialized or initialization is in progress, do not re-calculate.
+    // This prevents an infinite loop where setting the view triggers this effect again.
+    if (mapViewState || isInitializing.current) return
+
+    isInitializing.current = true
+
+    // Safely parse trip coordinates
+    const tripLat = activeTrip?.latitude != null ? Number(activeTrip.latitude) : null
+    const tripLng = activeTrip?.longitude != null ? Number(activeTrip.longitude) : null
+
+    // Safely parse city coordinates
+    const citiesWithCoords = (activeTripCities || []).reduce((acc, c) => {
+      const lat = c.latitude != null ? Number(c.latitude) : null
+      const lng = c.longitude != null ? Number(c.longitude) : null
+
+      if (lat != null && !isNaN(lat) && lng != null && !isNaN(lng)) {
+        acc.push({ ...c, latitude: lat, longitude: lng })
+      }
+      return acc
+    }, [])
+
+    // Helper to update viewState in one place with comprehensive validation
+    const setView = (latitude, longitude, zoom) => {
+      // Final safety check - must be finite numbers (not NaN, Infinity, or -Infinity)
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isFinite(zoom)) {
+        console.warn('DiscoveryMap: setView received invalid values', { latitude, longitude, zoom })
+        return
+      }
+
+      updateMapViewState({
+        latitude,
+        longitude,
+        zoom,
+        pitch: 0,
+        bearing: 0
+      })
+    }
+
+    // Multi-city: fit around all cities + home location
+    if (
+      activeTrip?.tripType === 'multi-city' &&
+      citiesWithCoords.length > 0
+    ) {
+      const lats = citiesWithCoords.map(c => c.latitude)
+      const lngs = citiesWithCoords.map(c => c.longitude)
+
+      // Include home location if available
+      if (homeLocation) {
+        const homeLat = Number(homeLocation.latitude)
+        const homeLng = Number(homeLocation.longitude)
+        if (Number.isFinite(homeLat) && Number.isFinite(homeLng)) {
+          lats.push(homeLat)
+          lngs.push(homeLng)
+        }
+      }
+
+      // Optionally include trip center if available
+      if (Number.isFinite(tripLat) && Number.isFinite(tripLng)) {
+        lats.push(tripLat)
+        lngs.push(tripLng)
+      }
+
+      // Guard against empty arrays (would cause Infinity from Math.min/max)
+      if (lats.length === 0 || lngs.length === 0) {
+        console.warn('DiscoveryMap: No valid coordinates for multi-city view')
+        return
+      }
+
+      const minLat = Math.min(...lats)
+      const maxLat = Math.max(...lats)
+      const minLng = Math.min(...lngs)
+      const maxLng = Math.max(...lngs)
+
+      // Verify calculated values are finite
+      if (!Number.isFinite(minLat) || !Number.isFinite(maxLat) ||
+        !Number.isFinite(minLng) || !Number.isFinite(maxLng)) {
+        console.warn('DiscoveryMap: Invalid bounds calculated', { minLat, maxLat, minLng, maxLng })
+        return
+      }
+
+      const centerLat = (minLat + maxLat) / 2
+      const centerLng = (minLng + maxLng) / 2
+
+      // Rough distance-based zoom heuristic
+      const maxDelta = Math.max(maxLat - minLat, maxLng - minLng)
+      let zoom = 6
+      if (maxDelta < 0.5) zoom = 11
+      else if (maxDelta < 1.5) zoom = 9
+      else if (maxDelta < 4) zoom = 7
+      else if (maxDelta < 10) zoom = 5
+      else zoom = 3.5
+
+      setView(centerLat, centerLng, zoom)
+      return
+    }
+
+    // Default: center on single trip location
+    if (Number.isFinite(tripLat) && Number.isFinite(tripLng)) {
+      setView(tripLat, tripLng, DISCOVERY_MAP_CONFIG.defaultZoom || 12)
+    }
+  }, [activeTrip, activeTripCities, homeLocation, updateMapViewState]) // REMOVED mapViewState from dependencies to break loop
+
+  /**
+   * Handle map move end - sync to context
+   */
+  const handleMoveEnd = useCallback((evt) => {
+    // Cancel long press on move
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+
+    const vs = evt.viewState
+    if (!vs ||
+      !Number.isFinite(vs.latitude) ||
+      !Number.isFinite(vs.longitude) ||
+      !Number.isFinite(vs.zoom)) {
+      return
+    }
+
+    // Clamp values to valid Mapbox ranges before updating context
+    const clamp = (val, min, max) => Math.max(min, Math.min(max, val))
+
+    updateMapViewState({
+      latitude: clamp(vs.latitude, -85, 85),
+      longitude: clamp(vs.longitude, -180, 180),
+      zoom: clamp(vs.zoom, 0, 22),
+      pitch: clamp(Number.isFinite(vs.pitch) ? vs.pitch : 0, 0, 85),
+      bearing: clamp(Number.isFinite(vs.bearing) ? vs.bearing : 0, -180, 180)
+    })
+  }, [updateMapViewState])
+
+  /**
+   * Handle map load
+   */
+  const handleLoad = useCallback(() => {
+    if (mapRef.current) {
+      setIsMapReady(true)
+    }
+  }, [])
+
+  /**
+   * Handle POI marker click
+   */
+  const handleMarkerClick = useCallback((poi) => {
+    if (onPOIClick) {
+      onPOIClick(poi)
+    }
+  }, [onPOIClick])
+
+  /**
+   * Handle Stay/Accommodation marker click
+   */
+  const handleStayClick = useCallback((stay) => {
+    if (onStayClick) {
+      onStayClick(stay)
+    }
+  }, [onStayClick])
+
+  /**
+   * Handle Map Click (Tap)
+   * Detects clicks on map features (labels)
+   */
+  const handleMapClick = useCallback(async (evt) => {
+    // If it was a long press, ignore click
+    if (isLongPress.current) {
+      isLongPress.current = false
+      return
+    }
+
+    // Check for rendered features under cursor
+    if (mapRef.current) {
+      const features = mapRef.current.queryRenderedFeatures(evt.point)
+
+      // Find POI labels
+      const poiFeature = features.find(f =>
+        f.layer.id.includes('poi-label') ||
+        f.layer.id.includes('transit-label') ||
+        f.layer.id.includes('airport-label')
+      )
+
+      if (poiFeature && onPOIClick) {
+        // Construct temporary POI from feature
+        const tempPOI = {
+          id: `map-feature-${poiFeature.id || Date.now()}`,
+          poiId: `mapbox-feature-${poiFeature.id || Date.now()}`,
+          name: poiFeature.properties.name || poiFeature.properties.name_en || 'Unknown Place',
+          latitude: evt.lngLat.lat,
+          longitude: evt.lngLat.lng,
+          category: 'attraction', // Default
+          source: 'map_click',
+          address: '' // Could reverse geocode if needed
+        }
+        onPOIClick(tempPOI)
+      }
+    }
+  }, [onPOIClick])
+
+  /**
+   * Handle Long Press (Drop Pin)
+   */
+  const handleLongPress = useCallback(async (lngLat) => {
+    isLongPress.current = true
+
+    // Reverse geocode to get details
+    const result = await reverseGeocode(lngLat.lat, lngLat.lng)
+
+    if (result && onPOIClick) {
+      // Add "Dropped Pin" label if name is generic
+      if (!result.name || result.name === 'Unknown Location') {
+        result.name = 'Dropped Pin'
+      }
+      onPOIClick(result)
+    }
+  }, [onPOIClick])
+
+  const onMouseDown = useCallback((evt) => {
+    longPressTimer.current = setTimeout(() => {
+      handleLongPress(evt.lngLat)
+    }, 500) // 500ms for long press
+  }, [handleLongPress])
+
+  const onMouseUp = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
+  const onTouchStart = useCallback((evt) => {
+    touchStartTime.current = Date.now()
+    // Get touch coordinates (simplified)
+    const touch = evt.points[0]
+    longPressTimer.current = setTimeout(() => {
+      handleLongPress(touch)
+    }, 500)
+  }, [handleLongPress])
+
+  const onTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
+  // Don't render if no token or coordinates
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="discovery-map-error">
+        <p>Map not available. Mapbox token not configured.</p>
+      </div>
+    )
+  }
+
+  // Ensure activeTrip coordinates are numbers
+  const tripLat = activeTrip?.latitude != null ? Number(activeTrip.latitude) : 0
+  const tripLng = activeTrip?.longitude != null ? Number(activeTrip.longitude) : 0
+  const isTripLocValid = !isNaN(tripLat) && !isNaN(tripLng) && (tripLat !== 0 || tripLng !== 0)
+
+  // Show loading state while initializing to prevent freeze
+  if (!mapViewState && !isTripLocValid) {
+    return (
+      <div className="discovery-map-loading">
+        <div className="discovery-map-spinner" />
+        <p>Loading map...</p>
+      </div>
+    )
+  }
+
+  // Helper to validate, sanitize, and clamp a number within bounds
+  const safeNumber = (value, fallback, min = -Infinity, max = Infinity) => {
+    const num = Number(value)
+    if (!Number.isFinite(num)) return fallback
+    return Math.max(min, Math.min(max, num))
+  }
+
+  // Build viewState with comprehensive validation and bounds clamping
+  // This prevents the Mapbox matrix calculation from entering infinite recursion
+  const defaultLat = isTripLocValid ? tripLat : 40.7128 // NYC fallback
+  const defaultLng = isTripLocValid ? tripLng : -74.0060
+  const defaultZoom = DISCOVERY_MAP_CONFIG.defaultZoom || 12
+
+  // Build initial view state with validation and clamping
+  const initialViewState = {
+    latitude: safeNumber(mapViewState?.latitude, defaultLat, -85, 85),
+    longitude: safeNumber(mapViewState?.longitude, defaultLng, -180, 180),
+    zoom: safeNumber(mapViewState?.zoom, defaultZoom, 0, 22),
+    pitch: safeNumber(mapViewState?.pitch, 0, 0, 85),
+    bearing: safeNumber(mapViewState?.bearing, 0, -180, 180)
+  }
+
+  // Final validation - if coordinates are still invalid, show loading
+  if (!Number.isFinite(initialViewState.latitude) || !Number.isFinite(initialViewState.longitude) ||
+    !Number.isFinite(initialViewState.zoom)) {
+    console.warn('DiscoveryMap: Invalid viewState after sanitization', initialViewState)
+    return (
+      <div className="discovery-map-loading">
+        <div className="discovery-map-spinner" />
+        <p>Loading map...</p>
+      </div>
+    )
+  }
+
+  return (
+    <motion.div
+      className="discovery-map-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Mapbox map using UNCONTROLLED mode with initialViewState */}
+      <Map
+        ref={mapRef}
+        initialViewState={initialViewState}
+        onMoveEnd={handleMoveEnd}
+        onLoad={handleLoad}
+        onClick={handleMapClick}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        mapboxAccessToken={MAPBOX_TOKEN}
+        mapStyle={MAP_STYLES.streets}
+        style={{ width: '100%', height: '100%' }}
+        minZoom={DISCOVERY_MAP_CONFIG.minZoom}
+        maxZoom={DISCOVERY_MAP_CONFIG.maxZoom}
+        attributionControl={false}
+        scrollZoom={true}
+        dragPan={true}
+        dragRotate={true}
+        doubleClickZoom={true}
+        touchZoomRotate={true}
+        touchPitch={true}
+        keyboard={true}
+      >
+        {/* Navigation controls (zoom buttons) - hidden, we use custom */}
+
+        {/* Geolocate control */}
+        <GeolocateControl
+          position="bottom-right"
+          trackUserLocation
+          showAccuracyCircle={false}
+          style={{ display: 'none' }} // Hidden, controlled by DiscoveryControls
+        />
+
+        {/* Home marker (user's current location) - starting point */}
+        {homeLocation && (
+          <Marker
+            latitude={homeLocation.latitude}
+            longitude={homeLocation.longitude}
+            anchor="center"
+          >
+            <div className="discovery-home-marker">
+              <FiHome size={18} />
+            </div>
+          </Marker>
+        )}
+
+        {/* Trip center marker */}
+        {showTripMarker && activeTrip?.latitude && activeTrip?.longitude && (
+          <Marker
+            latitude={activeTrip.latitude}
+            longitude={activeTrip.longitude}
+            anchor="center"
+          >
+            <div className="trip-center-marker">
+              <div className="trip-marker-pulse" />
+              <div className="trip-marker-dot" />
+            </div>
+          </Marker>
+        )}
+
+        {/* Multi-city trip city markers (highlight route stops) */}
+        {activeTrip?.tripType === 'multi-city' &&
+          (activeTripCities || [])
+            .filter(c => c.latitude != null && c.longitude != null)
+            .sort((a, b) => (a.orderIndex ?? a.order ?? 0) - (b.orderIndex ?? b.order ?? 0))
+            .map((city, index) => (
+              <Marker
+                key={city.id || `city-${index}`}
+                latitude={city.latitude}
+                longitude={city.longitude}
+                anchor="center"
+              >
+                <div className="discovery-city-marker">
+                  <div className="discovery-city-badge">{index + 1}</div>
+                  <div className="discovery-city-label">
+                    <span className="discovery-city-name">{city.name}</span>
+                    {city.country && (
+                      <span className="discovery-city-country">{city.country}</span>
+                    )}
+                  </div>
+                </div>
+              </Marker>
+            ))}
+
+        {/* POI markers - deduplicate by id/poiId to prevent duplicate key warnings */}
+        {(() => {
+          const seen = new Set()
+          return pois.filter(poi => {
+            const key = poi.id || poi.poiId
+            if (!key || seen.has(key)) return false
+            seen.add(key)
+            return true
+          })
+        })().map((poi, index) => (
+          <Marker
+            key={`poi-${poi.id || poi.poiId}-${index}`}
+            latitude={poi.latitude}
+            longitude={poi.longitude}
+            anchor="bottom"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation()
+              handleMarkerClick(poi)
+            }}
+          >
+            <POIMarker
+              poi={poi}
+              isSelected={selectedPOIId === poi.id || selectedPOIId === poi.poiId}
+              index={index}
+            />
+          </Marker>
+        ))}
+
+        {/* Accommodation/Stay markers - deduplicate by id */}
+        {(() => {
+          const seen = new Set()
+          return stays.filter(stay => {
+            const key = stay.id
+            if (!key || seen.has(key)) return false
+            seen.add(key)
+            return true
+          })
+        })().map((stay, index) => (
+          <Marker
+            key={`stay-${stay.id}-${index}`}
+            latitude={stay.latitude}
+            longitude={stay.longitude}
+            anchor="bottom"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation()
+              handleStayClick(stay)
+            }}
+          >
+            <div
+              className={`stay-marker ${selectedStayId === stay.id ? 'selected' : ''}`}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: selectedStayId === stay.id
+                  ? 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)'
+                  : 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+                border: selectedStayId === stay.id
+                  ? '3px solid white'
+                  : '2px solid rgba(255, 255, 255, 0.8)',
+                boxShadow: selectedStayId === stay.id
+                  ? '0 4px 16px rgba(155, 89, 182, 0.5)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                transform: selectedStayId === stay.id ? 'scale(1.15)' : 'scale(1)'
+              }}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 7v11a2 2 0 002 2h14a2 2 0 002-2V7" />
+                <path d="M21 7H3a2 2 0 01-2-2V4a2 2 0 012-2h18a2 2 0 012 2v1a2 2 0 01-2 2z" />
+                <path d="M3 11h18" />
+              </svg>
+            </div>
+          </Marker>
+        ))}
+      </Map>
+    </motion.div>
+  )
+})
+
+DiscoveryMap.displayName = 'DiscoveryMap'
+
+export default DiscoveryMap

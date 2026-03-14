@@ -1,0 +1,58 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        working-directory: ./backend
+        run: dotnet restore Paire.sln
+
+      - name: Build
+        working-directory: ./backend
+        run: dotnet build Paire.sln --no-restore -c Release
+
+  test:
+    name: Run Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run tests
+        working-directory: ./backend
+        run: dotnet test Paire.sln --no-build -c Release --verbosity normal

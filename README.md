@@ -84,12 +84,11 @@ A comprehensive expense tracking and financial management platform for couples.
 git clone <your-repo-url>
 cd You-me-Expenses
 
-# 2. Setup Backend
-cd backend/YouAndMeExpensesAPI
-cp appsettings.json appsettings.Development.json
-# Edit appsettings.Development.json with your Supabase credentials
-dotnet restore
-dotnet run
+# 2. Setup Backend (Modular Monolith - Paire.Api)
+cd backend
+cp src/Host/Paire.Api/appsettings.Example.json src/Host/Paire.Api/appsettings.json
+# Edit appsettings.json with your Supabase, JWT, and other credentials
+dotnet run --project src/Host/Paire.Api/Paire.Api.csproj
 
 # 3. Setup Frontend (in new terminal)
 cd frontend
@@ -171,85 +170,51 @@ npm run dev
 
 ```
 You-me-Expenses/
-├── 📁 backend/
-│   └── YouAndMeExpensesAPI/
-│       ├── Controllers/         # 12 API controllers
-│       │   ├── AnalyticsController.cs
-│       │   ├── BudgetsController.cs
-│       │   ├── ChatbotController.cs
-│       │   ├── LoansController.cs
-│       │   ├── LoanPaymentsController.cs      # 🆕 NEW!
-│       │   ├── RecurringBillsController.cs    # 🆕 NEW!
-│       │   ├── RemindersController.cs
-│       │   ├── SavingsGoalsController.cs      # 🆕 NEW!
-│       │   ├── ShoppingListsController.cs     # 🆕 NEW!
-│       │   ├── EconomicDataController.cs       # 🆕 NEW!
-│       │   ├── SystemController.cs
-│       │   └── TransactionsController.cs
-│       ├── Data/                # Entity Framework DbContext
-│       ├── DTOs/                # Data Transfer Objects
-│       ├── Models/              # Database models
-│       ├── Services/            # Business logic
-│       ├── Migrations/          # EF Core migrations
-│       └── Program.cs           # API entry point
+├── 📁 backend/                  # Modular Monolith (.NET 8)
+│   ├── Paire.sln
+│   ├── Dockerfile               # Build Paire.Api
+│   └── src/
+│       ├── Host/Paire.Api/      # Slim API host
+│       ├── Shared/
+│       │   ├── Paire.Shared.Kernel/       # Base entities, events
+│       │   └── Paire.Shared.Infrastructure/ # Email, storage, logging
+│       └── Modules/
+│           ├── Paire.Modules.Identity/
+│           ├── Paire.Modules.Finance/
+│           ├── Paire.Modules.Partnership/
+│           ├── Paire.Modules.Travel/
+│           ├── Paire.Modules.Shopping/
+│           ├── Paire.Modules.Analytics/
+│           ├── Paire.Modules.AI/
+│           ├── Paire.Modules.Gamification/
+│           ├── Paire.Modules.Notifications/
+│           ├── Paire.Modules.Banking/
+│           └── Paire.Modules.Admin/
 │
-├── 📁 frontend/
+├── 📁 frontend/                 # React 18 + Vite
 │   ├── src/
-│   │   ├── components/          # Reusable components
-│   │   │   ├── Chatbot.jsx
-│   │   │   ├── ErrorBoundary.jsx
-│   │   │   ├── Layout.jsx
-│   │   │   ├── Toast.jsx
-│   │   │   └── TransactionForm.jsx
-│   │   ├── pages/               # Page components (13 pages)
-│   │   │   ├── Analytics.jsx
-│   │   │   ├── Budgets.jsx
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Expenses.jsx
-│   │   │   ├── Income.jsx
-│   │   │   ├── Loans.jsx (enhanced)
-│   │   │   ├── Login.jsx
-│   │   │   ├── Partnership.jsx
-│   │   │   ├── Profile.jsx
-│   │   │   ├── RecurringBills.jsx       # 🆕 NEW!
-│   │   │   ├── ReminderSettings.jsx
-│   │   │   ├── SavingsGoals.jsx         # 🆕 NEW!
-│   │   │   ├── ShoppingLists.jsx        # 🆕 NEW!
-│   │   │   └── EconomicNews.jsx         # 🆕 NEW!
-│   │   ├── services/            # API & Supabase
-│   │   │   ├── api.js (enhanced)
-│   │   │   ├── supabase.js
-│   │   │   └── greeceEconomicData.js  # 🆕 NEW!
+│   │   ├── app/                 # App shell, routes, providers
+│   │   ├── shared/              # Shared components, hooks, services, utils
+│   │   ├── features/            # Feature modules (auth, finance, travel, etc.)
 │   │   ├── i18n/                # Translations (4 languages)
-│   │   │   └── locales/
-│   │   │       ├── en.json
-│   │   │       ├── el.json
-│   │   │       ├── es.json
-│   │   │       └── fr.json
-│   │   ├── styles/              # Global CSS
-│   │   ├── utils/               # Utility functions
-│   │   ├── tests/               # Unit tests
-│   │   ├── App.jsx              # Main app (updated)
-│   │   └── main.jsx             # Entry point
-│   ├── public/                  # Static assets
-│   ├── .env.example             # Environment template
-│   ├── package.json
-│   └── vite.config.js
+│   │   └── main.jsx
+│   ├── public/
+│   ├── .env.example
+│   └── package.json
 │
-├── 📁 supabase/                 # Database config
-│   ├── migrations/              # SQL migrations
-│   ├── schema.sql
-│   └── config.toml
+├── 📁 mobile-app/               # React Native (Expo)
+│   ├── app/                     # Expo Router (file-based)
+│   ├── features/                # Feature modules
+│   ├── shared/                  # Shared components, services
+│   └── package.json
 │
-├── 📁 docs/                     # Documentation (40+ files)
+├── 📁 docs/                     # Documentation
 │   ├── HOW_TO_RUN.md
-│   ├── COMPLETE_FEATURES_ROADMAP.md    # 🆕 NEW!
-│   ├── FINAL_IMPLEMENTATION_REPORT.md  # 🆕 NEW!
+│   ├── MIGRATION_GUIDE.md       # Modular monolith migration
 │   └── ... (more docs)
 │
-├── .gitignore
-├── README.md                    # This file!
-└── .env.example                 # Environment template
+├── README.md
+└── CHANGELOG.md
 ```
 
 ---
@@ -286,6 +251,7 @@ You-me-Expenses/
 - 🚀 [HOW_TO_RUN.md](./docs/HOW_TO_RUN.md) - **Start here!**
 - ⚡ [QUICKSTART.md](./docs/QUICKSTART.md) - 5-minute setup
 - 📖 [SETUP.md](./docs/SETUP.md) - Detailed setup guide
+- 🔄 [MIGRATION_GUIDE.md](./docs/MIGRATION_GUIDE.md) - Modular monolith architecture
 
 ### **Features:**
 - 🎯 [COMPLETE_FEATURES_ROADMAP.md](./docs/COMPLETE_FEATURES_ROADMAP.md) - All features
@@ -374,9 +340,15 @@ VITE_BACKEND_API_URL=http://localhost:5038
 ### **Quick Commands:**
 
 ```bash
-# Backend
-cd backend/YouAndMeExpensesAPI
-dotnet run                    # Start API on port 5038
+# Backend (Modular Monolith)
+cd backend
+dotnet run --project src/Host/Paire.Api/Paire.Api.csproj   # Start API
+dotnet build Paire.sln                                      # Build solution
+dotnet test Paire.sln                                       # Run tests
+
+# Backend with Docker
+docker build -t paire-api -f backend/Dockerfile backend/
+docker run -p 5038:80 paire-api
 
 # Frontend
 cd frontend
@@ -384,6 +356,10 @@ npm run dev                   # Start dev server on port 5173
 npm run build                 # Build for production
 npm run preview               # Preview production build
 npm test                      # Run tests
+
+# Mobile
+cd mobile-app
+npx expo start                # Start Expo dev server
 
 # Database
 cd supabase
@@ -447,7 +423,7 @@ Info:      #add8e6  (Light Blue)
 ## 🔧 **Configuration**
 
 ### **Backend Configuration:**
-Location: `backend/YouAndMeExpensesAPI/appsettings.json`
+Location: `backend/src/Host/Paire.Api/appsettings.json` (see `appsettings.Example.json` for template)
 
 Required settings:
 - Supabase URL and key
@@ -509,8 +485,8 @@ npm test -- --watch           # Watch mode
 
 ### **Backend Tests:**
 ```bash
-cd backend/YouAndMeExpenses.Tests
-dotnet test                   # Run all tests
+cd backend
+dotnet test Paire.sln         # Run all tests (includes YouAndMeExpenses.Tests)
 dotnet test --verbosity detailed
 ```
 
@@ -555,15 +531,20 @@ See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed instructions.
 ### **Completed (v2.2):** ✅
 - ✅ Mobile app (React Native) - companion app for capturing expenses and receipts on the go
 
+### **Completed (v2.0):** ✅
+- ✅ Modular monolith backend refactor - 11 domain modules (Identity, Finance, Partnership, Travel, Shopping, Analytics, AI, Gamification, Notifications, Banking, Admin)
+- ✅ Feature-based frontend structure (`features/`, `shared/`, `app/`)
+- ✅ Feature-based mobile app structure
+- ✅ Shared infrastructure (Email, Storage, Session) in Paire.Shared.Infrastructure
+- ✅ Integration events (MediatR) for cross-module communication
+
 ### **Planned (v2.1):**
 - [ ] Budget templates
 - [ ] Savings goal milestones
 - [ ] Bill payment integration
 - [ ] Shopping list sharing
 - [ ] Export to PDF/Excel
-- [ ] Mobile app (React Native)
 - [ ] Recurring transaction auto-creation
-- [ ] Bank integration (Plaid)
 
 ### **Considering (v3.0):**
 - [ ] Investment tracking
@@ -673,7 +654,7 @@ If you find this helpful, please give it a star ⭐
 
 ---
 
-**Version 2.2.0** - Analytics, dashboard refinements, and mobile companion app.  
+**Version 2.3.0** - Modular monolith backend, feature-based frontend/mobile, analytics and mobile companion app.  
 **Last Updated:** March 2026
 
 ---

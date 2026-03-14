@@ -1,0 +1,530 @@
+/* ========================================
+   Layout Settings Modal
+   Glass-morphism styling for TravelHome customization
+   ======================================== */
+
+/* Local Theme Variables - Light Mode */
+/* Scoped to modal backdrop so they do not override main app theme when Travel unmounts */
+.layout-modal-backdrop {
+    /* Spacing variables - required for layout */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+
+    /* Warm beige background like TravelLightTheme */
+    --modal-bg: #fffcf7;
+    --modal-item-bg: rgba(232, 145, 58, 0.04);
+    --modal-item-border: rgba(232, 145, 58, 0.12);
+    --modal-item-hover: rgba(232, 145, 58, 0.08);
+    --modal-footer-bg: rgba(250, 248, 245, 0.5);
+    /* Subtle warm tint */
+    --modal-backdrop: rgba(45, 41, 38, 0.4);
+
+    /* Warm primary accent */
+    --primary: #e8913a;
+    --primary-gradient: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+    --modal-btn-text: #ffffff;
+
+    /* Text colors */
+    --text-primary: #3d3530;
+    --text-secondary: #6b6058;
+    --text-light: #9a9088;
+
+    /* Error color for reset button */
+    --error: #ef4444;
+
+    --modal-danger-bg: rgba(239, 68, 68, 0.1);
+    --modal-danger-bg-subtle: rgba(239, 68, 68, 0.05);
+    --modal-danger-border: rgba(239, 68, 68, 0.3);
+
+    /* Scrollbar consistent with theme */
+    --scrollbar-thumb: rgba(232, 145, 58, 0.2);
+    --scrollbar-thumb-hover: rgba(232, 145, 58, 0.4);
+
+    /* Animations */
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --shadow-md: 0 4px 6px -1px rgba(180, 120, 60, 0.1), 0 2px 4px -1px rgba(180, 120, 60, 0.06);
+    --radius-lg: 24px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+
+    /* Glass border */
+    --glass-border: 1px solid rgba(232, 145, 58, 0.12);
+    --glass-bg: rgba(255, 252, 247, 0.95);
+    --glass-shadow: 0 8px 32px rgba(180, 120, 60, 0.08);
+}
+
+/* Dark Mode Overrides - scoped to modal only */
+.layout-modal-backdrop[data-theme='dark'] {
+    --modal-item-bg: rgba(255, 255, 255, 0.03);
+    --modal-item-border: rgba(255, 255, 255, 0.08);
+    --modal-item-hover: rgba(255, 255, 255, 0.06);
+    --modal-footer-bg: rgba(0, 0, 0, 0.2);
+    --modal-backdrop: rgba(0, 0, 0, 0.75);
+    --modal-btn-text: #ffffff;
+    --modal-danger-bg: rgba(248, 113, 113, 0.15);
+    --modal-danger-bg-subtle: rgba(248, 113, 113, 0.08);
+    --modal-danger-border: rgba(248, 113, 113, 0.4);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-light: #64748b;
+    --error: #f87171;
+    --glass-bg: rgba(30, 27, 36, 0.98);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.layout-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--modal-backdrop);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+}
+
+.layout-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    height: fit-content;
+    width: min(520px, 95vw);
+    max-height: 85vh;
+    background: var(--glass-bg);
+    border-radius: var(--radius-lg);
+    border: var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header */
+.layout-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    border-bottom: var(--glass-border);
+}
+
+.layout-modal-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.layout-modal-title .title-icon {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.layout-modal-title h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--modal-item-bg);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.close-btn:hover {
+    background: var(--modal-item-hover);
+    color: var(--text-primary);
+}
+
+.close-btn svg {
+    font-size: 1.25rem;
+}
+
+/* Content */
+.layout-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    scrollbar-gutter: stable;
+    /* Prevents layout shift */
+}
+
+/* Custom Scrollbar */
+.layout-modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.layout-modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.layout-modal-content::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 10px;
+}
+
+.layout-modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* Presets Section */
+.presets-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.presets-section h3 {
+    margin: 0 0 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.presets-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md);
+}
+
+.preset-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-sm);
+    background: var(--modal-item-bg);
+    border: 1px solid var(--modal-item-border);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.preset-btn:hover {
+    background: var(--modal-item-hover);
+    border-color: var(--primary);
+    /* subtle highlight on hover */
+    color: var(--text-primary);
+}
+
+.preset-btn.active {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    color: var(--modal-btn-text);
+    box-shadow: var(--shadow-md);
+}
+
+.preset-icon {
+    font-size: 1.5rem;
+}
+
+.preset-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Column Tabs */
+.column-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    background: var(--modal-item-bg);
+    border: 1px solid var(--modal-item-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.tab-btn:hover {
+    background: var(--modal-item-hover);
+}
+
+.tab-btn.active {
+    background: color-mix(in srgb, var(--primary), transparent 90%);
+    /* Based on primary color with opacity */
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Sections List */
+.sections-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.sections-hint {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-align: center;
+}
+
+.section-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: 12px 16px;
+    background: var(--modal-item-bg);
+    border: 1px solid var(--modal-item-border);
+    border-radius: var(--radius-md);
+    cursor: grab;
+    transition: var(--transition);
+}
+
+.section-item:active {
+    cursor: grabbing;
+}
+
+.section-item:hover {
+    background: var(--modal-item-hover);
+    border-color: var(--modal-item-border);
+}
+
+.section-item.hidden {
+    opacity: 0.5;
+}
+
+.section-drag-handle {
+    display: flex;
+    align-items: center;
+    color: var(--text-light);
+    font-size: 1.25rem;
+}
+
+.section-label {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.visibility-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--modal-item-bg);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.visibility-btn:hover {
+    background: var(--modal-item-hover);
+    color: var(--primary);
+}
+
+/* Footer */
+.layout-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    border-top: var(--glass-border);
+    background: var(--modal-footer-bg);
+}
+
+.reset-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 10px 16px;
+    background: transparent;
+    border: 1px solid var(--modal-danger-border);
+    border-radius: var(--radius-sm);
+    color: var(--error);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.reset-btn:hover {
+    background: var(--modal-danger-bg);
+    border-color: var(--error);
+}
+
+.footer-actions {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.cancel-btn {
+    padding: 10px 20px;
+    background: var(--modal-item-bg);
+    border: 1px solid var(--modal-item-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.cancel-btn:hover {
+    background: var(--modal-item-hover);
+    color: var(--text-primary);
+}
+
+.save-btn {
+    padding: 10px 24px;
+    background: var(--primary-gradient);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--modal-btn-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.save-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 480px) {
+    .layout-modal {
+        width: 100%;
+        max-height: 85vh;
+        height: auto;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: 0;
+        border-radius: 24px 24px 0 0;
+        border-bottom: none;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .layout-modal-header {
+        padding: 12px;
+        flex-shrink: 0;
+    }
+
+    .layout-modal-content {
+        padding: 12px;
+        flex: 1;
+        overflow-y: auto;
+        min-height: 200px;
+        max-height: calc(85vh - 140px); /* Account for header and footer */
+    }
+
+    .sections-list-container {
+        min-height: 150px;
+    }
+
+    .presets-row {
+        gap: 8px;
+    }
+
+    .preset-btn {
+        padding: 10px 4px;
+    }
+
+    .preset-name {
+        font-size: 0.7rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .column-tabs {
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .tab-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .section-item {
+        padding: 10px 12px;
+    }
+
+    .layout-modal-footer {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        flex-shrink: 0;
+    }
+
+    .footer-actions {
+        width: 100%;
+        order: 1;
+        /* Show actions first */
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .cancel-btn,
+    .save-btn {
+        width: 100%;
+        padding: 12px;
+        justify-content: center;
+    }
+
+    .reset-btn {
+        width: 100%;
+        justify-content: center;
+        order: 2;
+        /* Show reset below actions */
+        border: none;
+        /* Make it look less like a primary action */
+        font-size: 0.8rem;
+        padding: 8px;
+        background: transparent !important;
+        /* Ensure no bg */
+    }
+
+    .reset-btn:hover {
+        background: var(--modal-danger-bg-subtle) !important;
+    }
+
+    /* Safe area for iOS devices */
+    .layout-modal-footer {
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+}

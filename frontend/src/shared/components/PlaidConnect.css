@@ -1,0 +1,21 @@
+.plaid-connect-button {
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.plaid-connect-button:not(:disabled):hover {
+    opacity: 0.9 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.plaid-connect-button:not(:disabled):active {
+    transform: translateY(0);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.plaid-connect-button:disabled {
+    background-color: #ccc !important;
+    cursor: not-allowed !important;
+    box-shadow: none;
+}

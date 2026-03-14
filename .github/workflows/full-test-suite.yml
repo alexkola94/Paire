@@ -13,6 +13,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore and build
+        working-directory: ./backend
+        run: dotnet restore Paire.sln && dotnet build Paire.sln -c Release
+
+      - name: Run tests
+        working-directory: ./backend
+        run: dotnet test Paire.sln --no-build -c Release --verbosity normal
+
   frontend-tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
@@ -52,7 +74,7 @@ jobs:
 
   test-summary:
     name: Test Summary
-    needs: [frontend-tests]
+    needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
     if: always()
     timeout-minutes: 5
@@ -64,10 +86,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend Tests | ${{ needs.backend-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend Tests | ${{ needs.frontend-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [ "${{ needs.frontend-tests.result }}" != "success" ]; then
+          if [ "${{ needs.backend-tests.result }}" != "success" ] || [ "${{ needs.frontend-tests.result }}" != "success" ]; then
             echo "❌ Some tests failed!" >> $GITHUB_STEP_SUMMARY
             exit 1
           else

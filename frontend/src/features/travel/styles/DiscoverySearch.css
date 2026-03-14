@@ -1,0 +1,419 @@
+/* ================================
+   Discovery Search Styles
+   ================================ */
+
+.discovery-search {
+  position: fixed;
+  top: 110px;
+  /* More spacing below fixed header */
+  left: 16px;
+  right: 16px;
+  z-index: 150;
+  width: auto;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  pointer-events: none;
+  /* Let clicks pass through container */
+}
+
+/* Search Input Wrapper – minimal container, no outer pill/around styling */
+.discovery-search-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  transition: all 0.3s ease-in-out;
+  pointer-events: auto;
+  box-shadow: none;
+}
+
+/* Search icon – visible, theme-aware */
+.discovery-search-input-wrapper .search-icon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.3s ease-in-out;
+}
+
+/* Search input – styling lives on the input only (no wrapper “around” box) */
+.discovery-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.discovery-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.discovery-search-input:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+}
+
+/* Clear button and loading – keep aligned in minimal wrapper */
+.search-clear-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.3s ease-in-out;
+}
+
+.search-clear-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.search-loading {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--primary, #8B5CF6);
+  border-radius: 50%;
+  animation: discovery-search-spin 0.8s linear infinite;
+}
+
+@keyframes discovery-search-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Compact advisory hint under the search bar – surfaces country-level smart data */
+.discovery-advisory-hint {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.45);
+}
+
+.discovery-advisory-country {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+
+.discovery-advisory-message {
+  opacity: 0.9;
+}
+
+.travel-layout:not([data-theme='dark']) .discovery-advisory-hint {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #0f172a;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+}
+
+/* Light theme: wrapper stays minimal (no around styling) */
+.travel-layout:not([data-theme='dark']) .discovery-search-input-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* ... existing styles ... */
+
+/* Category Chips – centered to match search bar */
+.discovery-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  /* Allow wrapping to show all categories */
+  padding: 4px;
+  /* Space for shadow */
+  gap: 8px;
+  pointer-events: auto;
+  /* Re-enable clicks */
+  justify-content: center;
+  /* Center chips horizontally to align with search bar */
+  width: 100%;
+  /* Match search bar width */
+}
+
+.discovery-category-chip {
+  flex-shrink: 0;
+  /* Don't shrink chips */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(15, 7, 26, 0.85);
+  /* Slightly more opaque */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  color: rgba(255, 255, 255, 0.8);
+
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Light theme chips – overridden by TravelLightTheme.css for warm palette consistency */
+
+.discovery-category-chip:hover {
+  background: rgba(var(--chip-color), 0.15);
+  border-color: var(--chip-color);
+  color: white;
+}
+
+.discovery-category-chip.active {
+  background: var(--chip-gradient);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.discovery-category-chip svg {
+  flex-shrink: 0;
+}
+
+/* ================================
+   Responsive Adjustments
+   ================================ */
+
+@media (min-width: 768px) {
+  .discovery-search {
+    top: 84px;
+    left: 24px;
+    max-width: 450px;
+  }
+
+  .discovery-search-input {
+    height: 48px;
+    font-size: 1rem;
+    padding: 0 16px;
+  }
+
+  .discovery-category-chip {
+    padding: 10px 18px;
+    font-size: 0.875rem;
+  }
+}
+
+/* ================================
+   Reduced Motion
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .discovery-search-input-wrapper,
+  .discovery-category-chip {
+    transition: none;
+  }
+
+  .search-loading-spinner {
+    animation: none;
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: var(--primary, #8B5CF6);
+  }
+}
+
+/* ================================
+   Mobile Layout Refinements
+   ================================ */
+
+.discovery-mobile-toggle-wrapper {
+  display: none;
+  /* Hidden on desktop */
+}
+
+@media (max-width: 768px) {
+
+  /* Move search bar higher up */
+  .discovery-search {
+    top: 60px;
+    /* Reduced from default (usually lower) */
+    width: 90%;
+    margin-left: 0;
+    left: 50%;
+    transform: translateX(-50%) !important;
+    /* Ensure centered */
+  }
+
+  /* Show toggle wrapper */
+  .discovery-mobile-toggle-wrapper {
+    display: flex;
+    width: 100%;
+    margin-top: 0.75rem;
+  }
+
+  /* Filter Button Button */
+  .discovery-mobile-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: rgba(15, 7, 26, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 99px;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .discovery-mobile-filter-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+  }
+
+  .filter-count-badge {
+    background: white;
+    color: var(--primary);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hide categories by default */
+  .discovery-category-chips {
+    display: none;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: center;
+    /* Center chips to match search bar alignment */
+    background: transparent;
+    padding: 0;
+    margin-top: 0.5rem;
+    width: 100%;
+    max-height: 50vh;
+    overflow-y: auto;
+    /* Allow touches to pass through empty space */
+    pointer-events: none;
+  }
+
+  /* Re-enable pointer events on children */
+  .discovery-category-chips>* {
+    pointer-events: auto;
+  }
+
+  /* Show when open */
+  .discovery-category-chips.mobile-open {
+    display: flex;
+  }
+
+  /* Pop animation for chips when opening */
+  .discovery-category-chips.mobile-open .discovery-category-chip {
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+  }
+
+  /* Stagger delays for a playful effect */
+  .discovery-category-chips.mobile-open .discovery-category-chip:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+
+  .discovery-category-chips.mobile-open .discovery-category-chip:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+
+  .discovery-category-chips.mobile-open .discovery-category-chip:nth-child(3) {
+    animation-delay: 0.11s;
+  }
+
+  .discovery-category-chips.mobile-open .discovery-category-chip:nth-child(4) {
+    animation-delay: 0.14s;
+  }
+
+  .discovery-category-chips.mobile-open .discovery-category-chip:nth-child(5) {
+    animation-delay: 0.17s;
+  }
+
+  .discovery-category-chips.mobile-open .discovery-category-chip:nth-child(6) {
+    animation-delay: 0.20s;
+  }
+
+  .discovery-category-chips.mobile-open .discovery-category-chip:nth-child(7) {
+    animation-delay: 0.23s;
+  }
+
+  .discovery-category-chips.mobile-open .discovery-category-chip:nth-child(8) {
+    animation-delay: 0.26s;
+  }
+
+  .discovery-category-chip {
+    flex: 1 0 auto;
+    justify-content: center;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  70% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

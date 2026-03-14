@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Paire.Modules.Shopping</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Shared/Paire.Shared.Kernel/Paire.Shared.Kernel.csproj" />
+    <ProjectReference Include="../../Shared/Paire.Shared.Infrastructure/Paire.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="../Paire.Modules.Identity/Paire.Modules.Identity.csproj" />
+    <ProjectReference Include="../Paire.Modules.Partnership/Paire.Modules.Partnership.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,200 @@
+/* Accessibility Settings Modal Styles */
+
+.accessibility-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.accessibility-modal {
+    width: 90%;
+    max-width: 500px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+}
+
+.accessibility-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.accessibility-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.accessibility-content {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.setting-group {
+    margin-bottom: var(--spacing-xl);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.setting-label {
+    display: flex;
+    gap: var(--spacing-md);
+    flex: 1;
+}
+
+.setting-icon {
+    font-size: 1.5rem;
+    color: var(--primary);
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.setting-label h3 {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.setting-label p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Segmented Control for Font Size */
+.segmented-control {
+    background: var(--bg-tertiary);
+    padding: 4px;
+    border-radius: var(--radius-md);
+    display: flex;
+    gap: 4px;
+}
+
+.segment-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    min-width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.segment-btn.active {
+    background: var(--bg-primary);
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Switch Toggle */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-tertiary);
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked+.slider {
+    background-color: var(--primary);
+}
+
+input:checked+.slider:before {
+    transform: translateX(22px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.accessibility-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--bg-tertiary);
+    display: flex;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .setting-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .segmented-control,
+    .switch {
+        margin-left: 48px;
+        /* Offset to align with text */
+        margin-top: var(--spacing-sm);
+    }
+}

@@ -1,0 +1,59 @@
+/* ================================
+   Error Boundary Styles
+   ================================ */
+
+.error-boundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  padding: var(--spacing-lg);
+}
+
+.error-content {
+  max-width: 600px;
+  text-align: center;
+  background: var(--bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.error-content h1 {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.error-content p {
+  font-size: 1.0625rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xl);
+}
+
+.error-details {
+  text-align: left;
+  margin: var(--spacing-lg) 0;
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.error-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--error-dark);
+  margin-bottom: var(--spacing-sm);
+}
+
+.error-details pre {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: var(--spacing-sm);
+}
+

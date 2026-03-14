@@ -1,0 +1,71 @@
+/* ================================
+   DataCard – Unified card layout
+   Shared by Expenses, Income, RecurringBills
+   ================================ */
+
+/* Grid: 1 col default; tablet 2; desktop 3 */
+.data-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+}
+
+@media (min-width: 768px) {
+  .data-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .data-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Base card layout: flex column, min-height, actions at bottom */
+.data-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+  padding: var(--spacing-lg);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 767px) {
+  .data-card {
+    min-height: 280px;
+  }
+}
+
+/* Header: category/title + amount row */
+.data-card-header {
+  flex-shrink: 0;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Body: description/notes – grows, line-clamp so long text doesn’t stretch card */
+.data-card-body {
+  flex: 1 1 auto;
+  min-height: 3rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* Meta: date / due / added-by */
+.data-card-meta {
+  flex-shrink: 0;
+  margin-bottom: var(--spacing-md);
+}
+
+/* Actions: sticks to bottom when content is short */
+.data-card-actions {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--bg-tertiary);
+}

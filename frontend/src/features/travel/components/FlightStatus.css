@@ -1,0 +1,228 @@
+/* Flight Status Component Styles */
+
+.flight-status-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--travel-text-muted, #8b95a5);
+    font-size: 0.75rem;
+}
+
+.flight-status-loading.compact {
+    padding: 0.25rem 0;
+}
+
+.flight-status-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.6rem;
+    background: rgba(139, 149, 165, 0.1);
+    border-radius: 6px;
+    font-size: 0.65rem;
+    color: rgba(139, 149, 165, 0.8);
+    margin-top: 0.5rem;
+}
+
+/* Compact Status (for event cards) */
+.flight-status-compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.flight-status-compact .status-label {
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.flight-status-compact .delay-badge {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+/* Status Colors */
+.flight-status-compact.status-blue,
+.flight-status-card.status-blue {
+    --status-color: #3b82f6;
+    --status-bg: rgba(59, 130, 246, 0.15);
+}
+
+.flight-status-compact.status-green,
+.flight-status-card.status-green {
+    --status-color: #22c55e;
+    --status-bg: rgba(34, 197, 94, 0.15);
+}
+
+.flight-status-compact.status-red,
+.flight-status-card.status-red {
+    --status-color: #ef4444;
+    --status-bg: rgba(239, 68, 68, 0.15);
+}
+
+.flight-status-compact.status-gray,
+.flight-status-card.status-gray {
+    --status-color: #8b95a5;
+    --status-bg: rgba(139, 149, 165, 0.15);
+}
+
+.flight-status-compact {
+    background: var(--status-bg);
+    color: var(--status-color);
+}
+
+/* Full Status Card */
+.flight-status-card {
+    background: var(--travel-card-bg, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--status-bg);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 0.75rem;
+}
+
+.flight-status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--status-bg);
+    color: var(--status-color);
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.delay-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: #ef4444;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Flight Route */
+.flight-route {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.route-point {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.route-point.departure {
+    text-align: left;
+}
+
+.route-point.arrival {
+    text-align: right;
+}
+
+.airport-code {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--travel-text-primary, #fff);
+}
+
+.airport-name {
+    font-size: 0.7rem;
+    color: var(--travel-text-muted, #8b95a5);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.route-point.arrival .airport-name {
+    margin-left: auto;
+}
+
+.time-info {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+}
+
+.route-point.arrival .time-info {
+    justify-content: flex-end;
+}
+
+.scheduled-time {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--travel-text-primary, #fff);
+}
+
+.actual-time {
+    font-size: 0.75rem;
+    color: #22c55e;
+    font-weight: 500;
+}
+
+.gate-info,
+.terminal-info {
+    font-size: 0.7rem;
+    color: var(--travel-text-muted, #8b95a5);
+}
+
+.route-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--travel-accent, #a855f7);
+    padding-top: 0.5rem;
+    transform: rotate(90deg);
+}
+
+/* Flight Details */
+.flight-details {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--travel-border, rgba(255, 255, 255, 0.1));
+    font-size: 0.7rem;
+    color: var(--travel-text-muted, #8b95a5);
+}
+
+.flight-details .airline {
+    font-weight: 500;
+}
+
+.flight-details .aircraft {
+    opacity: 0.8;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .flight-status-loading motion.div {
+        animation: none;
+    }
+}

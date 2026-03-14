@@ -1,0 +1,1224 @@
+/* ================================
+   Explore Page - Premium Styling
+   Layout tuned for desktop so key modules
+   (weather + essentials) sit side‑by‑side
+   to reduce vertical scrolling while
+   remaining stacked on tablet/mobile.
+   ================================ */
+
+.explore-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.explore-page.calm-explore {
+  /* Slightly wider canvas on larger screens so
+     hero weather + essentials can breathe */
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.explore-page.empty-state {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.explore-page.empty-state svg {
+  opacity: 0.5;
+  margin-bottom: 1rem;
+  color: var(--travel-accent, #a855f7);
+}
+
+.explore-page.empty-state h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Section Cards */
+.explore-section {
+  background: linear-gradient(145deg,
+      rgba(30, 25, 45, 0.9) 0%,
+      rgba(20, 18, 35, 0.95) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.15);
+  border-radius: 20px;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Weather Section - Hero Style */
+.weather-section {
+  background: linear-gradient(135deg,
+      rgba(88, 28, 135, 0.4) 0%,
+      rgba(30, 25, 45, 0.95) 50%,
+      rgba(20, 18, 35, 0.98) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Today's Weather - Large Display */
+.today-weather {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.today-weather-main {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.today-weather-main .today-icon {
+  color: var(--travel-accent, #a855f7);
+  filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
+  animation: gentle-float 4s ease-in-out infinite;
+}
+
+@keyframes gentle-float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.today-temp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.today-temp .temp-high {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.today-temp .temp-low {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.today-desc {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.5rem;
+}
+
+.today-location {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Forecast Toggle Button */
+.forecast-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.forecast-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Expanded Forecast */
+.forecast-expanded {
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.forecast-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.forecast-day:last-child {
+  border-bottom: none;
+}
+
+.forecast-day .day-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 80px;
+}
+
+.forecast-day svg {
+  color: var(--travel-accent, #a855f7);
+  flex-shrink: 0;
+}
+
+.forecast-temps {
+  display: flex;
+  gap: 0.75rem;
+  min-width: 80px;
+  justify-content: flex-end;
+}
+
+.forecast-temps .temp-high {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.forecast-temps .temp-low {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* POI Section */
+.poi-section {
+  background: linear-gradient(145deg,
+      rgba(30, 25, 45, 0.9) 0%,
+      rgba(20, 18, 35, 0.95) 100%);
+}
+
+/* Saved Places snapshot above POI search */
+.saved-places-explore {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.75rem 0.5rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.saved-places-explore-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.saved-places-explore-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.saved-places-explore-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.saved-places-explore-count {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.saved-places-explore-view-all-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.saved-places-explore-view-all-btn:hover {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.7);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.saved-places-explore-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.saved-place-explore-pill {
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.13);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.saved-place-explore-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.saved-place-explore-name {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #f9fafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-place-explore-address {
+  font-size: 0.7rem;
+  color: rgba(249, 250, 251, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-place-explore-map-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(209, 213, 219, 0.7);
+  background: rgba(17, 24, 39, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(249, 250, 251, 0.85);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.saved-place-explore-map-btn:hover {
+  border-color: rgba(248, 250, 252, 0.9);
+  background: rgba(31, 41, 55, 0.95);
+  color: #f9fafb;
+  transform: translateY(-1px);
+}
+
+/* Find Places Trigger Button */
+.poi-search-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg,
+      rgba(168, 85, 247, 0.15) 0%,
+      rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 14px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.poi-search-trigger:hover {
+  background: linear-gradient(135deg,
+      rgba(168, 85, 247, 0.25) 0%,
+      rgba(139, 92, 246, 0.2) 100%);
+  border-color: rgba(168, 85, 247, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.2);
+}
+
+.poi-search-trigger svg {
+  color: var(--travel-accent, #a855f7);
+}
+
+/* POI Header */
+.poi-header {
+  margin-bottom: 1rem;
+}
+
+.poi-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+/* POI Categories - Premium Pill Buttons */
+.poi-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.poi-categories.calm-categories {
+  justify-content: center;
+}
+
+.poi-category-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.poi-category-btn:hover {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #fff;
+}
+
+.poi-category-btn.active {
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35);
+}
+
+.poi-category-btn svg {
+  flex-shrink: 0;
+}
+
+/* POI Results List */
+.poi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.poi-list.calm-list {
+  margin-top: 0.5rem;
+}
+
+/* POI Card - Premium */
+.poi-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.poi-card:hover {
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.3);
+  transform: translateX(4px);
+}
+
+.poi-card.calm-card {
+  cursor: pointer;
+}
+
+.poi-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.poi-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.poi-distance {
+  font-size: 0.75rem;
+  color: var(--travel-accent, #a855f7);
+  font-weight: 500;
+}
+
+.poi-link-icon {
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.poi-card:hover .poi-link-icon {
+  color: var(--travel-accent, #a855f7);
+}
+
+/* Empty POI State */
+.empty-pois {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.calm-empty-small {
+  padding: 1.5rem;
+}
+
+.calm-empty-small p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--travel-accent, #a855f7);
+}
+
+.calm-loading {
+  min-height: 80px;
+}
+
+/* Error State */
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+}
+
+.calm-error {
+  flex-direction: row;
+}
+
+/* Calm Empty States */
+.calm-empty {
+  opacity: 0.9;
+}
+
+.calm-empty svg {
+  color: var(--travel-accent, #a855f7);
+  opacity: 0.6;
+  margin-bottom: 1.25rem;
+}
+
+.calm-empty h3 {
+  font-size: 1.15rem;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.calm-empty p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 280px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .explore-page {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .explore-section {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .today-weather {
+    padding: 0.75rem 0;
+  }
+
+  .today-weather-main {
+    gap: 1rem;
+  }
+
+  .today-weather-main .today-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .today-temp .temp-high {
+    font-size: 2.5rem;
+  }
+
+  .today-temp .temp-low {
+    font-size: 1rem;
+  }
+
+  .today-desc {
+    font-size: 1rem;
+  }
+
+  .today-location {
+    font-size: 0.75rem;
+  }
+
+  .forecast-toggle {
+    padding: 0.625rem;
+    font-size: 0.75rem;
+    min-height: 44px;
+    /* Touch-friendly */
+  }
+
+  .forecast-day {
+    padding: 0.625rem 0;
+  }
+
+  .forecast-day .day-name {
+    font-size: 0.8rem;
+    min-width: 60px;
+  }
+
+  .forecast-temps {
+    gap: 0.5rem;
+    min-width: 70px;
+  }
+
+  .forecast-temps .temp-high,
+  .forecast-temps .temp-low {
+    font-size: 0.85rem;
+  }
+
+  .poi-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .poi-categories {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .poi-category-btn {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.75rem;
+    min-height: 44px;
+    /* Touch-friendly */
+    flex: 1;
+    min-width: calc(50% - 0.25rem);
+  }
+
+  .poi-card {
+    padding: 0.875rem 1rem;
+    min-height: 44px;
+    /* Touch-friendly */
+  }
+
+  .poi-name {
+    font-size: 0.875rem;
+  }
+
+  .poi-distance {
+    font-size: 0.7rem;
+  }
+
+  .essentials-grid {
+    gap: 1rem;
+  }
+
+  .explore-card {
+    padding: 1rem;
+  }
+
+  .card-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .card-title h3 {
+    font-size: 1rem;
+  }
+
+  .card-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .phrase-item {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .phrase-key {
+    font-size: 0.85rem;
+  }
+
+  .phrase-value {
+    font-size: 0.9rem;
+  }
+
+  .view-more-btn {
+    padding: 0.625rem;
+    font-size: 0.8rem;
+    min-height: 44px;
+    /* Touch-friendly */
+  }
+
+  .emergency-item {
+    padding: 0.625rem 0.875rem;
+    min-height: 44px;
+    /* Touch-friendly */
+  }
+
+  .emergency-item .label {
+    font-size: 0.85rem;
+  }
+
+  .emergency-item .number {
+    font-size: 1rem;
+  }
+
+  .poi-search-trigger {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.875rem;
+    min-height: 44px;
+    /* Touch-friendly */
+  }
+}
+
+@media (max-width: 480px) {
+  .explore-page {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .explore-section {
+    padding: 0.875rem;
+    border-radius: 14px;
+  }
+
+  .today-temp .temp-high {
+    font-size: 2rem;
+  }
+
+  .today-weather-main {
+    gap: 0.75rem;
+  }
+
+  .today-weather-main .today-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .poi-category-btn {
+    min-width: calc(50% - 0.25rem);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+  }
+
+  .poi-category-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .essentials-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .explore-section {
+    padding: 2rem;
+  }
+
+  .today-temp .temp-high {
+    font-size: 4rem;
+  }
+
+  .today-weather-main .today-icon {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* =========================================
+   Desktop Layout – spread modules horizontally
+   ========================================= */
+@media (min-width: 1024px) {
+  .explore-page.calm-explore {
+    /* Wider layout on desktop to use full viewport */
+    max-width: 1120px;
+    padding-inline: 1.5rem;
+  }
+
+  .explore-page {
+    /* Switch from vertical stack to grid for desktop,
+       so we use horizontal space and avoid deep scrolling */
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "weather essentials"
+      "poi poi";
+    column-gap: 1.75rem;
+    row-gap: 1.75rem;
+  }
+
+  .explore-section.weather-section {
+    grid-area: weather;
+    height: 100%;
+  }
+
+  .explore-section.essentials-section {
+    grid-area: essentials;
+    height: 100%;
+  }
+
+  .explore-section.poi-section {
+    grid-area: poi;
+  }
+}
+
+/* =========================================
+   Travel Essentials (Emergency & Phrasebook)
+   ========================================= */
+
+.essentials-section {
+  background: linear-gradient(145deg,
+      rgba(30, 25, 45, 0.95) 0%,
+      rgba(20, 18, 35, 0.98) 100%);
+}
+
+.essentials-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 640px) {
+  .essentials-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Card Common Styles */
+.explore-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.explore-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-icon.error-bg {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.card-icon.primary-bg {
+  background: rgba(232, 145, 58, 0.12);
+  color: #e8913a;
+}
+
+.card-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.card-subtitle {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Emergency Card Specifics */
+.emergency-numbers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: auto;
+}
+
+.emergency-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.emergency-item:hover {
+  background: rgba(239, 68, 68, 0.15);
+  transform: translateX(2px);
+}
+
+.emergency-item .label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.emergency-item .number {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.5px;
+}
+
+/* Highlight a universal / primary emergency number (e.g. 112) */
+.emergency-item-primary {
+  background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.06));
+  border-color: rgba(239, 68, 68, 0.25);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.25);
+}
+
+.emergency-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Phrasebook Card Specifics */
+.phrasebook-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.phrase-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.phrase-item:last-child {
+  border-bottom: none;
+}
+
+.phrase-key {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.phrase-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.view-more-btn {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-more-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Light Mode Support */
+@media (prefers-color-scheme: light) {
+  /* This is just a helper, the app likely uses a class .light-mode or data-theme */
+}
+
+/* App-specific Light Mode overrides based on CSS Variables if available */
+[data-theme='light'] .explore-section,
+[data-theme='light'] .essentials-section,
+[data-theme='light'] .poi-section {
+  background: linear-gradient(145deg, #ffffff 0%, #f3f4f6 100%);
+  border-color: rgba(168, 85, 247, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .explore-card {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='light'] .card-title h3,
+[data-theme='light'] .today-temp .temp-high,
+[data-theme='light'] .today-desc,
+[data-theme='light'] .forecast-temps .temp-high,
+[data-theme='light'] .poi-name,
+[data-theme='light'] .phrase-value {
+  color: #1f2937;
+}
+
+[data-theme='light'] .card-subtitle,
+[data-theme='light'] .today-temp .temp-low,
+[data-theme='light'] .today-location,
+[data-theme='light'] .forecast-day .day-name,
+[data-theme='light'] .phrase-key {
+  color: #6b7280;
+}
+
+[data-theme='light'] .emergency-item {
+  background: #fef2f2;
+  border-color: #fee2e2;
+}
+
+[data-theme='light'] .emergency-item .label {
+  color: #ef4444;
+}
+
+[data-theme='light'] .view-more-btn {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #4b5563;
+}
+
+[data-theme='light'] .view-more-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+/* Light theme empty state styling */
+[data-theme='light'] .calm-empty {
+  opacity: 1;
+}
+
+[data-theme='light'] .calm-empty svg {
+  color: #e8913a;
+  opacity: 0.85;
+}
+
+[data-theme='light'] .calm-empty h3 {
+  color: #1f2937;
+}
+
+[data-theme='light'] .calm-empty p {
+  color: #6b7280;
+}
+
+[data-theme='light'] .calm-empty-small {
+  color: #6b7280;
+}
+
+[data-theme='light'] .calm-empty-small p {
+  color: #6b7280;
+}
+
+/* Light theme loading and error states */
+[data-theme='light'] .loading-state {
+  color: #e8913a;
+}
+
+[data-theme='light'] .error-state {
+  color: #6b7280;
+}
+
+/* Light theme POI section styles */
+[data-theme='light'] .poi-header h3 {
+  color: #1f2937;
+}
+
+[data-theme='light'] .poi-category-btn {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #4b5563;
+}
+
+[data-theme='light'] .poi-category-btn:hover {
+  background: rgba(232, 145, 58, 0.1);
+  border-color: rgba(232, 145, 58, 0.4);
+  color: #e8913a;
+}
+
+[data-theme='light'] .poi-category-btn.active {
+  background: linear-gradient(135deg, #e8913a 0%, #f0a85c 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(232, 145, 58, 0.35);
+}
+
+[data-theme='light'] .poi-card {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .poi-card:hover {
+  background: rgba(232, 145, 58, 0.08);
+  border-color: rgba(232, 145, 58, 0.25);
+}
+
+[data-theme='light'] .poi-distance {
+  color: #e8913a;
+}
+
+[data-theme='light'] .poi-link-icon {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme='light'] .poi-card:hover .poi-link-icon {
+  color: #e8913a;
+}
+
+[data-theme='light'] .poi-search-trigger {
+  background: linear-gradient(135deg,
+      rgba(232, 145, 58, 0.1) 0%,
+      rgba(240, 168, 92, 0.08) 100%);
+  border-color: rgba(232, 145, 58, 0.25);
+  color: #3d3530;
+}
+
+[data-theme='light'] .poi-search-trigger:hover {
+  background: linear-gradient(135deg,
+      rgba(232, 145, 58, 0.18) 0%,
+      rgba(240, 168, 92, 0.14) 100%);
+  border-color: rgba(232, 145, 58, 0.4);
+  box-shadow: 0 8px 24px rgba(232, 145, 58, 0.15);
+}
+
+[data-theme='light'] .poi-search-trigger svg {
+  color: #e8913a;
+}
+
+/* Light theme saved places */
+[data-theme='light'] .saved-places-explore {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .saved-places-explore-title {
+  color: #1f2937;
+}
+
+[data-theme='light'] .saved-places-explore-count {
+  color: #6b7280;
+}
+
+[data-theme='light'] .saved-places-explore-view-all-btn {
+  border-color: rgba(232, 145, 58, 0.4);
+  background: rgba(232, 145, 58, 0.06);
+  color: #3d3530;
+}
+
+[data-theme='light'] .saved-places-explore-view-all-btn:hover {
+  background: rgba(232, 145, 58, 0.15);
+  border-color: rgba(232, 145, 58, 0.6);
+  color: #e8913a;
+}
+
+[data-theme='light'] .saved-place-explore-pill {
+  background: rgba(232, 145, 58, 0.08);
+  border-color: rgba(232, 145, 58, 0.3);
+}
+
+[data-theme='light'] .saved-place-explore-name {
+  color: #1f2937;
+}
+
+[data-theme='light'] .saved-place-explore-address {
+  color: #6b7280;
+}
+
+[data-theme='light'] .saved-place-explore-map-btn {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.9);
+  color: #4b5563;
+}
+
+[data-theme='light'] .saved-place-explore-map-btn:hover {
+  border-color: #e8913a;
+  color: #e8913a;
+}
