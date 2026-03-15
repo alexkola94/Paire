@@ -58,7 +58,7 @@ public class AchievementService : IAchievementService
         return await SaveAchievementsAsync(newAchievements, userId);
     }
 
-    public async Task<List<UserAchievement>> CheckConsistencyAchievementsAsync(string userId) => new List<UserAchievement>();
+    public Task<List<UserAchievement>> CheckConsistencyAchievementsAsync(string userId) => Task.FromResult(new List<UserAchievement>());
 
     public async Task<List<UserAchievement>> CheckMilestoneAchievementsAsync(string userId) => await CheckCountAchievementsAsync(userId, "milestone", async () =>
     {
@@ -135,11 +135,11 @@ public class AchievementService : IAchievementService
         return await SaveAchievementsAsync(newAchievements, userId);
     }
 
-    private async Task<UserAchievement> AwardAchievementAsync(string userId, Guid achievementId, decimal progress)
+    private Task<UserAchievement> AwardAchievementAsync(string userId, Guid achievementId, decimal progress)
     {
         var ua = new UserAchievement { Id = Guid.NewGuid(), UserId = userId, AchievementId = achievementId, UnlockedAt = DateTime.UtcNow, Progress = progress, IsNotified = false, CreatedAt = DateTime.UtcNow };
         _analyticsContext.UserAchievements.Add(ua);
-        return ua;
+        return Task.FromResult(ua);
     }
 
     private async Task<List<UserAchievement>> SaveAchievementsAsync(List<UserAchievement> achievements, string userId)

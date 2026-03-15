@@ -1,51 +1,50 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Paire.Modules.AI.Core.DTOs;
+using Paire.Modules.AI.Core.Interfaces;
+using Paire.Modules.AI.Core.Services;
 using Paire.Shared.Kernel.Api;
 
 namespace Paire.Modules.AI.Api.Controllers;
 
 /// <summary>
-/// Main financial chatbot API. Provides suggestions and processes queries.
+/// Main financial chatbot API. Rule-based queries and suggestions.
 /// </summary>
 [Authorize]
 [ApiController]
 [Route("api/chatbot")]
 public class ChatbotController : BaseApiController
 {
+    private readonly IChatbotService _chatbotService;
+    private readonly IConversationService _conversationService;
+    private readonly ChatbotPersonalityService _personalityService;
     private readonly ILogger<ChatbotController> _logger;
 
-    private static readonly Dictionary<string, List<string>> SuggestionsByLanguage = new()
+    public ChatbotController(
+        IChatbotService chatbotService,
+        IConversationService conversationService,
+        ChatbotPersonalityService personalityService,
+        ILogger<ChatbotController> logger)
     {
-        ["en"] = new() { "How much did I spend this month?", "What's my current balance?", "What did I spend on groceries?", "Show me my top expenses", "What's my daily average spending?" },
-        ["el"] = new() { "Πόσο ξόδεψα αυτόν τον μήνα;", "Ποιο είναι το τρέχον υπόλοιπό μου;", "Τι ξόδεψα σε είδη παντοπωλείου;", "Δείξε μου τις κορυφαίες δαπάνες μου", "Ποιο είναι το ημερήσιο μέσο όρο δαπανών μου;" },
-        ["es"] = new() { "¿Cuánto gasté este mes?", "¿Cuál es mi saldo actual?", "¿En qué gasté en comestibles?", "Muéstrame mis mayores gastos", "¿Cuál es mi gasto diario promedio?" },
-        ["fr"] = new() { "Combien ai-je dépensé ce mois-ci ?", "Quel est mon solde actuel ?", "Combien ai-je dépensé en épicerie ?", "Montrez-moi mes principales dépenses", "Quel est mon dépense quotidienne moyenne ?" }
-    };
-
-    public ChatbotController(ILogger<ChatbotController> logger)
-    {
+        _chatbotService = chatbotService;
+        _conversationService = conversationService;
+        _personalityService = personalityService;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Get suggested questions for the chatbot.
-    /// </summary>
     [HttpGet("suggestions")]
-    public IActionResult GetSuggestions([FromQuery] string? language = "en")
+    public async Task<IActionResult> GetSuggestions([FromQuery] string? language = "en", CancellationToken cancellationToken = default)
     {
-        var lang = (language ?? "en").ToLowerInvariant();
-        if (!SuggestionsByLanguage.TryGetValue(lang, out var list))
-            list = SuggestionsByLanguage["en"];
-        return Ok(list);
+        var (userId, error) = GetAuthenticatedUser();
+        if (error != null) return error;
+
+        var suggestions = await _chatbotService.GetSuggestedQuestionsAsync(userId.ToString(), language ?? "en", cancellationToken);
+        return Ok(suggestions);
     }
 
-    /// <summary>
-    /// Process a chatbot query. Returns a simple response (rule-based stub).
-    /// Full AI/rule-based logic can be added later.
-    /// </summary>
     [HttpPost("query")]
-    public IActionResult ProcessQuery([FromBody] ChatbotQueryRequest request)
+    public async Task<IActionResult> ProcessQuery([FromBody] ChatbotQueryRequest request, CancellationToken cancellationToken = default)
     {
         var (userId, error) = GetAuthenticatedUser();
         if (error != null) return error;
@@ -55,14 +54,36 @@ public class ChatbotController : BaseApiController
 
         try
         {
-            var response = new ChatbotResponseDto
+            var conversation = await _conversationService.GetOrCreateConversationAsync(userId.ToString(), request.ConversationId, cancellationToken);
+
+            List<ChatMessageDto>? history = request.History;
+            if (history == null || history.Count == 0)
             {
-                Message = "I'm your financial assistant. For detailed insights, check your Dashboard and Reports. Full chatbot logic is being migrated to the new architecture.",
-                Type = "text",
-                QuickActions = new List<string> { "View Dashboard", "View Reports" },
-                ActionLink = "/dashboard"
-            };
-            return Ok(response);
+                var contextMessages = await _conversationService.GetRecentContextAsync(conversation.Id, 10, cancellationToken);
+                if (contextMessages.Count > 0)
+                    history = contextMessages;
+            }
+
+            var language = request.Language ?? "en";
+            var response = await _chatbotService.ProcessQueryAsync(userId.ToString(), request.Query, history, language, cancellationToken);
+            response = _personalityService.ApplyPersonality(response, await _personalityService.GetPersonalityAsync(userId.ToString()));
+
+            await _conversationService.SaveMessageAsync(conversation.Id, "user", request.Query, cancellationToken);
+            if (!string.IsNullOrEmpty(response.Message))
+                await _conversationService.SaveMessageAsync(conversation.Id, "assistant", response.Message, cancellationToken);
+
+            return Ok(new
+            {
+                response.Message,
+                response.Type,
+                response.Data,
+                response.QuickActions,
+                response.ActionLink,
+                response.CanGenerateReport,
+                response.ReportType,
+                response.ReportParams,
+                conversationId = conversation.Id
+            });
         }
         catch (Exception ex)
         {
@@ -71,9 +92,6 @@ public class ChatbotController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// Generate a financial report (CSV/PDF). Stub - returns minimal CSV for now.
-    /// </summary>
     [HttpPost("generate-report")]
     public IActionResult GenerateReport([FromBody] GenerateReportRequest request)
     {
@@ -83,8 +101,6 @@ public class ChatbotController : BaseApiController
         var format = (request?.Format ?? "csv").ToLowerInvariant();
         var contentType = format == "pdf" ? "application/pdf" : "text/csv";
         var ext = format == "pdf" ? "pdf" : "csv";
-
-        // Stub: return minimal CSV. Full report generation can be wired to Analytics/Finance modules later.
         var csv = "Date,Category,Amount,Type\n";
         var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
         return File(bytes, contentType, $"financial_report.{ext}");
@@ -99,30 +115,4 @@ public class GenerateReportRequest
     public string? EndDate { get; set; }
     public string? Category { get; set; }
     public string? GroupBy { get; set; }
-}
-
-public class ChatbotQueryRequest
-{
-    public string Query { get; set; } = string.Empty;
-    public List<ChatMessageDto>? History { get; set; }
-    public string? Language { get; set; }
-    public Guid? ConversationId { get; set; }
-}
-
-public class ChatMessageDto
-{
-    public string Role { get; set; } = "user";
-    public string Content { get; set; } = string.Empty;
-}
-
-public class ChatbotResponseDto
-{
-    public string Message { get; set; } = string.Empty;
-    public string Type { get; set; } = "text";
-    public object? Data { get; set; }
-    public List<string>? QuickActions { get; set; }
-    public string? ActionLink { get; set; }
-    public bool CanGenerateReport { get; set; }
-    public string? ReportType { get; set; }
-    public object? ReportParams { get; set; }
 }

@@ -23,11 +23,11 @@ function getScoreLabel(score, t) {
 }
 
 const COMPONENT_KEYS = [
-  { key: 'budgetAdherence', label: 'paireScore.budget', defaultLabel: 'Budget', color: '#8B5CF6' },
-  { key: 'savingsRate', label: 'paireScore.savings', defaultLabel: 'Savings', color: '#10B981' },
-  { key: 'debtManagement', label: 'paireScore.debt', defaultLabel: 'Debt', color: '#F59E0B' },
-  { key: 'consistency', label: 'paireScore.consistency', defaultLabel: 'Consistency', color: '#3B82F6' },
-  { key: 'goalProgress', label: 'paireScore.goals', defaultLabel: 'Goals', color: '#EC4899' },
+  { key: 'budgetAdherenceScore', label: 'paireScore.budget', defaultLabel: 'Budget', color: '#8B5CF6' },
+  { key: 'savingsRateScore', label: 'paireScore.savings', defaultLabel: 'Savings', color: '#10B981' },
+  { key: 'debtHealthScore', label: 'paireScore.debt', defaultLabel: 'Debt', color: '#F59E0B' },
+  { key: 'expenseConsistencyScore', label: 'paireScore.consistency', defaultLabel: 'Consistency', color: '#3B82F6' },
+  { key: 'goalProgressScore', label: 'paireScore.goals', defaultLabel: 'Goals', color: '#EC4899' },
 ]
 
 const styles = {

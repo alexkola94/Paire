@@ -68,12 +68,6 @@ namespace Paire.Modules.Identity.Core.Services
                 "Cross-user profile access denied pending Partnership module: User {RequesterId} -> Profile {ProfileId}",
                 requesterId, profileId);
             return null;
-            
-            // Original partnership check (to be restored via IPartnershipResolver):
-            // var isPartner = await partnershipResolver.ArePartnersAsync(requesterId, profileId);
-            // if (!isPartner) return null;
-
-            return await GetBasicProfileAsync(profileId);
         }
 
         private async Task<object?> GetBasicProfileAsync(Guid profileId)
