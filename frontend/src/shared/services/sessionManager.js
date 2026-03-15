@@ -239,7 +239,12 @@ export const sessionManager = {
    */
   getCurrentUser() {
     const userJson = sessionStorage.getItem(SESSION_USER_KEY) || localStorage.getItem(SESSION_USER_KEY)
-    return userJson ? JSON.parse(userJson) : null
+    if (!userJson || userJson === 'undefined' || userJson === 'null') return null
+    try {
+      return JSON.parse(userJson)
+    } catch {
+      return null
+    }
   },
 
   /**

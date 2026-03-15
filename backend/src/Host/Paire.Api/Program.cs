@@ -152,6 +152,15 @@ app.MapGet("/health", () => Results.Ok(new
     version = "2.2.0"
 }));
 
+app.MapGet("/api/system/warmup", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+
+app.MapGet("/api/system/health", () => Results.Ok(new
+{
+    status = "healthy",
+    timestamp = DateTime.UtcNow,
+    version = "2.3.0"
+})).AllowAnonymous();
+
 app.Logger.LogInformation("Paire API (Modular Monolith) is starting...");
 app.Logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
 

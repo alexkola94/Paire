@@ -51,7 +51,8 @@ public class SessionValidationMiddleware
             return;
         }
 
-        if (context.User?.Identity?.IsAuthenticated == true)
+        var sessionValidationEnabled = _configuration.GetValue<bool>("Features:SessionValidation", true);
+        if (sessionValidationEnabled && context.User?.Identity?.IsAuthenticated == true)
         {
             var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
             if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))

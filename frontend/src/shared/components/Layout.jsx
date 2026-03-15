@@ -2,6 +2,7 @@ import { useNavigate, Outlet, NavLink } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { getBackendUrl } from '../utils/getBackendUrl'
 import { useTheme } from '../context/ThemeContext'
 import { useTravelMode } from '../../features/travel/context/TravelModeContext'
 import PageTransition from './PageTransition'
@@ -240,7 +241,7 @@ function Layout() {
         // Since we don't have a dedicated service method for this yet, we'll try a direct fetch or skip if complex
         // Actually, let's use a simple fetch if possible, or just default to null if fails
         // To be safe and consistent, we'll try to fetch from the health endpoint which is usually public
-        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/system/health`)
+        const response = await fetch(`${getBackendUrl()}/api/system/health`)
         if (response.ok) {
           const data = await response.json()
           if (data.version) {

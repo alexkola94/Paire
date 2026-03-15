@@ -79,7 +79,7 @@ public class FinanceDbContext : DbContext
         {
             entity.ToTable("budgets");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Amount).HasColumnName("budgeted_amount").HasColumnType("decimal(18,2)");
             entity.Property(e => e.SpentAmount).HasColumnType("decimal(18,2)");
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.IsActive);
@@ -124,6 +124,10 @@ public class FinanceDbContext : DbContext
         {
             entity.ToTable("user_profiles");
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Email).HasColumnName("email");
+            entity.Property(e => e.DisplayName).HasColumnName("display_name");
+            entity.Property(e => e.AvatarUrl).HasColumnName("avatar_url");
         });
     }
 }

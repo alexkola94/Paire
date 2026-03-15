@@ -18,6 +18,7 @@ public static class AnalyticsModule
         services.AddScoped<IFinancialHealthService, FinancialHealthService>();
         services.AddScoped<IWeeklyRecapService, WeeklyRecapService>();
         services.AddScoped<IAchievementService, AchievementService>();
+        services.AddScoped<IYearInReviewService, YearInReviewService>();
 
         services.AddHostedService<WeeklyRecapBackgroundService>();
 

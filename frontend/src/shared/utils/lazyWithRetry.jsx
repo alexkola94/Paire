@@ -9,9 +9,15 @@ import { lazy } from 'react'
  */
 export const lazyWithRetry = (componentImport) => {
     return lazy(async () => {
-        const pageHasAlreadyBeenForceRefreshed = JSON.parse(
-            window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
-        )
+        let pageHasAlreadyBeenForceRefreshed = false
+        try {
+            const stored = window.sessionStorage.getItem('page-has-been-force-refreshed')
+            if (stored && stored !== 'undefined' && stored !== 'null') {
+                pageHasAlreadyBeenForceRefreshed = JSON.parse(stored)
+            }
+        } catch {
+            // Invalid JSON in storage - treat as false
+        }
 
         try {
             const component = await componentImport()
