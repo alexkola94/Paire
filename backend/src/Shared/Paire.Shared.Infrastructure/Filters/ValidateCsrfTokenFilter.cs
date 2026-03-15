@@ -18,6 +18,7 @@ public class ValidateCsrfTokenFilter : IAsyncAuthorizationFilter
         "/api/auth/resend-verification",
         "/api/ai-gateway",
         "/api/chatbot",
+        "/api/conversations",
         "/health",
         "/swagger",
         "/"

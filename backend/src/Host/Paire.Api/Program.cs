@@ -13,6 +13,7 @@ using Paire.Modules.Shopping;
 using Paire.Modules.Analytics;
 using Paire.Modules.AI;
 using Paire.Modules.Gamification;
+using Paire.Modules.Gamification.Core.Interfaces;
 using Paire.Modules.Notifications;
 using Paire.Modules.Banking;
 using Paire.Modules.Admin;
@@ -164,6 +165,18 @@ app.MapGet("/api/system/health", () => Results.Ok(new
 app.Logger.LogInformation("Paire API (Modular Monolith) is starting...");
 app.Logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
 
-app.Run();
+// Seed default challenges if table is empty (idempotent)
+try
+{
+    using var scope = app.Services.CreateScope();
+    var challengeService = scope.ServiceProvider.GetRequiredService<IChallengeService>();
+    await challengeService.SeedDefaultChallengesAsync();
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Could not seed challenges (table may not exist yet or already seeded)");
+}
+
+await app.RunAsync();
 
 public partial class Program { }

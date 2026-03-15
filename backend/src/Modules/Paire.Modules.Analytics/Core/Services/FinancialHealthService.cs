@@ -65,12 +65,20 @@ public class FinancialHealthService : IFinancialHealthService
         return score;
     }
 
-    public async Task<FinancialHealthScore?> GetCurrentScoreAsync(string userId) => await _analyticsContext.FinancialHealthScores.FirstOrDefaultAsync(s => s.UserId == userId && s.Period == DateTime.UtcNow.ToString("yyyy-MM"));
+    public async Task<FinancialHealthScore?> GetCurrentScoreAsync(string userId)
+    {
+        var period = DateTime.UtcNow.ToString("yyyy-MM");
+        return await _analyticsContext.FinancialHealthScores.FirstOrDefaultAsync(s => s.UserId == userId && s.Period == period);
+    }
 
     public async Task<List<FinancialHealthScore>> GetScoreHistoryAsync(string userId, int months = 6)
     {
         var cutoffPeriod = DateTime.UtcNow.AddMonths(-months).ToString("yyyy-MM");
-        return await _analyticsContext.FinancialHealthScores.Where(s => s.UserId == userId && string.Compare(s.Period, cutoffPeriod, StringComparison.Ordinal) >= 0).OrderByDescending(s => s.Period).Take(months).ToListAsync();
+        return await _analyticsContext.FinancialHealthScores
+            .Where(s => s.UserId == userId && string.Compare(s.Period, cutoffPeriod) >= 0)
+            .OrderByDescending(s => s.Period)
+            .Take(months)
+            .ToListAsync();
     }
 
     public async Task<object?> GetPartnershipScoreAsync(string userId)

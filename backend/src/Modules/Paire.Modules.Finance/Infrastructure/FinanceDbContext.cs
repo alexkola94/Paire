@@ -79,8 +79,16 @@ public class FinanceDbContext : DbContext
         {
             entity.ToTable("budgets");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Amount).HasColumnName("budgeted_amount").HasColumnType("decimal(18,2)");
-            entity.Property(e => e.SpentAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Category).HasColumnName("category");
+            entity.Property(e => e.Amount).HasColumnName("amount").HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Period).HasColumnName("period");
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.SpentAmount).HasColumnName("spent_amount").HasColumnType("decimal(18,2)");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.IsActive);
         });
